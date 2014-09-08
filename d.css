@@ -1,0 +1,281 @@
+body, body >* {
+	margin: 0 auto;			/* <- centered */
+	min-width: 656px;
+	max-width: 1000px;
+	text-align: center;
+}
+body, .task input:not([type="checkbox"]) {
+	font-family: "Arial";
+	line-height: 28px;
+	font-size: 21px;
+}
+#took {
+	white-space: pre;
+	font-family: monospace;
+}
+footer p {
+	line-height: normal;
+	border: 5px solid transparent;
+}
+header, .post.p p {
+	white-space: nowrap;
+	overflow: hidden;		/* <- ellipsis failed, to hell with it */
+}
+header.a >* {
+	margin-bottom: 8px;
+}
+header.a >*>* {
+	width: 25%;
+	text-align: center;
+}
+header .anno {	margin-bottom: 0;}
+header .report {margin: 0 0 8px 0;}
+a, .a	{		color: #888;}
+a:hover	{		color: #000;}
+.task a, .task .a {	color: #bbb;}
+.task a:hover {		color: #fff;}
+.anno {	white-space: normal;
+	text-align: center;
+	padding: 8px 22px;
+	background-color: #ace;
+	color: #fff;
+}
+.room {	padding: 0 8px;
+	background-color: #def;
+}
+.report {
+	background-color: #f77;
+	color: #ff7;
+}
+.arr a, a.a, a.r {
+	text-decoration: none;
+}
+.arr a {display: inline-block;
+	border: 5px solid transparent;
+}
+.arr > a:hover {border-left-color:	#eee;}
+.arr .r a:hover {border-right-color:	#eee;}
+.task .arr {
+	padding: 0 !important;
+}
+#tower .thread {
+	margin: 0;
+	padding-top: 0;
+}
+#tower .thread:first-child, .task p:first-child {
+	padding-top: 8px;
+}
+#tower .thread:first-child, .thread {
+	margin-top: 24px;
+}
+#task, .thread {
+	padding: 8px 0;
+	background-color: #aaa;
+}
+#task > img, header >* {
+	margin-top: 8px;
+	vertical-align: bottom;		/* <- removes extra bottom space (sub-baseline) */
+}
+#task > textarea {
+	margin-top: 8px;
+	width: 978px;
+	height: 978px;
+}
+.task form textarea {
+	width: 456px;
+	height: 160px;
+	max-width: 950px;
+	max-height: 950px;
+}
+.task form:not(:empty), .task p, .task ul, .task ol, header > div {
+	text-align: left;
+	padding: 0 22px 8px 22px;
+}
+.task form, .task p, .task ul, .task ol {
+	line-height: 26px;
+	margin: 0;
+	color: #fff;
+	background-color: #555;
+}
+.task li {
+	margin-left: 22px;
+}
+.task form >*, .a >* {
+	display: table;
+	width: 100%;
+}
+.task form >*>*, .a >*>* {
+	display: table-cell;
+}
+.task form >*>*:nth-child(2) {
+	width: 150px;
+	text-align: right;
+}
+.task input:not([type="checkbox"]) {
+	width: 142px;
+}
+.task input[type="text"] {
+	width: 100%;
+}
+.task p > b {
+	display: block;
+	padding-right: 6px;
+}
+.post .center {
+	margin: 0 auto;
+	max-width: 690px;
+}
+.post .center p {
+	line-height: 28px;
+	min-width: 64px;
+}
+.post .center table {
+	border: none;
+	border-collapse: collapse;
+	border-spacing: 0;
+	line-height: normal;
+}
+.post .center td {
+	margin: 0;
+	padding: 4px;
+	font-size: 17px;
+	line-height: 20px;
+}
+.post img {
+	max-width: 640px;
+	vertical-align: bottom;
+}
+.post p {
+	margin: 0;
+	padding: 0 4px;
+	min-width: 165px;
+	font-size: 12px;
+	border-left: none;
+	border-left: 5px solid #eee;
+}
+.post p.r {
+	border-left: none;
+	border-right: 5px solid #eee;
+}
+.post p, header div, .l {
+	text-align: left;
+	float: left;
+}
+.post p.r, .r {
+	text-align: right;
+	float: right;
+}
+.post {	background-color: #f5f5f5;}
+.alt, body {	background-color: #eee;}
+.burnt .post {	background-color: #fdd;} span.burnt,
+.burnt .alt {	background-color: #ecc;}
+.full .post {	background-color: #dfd;} span.full,
+.full .alt {	background-color: #cec;} .post:target,
+.frozen .post {	background-color: #def;} span.frozen,
+.frozen .alt {	background-color: #cde;} body.burnt-hell, .mod,
+.post.born p:hover {	border-color:	#f00; background-color: #fdc;}
+.post.burn p:hover {	border-color:	#900; background-color: #f55;}
+.post.goo p:hover {	border-color:	#b0f; background-color: #dcf;} body.frozen-hell,
+.post.ice p:hover {	border-color:	#ace; background-color: #cdf;}
+.post.me p:hover {	border-color:	#4e7; background-color: #cfd;}
+.post.null p:hover {	border-color:	#888; background-color: #bbb;}
+.post input[type="text"], .post select {
+	height: 14px;
+	width: 99px;
+	margin: 0;
+	padding: 1px;
+	border-width: 1px;
+	vertical-align: middle;
+}
+.post input[type="submit"], .post select {
+	height: 20px;
+}
+.post.p input[type="text"] {
+	width: 159px;
+}
+.post.p textarea {
+	max-width:161px;
+	min-height:48px;
+}
+.post.p p, .post .date-out > * {
+	width: 165px;
+}
+.post.p p .report {
+	display: block;
+	white-space: normal;
+	margin-bottom: 4px;
+	padding: 4px;
+}
+.post.p p div, .post .date-out {
+	font-size: 11px;
+	line-height: normal;
+}
+.post.p {
+	padding-bottom: 8px;
+}
+.post.p.res, .post.p.res > p {
+	min-height: 56px;
+}
+.post .date-out {
+	display: block;
+	position: absolute;
+	width: 0;
+}
+.post .date-out > * {
+	display: block;
+	position: relative;
+}
+.post .date-out.l > * {
+	top: -28px;
+	left: -177px;
+}
+.post .date-out.r > * {
+	top: -28px;
+	left: 169px;
+	text-align: left;
+}
+.post .date-out > p {
+	border: none;
+	left: 500px;
+}
+.post .date-out > p.r {
+	left: 0;
+}
+.post .date-out .report {
+	background-color: rgba(234, 123, 123, 0.8);
+}
+.post .date-out > b {
+	text-align: center;
+	padding: 1px;
+}
+.post .u img {
+	border: 2px solid #09f;
+}
+.post .u {
+	color: #09f;
+}
+#thumbs {
+	margin: 8px auto 0 auto;
+	max-width: 864px;
+	text-align: left;
+}
+.op {	display: inline-block;
+	background-color: #ddd;
+	border: 6px solid #a0a0a0;
+	width: 160px;
+	height: 90px;
+	vertical-align: top;
+}
+.op:hover {
+	border-color: #09f;
+}
+.op >* {height: 100%;}
+.op * {	border: none;
+	text-align: center;
+	vertical-align: middle;
+}
+.al {	text-align: left;}
+p.hint, li {
+	font-size: 13px;
+}
+pre {	display: none;}
