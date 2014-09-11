@@ -1,6 +1,7 @@
-﻿var	h = gn('header')[0], i = gi(), j, k = id('task'), l = location.href
+﻿var	h = gn('header')[0], i = gi(), j, k = id('task'), l = location.href, m, n
 ,	filter = (k?k.getAttribute('data-filter'):0)
 ,	rootPath = (h?gn('a',h)[0].href.replace(/^\w+:\/+[^\/]+\/+/, '/'):'/')
+,	AN = /\banno\b/i
 ,	TU = /^\d+(<|>|$)/
 ,	WS = /^\s+|\s+$/g
 ,	NL = /^(\r\n|\r|\n)/g
@@ -98,6 +99,14 @@ if (k) {
 	}
 	if (flag.k) k.lastElementChild.innerHTML +=
 		'<span class="r">'+la.checked+': <input type="checkbox" id="ok" onChange="'+i0.getAttribute('onkeyup')+'"></span>';
+	if (i = (j = gn('ul',k)).length) {
+		n = (m = gn('b')).length;
+		while (n--) if (AN.test(m[n].className)) {n = 1; break;}
+		while (i--) if (m = j[i].previousElementSibling) {
+			m.innerHTML = '<a href="javascript:;" onclick="toggleHide(this.parentNode.nextElementSibling)">'+m.innerHTML+'</a>';
+			if (n !== 1) toggleHide(j[i]);
+		}
+	}
 }
 
 function gn(n,d) {return (d?d:document).getElementsByTagName(n);}

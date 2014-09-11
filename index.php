@@ -405,7 +405,7 @@ if ($u_key) {
 			if (is_array($hint)) {
 				$s = '';
 				foreach ($hint as $i) $s .= '
-		<li>'.get_template_hint($i).'</li>';
+			<li>'.get_template_hint($i).'</li>';
 				$s = "
 		<ul>$s
 		</ul>";

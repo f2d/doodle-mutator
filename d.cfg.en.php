@@ -114,18 +114,18 @@ $tmp_rooms_placeholder = 'Type here to filter the list.';
 $tmp_rooms_submit = 'Enter';
 $tmp_rules = array(
 	'Rules' => array(
-'Parallel turn-based multiplayer drawing game.
-Enjoy your time, make fun, not trouble.
-Site does not guarantee keeping everything that anyone may post.'
+'Parallel turn-based multiplayer drawing game.',
+'Enjoy your time, make fun, not trouble.',
+'Site does not guarantee keeping everything that anyone may post.'
 ),	'Mechanics' => array(
 'As a task you get random last post, except your own, or a prompt to start a new thread.
 You have '.(TARGET_DESC_TIME/60).' min. to describe or '.(TARGET_DRAW_TIME/3600).' hours to draw, after that your task can possibly be taken by other people.
 If not yet taken, or already dropped, you can still send your post and hit the target.
-Misfired text goes nowhere, but pic makes a new thread with copy of your task.
-','If your task is empty, you can try to change it anytime, if not — once in '.(TARGET_CHANGE_TIME/60).' min., by entering or refreshing room.
+Misfired text goes nowhere, but pic makes a new thread with copy of your task.',
+'If your task is empty, you can try to change it anytime, if not — once in '.(TARGET_CHANGE_TIME/60).' min., by entering or refreshing room.
 Do not open the same room in multiple tabs, your aim there is single and will change.
-If, after some time or room actions, you finally decide to perform your task, be sure to check it with the [a|⌈?⌋] button at right.
-','Threads stay full at '.TRD_MAX_POSTS.' pics for '.(TRD_ARCH_TIME/3600).' hours (to let reports and moderation), then go to archive when the next new thread is created.
+If, after some time or room actions, you finally decide to perform your task, be sure to check it with the [a|⌈?⌋] button at right.',
+'Threads stay full at '.TRD_MAX_POSTS.' pics for '.(TRD_ARCH_TIME/3600).' hours (to let reports and moderation), then go to archive when the next new thread is created.
 Single-letter rooms keep only 1 page in archive (no more than '.TRD_PER_PAGE.' threads), have no reports and moderation, and full threads go to archive right away.'
 ));
 $tmp_stop_all = 'Game frozen.';
