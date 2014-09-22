@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.11'
-,	INFO_DATE = '2014-07-16 — 2014-09-14'
+,	INFO_DATE = '2014-07-16 — 2014-09-22'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers'
@@ -1331,7 +1331,7 @@ var	d = t ? new Date(t+(t >0?0:new Date())) : new Date(), t = ['Hours','Minutes'
 	return y ? t[0]+'-'+t[1]+'-'+t[2]+' '+t[3]+':'+t[4]+':'+t[5] : t.join(':');
 }
 
-function getSendMeta() {
+function getSendMeta(sz) {
 var	a = ['clip', 'mask', 'lighter', 'xor']
 ,	b = ['resize', 'integral']
 ,	d = draw.time, h = draw.history.layers, i, j = [], k, l, m = [], n = [], u = [], t = outside.t0;
@@ -1345,7 +1345,16 @@ var	a = ['clip', 'mask', 'lighter', 'xor']
 	}
 	if (m.length) j.push('Composition: '+m.join(', '));
 	if (n.length) j.push('Filter: '+n.join(', '));
-	return Math.floor(t/1000)+','+u.join('-')+','+NS+' '+INFO_VERSION + (j.length?' (used '+j.join(', ')+')':'');
+//	return Math.floor(t/1000)+','+u.join('-')+','+NS+' '+INFO_VERSION + (j.length?' (used '+j.join(', ')+')':'');
+	return 't0: '	+Math.floor(t/1000)
+	+'\ntime: '	+u.join('-')
+	+'\napp: '	+NS+' '+INFO_VERSION
+	+(j.length
+	?'\nused: '	+j.join(', '):'')
+	+'\nlength: '	+(sz?sz:
+		'png = '	+ cnv.view.toDataURL().length
+		+', jpg = '	+ cnv.view.toDataURL(IJ).length
+	);
 }
 
 function sendPic(dest, auto) {
@@ -1479,16 +1488,17 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 				outside.send.appendChild(e);
 			}
 			e = pngData.length;
-			a.txt.value = getSendMeta();
-			a.pic.value = (((i = outside.jp || outside.jpg_pref)
+			d = (((i = outside.jp || outside.jpg_pref)
 				&& (e > i)
 				&& (((c = cnv.view.width * cnv.view.height
 				) <= (d = select.imgRes.width * select.imgRes.height
 				))
 				|| (e > (i *= c/d)))
-				&& (e > (jpgData = cnv.view.toDataURL(IJ)).length)
+				&& (e > (t = (jpgData = cnv.view.toDataURL(IJ)).length))
 			) ? jpgData : pngData);
-			if (mode.debug) alert('jpg = '+(jpgData?jpgData.length:0)+'\npng = '+e+'\npng limit = '+i);
+			a.pic.value = d;
+			a.txt.value = getSendMeta(d.length);
+			if (mode.debug) alert('png limit = '+i+'\npng = '+e+'\njpg = '+t);
 			outside.send.submit();
 		}
 	}

@@ -53,9 +53,17 @@ function exit_if_not_mod($t) {
 function optimize_pic($filepath) {
 	if (function_exists('exec') && (substr($filepath, -4) == '.png') && is_file('optipng.exe')) {
 		$f = './optipng.exe -fix -quiet "'.$filepath.'"';
+		$output = array('');
 		data_lock('/pic');
-		exec(DIRECTORY_SEPARATOR == '/' ? $f : str_replace('/', DIRECTORY_SEPARATOR, $f));
+		exec(DIRECTORY_SEPARATOR == '/' ? $f : str_replace('/', DIRECTORY_SEPARATOR, $f), $output, $return);
 		data_unlock('/pic');
+		if (is_file($f = $filepath.'.bak') && filesize($f) && !filesize($filepath)) {
+			data_log_adm("Optimizing $filepath failed, restoring from $f");
+			unlink($filepath);
+			rename($f, $filepath);
+			if (!$return) $return = 'fallback';
+		}
+		if ($return) data_log_adm("Return code: $return, command output:".implode(NL, $output));
 	}
 }
 
@@ -108,7 +116,7 @@ function get_template_hint($t) {
 	, nl2br(htmlspecialchars($t)));
 }
 
-function get_template_pre($p, $r = 0) {
+function get_template_pre($p, $R = 0) {
 	if (is_array($a = $p)) {
 		foreach ($a as $k => $v) if (!$k) $p = $v; else if ($v) $attr .= " $k=\"$v\"";
 	}
@@ -117,7 +125,7 @@ global	$tmp_require_js;
 	<div class="thread">
 		<pre'.$attr.'>'.$p.'
 		</pre>
-		<noscript><p class="hint report">'.($r?'JavaScript support required.':$tmp_require_js).'</p></noscript>
+		<noscript><p class="hint report">'.($R?'JavaScript support required.':$tmp_require_js).'</p></noscript>
 	</div>
 ':'');
 }
@@ -128,7 +136,10 @@ function get_template_page($t) {
 	$L = (LINK_TIME && !$R);
 	$n = ROOTPRFX.NAMEPRFX;
 global	$cfg_langs, $tmp_icon, $tmp_announce;
-	foreach (data_global_announce() as $k => $v) $ano .= ($ano?'<br>':'')."$tmp_announce[$k]: $v";
+	foreach (data_global_announce() as $k => $v) $ano .= ($ano?'
+		<br>':'')."
+			$tmp_announce[$k]: $v";
+	if (!($class = $t['body']) && (FROZEN_HELL && !$R)) $class = 'frozen-hell';
 	if (is_array($a = $t['data'])) foreach ($a as $k => $v) $data .= ' data-'.$k.'="'.$v.'"';
 	if (is_array($a = $t['content'])) foreach ($a as $v) $pre .= get_template_pre($v, $R); else $pre = get_template_pre($a, $R);
 	if (is_array($a = $j) || ($j && ($a = array(".$j" => 0)))) foreach ($a as $k => $v) $scr .= '
@@ -144,7 +155,7 @@ global	$cfg_langs, $tmp_icon, $tmp_announce;
 	'.preg_replace('~\v+~', NL.'	', $t['head']):'').($t['title']?'
 	<title>'.$t['title'].'</title>':'').'
 </head>
-<body'.((FROZEN_HELL && !$R)?' class="frozen-hell"':'').'>'.($t['header']?'
+<body'.($class?' class="'.$class.'"':'').'>'.($t['header']?'
 	<header>'.($ano?'
 		<p class="anno">'.$ano.'
 		</p>':'').$t['header'].'

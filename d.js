@@ -32,6 +32,7 @@ if (lang == 'ru') la = {
 ,	report: 'Жалоб'
 ,	active: 'Активных нитей'
 ,	frozen: 'Замороженные нити'
+,	frozen_hint: 'Замороженная нить. Кликните, чтобы показать/спрятать.'
 ,	burnt: 'Выжженные нити'
 ,	full: 'Полные нити'
 ,	count: {img: 'Рисунков'
@@ -60,6 +61,7 @@ if (lang == 'ru') la = {
 ,	report: 'Reports'
 ,	active: 'Active threads'
 ,	frozen: 'Frozen threads'
+,	frozen_hint: 'Frozen thread. Click here to show/hide.'
 ,	burnt: 'Burnt threads'
 ,	full: 'Full threads'
 ,	count: {img: 'Pictures'
@@ -198,7 +200,7 @@ function submitLimit(l,m) {
 				if (i == k.lastElementChild) k = i, i = k.firstElementChild;
 				if (filter == 1) i = i.nextSibling; else
 				if (filter) i = k.lastElementChild;
-				if (j = (!v || !(i = i.textContent) || i.indexOf(v) >= 0)) alt = (alt?'':' alt'), t.className = 'post'+(i == v?' mod':alt);
+				if (j = (!v || !(i = i.textContent) || i.indexOf(v) >= 0)) alt = (alt?'':' alt'), t.className = 'post'+(i == v?' ok':alt);
 				t.style.display = (j?'':'none');
 			}
 		}
@@ -229,6 +231,7 @@ var	i = e.name+'_link', a = id(i), r = r.replace('*', r.indexOf('.') < 0 ? e.val
 	,	e.innerHTML = '<p class="l"><a href="'+r+'" id="'+i+'">'+t+'</a></p>';
 }
 
+function showProps(o, z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; alert(t); return o;}
 function showContent(pre) {
 	if (pre) window.ph = pre.innerHTML;
 var	i, j, k, l, m, n = '\n', o = 'tower', p = window.ph, opt = 'opt_', q, s = ' ', t = '	'
@@ -236,25 +239,38 @@ var	i, j, k, l, m, n = '\n', o = 'tower', p = window.ph, opt = 'opt_', q, s = ' 
 ,	f = p.split(n,1)[0], g = ':|*', h = id(o), hell, recl = ['report'];
 
 	for (i in mt) recl.push(i);
+
+	if (f == 'ref') {
+		flag.ref = flag.c = 1;
+		a = p.split(n), j = {}, k = [];
+		for (i in a) if (a[i].indexOf(t) > 0 && (m = a[i].match(/\s([^:\/]*[:\/]+)?([^\/]+)/))) {
+			m = m[2].replace(/\W+$/, '').split('.').slice(-2).join('.');
+			if (k.indexOf(m) < 0) k.push(m), j[m] = [];
+			j[m].push(a[i]);
+		}
+		a = [];
+		k.sort();
+		for (i in k) a.push(j[k[i]].join(n));
+	} else
 	for (i in g) if (f.indexOf(g[i]) > -1) {
 		l = (f = f.split(g = g[i])).length;
 		if (g == '*') count.u = [0,0,0], count.o = [0,0];
-		flag.pixr = f[2];
-		if (f.length > 3) for (i in f[3]) flag[f[3][i]] = 1;
+		if (g == ':') flag.pixr = f[2];
+		if (l > 3) for (i in f[3]) flag[f[3][i]] = 1;
 		break;
 	}
 
 	function getThread(txt, preCount) {
 	var	line = txt.split(n), output = '', placeholder = '<!--?-->'
 	,	img = (flag.u?0:1), alt = 1, tr = []
-	,	desc_num = (g == ':'?1:0), post_num = 0, thread_num = 0;
+	,	desc_num = (g == ':'?1:0), post_num = 0, thread_num = 0, i, j, k, l, m;
 		hell = 0;
 		for (i in line) if (line[i].indexOf(t) > 0) {
 		var	tab = line[i].split(t), u = (tab.length > 3?tab.shift():''), post = '<br>', res = 0;
 			if (u.indexOf(',') > -1) {
-				u = u.split(','), thread_num = u.shift(), u = u[0];
-				if (isNaN(thread_num[0])) {
-					hell = recl[k = 'asdf'.indexOf(thread_num[0])]+'" id="'+(thread_num = thread_num.slice(1));
+				u = u.split(','), thread_num = u.shift(), u = u[0], j = thread_num[0];
+				if (isNaN(j)) {
+					hell = recl[k = 'asdf'.indexOf(j)]+'" id="'+(thread_num = thread_num.slice(1));
 					if (preCount) mt[recl[k]].push(thread_num);
 				}
 			}
@@ -272,7 +288,7 @@ e+'<span title="'+tab[2]+'">'+tab[3].slice(1)+'</span>';
 					} else {
 						if (m = tab[3].match(/^((\d+)-(\d+)|[\d:]+),(.*)$/m)) {
 							if (m[2]) {
-							var	k = [0, 0, Math.floor((+m[3]-m[2])/1000)], l = 3;
+								k = [0, 0, Math.floor((+m[3]-m[2])/1000)], l = 3;
 								while (--l) {
 									if (k[l] > 59) k[l-1] = Math.floor(k[l]/60), k[l] %= 60;
 									if (k[l] < 10) k[l] = '0'+k[l];
@@ -282,7 +298,7 @@ e+'<span title="'+tab[2]+'">'+tab[3].slice(1)+'</span>';
 							q = m[1]+', '+m[4], m = la.time+s+m[1]+s+la.using+s+m[4];
 						} else q = m = la.hax+s+tab[3];
 						if (tab[2].indexOf(j = ';') > 0) {
-						var	j = tab[2].split(j), res = 1;
+							j = tab[2].split(j), res = 1;
 							tab[0] +=
 '<span class="a">'+(n+la.resized).replace(NL, '<br />')+': '+j[1].replace('*', 'x')+'</span>';
 							tab[2] = j[0].replace(/(\.[^.]+)$/, '_res$1');
@@ -302,12 +318,12 @@ e+'</a>';
 							tab[1] = '<input type="text" name="'+opt+k[0]+'" value="'+k[2]+'">';
 						} else
 						if (k[1].indexOf(g) > 0) {
-						var	l = k[1].split(':'), m = parseInt(l.shift()), oi
-						,	opts = opt+k[0]+(l.length > 3?'" onChange="selectLink(this,\''+l[2]+'\',\''+l[3]+'\')':'')+'">';
+							l = k[1].split(':'), m = parseInt(l.shift());
+						var	opts = opt+k[0]+(l.length > 3?'" onChange="selectLink(this,\''+l[2]+'\',\''+l[3]+'\')':'')+'">';
 							k = l[0].split(g);
 							l = l[1].split(g);
-							for (oi in k) opts +=
-e+'<option value="'+k[oi]+'"'+(m == oi?' selected':'')+'>'+(l[oi]?l:k)[oi]+'</option>';
+							for (j in k) opts +=
+e+'<option value="'+k[j]+'"'+(m == j?' selected':'')+'>'+(l[j]?l:k)[j]+'</option>';
 							tab[1] =
 e+'<select name="'+opts+
 e+'</select>';
@@ -367,15 +383,20 @@ e+'<div'+(inout?' class="'+inout+'"':'')+'><p class="'+k+'">'+da[k]+'</p></div>'
 						post =
 dd+e+(desc_num && img?desc_num++ +'. ':'')+tab[2];
 					} else if (g == '*') post = placeholder;
+					else if (flag.ref) {
+						try {m = decodeURIComponent(k = tab[1]);} catch (e) {m = k;}
+						tab[1] = '<a href="'+k+'">'+m+'</a>';
+					}
 					alt = (alt?'':' alt');
 					img = 0;
 				}
 				if (u == 'u') post = '<span class="u">'+post+'</span>'; else
 				if (flag.u) post = post.replace(' ', ' <span class="a">')+'</span>';
-			var	q = (flag.u?tab[2].slice(0, tab[2].indexOf('.')).replace(WS, ''):0)
-			,	m = (thread_num?thread_num+'-'+post_num+'-':''), i, j, l
-			,	k = 2; while (k--) if (tab[k].replace(WS, '').length || (flag.u && (tab[k] += la.count[k?'self':'each']))) {
-				var	r = '', da;
+			var	q = (flag.u?tab[2].slice(0, tab[2].indexOf('.')).replace(WS, ''):0);
+				m = (thread_num?thread_num+'-'+post_num+'-':'');
+				k = 2;
+				while (k--) if (tab[k].replace(WS, '').length || (flag.u && (tab[k] += la.count[k?'self':'each']))) {
+				var	r = '';
 					if (tab[k].indexOf(l = '<br>') > 0) {
 						l = tab[k].split(l);
 						tab[k] = l.shift();
@@ -386,14 +407,13 @@ e+'	<span class="'+recl[0]+'">'+unixTimeToStamp(l[j].slice(0, i = l[j].indexOf('
 					if (r) tab[k] +=
 e+'<span class="date-out '+'rl'[k]+'">'+r+
 e+'</span>';
-					l = '';
-					post =
+					l = '', post =
 e+'<p'+(desc_num && f[k]?l+' title="'+f[k]+(m?(mm&&(k||!q)
 ?'" id="m_'+(q?q+'_'+thread_num+'_3':(m+k).replace(/-/g, '_'))
 :'" onClick="window.open(\''+(q?'3-'+q+'\',\'Info\',\'width=400,height=400':m+k+'\',\'Report\',\'width=656,height=267')+'\')'
-):'')+'"':'')+(k?' class="r"':'')+'>'+tab[k]+'</p>'+post;
+):'')+'"':'')+(k?(flag.ref?' class="e"':' class="r"'):'')+'>'+tab[k]+'</p>'+post;
 				}
-				if (!desc_num) post =
+				if (!(desc_num||flag.ref)) post =
 e+'<div class="center">'+post+
 e+'</div>';
 				output +=
@@ -412,7 +432,10 @@ e+'<div class="center">'+
 e+'	<table width="100%"><tr>';
 					l =
 e+'		<td width="'+Math.floor(100/(j = tr.length))+'%"';
-					for (k in tr) output += l+(j === 3?' align="'+(k == 0?'left':(k == j-1?'right':'center'))+'">':'>')+tr[k]+'</td>';
+					for (k in tr) output += l+(j > 1 && j < 4?' align="'+(
+						k == 0	?'left':(
+						k == j-1?'right':'center')
+					)+'">':'>')+tr[k]+'</td>';
 					tr = [];
 					output +=
 e+'	</tr></table>'+
@@ -432,6 +455,13 @@ j+'r">'+count.uLast+k+'<br>'+
 i+'l">'+count.u.join(f[1])+l+
 i+'r">'+count.o.join(f[1])+l+'<br>');
 		}
+		if (!mm&&hell&&(j = hell.split('"'))[0] == 'frozen') {
+			output =
+d+'<div class="post alt anno"><a href="javascript:;" onclick="toggleHide(this.parentNode.nextElementSibling)">'+la.frozen_hint+'</a>'+
+d+'</div>'+
+d+'<div style="display:none">'+output+
+d+'</div>';
+		}
 		return output;
 	}
 
@@ -439,7 +469,7 @@ i+'r">'+count.o.join(f[1])+l+'<br>');
 		if (h.innerHTML == (p = '')) for (i in a) {
 			o = getThread(a[i]);
 			p +=
-c+'<div class="thread'+(hell?' '+hell:'')+(flag.u?' al':'')+'">'+o+
+c+'<div class="thread'+(flag.u?' al':'')+(hell?' '+hell:'')+'">'+o+
 c+'</div>';
 		}
 		h.innerHTML = (p?p+

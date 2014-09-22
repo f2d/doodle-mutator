@@ -25,7 +25,7 @@ define('DIR_'.strtoupper($k), $v.'/');
 define(DIR_PICS, 'i/');
 define(DIR_THUMB, 'th/');
 
-define(LINK_TIME, true);	//* <- src=file?modtime to force reload at clients
+define(LINK_TIME, false);	//* <- src=file?modtime to force reload at clients
 define(LOG_IP, true);		//* <- for each visit, add to separate file per user
 define(LOG_UA, false);		//* <- for each post with pic, add a field to the post itself
 define(PIC_SUB, false);		//* <- true: img src=/i/p/0/0123.png, false: src=/i/0123.png and leave it to rewrite rule

@@ -2,7 +2,7 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; BTW, tabs align to 8 spaces
 ,	INFO_VERSION = 'v0.9.45'
-,	INFO_DATE = '2013-04-01 — 2014-09-05'
+,	INFO_DATE = '2013-04-01 — 2014-09-22'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640
 ,	CR = 'CanvasRecover', CT = 'Time', DRAW_PIXEL_OFFSET = -0.5
@@ -807,11 +807,19 @@ var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
 function timeElapsed() {text.timer.textContent = unixDateToHMS(timer += 1000, 1);}
 function autoSave() {if (mode.autoSave && cue.autoSave && !(cue.autoSave = (draw.active?-1:0))) sendPic(2,true);}
 
-function sendMeta() {
+function sendMeta(sz) {
 var	d = draw.time, i, j = [], u = [], t = outside.t0;
 	for (i in d) u[i] = parseInt(d[i]) || (i > 0?+new Date:t);
 	for (i in used) j.push(used[i]);
-	return Math.floor(t/1000) +','+ u.join('-') +','+ NS +' '+ INFO_VERSION + (j.length?' (used '+j.join(', ')+')':'');
+	return 't0: '	+Math.floor(t/1000)
+	+'\ntime: '	+u.join('-')
+	+'\napp: '	+NS+' '+INFO_VERSION
+	+(j.length
+	?'\nused: '	+j.join(', '):'')
+	+'\nlength: '	+(sz?sz:
+		'png = '	+ canvas.toDataURL().length
+		+', jpg = '	+ canvas.toDataURL(IJ).length
+	);
 }
 
 function sendPic(dest, auto) {
@@ -901,16 +909,17 @@ var	a = auto || false, c, d, e, i, t;
 				outside.send.appendChild(e);
 			}
 			e = pngData.length;
-			a.txt.value = sendMeta();
-			a.pic.value = (((i = outside.jp || outside.jpg_pref)
+			d = (((i = outside.jp || outside.jpg_pref)
 				&& (e > i)
 				&& (((c = canvas.width * canvas.height
 				) <= (d = select.imgRes.width * select.imgRes.height
 				))
 				|| (e > (i *= c/d)))
-				&& (e > (jpgData = canvas.toDataURL(IJ)).length)
+				&& (e > (t = (jpgData = canvas.toDataURL(IJ)).length))
 			) ? jpgData : pngData);
-			if (mode.debug) alert('jpg = '+(jpgData?jpgData.length:0)+'\npng = '+e+'\npng limit = '+i);
+			a.pic.value = d;
+			a.txt.value = sendMeta(d.length);
+			if (mode.debug) alert('png limit = '+i+'\npng = '+e+'\njpg = '+t);
 			outside.send.submit();
 		}
 	}

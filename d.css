@@ -17,9 +17,10 @@ footer p {
 	line-height: normal;
 	border: 5px solid transparent;
 }
-header, .post.p p {
+header, .post.p p, .post p.e {
 	white-space: nowrap;
-	overflow: hidden;		/* <- ellipsis failed, to hell with it */
+	overflow: hidden;
+	text-overflow: ellipsis;	/* <- requires max-width */
 }
 header.a >* {
 	margin-bottom: 8px;
@@ -150,8 +151,8 @@ a:hover	{		color: #000;}
 	padding: 0 4px;
 	min-width: 165px;
 	font-size: 12px;
-	border-left: none;
 	border-left: 5px solid #eee;
+	border-right: none;
 }
 .post p.r {
 	border-left: none;
@@ -165,17 +166,21 @@ a:hover	{		color: #000;}
 	text-align: right;
 	float: right;
 }
-.post {	background-color: #f5f5f5;}
-.alt, body {	background-color: #eee;}
-.burnt .post {	background-color: #fdd;} span.burnt,
-.burnt .alt {	background-color: #ecc;}
-.full .post {	background-color: #dfd;} span.full,
-.full .alt {	background-color: #cec;} .post:target,
-.frozen .post {	background-color: #def;} span.frozen,
-.frozen .alt {	background-color: #cde;} body.burnt-hell, .mod,
+.post p.e {
+	max-width: 465px;
+	max-height: 28px;
+}
+.post {	background-color: #f5f5f5;} body,
+.alt {	background-color: #eee;} .burnt-hell,
+.burnt .post {	background-color: #fdd;} .post .burnt, .hot,
+.burnt .alt {	background-color: #ecc;} .post:target, .ok,
+.full .post {	background-color: #dfd;} .post .full, .green,
+.full .alt {	background-color: #cec;} .frozen-hell,
+.frozen .post {	background-color: #def;} .post .frozen, .cold,
+.frozen .alt {	background-color: #cde;} .mod,
 .post.born p:hover {	border-color:	#f00; background-color: #fdc;}
 .post.burn p:hover {	border-color:	#900; background-color: #f55;}
-.post.goo p:hover {	border-color:	#b0f; background-color: #dcf;} body.frozen-hell,
+.post.goo p:hover {	border-color:	#b0f; background-color: #dcf;}
 .post.ice p:hover {	border-color:	#ace; background-color: #cdf;}
 .post.me p:hover {	border-color:	#4e7; background-color: #cfd;}
 .post.null p:hover {	border-color:	#888; background-color: #bbb;}

@@ -6,6 +6,7 @@ define(DIR_DAUS, DIR_DATA.DIR_USER);
 define(TRD_MOD, '~^((\d+)(\..+)?(\.log))(\.(s)top|\.(d)el)?$~i');
 define(TRD_PLAY, '~^(\d+)(?:\.p(\d+|f))?(?:\.u(\d+))?(?:\.t(\d+))?(\..+)?(\.log)$~i');
 define(BOM, pack('CCC', 239, 187, 191).NL);	//* <- UTF-8 Byte Order Mark
+define(NOR, '&mdash;');				//* <- no request placeholder
 define(TXT, '		');
 define(IMG, '	<	');
 
@@ -410,8 +411,10 @@ global	$u_num, $u_flag, $room, $merge;
 			$ok = $a[1];
 			$old = fln($f = $d.$f);
 			if (count($old) > $ok) {
+				$lst = BOM;
+				if ($fst = strpos($old[$ok], IMG)) $lst .= substr($old[$ok], 0, $fst).TXT.NOR.NL;	//* <- add placeholder if pic first
 				$p = substr_count($fst = implode(NL, array_slice($old, 0, $ok)), IMG);
-				$q = substr_count($lst = BOM.implode(NL, array_slice($old, $ok)), IMG);
+				$q = substr_count($lst .= implode(NL, array_slice($old, $ok)), IMG);
 				data_put(0, ($ok = data_get_thread_count())+1);
 				data_put("$d$ok.p$p.log$m[5]", $fst);		//* <- put 1st half into new thread, un/frozen like old
 				data_put($f, $lst);				//* <- put 2nd half into old thread, to keep people's target
@@ -597,7 +600,7 @@ function data_get_visible_threads() {
 global	$u_num, $u_flag, $room;
 	if (!is_dir($d = DIR_ROOM.$room.'/')) return 0;
 	$u_tab = '	'.$u_num.TXT;
-	$u_chars = array('ban', 'god', 'mod_'.$room, 'nor');
+	$u_chars = array('ban', 'god', 'mod', 'mod_'.$room, 'nor');
 	$threads = array();
 	$reports = array();
 	$sd = array_diff(scandir($d), array('.', '..'));
@@ -605,10 +608,11 @@ if (TIME_PARTS) time_check_point('done scan'.NL);
 	foreach ($sd as $fn) if (is_file($f = $d.$fn) && ($f = data_cache($f))) {
 		$pn = preg_match(TRD_MOD, $fn, $n);
 		$pp = preg_match(TRD_PLAY, $fn, $p);
+		$frz = ($pn && $n[6]);
 		if (GOD
-		|| (MOD && ($pn && $n[6]))			//* <- only own or "frozen" for mods
+	//	|| (MOD && $frz)				//* <- only own or "frozen" for mods
 		|| ($u_flag['see'] && !($pn && $n[5]))		//* <- any active for seers
-		|| ($pp && strpos(str_replace(IMG, TXT, $f), $u_tab))
+		|| (($pp || $frz) && strpos(str_replace(IMG, TXT, $f), $u_tab))
 		) {
 			$posts = array(0);
 			foreach (explode(NL, $f) as $line) if (strpos($line = trim($line), '	')) {
@@ -630,7 +634,7 @@ if (TIME_PARTS) time_check_point('done scan'.NL);
 			($f = $n[6].$n[7]) || ($f = ($p[2] && ($p[2] == 'f' || $p[2] >= TRD_MAX_POSTS)?'f':''));
 			$threads[$f .= $n[2]] = $posts;
 
-			if (MOD && is_file($r = DIR_DOOM.$room."/$n[2].report.txt")) {
+			if ((MOD || $frz) && is_file($r = DIR_DOOM.$room."/$n[2].report.txt")) {
 				$repl = array();
 				foreach (fln($r) as $line) if (count($tab = explode('	', $line, 4)) > 3) $repl[$tab[1]][$tab[2]][$tab[0]] = $tab[3];
 				$reports[$f] = $repl;
@@ -770,7 +774,10 @@ global	$u_num, $room, $target;
 		$f = "$d$n$pic.log";
 		if ($pic) $fork = data_log($f, $ptp && $target['post']
 			? $target['post']			//* <- late misfire: fork with request copy, if any
-			: T0.'	'.$u_num.TXT.($target?'<span title="'.htmlspecialchars($target['time'].', '.$target['task']).'">&mdash;</span>':'&mdash;')
+			: T0.'	'.$u_num.TXT.($target
+				? '<span title="'.htmlspecialchars($target['time'].', '.$target['task']).'">'.NOR.'</span>'
+				: NOR
+			)
 		);
 		data_put(0, $n+1);				//* <- increment last created thread number
 	}

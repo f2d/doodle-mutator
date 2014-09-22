@@ -40,9 +40,9 @@ ob_end_clean();
 if (TIME_PARTS) time_check_point('after cfg');
 
 if ($me = $_REQUEST[ME]) {
-	if (strrpos($me, '/')) {
+	if (false !== strpos($me, '/')) {
 		list($u_qk, $u_opts, $u_room_home, $u_draw_app) = explode('/', $me, 4);
-		list($u_opts, $u_per_page, $u_draw_max_undo) = explode('_', $u_opts);
+		list($u_opts, $u_per_page, $u_draw_max_undo) = explode(false !== strpos($u_opts, '_')?'_':'.', $u_opts);
 	} else {
 		list($u_qk, $u_opts, $u_per_page, $u_room_home) = explode('_', $me, 4);
 	}
@@ -52,7 +52,8 @@ if ($me = $_REQUEST[ME]) {
 		if ($u_flag['ban']) die(get_template_page(array(
 	'lang' => $lang
 ,	'title' => $tmp_ban
-,	'task' => $tmp_ban)));
+,	'task' => $tmp_ban
+,	'body' => 'burnt-hell')));
 		if (POST) $post_status = OQ.$tmp_post_ok_user_qk;
 	}
 }
@@ -67,14 +68,21 @@ if (FROZEN_HELL && !GOD && !($u_key && $qd_opts) && !$qd_arch) {
 	if (POST) goto post_refresh;
 	die($etc == '-'?'-':get_template_page(array(
 	'lang' => $lang
-,	'title' => $tmp_stop_all
-,	'header' => ' '
+,	'title' => $tmp_stop_all.' '.$tmp_title.'.'
+,	'header' => '
+		<div>
+			<a href="'.ROOTPRFX.'">'.$tmp_title.'.</a>
+		</div>
+		<div class="r">
+			<a href="'.ROOTPRFX.DIR_ARCH.'">'.$tmp_archive.'.</a>
+			<a href="'.ROOTPRFX.DIR_OPTS.'">'.$tmp_options.'.</a>
+		</div>'
 ,	'task' => $tmp_stop_all)));
 }
 
 if ($qdir) {
 	if ($l = mb_strlen($room = trim_room($room_url = urldecode($_REQUEST['room'])))) define(R1, $l = (mb_strlen(ltrim($room, '.')) <= 1));
-	define(MOD, (GOD || $u_flag['mod_'.$room])?1:0);
+	define(MOD, (GOD || $u_flag['mod'] || $u_flag['mod_'.$room])?1:0);
 } else if ($u_key) {
 	if (!$u_room_home) $qd_opts = 1;
 	$rd = ($rr = '
@@ -159,12 +167,48 @@ if ($u_key) {
 	if (isset($_POST['pic'])) {
 		$post_status = 'file_pic';
 		$log = 0;
-
-		if ((count($a = explode(',', $pp = $_POST['pic'], 2)) < 2)
+		$ppl = strlen($pp = $_POST['pic']);
+		$txt = (($ptx = $_POST['txt']) ? $ptx : '0-0,(?)');
+	//* metadata, newline separated tagged format:
+		if (false !== strpos($txt, NL)) {
+			$a = explode(',', 'app,length,t0,time,used');
+			$x = preg_split('~\v+~', $txt);
+			$y = array();
+			foreach ($x as $line) if (preg_match('~^(\w+)[\s:=]+(.+)$~', $line, $m) && in_array($k = strtolower($m[1]), $a)) $y[$k] = $m[2];
+			if ($y['length'] && $y['length'] != $ppl) {
+				$post_status = 'file_part';
+				$log = $ppl.' bytes';
+			} else {
+				if (!preg_match('~^(\d+:)+\d+$~', $y['time'])) {
+					$t = array(($y['t0']?$y['t0']:$target['time']).'000', T0.'000');
+					if (preg_match('~^(\d+)\D+(\d+)$~', $y['time'], $m)) {
+						if ($m[1] && $m[1] != $m[2]) $t[0] = $m[1];
+						if ($m[2]) $t[1] = $m[2];
+					}
+					$y['time'] = "$t[0]-$t[1]";
+				}
+				if (!$y['app']) $y['app'] = '[?]';
+				if ($y['used']) $y['app'] .= " (used $y[used])";
+				$txt = "$y[time],$y[app]";
+			}
+		} else
+	//* metadata, old CSV:
+		if (preg_match('~^(?:(\d+),)?(?:([\d:]+)|(\d+)-(\d+)),(.*)$~is', $txt, $t)) {
+			if ($t[2]) $txt = $t[2].','.$t[5];
+			else {
+				if (!$t[4]) $t[4] = T0.'000';
+				if (!$t[3] || $t[3] == $t[4]) $t[3] = ($t[1]?$t[1]:$target['time']).'000';
+				if (!$t[3]) $t[3] = $t[4];
+				$txt = $t[3].'-'.$t[4].','.$t[5];
+			}
+		}
+		if ($log); else
+	//* parse pic content:
+		if ((count($a = explode(',', $pp, 2)) < 2)
 			|| !(($png = strpos($a[0], 'png'))
 				||   strpos($a[0], 'jpeg'))
 			|| (false === ($data = base64_decode($a[1])))
-		) $log = 'invalid, '.($stl = strlen($pp)).' bytes: '.(($stl > REPORT_MAX_LENGTH) ? substr($pp, 0, REPORT_MAX_LENGTH).'(...)' : $pp);
+		) $log = 'invalid, '.$ppl.' bytes: '.(($ppl > REPORT_MAX_LENGTH) ? substr($pp, 0, REPORT_MAX_LENGTH).'(...)' : $pp);
 		else
 		if (($x = strlen($data)) > DRAW_MAX_FILESIZE) {
 			$post_status = 'file_size';
@@ -174,6 +218,7 @@ if ($u_key) {
 			$post_status = 'file_dup';
 			$log = $fn;
 		} else
+	//* save pic file:
 		if (data_lock($room)) {
 			if (($log = file_put_contents($f, $data)) != $x) {
 				$x = 0;
@@ -198,11 +243,10 @@ if ($u_key) {
 					for ($x = $w; --$x;)
 					for ($y = $h; --$y;) if (imageColorAt($pic, $x, $y) != $log) break 2;
 				}
-			} else $x = 0;				//* <- post denied: image decoding error
-
+			} else $x = 0;		//* <- post denied: image decoding error
+	//* save post:
 			if ($x > 0) {
 				optimize_pic($f);
-
 				if ($w > DRAW_PREVIEW_WIDTH) {
 					$fn .= ";$w*$h, ".format_filesize($z = filesize($f));
 					$p = imageCreateTrueColor($x = DRAW_PREVIEW_WIDTH, $y = round($h/$w*$x));
@@ -225,24 +269,19 @@ if ($u_key) {
 					} else	imageDestroy($p);
 				}
 				data_aim();
-				$txt = (isset($_POST['txt']) ? $_POST['txt'] : '0-0,(?)');
-				if (preg_match('~^(?:(\d+),)?(?:([\d:]+)|(\d+)-(\d+)),(.*)$~is', $txt, $t)) {
-					if ($t[2]) $txt = $t[2].','.$t[5];
-					else {
-						if (!$t[4]) $t[4] = T0.'000';
-						if (!$t[3] || $t[3] == $t[4]) $t[3] = ($t[1]?$t[1]:$target['time']).'000';
-						if (!$t[3]) $t[3] = $t[4];
-						$txt = $t[3].'-'.$t[4].','.$t[5];
-					}
-				}
+	//* gather post data fields to store:
 				$x = array($fn, trim_post($txt));
 				if (LOG_UA) $x[] = trim_post($_SERVER['HTTP_USER_AGENT']);
+	//* write data:
 				$x = data_log_post($x);
 				$post_status = ($x > 0?OQ.$tmp_post_ok_file:($x?'trd_miss':1));
 				$log = ($post_status != 1?0:$x);
 			} else if (is_file($f)) unlink($f);
 		}
-		if ($log) data_log_adm("Denied $post_status: $log");
+		if ($log) data_log_adm("Denied $post_status: $log".($ptx?"
+{
+$ptx
+}":''));
 	} else
 
 //* admin/mod actions ---------------------------------------------------------
@@ -484,8 +523,8 @@ if (TIME_PARTS) time_check_point('ignore user abort');
 							if (is_dir($d = DIR_PICS))
 							foreach (scandir($d) as $f) if (trim($f, '.') && is_file($old = $d.$f)) {
 								$new = pic_subpath($f, 1);
-								$done .= NL.(++$a).'	'.$old.' => '.$new.'	'.
-($old == $new?'same':(rename($old, $new)?'OK':'fail'));
+								$done .=
+NL.(++$a)."	$old => $new	".($old == $new?'same':(rename($old, $new)?'OK':'fail'));
 							}
 if (TIME_PARTS && $a) time_check_point("done $a pics");
 						} else
@@ -539,6 +578,10 @@ if (TIME_PARTS && $a) time_check_point("done $a users");
 
 1,".trim(str_replace(NL.$u_num.'	', NL.'u	'
 , preg_replace('/(\V+)	(\V+)	(\V+)\+\V+(	\V+?)/Uu', '$1	$3$4	$1. $2', NL.$t)));
+					} else
+					if ($etc == 4) {
+						$js[0]++;
+						$content .= 'ref'.NL.preg_replace('/(\d+)([^\d\s]\V+)?	(\V+)/', '$1	$3', $t);
 					} else	$done = ($t?'
 		<textarea>'.$t.'</textarea>':$tmp_empty);
 				}
@@ -599,7 +642,7 @@ if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
 						);
 					//	if ($ta[1] === NB && $ta[2] === NB) $ta[1] = $ta[2] = ' ';
 						if (count($tab) > 5) $ta[] = $tab[5];	//* <- pic comment
-						if (MOD && is_array($r = $report[$tid][$postnum])) {
+						if (/*MOD &&*/ is_array($r = $report[$tid][$postnum])) {
 							foreach ($r as $col => $l)
 							foreach ($l as $time => $line)
 							$ta[$col+1] .= '<br>'.intval($time).': '.$line;
@@ -761,7 +804,7 @@ die(get_template_page(array(
 		):('
 		<div>'.
 			$a.ROOTPRFX.'">'.$s[0].
-			$a.ROOTPRFX.'?">'.$s[5].'
+			$a.ROOTPRFX.'?drawtest">'.$s[5].'
 		</div>'.(is_dir(DIR_ARCH)?'
 		<div class="r">'.$a.ROOTPRFX.DIR_ARCH.'">'.$s[3].'
 		</div>':'')
@@ -802,13 +845,16 @@ $l = (($room = $_POST['rooms']) && ($room = trim_room(urldecode($room)))
 );
 if ($ok) {
 	if ($u_key) {
-		$x = '; expires='.gmdate(DATE_COOKIE, T0 + (($u_key[0] == 'q')?-1234:QK_EXPIRES)).'; Path='.ROOTPRFX;
-		header($a = 'Set-Cookie: '.ME.'='.$u_key.(
-			($u_opts[0] == 'd' || $u_key[0] == 'q')
+		$q = ($u_key[0] == 'q');
+		$h = 'Set-Cookie: ';
+		$x = '; expires='.gmdate(DATE_COOKIE, T0 + ($q?-1234:QK_EXPIRES)).'; Path='.ROOTPRFX;
+		$r = trim_room($u_room_home);
+		header($h.ME.'='.$u_key.(
+			($q || $u_opts[0] == 'd')
 			? ''
-			: '/'.$u_opts.'_'.$u_per_page.'_'.$u_draw_max_undo.'/'.trim_room($u_room_home).'/'.$u_draw_app
+			: "/$u_opts.$u_per_page.$u_draw_max_undo/$r/$u_draw_app"
 		).$x);
-		if ($add_qk) header($a = 'Set-Cookie: '.$add_qk.$x);
+		if ($add_qk) header($h.$add_qk.$x);
 	}
 } else $l .= '?!='.$p;
 header('Location: '.$l);
