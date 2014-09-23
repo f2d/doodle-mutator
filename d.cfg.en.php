@@ -111,6 +111,7 @@ $tmp_rooms_hint =
 Hidden rooms are not shown, start with a dot: '.$tmp_room_new_hide.'.':'').(ROOM_DUMP?'
 Single-thread rooms start with an exclamation: '.$tmp_room_new_dump.' (archived at every '.DUMP_MAX_POSTS.' posts).':'').']
 Single-letter rooms have single page in archive and no reports or moderation.';
+$tmp_filter_placeholder =
 $tmp_rooms_placeholder = 'Type here to filter the list.';
 $tmp_rooms_submit = 'Enter';
 $tmp_rules = array(

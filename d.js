@@ -1,5 +1,5 @@
 ﻿var	h = gn('header')[0], i = gi(), j, k = id('task'), l = location.href, m, n
-,	filter = (k?k.getAttribute('data-filter'):0)
+,	filtered, filter = null
 ,	rootPath = (h?gn('a',h)[0].href.replace(/^\w+:\/+[^\/]+\/+/, '/'):'/')
 ,	AN = /\banno\b/i
 ,	TU = /^\d+(<|>|$)/
@@ -80,7 +80,7 @@ if (((i.length && i[0].type == 'text') || (i = gn('textarea')).length) && (i = i
 if ((i = gn('pre')).length) showContent(i[0]);
 
 if (k) {
-	if (filter !== null) {
+	if ((filter = k.getAttribute('data-filter')) !== null) {
 		j = k.nextSibling;
 		while (!j.tagName) j = j.nextSibling;
 		j.id = 'filter';
@@ -193,25 +193,34 @@ var	r = '_res';
 
 function submitLimit(l,m) {
 	function filterList() {
-		if (t = id('filter')) {
-			t = t.firstElementChild;
-			while (k = t = t.nextSibling) if (t.tagName) {
-				i = k.firstElementChild;
-				if (i == k.lastElementChild) k = i, i = k.firstElementChild;
-				if (filter == 1) i = i.nextSibling; else
-				if (filter) i = k.lastElementChild;
-				if (j = (!v || !(i = i.textContent) || i.indexOf(v) >= 0)) alt = (alt?'':' alt'), t.className = 'post'+(i == v?' ok':alt);
-				t.style.display = (j?'':'none');
+	var	c = id('tower') || id('filter');
+		if (!c || !filter || filtered == (v = v.toLowerCase())) return;
+		filtered = v;
+	var	d = gn('div',c), e, i, j, k, l = d.length, p = /\bpost\b/i, t = /^(div|p)$/i, alt;
+		for (i = 0; i < l; i++) if (p.test((e = d[i]).className)) {
+			if (e == e.parentNode.firstElementChild) alt = 1;
+			if (!(k = gn('p',e)).length) k = e.textContent;
+			else if (filter == 1 && k.length > 1) k = k[1].textContent;
+			else {
+				j = k.length-1, j = k[j > 1?1:j], k = '';
+				while (j = j.nextSibling) if (!t.test(j.tagName)) k += j.textContent;
 			}
+			if (j = (!v || !(k = k.replace(WS, '').toLowerCase()) || k.indexOf(v) >= 0)) {
+				alt = (alt?'':' alt');
+				e.className = e.className.replace(/\s(alt|ok)\b/i, '')+(k == v?' ok':alt);
+			}
+			e.style.display = (j?'':'none');
 		}
 	}
 	function r(e) {
-		for (t in i) if (i[t].type == 'submit') return i[t].disabled = ((k && !k.checked) ? true
+		k = ((k && !k.checked)
+			? true
 			: (!(v = e.value) || (v = v.replace(WS, '')).length < l || (m && m < v.length))
 		), filterList();
+		for (t in i) if (i[t].type == 'submit') return i[t].disabled = k;
 	}
-var	i = gi(), j, k = id('ok'), t, v, alt;
-	if (m && (t = gn('textarea')).length) return r(t[0]);
+var	i = gi(), k = id('ok'), t = id('task'), v;
+	if (m&&(t = gn('textarea',t)).length) return r(t[0]);
 	for (t in i) if (i[t].type == 'text') return r(i[t]);
 }
 
@@ -241,7 +250,7 @@ var	i, j, k, l, m, n = '\n', o = 'tower', p = window.ph, opt = 'opt_', q, s = ' 
 	for (i in mt) recl.push(i);
 
 	if (f == 'ref') {
-		flag.ref = flag.c = 1;
+		flag.ref = flag.a = flag.c = 1;
 		a = p.split(n), j = {}, k = [];
 		for (i in a) if (a[i].indexOf(t) > 0 && (m = a[i].match(/\s([^:\/]*[:\/]+)?([^\/]+)/))) {
 			m = m[2].replace(/\W+$/, '').split('.').slice(-2).join('.');

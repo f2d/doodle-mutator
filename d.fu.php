@@ -25,7 +25,7 @@ function pic_subpath($f, $mk = 0) {
 	return $n.($mk === ''?'':$f);
 }
 function get_draw_app_list($n) {
-global	$cfg_draw_app, $tmp_draw_app, $tmp_options_field;
+	global $cfg_draw_app, $tmp_draw_app, $tmp_options_field;
 	if (!in_array($n, $cfg_draw_app)) $n = $cfg_draw_app[0];
 	$a = $tmp_options_field['draw_app'];
 	foreach ($cfg_draw_app as $k => $v) $a .= ($k?', ':': ').($n == $v
@@ -76,20 +76,29 @@ if (constant('ROOM_HIDE') && ROOM_HIDE) $tmp_room_new_hide = '{'.$cfg_room.($s =
 //if (constant('ROOM_DUMP') && ROOM_DUMP) $tmp_room_new_dump = '{'.$cfg_room.($s = ROOM_DUMP.'dump')."/|$s}";
 $tmp_title_var = 1;
 
-function get_template_form($name, $min = 0, $max = 0, $area = 0) {
-global	$tmp_submit;
-	if (is_array($name)) list($name, $head, $hint, $butn) = $name;
-	else {
-		$head = $GLOBALS['tmp_'.$name];
-		$hint = $GLOBALS['tmp_'.$name.'_hint'];
-		$plhd = $GLOBALS['tmp_'.$name.'_placeholder'];
-		$butn = $GLOBALS['tmp_'.$name.'_submit'];
-	}
+function get_template_form($a, $min = 0, $max = 0, $area = 0) {
+	if (is_array($a)) {
+		list($name, $head, $hint, $butn) = $a;
+		$a = 0;
+	} else $name = $a;
 	if ($name) {
-		if ($name[0] == '?') $name = substr($name, 1); else
-		if ($name[0] == ';') $method = 0;
-		else $method = ' method="post"';
-		$name = ' name="'.$name.'"';
+		foreach (array(
+			'?' => ''
+		,	';' => 0
+		,	0 => ' method="post"'
+		) as $k => $v) if (!$k || $name[0] == $k) {
+			$method = $v;
+			if ($k) $name = substr($name, 1);
+			break;
+		}
+		if ($a)
+		foreach (array(
+			'head' => ''
+		,	'hint' => '_hint'
+		,	'plhd' => '_placeholder'
+		,	'butn' => '_submit'
+		) as $k => $v) $$k = $GLOBALS["tmp_$name$v"];
+		if ($name) $name = ' name="'.$name.'"';
 	}
 	if ($min||$max) $name .= ' onKeyUp="submitLimit('.($min?$min:0).($max?','.$max:'').')"';
 	if ($name && $plhd) $name .= ' placeholder="'.$plhd.'"';
@@ -101,7 +110,7 @@ global	$tmp_submit;
 		<form'.$method.'>
 			<b>
 			<b><'.($area?'textarea'.$name.'></textarea':'input type="text"'.$name).'></b>
-			<b><input type="submit" value="'.($butn?$butn:$tmp_submit).'"></b>
+			<b><input type="submit" value="'.($butn?$butn:$GLOBALS['tmp_submit']).'"></b>
 			</b>
 		</form>'
 ):'').($hint?'
@@ -120,7 +129,7 @@ function get_template_pre($p, $R = 0) {
 	if (is_array($a = $p)) {
 		foreach ($a as $k => $v) if (!$k) $p = $v; else if ($v) $attr .= " $k=\"$v\"";
 	}
-global	$tmp_require_js;
+	global $tmp_require_js;
 	return ($p?'
 	<div class="thread">
 		<pre'.$attr.'>'.$p.'
@@ -135,7 +144,7 @@ function get_template_page($t) {
 	$R = ($j === 'arch');
 	$L = (LINK_TIME && !$R);
 	$n = ROOTPRFX.NAMEPRFX;
-global	$cfg_langs, $tmp_icon, $tmp_announce;
+	global $cfg_langs, $tmp_icon, $tmp_announce;
 	foreach (data_global_announce() as $k => $v) $ano .= ($ano?'
 		<br>':'')."
 			$tmp_announce[$k]: $v";

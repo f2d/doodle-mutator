@@ -569,18 +569,21 @@ if (TIME_PARTS && $a) time_check_point("done $a users");
 						exit_if_not_mod(data_get_mod_log($etc, 1));
 						$t = data_get_mod_log($etc);
 					}
-					if ($etc == 3) {
+					if ($etc < 5) {
 						$js[0]++;
+						$lnk .= get_template_form(';filter', USER_NAME_MIN_LENGTH);
+						$task_data['filter'] = 1;
+					}
+					if ($etc == 3) {
 						$js['.mod'] = 0;
-						$a = ($u_opts[6]?'a':'').($u_opts[1]?'':'c');
-						$content .= "$tmp_mod_user_info:$tmp_mod_user_hint::ug$a
+					//	$a = ($u_opts[6]?'a':'').($u_opts[1]?'':'c');
+						$content .= "$tmp_mod_user_info:$tmp_mod_user_hint::ugca
 0,u	&nbsp;	 	$u_num.
 
 1,".trim(str_replace(NL.$u_num.'	', NL.'u	'
 , preg_replace('/(\V+)	(\V+)	(\V+)\+\V+(	\V+?)/Uu', '$1	$3$4	$1. $2', NL.$t)));
 					} else
 					if ($etc == 4) {
-						$js[0]++;
 						$content .= 'ref'.NL.preg_replace('/(\d+)([^\d\s]\V+)?	(\V+)/', '$1	$3', $t);
 					} else	$done = ($t?'
 		<textarea>'.$t.'</textarea>':$tmp_empty);
