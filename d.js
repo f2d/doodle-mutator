@@ -241,6 +241,12 @@ var	i = e.name+'_link', a = id(i), r = r.replace('*', r.indexOf('.') < 0 ? e.val
 }
 
 function showProps(o, z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; alert(t); return o;}
+function showOpen(i) {
+var	t = id(i) || (showContent(), id(i)), d = t.firstElementChild;
+	if (/^a$/i.test(d.firstElementChild.tagName)) d.nextElementSibling.style.display = '';
+	t.scrollIntoView(false);
+}
+
 function showContent(pre) {
 	if (pre) window.ph = pre.innerHTML;
 var	i, j, k, l, m, n = '\n', o = 'tower', p = window.ph, opt = 'opt_', q, s = ' ', t = '	'
@@ -485,7 +491,7 @@ c+'</div>';
 b+'<div class="thread task">'+
 c+'<p class="hint">'+
 d+'<a href="javascript:showContent()">'+la.close+'</a><span class="r">'+
-d+'<a href="javascript:document.body.firstElementChild.scrollIntoView(false);void(0);">'+la.top+'</a></span>'+
+d+'<a href="javascript:document.body.firstElementChild.scrollIntoView(false)">'+la.top+'</a></span>'+
 c+'</p>'+
 b+'</div>':p);
 		if (p&&mm) mm();
@@ -503,9 +509,9 @@ b+'</div>':p);
 				k = (h?e+'<span class="r">'+h+'</span>'+(m?e+m:(h.indexOf('<br>') > 0?'<br>&nbsp;':'')):'');
 			}
 			for (i in mt) if (mt[i].length) {
-				k += ', '+la[i]+':';
-				for (j in mt[i]) k +=
-e+'<a href="#'+mt[i][j]+'"># '+mt[i][j]+'</a>';
+				k += ', '+la[i];
+				for (j in mt[i]) h = mt[i][j], k += (j > 0?',':':')+
+e+'<a href="javascript:showOpen('+h+')"># '+h+'</a>';
 			}
 			p.className += ' task';
 			p.innerHTML =
