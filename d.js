@@ -255,6 +255,7 @@ var	i, j, k, l, m, n = '\n', o = 'tower', p = window.ph, opt = 'opt_', q, s = ' 
 
 	for (i in mt) recl.push(i);
 
+	if (f == 'rep') flag.ref = 2; else
 	if (f == 'ref') {
 		flag.ref = flag.a = flag.c = 1;
 		a = p.split(n), j = {}, k = [];
@@ -398,7 +399,7 @@ e+'<div'+(inout?' class="'+inout+'"':'')+'><p class="'+k+'">'+da[k]+'</p></div>'
 						post =
 dd+e+(desc_num && img?desc_num++ +'. ':'')+tab[2];
 					} else if (g == '*') post = placeholder;
-					else if (flag.ref) {
+					else if (flag.ref == 1) {
 						try {m = decodeURIComponent(k = tab[1]);} catch (e) {m = k;}
 						tab[1] = '<a href="'+k+'">'+m+'</a>';
 					}
@@ -426,7 +427,7 @@ e+'</span>';
 e+'<p'+(desc_num && f[k]?l+' title="'+f[k]+(m?(mm&&(k||!q)
 ?'" id="m_'+(q?q+'_'+thread_num+'_3':(m+k).replace(/-/g, '_'))
 :'" onClick="window.open(\''+(q?'3-'+q+'\',\'Info\',\'width=400,height=400':m+k+'\',\'Report\',\'width=656,height=267')+'\')'
-):'')+'"':'')+(k?(flag.ref?' class="e"':' class="r"'):'')+'>'+tab[k]+'</p>'+post;
+):'')+'"':'')+(k?(flag.ref == 1?' class="e"':' class="r"'):'')+'>'+tab[k]+'</p>'+post;
 				}
 				if (!(desc_num||flag.ref)) post =
 e+'<div class="center">'+post+

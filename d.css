@@ -211,7 +211,7 @@ a:hover	{		color: #000;}
 	margin-bottom: 4px;
 	padding: 4px;
 }
-.post.p p div, .post .date-out {
+.post.p p div, .post .date-out, .log {
 	font-size: 11px;
 	line-height: normal;
 }
@@ -278,6 +278,8 @@ a:hover	{		color: #000;}
 .op * {	border: none;
 	text-align: center;
 	vertical-align: middle;
+}
+.log {	padding: 8px 178px;
 }
 .al {	text-align: left;}
 p.hint, li {
