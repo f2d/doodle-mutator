@@ -501,9 +501,10 @@ data_lock($room)
 							exit_if_not_mod(data_get_mod_log($mod_page = $etc, 1));
 							if ($a = data_get_mod_log($etc)) {
 								$content = 'rep'.
-preg_replace('/(\S+)	(\S+)	((\S+)	)?(\V+)/', '$1	$2	<div class="log al">thread $4, $5</div>',
-preg_replace('/<br[^>]*>(\d+)([^\d\s]\S+)?	/i', NL.'$1	',
-preg_replace('/\v+/', '<br>', NL.htmlspecialchars($a))));
+preg_replace('~(\v\S+)\s+(\S+)\s+~', '$1	$2	',			//* <- transform data fields
+preg_replace('~\h+~', ' ',
+preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)?\s~i', NL.'$1	',			//* <- preserve each multiline entry as one
+preg_replace('~\v+~', '<br>', NL.htmlspecialchars($a)))));
 								$js[0]++;
 							}
 						}
@@ -566,7 +567,7 @@ if (TIME_PARTS && $a) time_check_point("done $a users");
 				} else
 				if ($etc > 2) {
 					if ($etc == 5) {
-						exit_if_not_mod(T0);	//* <- never exits, just to check if HTTP_IF_MODIFIED_SINCE is sent
+						exit_if_not_mod(T0);		//* <- never exits, just to check if HTTP_IF_MODIFIED_SINCE is sent
 						$t = print_r($_SERVER, true)
 .NL.'DATE_RFC822 = '.gmdate(DATE_RFC822, T0)
 .NL.'DATE_RFC2822 = '.gmdate('r', T0);
@@ -581,16 +582,18 @@ if (TIME_PARTS && $a) time_check_point("done $a users");
 					if ($etc == 3) {
 						$js['.mod'] = 0;
 					//	$a = ($u_opts[6]?'a':'').($u_opts[1]?'':'c');
-						$content .= "$tmp_mod_user_info:$tmp_mod_user_hint::ugca
+						$content .= "$tmp_mod_user_info:$tmp_mod_user_hint::ugc
 0,u	&nbsp;	 	$u_num.
 
 1,".trim(
-str_replace(NL.$u_num.'	', NL.'u	',
-preg_replace('/(\V+)	(\V+)	(\V+)\+\V+(	\V+?)/Uu', '$1	$3$4	$1. $2', NL.$t)
-));
+str_replace(NL."$u_num	", NL.'u	',					//* <- mark self
+preg_replace('~(\V+\v+\b){10}~', '$0'.NL.'1,',					//* <- group lines by 10
+preg_replace('~(\V+)	(\V+)	(\V+)\+\V+(	\V+?)~Uu', '$1	$3$4	$1. $2',//* <- transform data fields; TODO: move this to db.php?
+NL.$t))));
 					} else
 					if ($etc == 4) {
-						$content .= 'ref'.NL.preg_replace('/(\d+)([^\d\s]\V+)?	(\V+)/', '$1	$3', $t);
+						$content .= 'ref'.NL.
+preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~', '$1	$3', $t);		//* <- transform data fields
 					} else	$done = ($t?'
 		<textarea>'.$t.'</textarea>':$tmp_empty);
 				}

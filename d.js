@@ -29,6 +29,7 @@ if (lang == 'ru') la = {
 ,	time: 'Нарисовано за'
 ,	using: 'с помощью'
 ,	resized: 'Размер'	//'\nИзображение уменьшено.\nРазмер'
+,	groups: 'Групп'
 ,	report: 'Жалоб'
 ,	active: 'Активных нитей'
 ,	frozen: 'Замороженные нити'
@@ -41,6 +42,7 @@ if (lang == 'ru') la = {
 	,	last: 'последний'
 	,	self: 'Себя'
 	,	each: 'Всех'
+	,	total: 'Всего'
 }}; else la = {
 	arch: 'archive'
 ,	draw: 'Draw'
@@ -58,6 +60,7 @@ if (lang == 'ru') la = {
 ,	time: 'Drawn in'
 ,	using: 'using'
 ,	resized: 'Full size'	//'\nShown image is resized.\nFull size'
+,	groups: 'Groups'
 ,	report: 'Reports'
 ,	active: 'Active threads'
 ,	frozen: 'Frozen threads'
@@ -70,6 +73,7 @@ if (lang == 'ru') la = {
 	,	last: 'last'
 	,	self: 'Self'
 	,	each: 'All at once'
+	,	total: 'Total'
 }};
 
 if (((i.length && i[0].type == 'text') || (i = gn('textarea')).length) && (i = i0 = i[0])) {
@@ -193,10 +197,12 @@ var	r = '_res';
 
 function submitLimit(l,m) {
 	function filterList() {
-	var	c = id('tower') || id('filter');
-		if (!c || !filter || filtered == (v = v.toLowerCase())) return;
+		if (!filter
+		|| filtered == (v = v.toLowerCase())
+		|| !((c = id('tower')) ? (c.innerHTML.length || (v.replace(WS, '').length && (showContent(), 1)
+		)) : (c = id('filter')))) return;
 		filtered = v;
-	var	d = gn('div',c), e, i, j, k, l = d.length, p = /\bpost\b/i, t = /^(div|p)$/i, alt;
+	var	c, d = gn('div',c), e, i, j, k, l = d.length, p = /\bpost\b/i, t = /^(div|p)$/i, alt;
 		for (i = 0; i < l; i++) if (p.test((e = d[i]).className)) {
 			if (e == e.parentNode.firstElementChild) alt = 1;
 			if (!(k = gn('p',e)).length) k = e.textContent;
@@ -255,9 +261,9 @@ var	i, j, k, l, m, n = '\n', o = 'tower', p = window.ph, opt = 'opt_', q, s = ' 
 
 	for (i in mt) recl.push(i);
 
-	if (f == 'rep') flag.ref = 2; else
+	if (f == 'rep') flag[f] = 1; else
 	if (f == 'ref') {
-		flag.ref = flag.a = flag.c = 1;
+		flag[f] = flag.a = flag.c = 1;
 		a = p.split(n), j = {}, k = [];
 		for (i in a) if (a[i].indexOf(t) > 0 && (m = a[i].match(/\s([^:\/]*[:\/]+)?([^\/]+)/))) {
 			m = m[2].replace(/\W+$/, '').split('.').slice(-2).join('.');
@@ -399,19 +405,20 @@ e+'<div'+(inout?' class="'+inout+'"':'')+'><p class="'+k+'">'+da[k]+'</p></div>'
 						post =
 dd+e+(desc_num && img?desc_num++ +'. ':'')+tab[2];
 					} else if (g == '*') post = placeholder;
-					else if (flag.ref == 1) {
+					else if (flag.ref) {
 						try {m = decodeURIComponent(k = tab[1]);} catch (e) {m = k;}
 						tab[1] = '<a href="'+k+'">'+m+'</a>';
 					}
 					alt = (alt?'':' alt');
 					img = 0;
 				}
-				if (u == 'u') post = '<span class="u">'+post+'</span>'; else
-				if (flag.u) post = post.replace(' ', ' <span class="a">')+'</span>';
-			var	q = (flag.u?tab[2].slice(0, tab[2].indexOf('.')).replace(WS, ''):0);
+				if (u == 'u') post = '<span class="u">'+post+'</span>';
+				else if (flag.u) post = post.replace(' ', ' <span class="a">')+'</span>';
+				else if (flag.rep) post = '<div class="log al">'+post+'</div>';
+				q = (flag.u?tab[2].slice(0, tab[2].indexOf('.')).replace(WS, ''):0);
 				m = (thread_num?thread_num+'-'+post_num+'-':'');
 				k = 2;
-				while (k--) if (tab[k].replace(WS, '').length || (flag.u && (tab[k] += la.count[k?'self':'each']))) {
+				while (k--) if (tab[k].replace(WS, '').length || (flag.u && (tab[k] += la.count[k > 0?'self':'each']))) {
 				var	r = '';
 					if (tab[k].indexOf(l = '<br>') > 0) {
 						l = tab[k].split(l);
@@ -427,9 +434,9 @@ e+'</span>';
 e+'<p'+(desc_num && f[k]?l+' title="'+f[k]+(m?(mm&&(k||!q)
 ?'" id="m_'+(q?q+'_'+thread_num+'_3':(m+k).replace(/-/g, '_'))
 :'" onClick="window.open(\''+(q?'3-'+q+'\',\'Info\',\'width=400,height=400':m+k+'\',\'Report\',\'width=656,height=267')+'\')'
-):'')+'"':'')+(k?(flag.ref == 1?' class="e"':' class="r"'):'')+'>'+tab[k]+'</p>'+post;
+):'')+'"':'')+(k?(flag.ref?' class="e"':' class="r"'):'')+'>'+tab[k]+'</p>'+post;
 				}
-				if (!(desc_num||flag.ref)) post =
+				if (!(desc_num||flag.ref||flag.rep)) post =
 e+'<div class="center">'+post+
 e+'</div>';
 				output +=
@@ -503,7 +510,10 @@ b+'</div>':p);
 			if (flag.c) {
 				for (i in a) getThread(a[i], 1);
 				for (i in count) if (count[i]) {
-					k = (l[i]?(i == 'u' && flag.u?l.self:l[i]):l.last)+': '+count[i];
+					k = (l[i]
+						? (flag.u ? (i == 'u'?l.self:l.total) : l[i])
+						: l.last
+					)+': '+count[i];
 					if (i == 'img') m += '<br>'+k;
 					else h += (l[i]?(h?'<br>':''):', ')+k;
 				}
@@ -516,7 +526,7 @@ e+'<a href="javascript:showOpen('+h+')"># '+h+'</a>';
 			}
 			p.className += ' task';
 			p.innerHTML =
-d+'<p class="hint"><a href="javascript:showContent()">'+la.active+': '+a.length+'</a>'+k+'</p>'+b;
+d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.groups:la.active)+': '+a.length+'</a>'+k+'</p>'+b;
 			p.parentNode.insertBefore(h = document.createElement('div'), p.nextSibling);
 			h.id = o;
 			if (flag.a) showContent();

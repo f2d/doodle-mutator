@@ -1,12 +1,14 @@
-﻿var	mPat = /^m_(\d+_)+menu$/i
-,	divPat = /^div$/i
-,	formPat = /^form$/i;
+﻿var	BR = /^br$/i
+,	DIV = /^div$/i
+,	FORM = /^form$/i
+,	INPUT = /^input$/i
+,	MENU = /^m_(\d+_)+menu$/i;
 
 function mm() {
 	if (!(flag || flag.g || flag.m)) return;	//* <- god|mod
 var	a = gn('p'), i = a.length, p = id('tower'), f;
-	if (!p && (p = id('task'))) while ((p = p.nextSibling) && !divPat.test(p.tagName));
-	if (p && !formPat.test(p.parentNode.tagName)) {
+	if (!p && (p = id('task'))) while ((p = p.nextSibling) && !DIV.test(p.tagName));
+	if (p && !FORM.test(p.parentNode.tagName)) {
 		p.parentNode.insertBefore(f = document.createElement('form'), p);
 		f.method = 'post';
 		f.innerHTML = '<input type="hidden" name="mod" value="'+(+new Date())+'">';
@@ -17,7 +19,7 @@ var	a = gn('p'), i = a.length, p = id('tower'), f;
 
 function mDropAll(p) {
 var	a = gn('div'), i = a.length, p;
-	while (i--) if ((p = a[i]).id && mPat.test(p.id)) mDrop(p.parentNode);
+	while (i--) if ((p = a[i]).id && MENU.test(p.id)) mDrop(p.parentNode);
 }
 
 function mDropDown(p) {
@@ -94,7 +96,7 @@ Green: you.')
 		for (i in a) if (a[i]) {
 			b0 = (b = a[i].split('+')).shift(), v1 =
 			v0 = (v = o[i].split('+')).shift();
-			iv = '<input type="checkbox" name="'+p.id.replace('m', 'm'+i)+'" value="';
+			iv = '<input type="checkbox" onChange="mRow(this)" name="'+p.id.replace('m', 'm'+i)+'" value="';
 			for (j in b) b[j] =
  (c?'':b[j])+iv+(v1 += '+'+v[j])+'">'
 +(c?b[j]:'');
@@ -113,6 +115,14 @@ Green: you.')
 		p.appendChild(m);
 		mFit(p);
 	}
+}
+
+function mRow(i) {
+	function mIter(which) {
+	var	e = i, t;
+		while ((e = e[which+'ElementSibling']) && (!(t = e.tagName) || !BR.test(t))) if (e != i && INPUT.test(t)) e.checked = 0;
+	}
+	if (i.checked) mIter('previous'), mIter('next');
 }
 
 function mDrop(p) {
