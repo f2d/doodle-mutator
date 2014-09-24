@@ -279,6 +279,13 @@ var	i, j, k, l, m, n = '\n', o = 'tower', p = window.ph, opt = 'opt_', q, s = ' 
 		if (g == '*') count.u = [0,0,0], count.o = [0,0];
 		if (g == ':') flag.pixr = f[2];
 		if (l > 3) for (i in f[3]) flag[f[3][i]] = 1;
+		if (flag.u) {
+			l = a.pop().split(n), j = [];
+			while (l.length) {
+				j.push(l.shift());
+				if (!l.length || j.length > 9) a.push(j.join(n)), j = [];
+			}
+		}
 		break;
 	}
 
@@ -511,7 +518,7 @@ b+'</div>':p);
 				for (i in a) getThread(a[i], 1);
 				for (i in count) if (count[i]) {
 					k = (l[i]
-						? (flag.u ? (i == 'u'?l.self:l.total) : l[i])
+						? (flag.u ? (i == 'u'?l.self:l.total) : (flag.ref ? l.total : l[i]))
 						: l.last
 					)+': '+count[i];
 					if (i == 'img') m += '<br>'+k;

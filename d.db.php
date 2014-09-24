@@ -513,7 +513,8 @@ global	$u_num, $u_flag, $room, $merge;
 			$ok = $a[1];
 			$l = fln($f = $d.$f);
 			if (count($l) > ($n = $a[1])) {
-				$ok .= '='.$l[$n];
+				$ok .= '
+old = '.$l[$n];
 				$tc = substr_count($msg = preg_replace('~[ \v]+~', ' ', $msg), '	');
 				if ($un > 1) {	//* <- replace
 					$l[$n] = ($tc > 1?'':substr($prfx = str_replace(IMG, TXT, $l[$n]), 0, strrpos($prfx, TXT)).($tc?IMG:TXT));
@@ -522,9 +523,11 @@ global	$u_num, $u_flag, $room, $merge;
 				$l[$n] .= $msg;	//* <- add
 
 				if (data_put($f, implode(NL, $l))) {
-					$ok .= '	=>	'.$msg;
+					$ok .= '
+new = '.$l[$n];
 					data_post_refresh();
-				}
+				} else $ok .= '
+! save failed';
 			} else $ok = -$ok;
 		}
 	} else

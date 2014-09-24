@@ -587,9 +587,8 @@ if (TIME_PARTS && $a) time_check_point("done $a users");
 
 1,".trim(
 str_replace(NL."$u_num	", NL.'u	',					//* <- mark self
-preg_replace('~^(\V+\v+){10}~m', '$0'.NL.'1,',					//* <- group lines by 10
 preg_replace('~(\V+)	(\V+)	(\V+)\+\V+(	\V+?)~Uu', '$1	$3$4	$1. $2',//* <- transform data fields; TODO: move this to db.php?
-NL.$t))));
+NL.$t)));
 					} else
 					if ($etc == 4) {
 						$content .= 'ref'.NL.
