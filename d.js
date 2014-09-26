@@ -1,7 +1,7 @@
 ﻿var	h = gn('header')[0], i = gi(), j, k = id('task'), l = location.href, m, n
 ,	filtered, filter = null
 ,	rootPath = (h?gn('a',h)[0].href.replace(/^\w+:\/+[^\/]+\/+/, '/'):'/')
-,	AN = /\banno\b/i
+,	AN = /\banno\b/i, PT = /\bpost\b/i, DP = /^(div|p)$/i
 ,	TU = /^\d+(<|>|$)/
 ,	WS = /^\s+|\s+$/g
 ,	NL = /^(\r\n|\r|\n)/g
@@ -115,6 +115,15 @@ if (k) {
 	}
 }
 
+function propNameForIE(n) {return n.split('-').map(function(v,i) {return i > 0 ? v.slice(0,1).toUpperCase()+v.slice(1).toLowerCase() : v;}).join('');}
+function getStyleValue(obj, prop) {
+var	o;
+	if (o = obj.currentStyle) return o[propNameForIE(prop)];
+	if (o = window.getComputedStyle) return o(obj).getPropertyValue(prop);
+	return null;
+}
+
+function showProps(o, z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; alert(t); return o;}
 function gn(n,d) {return (d?d:document).getElementsByTagName(n);}
 function gi(d) {return gn('input',d);}
 function id(i) {return document.getElementById(i);}
@@ -202,20 +211,26 @@ function submitLimit(l,m) {
 		|| !((c = id('tower')) ? (c.innerHTML.length || (v.replace(WS, '').length && (showContent(), 1)
 		)) : (c = id('filter')))) return;
 		filtered = v;
-	var	c, d = gn('div',c), e, i, j, k, l = d.length, p = /\bpost\b/i, t = /^(div|p)$/i, alt;
-		for (i = 0; i < l; i++) if (p.test((e = d[i]).className)) {
-			if (e == e.parentNode.firstElementChild) alt = 1;
+	var	c, d = gn('div',c), e, i, j, k, l = d.length, o = [], p, alt;
+		for (i = 0; i < l; i++) if (PT.test((e = d[i]).className)) {
+			if (o.indexOf(p = e.parentNode) < 0) o.push(p);
+			if (e == p.firstElementChild) alt = 1;
 			if (!(k = gn('p',e)).length) k = e.textContent;
 			else if (filter == 1 && k.length > 1) k = k[1].textContent;
 			else {
 				j = k.length-1, j = k[j > 1?1:j], k = '';
-				while (j = j.nextSibling) if (!t.test(j.tagName)) k += j.textContent;
+				while (j = j.nextSibling) if (!DP.test(j.tagName)) k += j.textContent;
 			}
 			if (j = (!v || !(k = k.replace(WS, '').toLowerCase()) || k.indexOf(v) >= 0)) {
 				alt = (alt?'':' alt');
 				e.className = e.className.replace(/\s(alt|ok)\b/i, '')+(k == v?' ok':alt);
 			}
 			e.style.display = (j?'':'none');
+		}
+		for (i in o) {
+			d = 'none', e = (p = o[i]).firstElementChild;
+			do {if (e.style.display != d) {d = ''; break;}} while (e = e.nextElementSibling);
+			p.style.display = d;
 		}
 	}
 	function r(e) {
@@ -246,7 +261,6 @@ var	i = e.name+'_link', a = id(i), r = r.replace('*', r.indexOf('.') < 0 ? e.val
 	,	e.innerHTML = '<p class="l"><a href="'+r+'" id="'+i+'">'+t+'</a></p>';
 }
 
-function showProps(o, z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; alert(t); return o;}
 function showOpen(i) {
 var	t = id(i) || (showContent(), id(i)), d = t.firstElementChild;
 	if (/^a$/i.test(d.firstElementChild.tagName)) d.nextElementSibling.style.display = '';
@@ -254,7 +268,7 @@ var	t = id(i) || (showContent(), id(i)), d = t.firstElementChild;
 }
 
 function showContent(pre) {
-	if (pre) window.ph = pre.innerHTML;
+	if (pre) window.ph = pre.innerHTML.replace(WS, '');
 var	i, j, k, l, m, n = '\n', o = 'tower', p = window.ph, opt = 'opt_', q, s = ' ', t = '	'
 ,	a = p.split(n+n), b = n+t, c = b+t, d = c+t, e = d+t
 ,	f = p.split(n,1)[0], g = ':|*', h = id(o), hell, recl = ['report'];
@@ -283,7 +297,7 @@ var	i, j, k, l, m, n = '\n', o = 'tower', p = window.ph, opt = 'opt_', q, s = ' 
 			l = a.pop().split(n), j = [];
 			while (l.length) {
 				j.push(l.shift());
-				if (!l.length || j.length > 9) a.push(j.join(n)), j = [];
+				if (!l.length || j.length > 9) a.push(a.length+','+j.join(n).replace(/^\d+,/, '')), j = [];
 			}
 		}
 		break;
@@ -518,7 +532,7 @@ b+'</div>':p);
 				for (i in a) getThread(a[i], 1);
 				for (i in count) if (count[i]) {
 					k = (l[i]
-						? (flag.u ? (i == 'u'?l.self:l.total) : (flag.ref ? l.total : l[i]))
+						? (flag.u && i == 'u' ? l.self : (flag.ref ? l.total : l[i]))
 						: l.last
 					)+': '+count[i];
 					if (i == 'img') m += '<br>'+k;
@@ -547,8 +561,23 @@ d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.gro
 	if (g == '|') {
 		for (h in (i = gi())) if (i[h].name && i[h].name.slice(0,4) == opt && i[h].type == 'hidden') toggleOpt(i[h]);
 		for (h in (i = gn('select'))) if (i[h].onchange) i[h].onchange();
+	} else
+	if (g == '*') {
+		d = gn('div'), i = d.length;
+		while (i--) if (PT.test((c = d[i]).className) && (p = gn('p',c)).length > 1) {
+			function w(e) {
+			var	sum = e.offsetWidth, i, a = ['border-left-width', 'padding-left', 'padding-right', 'border-right-width'];
+				for (i in a) if (getStyleValue(e, a[i].replace('width', 'style')) != 'none') sum -= parseInt(j = getStyleValue(e, a[i]));
+				return sum;
+			}
+			a = (c = c.firstElementChild).lastElementChild.offsetWidth, e = w(p[0]), f = w(p[1]);
+			if (a+e+f < c.offsetWidth) {
+				if (e < f) p[0].style.width = f+'px'; else
+				if (e > f) p[1].style.width = e+'px';
+			}
+		}
 	}
-	if (g != ':' && inout) {
+	if (inout && g != ':') {
 	var	s = 'style', h = gn('header')[0], e = gn(s, h);
 		(e.length ? e[0] : h.appendChild(document.createElement(s))).innerHTML = '.post .center {max-width: 500px;}';
 	}

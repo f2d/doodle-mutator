@@ -128,7 +128,7 @@ a:hover	{		color: #000;}
 }
 .post .center p {
 	line-height: 28px;
-	min-width: 64px;
+	min-width: 0;
 }
 .post .center table {
 	border: none;
