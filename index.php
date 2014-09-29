@@ -666,6 +666,7 @@ if (TIME_PARTS) time_check_point('done trd '.$k);
 				ksort($a);
 				$content .= implode(NL, array_reverse($a));
 if (TIME_PARTS) time_check_point('after sort + join');
+				if (GOD) {$task_data['filter'] = 1;}
 			} else if (GOD) $content = "$tmp_empty:$tmp_empty::vg
 0,0	0	&mdash;	";
 			$t = $target['task'];
@@ -673,6 +674,8 @@ if (TIME_PARTS) time_check_point('after sort + join');
 				$task = get_template_form(array('describe'
 ,	$t?$tmp_describe_this:$tmp_describe_new
 ,	$tmp_describe_hint.($u_flag['nop']?' '.$tmp_no_play_hint:'')
+,	''
+,	GOD?$tmp_filter_placeholder:''
 ), DESCRIBE_MIN_LENGTH);
 				if ($t) {
 					$src = (strpos($t, ';') ? pic_resized_path(pic_normal_path($t)) : $t);

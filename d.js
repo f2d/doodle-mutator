@@ -8,7 +8,7 @@
 ,	count = {u:0, uLast:'', o:0, oLast:'', img:0}
 ,	u_bar = {0:'born', b:'burn', g:'goo', m:'ice', n:'null', u:'me'}
 ,	mm, mt = {frozen:[], burnt:[], full:[]}
-,	checking, cs = 'checkStatus', flag = {}
+,	checking, cs = 'checkStatus', data = {}, flag = {}
 ,	inout = (('ontouchstart' in document.documentElement)?'':'date-out')
 ,	la, lang = document.documentElement.lang || 'en';
 
@@ -40,6 +40,7 @@ if (lang == 'ru') la = {
 	,	u: 'Своих постов'
 	,	o: 'Прочих'
 	,	last: 'последний'
+	,	lastr: 'последняя'
 	,	self: 'Себя'
 	,	each: 'Всех'
 	,	total: 'Всего'
@@ -268,25 +269,33 @@ var	t = id(i) || (showContent(), id(i)), d = t.firstElementChild;
 }
 
 function showContent(pre) {
-	if (pre) window.ph = pre.innerHTML.replace(WS, '');
-var	i, j, k, l, m, n = '\n', o = 'tower', p = window.ph, opt = 'opt_', q, s = ' ', t = '	'
+	s = data.sort;
+	if (pre && pre.innerHTML) data.ph = pre.innerHTML.replace(WS, ''); else data.sort = pre;
+	if (h = id(o = 'tower')) {
+		i = h.innerHTML.length, h.innerHTML = '';
+		if (i && pre == s) return;
+	}
+
+var	i, j, k, l, m, n = '\n', o, p = data.ph, opt = 'opt_', q, s = ' ', t = '	'
 ,	a = p.split(n+n), b = n+t, c = b+t, d = c+t, e = d+t
-,	f = p.split(n,1)[0], g = ':|*', h = id(o), hell, recl = ['report'];
+,	f = p.split(n,1)[0], g = ':|*', h, hell, recl = ['report'];
 
 	for (i in mt) recl.push(i);
 
 	if (f == 'rep') flag[f] = 1; else
 	if (f == 'ref') {
-		flag[f] = flag.a = flag.c = 1;
-		a = p.split(n), j = {}, k = [];
-		for (i in a) if (a[i].indexOf(t) > 0 && (m = a[i].match(/\s([^:\/]*[:\/]+)?([^\/]+)/))) {
-			m = m[2].replace(/\W+$/, '').split('.').slice(-2).join('.');
-			if (k.indexOf(m) < 0) k.push(m), j[m] = [];
-			j[m].push(a[i]);
-		}
-		a = [];
-		k.sort();
-		for (i in k) a.push(j[k[i]].join(n));
+		flag[f] = flag.c = 1;
+		if (isNaN(pre)) {
+			a = p.split(n), j = {}, k = [];
+			for (i in a) if (a[i].indexOf(t) > 0 && (m = a[i].match(/\s([^:\/]*[:\/]+)?([^\/]+)/))) {
+				m = m[2].replace(/\W+$/, '').split('.').slice(-2).join('.');
+				if (k.indexOf(m) < 0) k.push(m), j[m] = [];
+				j[m].push(a[i]);
+			}
+			a = [];
+			k.sort();
+			for (i in k) a.push(j[k[i]].join(n));
+		} else if (pre < 0) a = p.split(n), a.reverse(), a = [a.join(n)];
 	} else
 	for (i in g) if (f.indexOf(g[i]) > -1) {
 		l = (f = f.split(g = g[i])).length;
@@ -510,12 +519,10 @@ d+'</div>';
 	}
 
 	if (h) {
-		if (h.innerHTML == (p = '')) for (i in a) {
-			o = getThread(a[i]);
-			p +=
+		p = '';
+		for (i in a) o = getThread(a[i]), p +=
 c+'<div class="thread'+(flag.u?' al':'')+(hell?' '+hell:'')+'">'+o+
 c+'</div>';
-		}
 		h.innerHTML = (p?p+
 b+'<div class="thread task">'+
 c+'<p class="hint">'+
@@ -524,17 +531,21 @@ d+'<a href="javascript:document.body.firstElementChild.scrollIntoView(false)">'+
 c+'</p>'+
 b+'</div>':p);
 		if (p&&mm) mm();
-	} else if (pre) {
-	var	p = pre.parentNode;
+	} else if (pre && (p = pre.parentNode)) {
 		if (a.length > 1) {
 			k = h = m = '', l = la.count;
 			if (flag.c) {
 				for (i in a) getThread(a[i], 1);
 				for (i in count) if (count[i]) {
-					k = (l[i]
-						? (flag.u && i == 'u' ? l.self : (flag.ref ? l.total : l[i]))
-						: l.last
-					)+': '+count[i];
+					k = (flag.ref
+						? '<a href="javascript:showContent('+(l[i]?1:-1)+')">'+(l[i]
+							? l.total
+							: (l.lastr || l.last)
+						)+'</a>'
+						: (l[i]
+							? (flag.u && i == 'u' ? l.self : l[i])
+							: l.last
+					))+': '+count[i];
 					if (i == 'img') m += '<br>'+k;
 					else h += (l[i]?(h?'<br>':''):', ')+k;
 				}

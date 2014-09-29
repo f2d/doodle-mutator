@@ -545,14 +545,14 @@ global	$u_flag;
 	$sd = array_diff(scandir($dr), array('.', '..'));
 if (TIME_PARTS) time_check_point('done scan'.NL);
 	foreach ($sd as $r) if ((
-		($u_mod = (GOD || $u_flag['mod_'.$r])) || !ROOM_HIDE || ROOM_HIDE != $r[0]
+		($u_mod = (GOD || $u_flag['mod'] || $u_flag['mod_'.$r])) || !ROOM_HIDE || ROOM_HIDE != $r[0]
 	) && is_dir($d = "$dr$r/")) {
 		$lmt = 0;			//* <- last mod time in room
 		if (is_file($cf = DIR_DOOM.$r.'/post.count') && (list($lmt, $c, $mod) = fln($cf))) {
 			$c = explode(',', $c);
 			if ($u_mod && $mod) {
 				$mod = explode(',', $mod);
-				if (!GOD) $mod[3] = '';
+				if (!GOD) $mod[2] = 0;
 				$c[] = $mod;
 			}
 		} else {
@@ -576,7 +576,7 @@ if (TIME_PARTS) time_check_point('done scan'.NL);
 					if ($m[7]) ++$mod['del'];
 				}
 			}
-			if ($d = glob(DIR_DOOM.$r.'/*.report.txt', GLOB_NOSORT)) $mod['rep'] = count($d);
+			if ($d = glob(DIR_DOOM.$r.'/*.report.txt', GLOB_NOSORT)) foreach ($d as $f) $mod['rep'] += substr_count(file_get_contents($f), NL);
 			$c = array($count_thrd	//* <- active
 , data_get_thread_count($r)			//* <- ever
 , data_get_archive_count($r)			//* <- archived
@@ -584,7 +584,7 @@ if (TIME_PARTS) time_check_point('done scan'.NL);
 			file_put_contents($cf, $lmt.NL.implode(',', $c).(implode('', $mod)?NL.implode(',', $mod):($mod = '')));
 			data_unlock();
 			if ($u_mod && $mod) {
-				if (!GOD) $mod['del'] = '';
+				if (!GOD) $mod['del'] = 0;
 				$c[] = $mod;
 			}
 		}

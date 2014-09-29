@@ -78,7 +78,7 @@ $tmp_title_var = 1;
 
 function get_template_form($a, $min = 0, $max = 0, $area = 0) {
 	if (is_array($a)) {
-		list($name, $head, $hint, $butn) = $a;
+		list($name, $head, $hint, $butn, $plhd) = $a;
 		$a = 0;
 	} else $name = $a;
 	if ($name) {
