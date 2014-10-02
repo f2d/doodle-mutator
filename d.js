@@ -25,7 +25,7 @@ if (lang == 'ru') la = {
 ,	mistype: 'Тип задания сменился, обновите страницу.'
 ,	load: 'Проверка... '
 ,	fail: 'Ошибка '
-,	hax: '(?)'		//'Нестандартный набор данных.'
+,	hax: '(?)'		//'Неизвестный набор данных.'
 ,	time: 'Нарисовано за'
 ,	using: 'с помощью'
 ,	resized: 'Размер'	//'\nИзображение уменьшено.\nРазмер'
@@ -33,10 +33,13 @@ if (lang == 'ru') la = {
 ,	report: 'Жалоб'
 ,	active: 'Активных нитей'
 ,	frozen: 'Замороженные нити'
-,	frozen_hint: 'Замороженная нить. Кликните, чтобы показать/спрятать.'
 ,	burnt: 'Выжженные нити'
 ,	full: 'Полные нити'
-,	count: {img: 'Рисунков'
+,	hint: {	show: 'Кликните, чтобы показать/спрятать.'
+	,	frozen: 'Замороженная нить.\n'
+	,	burnt: 'Выжженная нить.\n'
+	,	full: 'Полная нить.\n'
+},	count: {img: 'Рисунков'
 	,	u: 'Своих постов'
 	,	o: 'Прочих'
 	,	last: 'последний'
@@ -57,7 +60,7 @@ if (lang == 'ru') la = {
 ,	mistype: 'Task type changed, please reload the page.'
 ,	load: 'Checking... '
 ,	fail: 'Error '
-,	hax: '(?)'		//'Nonstandart data set.'
+,	hax: '(?)'		//'Unknown data set.'
 ,	time: 'Drawn in'
 ,	using: 'using'
 ,	resized: 'Full size'	//'\nShown image is resized.\nFull size'
@@ -65,10 +68,13 @@ if (lang == 'ru') la = {
 ,	report: 'Reports'
 ,	active: 'Active threads'
 ,	frozen: 'Frozen threads'
-,	frozen_hint: 'Frozen thread. Click here to show/hide.'
 ,	burnt: 'Burnt threads'
 ,	full: 'Full threads'
-,	count: {img: 'Pictures'
+,	hint: {	show: 'Click here to show/hide.'
+	,	frozen: 'Frozen thread.\n'
+	,	burnt: 'Burnt thread.\n'
+	,	full: 'Full thread.\n'
+},	count: {img: 'Pictures'
 	,	u: 'Own posts'
 	,	o: 'Others'
 	,	last: 'last'
@@ -311,6 +317,7 @@ var	i, j, k, l, m, n = '\n', o, p = data.ph, opt = 'opt_', q, s = ' ', t = '	'
 		}
 		break;
 	}
+	flag.hell = {burnt: !!mm, frozen: !mm/*, full: !flag.a*/};
 
 	function getThread(txt, preCount) {
 	var	line = txt.split(n), output = '', placeholder = '<!--?-->'
@@ -508,13 +515,11 @@ j+'r">'+count.uLast+k+'<br>'+
 i+'l">'+count.u.join(f[1])+l+
 i+'r">'+count.o.join(f[1])+l+'<br>');
 		}
-		if (!mm&&hell&&(j = hell.split('"'))[0] == 'frozen') {
-			output =
-d+'<div class="post alt anno"><a href="javascript:;" onclick="toggleHide(this.parentNode.nextElementSibling)">'+la.frozen_hint+'</a>'+
+		if (hell && flag.hell[j = hell.split('"')[0]]) output =
+d+'<div class="post alt anno"><a href="javascript:;" onclick="toggleHide(this.parentNode.nextElementSibling)">'+la.hint[j]+la.hint.show+'</a>'+
 d+'</div>'+
 d+'<div style="display:none">'+output+
 d+'</div>';
-		}
 		return output;
 	}
 
