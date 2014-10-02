@@ -431,7 +431,9 @@ global	$u_num, $u_flag, $room, $merge;
 	if ($o == 'harakiri'	) $ok = data_set_u_flag($u_num, 'mod_'.$room, 0, 1); else
 	if ($o == 'ban'		) $ok = data_set_u_flag($a, 'ban', !$un); else
 	if ($o == 'can report'	) $ok = data_set_u_flag($a, 'nor', $un); else
-	if (!GOD) return 0; else
+	if (!GOD
+	&& $o != 'room announce') return 0;
+	else
 
 //* ----	god right	----
 	if ($o == 'gets targets') $ok = data_set_u_flag($a, 'nop', $un); else

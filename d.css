@@ -170,6 +170,10 @@ a:hover	{		color: #000;}
 	max-width: 465px;
 	max-height: 28px;
 }
+.post p u {
+	display: block;
+	margin: 1em 0;
+}
 .post {	background-color: #f5f5f5;} body,
 .alt {	background-color: #eee;} .burnt-hell,
 .burnt .post {	background-color: #fdd;} .post .burnt, .hot,
