@@ -178,8 +178,10 @@ function data_get_thread_count($r = 0) {
 	if (!$r) {global $room; $r = $room;}
 	return (is_file($f = DIR_DOOM.$r.'/room.count')						//* <- seems ~2x faster than scandir()
 	? file_get_contents($f)
-	: count(array_diff(scandir(DIR_ROOM.$r), array('.', '..', trim(DIR_THUMB, '/'))))	//* <- seems ~2x faster than glob()
-	);
+	: (is_dir($d = DIR_ROOM.$r)
+		? count(array_diff(scandir($d), array('.', '..', trim(DIR_THUMB, '/'))))	//* <- seems ~2x faster than glob()
+		: 0
+	));
 }
 function data_is_thread_cap($r = 0) {
 	if (!$r) {global $room; $r = $room;}
@@ -428,7 +430,7 @@ global	$u_num, $u_flag, $room, $merge;
 	} else
 
 //* ----	right	----
-	if ($o == 'harakiri'	) $ok = data_set_u_flag($u_num, 'mod_'.$room, 0, 1); else
+	if (substr($o, 0, 8) == 'harakiri') $ok = data_set_u_flag($u_num, 'mod_'.$room, 0, 1); else
 	if ($o == 'ban'		) $ok = data_set_u_flag($a, 'ban', !$un); else
 	if ($o == 'can report'	) $ok = data_set_u_flag($a, 'nor', $un); else
 	if (!GOD
@@ -775,7 +777,7 @@ global	$u_num, $room, $target;
 //* create new thread, if not too many
 		if (!($ptp = ($pic && !$target['pic'])) && ($n = data_is_thread_cap())) return -$n;
 
-		$n = data_get_thread_count();
+		if (!($n = data_get_thread_count())) data_set_u_flag($u_num, 'mod_'.$room, 1, 2);
 		$f = "$d$n$pic.log";
 		if ($pic) $fork = data_log($f, $ptp && $target['post']
 			? $target['post']			//* <- late misfire: fork with request copy, if any
