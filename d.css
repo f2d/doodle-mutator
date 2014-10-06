@@ -99,7 +99,7 @@ a:hover	{		color: #000;}
 	background-color: #555;
 }
 .task li {
-	margin-left: 22px;
+	margin: 0 0 12px 22px;
 }
 .task form >*, .a >* {
 	display: table;

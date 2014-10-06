@@ -161,6 +161,7 @@ if ($u_key) {
 			if ($t < 0) $log = -$t;
 		}
 		if ($log) data_log_adm("Denied $post_status: $log");
+		else if (!$u_room_home) $u_room_home = $room;
 	} else
 
 //* process new pic post ------------------------------------------------------
@@ -282,6 +283,7 @@ if ($u_key) {
 {
 $ptx
 }":''));
+		else if (!$u_room_home) $u_room_home = $room;
 	} else
 
 //* admin/mod actions ---------------------------------------------------------
@@ -438,6 +440,7 @@ if ($u_key) {
 .NL.$tmp_options_name.$s.$usernames[$u_num]
 .NL.$tmp_options_qk.$s.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">'.$content
 .NL.$tmp_options_time.$s.date('e, T, P')
+.($u_flag ? NL.$tmp_options_flags.$s.implode(', ', $u_flag) : '')
 .$i.$tmp_options_apply.'">
 </form>';
 		foreach ($tmp_rules as $head => $hint) {

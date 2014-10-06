@@ -53,6 +53,7 @@ $tmp_options_field = array(
 ,	'room_home'	=> 'Home room (single dot = room list)'
 );
 $tmp_options_first = 'Press '.$tmp_options_apply.' to continue.';
+$tmp_options_flags = 'Status';
 $tmp_options_logout = 'Log out';
 $tmp_options_name = 'Your signature';
 $tmp_options_qk = 'Your key to login later with';
@@ -123,10 +124,12 @@ $tmp_rules = array(
 'As a task you get random last post, except your own, or a prompt to start a new thread.
 You have '.(TARGET_DESC_TIME/60).' min. to describe or '.(TARGET_DRAW_TIME/3600).' hours to draw, after that your task can possibly be taken by other people.
 If not yet taken, or already dropped, you can still send your post and hit the target.
-Misfired text goes nowhere, but pic makes a new thread with copy of your task.',
+Misfired pic makes a new thread with copy of your task, a text post just starts a new one.',
 'If your task is empty, you can try to change it anytime, if not — once in '.(TARGET_CHANGE_TIME/60).' min., by entering or refreshing room.
-Do not open the same room in multiple tabs, your aim there is single and will change.
-If, after some time or room actions, you finally decide to perform your task, be sure to check it with the [a|⌈?⌋] button at right.',
+Do not open the same room in multiple tabs, the site keeps only single target per room for you, and it will change.
+If, after some time or room actions, you finally decide to perform your task, be sure to check it with the [a|⌈?⌋] button at right.
+While red-stripe message is displayed, refreshing room in-place (i.e., using the F5 key) will not change the task.
+The link to room in the page header will change the task regardless.',
 'Threads stay full at '.TRD_MAX_POSTS.' pics for '.(TRD_ARCH_TIME/3600).' hours (to let reports and moderation), then go to archive when the next new thread is created.
 Single-letter rooms keep only 1 page in archive (no more than '.TRD_PER_PAGE.' threads), have no reports and moderation, and full threads go to archive right away.'
 ));

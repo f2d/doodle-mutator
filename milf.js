@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.11'
-,	INFO_DATE = '2014-07-16 — 2014-09-22'
+,	INFO_DATE = '2014-07-16 — 2014-10-06'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers'
@@ -376,10 +376,7 @@ var	a, b = 'button', j, k, l = 'layer', d, e = id('layers')
 				d.color = hi;
 			}
 		}
-		if (i = id(l+c)) {
-			i.className = i.className.replace(b, b+'-active');
-			if (scroll && c > 0) i.scrollIntoView();
-		}
+		if (i = id(l+c)) i.className = i.className.replace(b, b+'-active');
 	} else {
 //* HTML reset, slower, resets scroll:
 		j = (i > 1?'<hr><div class="slide">':''), k = '<i title="';
@@ -402,9 +399,15 @@ var	a, b = 'button', j, k, l = 'layer', d, e = id('layers')
 			)+'</i></i></p>';
 		}
 		clearContent(e), setContent(e, j);
-		if (c > 0 && c < z.length-10 && (i = id(l+c))) i.scrollIntoView();	//* <- param: none/true=alignWithTop, false=bottom
 	}
-	i = z.length-1, j = {U:i,T:i, D:1,B:1,M:1, C:0,E:0}, d = b+'-disabled';
+	j = z.length-1;
+	if (c && j > 9) {
+		i = c+5, a = true;
+		if (i > j) i = j; else
+		if (i < 10) i = 1, a = false;
+		if (i = id(l+i)) i.scrollIntoView(a);	//* <- param: none/true=alignWithTop, false=Bottom
+	}
+	i = j, j = {U:i,T:i, D:1,B:1,M:1, C:0,E:0}, d = b+'-disabled';
 	for (i in j) setClass(id(l+i), (!c || c == j[i]) ?d:b);
 	updateHistoryButtons(), draw.view(2);
 }
@@ -1827,14 +1830,15 @@ function drop(event) {
 //* Autoplace windows around canvas *------------------------------------------
 
 function resetAside() {
-var	margin = 2, off = getOffsetXY(draw.container), x = off.x + cnv.view.offsetWidth + margin, y = 0, z
+var	margin = 2, h = 234//Math.max(cnv.view.height, select.imgRes.height)
+,	off = getOffsetXY(draw.container), x = off.x + cnv.view.offsetWidth + margin, y = 0, z
 ,	a = container.getElementsByTagName('aside'), i = a.length, e;
 	while (i--) if ((e = a[i]).id) {
 		e.style.display = '';
 		if (z) x = off.x - e.offsetWidth - margin;
 		putInView(e, x, y+off.y);
 		y += e.offsetHeight + margin;
-		if (!z && y > select.imgRes.height) y = 0, z = 1;
+		if (!z && y > h) y = 0, z = 1;
 	}
 }
 
@@ -2345,7 +2349,7 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #| .|-button {background-color: #ddd;}\
 #| .|-button-active {background-color: #ace;}\
 #| .|-button-active:hover {background-color: #bef;}\
-#| .|-button-disabled {color: gray; cursor: default;}\
+#| .|-button-disabled {color: #888; cursor: default;}\
 #| .|-button-key, #| .|-button-subtitle {vertical-align: top; height: 10px; font-size: 9px; margin: 0; padding: 0;}\
 #| .|-button-key, #|-debug {text-align: left;}\
 #| .|-button-subtitle {line-height: 6px; margin: 0 -3px;}\
@@ -2372,10 +2376,11 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #| aside input[type="text"] {margin: 2px; width: 48px;}\
 #| aside p {line-height: 22px; margin: 0.5em;}\
 #| aside p, #|-info hr, #|-layers hr, #|-colors table {font-size: small;}\
-#| aside {position: absolute; left: 0; top: 0; text-align: left; padding: 2px; border: 2px solid gray; background-color: rgba(234,234,234,0.90);}\
-#| canvas {border: 1px solid #aaa; margin: 0; vertical-align: bottom; cursor:\
+#| aside {position: absolute; left: 0; top: 0; text-align: left; padding: 2px; border: 2px solid #888; background-color: rgba(234,234,234,0.90);}\
+#| canvas {border: 1px solid #ddd; margin: 0; vertical-align: bottom; cursor:\
 	url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC\'),\
 	auto;}\
+#| canvas:hover {border-color: #aaa;}\
 #| hr {border: 1px solid #aaa; border-top: none;}\
 #| {text-align: center; padding: 12px; background-color: #f8f8f8;}\
 #|, #| button, #| input, #| select {color: #111; font-family: "Arial"; font-size: 19px; line-height: normal;}\
@@ -2441,5 +2446,3 @@ var	r = {};
 document.addEventListener('DOMContentLoaded', init, false);
 
 }; //* <- END global wrapper
-
-//function showProps(o, z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; alert(t); return o;}

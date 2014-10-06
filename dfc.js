@@ -2,7 +2,7 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; BTW, tabs align to 8 spaces
 ,	INFO_VERSION = 'v0.9.45'
-,	INFO_DATE = '2013-04-01 — 2014-09-22'
+,	INFO_DATE = '2013-04-01 — 2014-10-06'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640
 ,	CR = 'CanvasRecover', CT = 'Time', DRAW_PIXEL_OFFSET = -0.5
@@ -1429,7 +1429,7 @@ document.write(replaceAll(replaceAdd('\n<style>\
 #| .|-button {background-color: #ddd;}\
 #| .|-button-active {background-color: #ace;}\
 #| .|-button-active:hover {background-color: #bef;}\
-#| .|-button-disabled {color: gray; cursor: default;}\
+#| .|-button-disabled {color: #888; cursor: default;}\
 #| .|-button-key, #| .|-button-subtitle {vertical-align: top; height: 10px; font-size: 9px; margin: 0; padding: 0;}\
 #| .|-button-key, #|-debug {text-align: left;}\
 #| .|-button-subtitle {line-height: 6px; margin: 0 -3px;}\
@@ -1442,9 +1442,10 @@ document.write(replaceAll(replaceAdd('\n<style>\
 */#| a {color: #888;}\
 #| a:hover {color: #000;}\
 #| abbr {border-bottom: 1px dotted #111;}\
-#| canvas {border: 1px solid #aaa; margin: 0; vertical-align: bottom; cursor:\
+#| canvas {border: 1px solid #ddd; margin: 0; vertical-align: bottom; cursor:\
 	url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC\'),\
 	auto;}\
+#| canvas:hover {border-color: #aaa;}\
 #| input[type="range"] {width: 156px; height: 16px; margin: 0; padding: 0;}\
 #| input[type="text"] {width: 48px;}\
 #| select, #| #|-color-text {width: 78px;}\
@@ -1465,7 +1466,7 @@ document.write(replaceAll(replaceAdd('\n<style>\
 #|-right table {border-collapse: collapse;}\
 #|-right table, #|-info > div {margin-top: 7px;}\
 #|-right td {padding: 0 2px; height: 32px;}\
-#|-right {color: gray; width: 321px; margin: 0; margin-left: 12px; text-align: left; display: inline-block; vertical-align: top; overflow-x: hidden;}\
+#|-right {color: #888; width: 321px; margin: 0; margin-left: 12px; text-align: left; display: inline-block; vertical-align: top; overflow-x: hidden;}\
 #| .|-a .|-a,\
 #| .|-b .|-b,\
 #| .|-c .|-c {display: none;}\
