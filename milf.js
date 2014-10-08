@@ -5,12 +5,12 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v1.11'
-,	INFO_DATE = '2014-07-16 — 2014-10-06'
+,	INFO_VERSION = 'v1.12'
+,	INFO_DATE = '2014-07-16 — 2014-10-08'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers'
-,	LS = window.localStorage || localStorage
+,	LS = this.LS = window.localStorage || localStorage
 ,	DRAW_PIXEL_OFFSET = -0.5
 ,	DRAW_HELPER = {lineWidth: 1, shadowBlur: 0, shadowColor: A0, strokeStyle: 'rgba(123,123,123,0.5)', globalCompositeOperation: SO}
 
@@ -265,7 +265,7 @@ var	y = draw.history, c = y.layer, d = y.layers, z, u;
 		return updateLayers(2);
 	}
 //* new
-var	x = {data:[], pos:0, last:0, show:1, alpha: RANGE.A.max, name: lang.layer.prefix+'_'+(++count.layers)};
+var	x = {show:1, name: lang.layer.prefix+'_'+(++count.layers), alpha: RANGE.A.max, pos:0, last:0, data:[]};
 	if (load === 1) {
 //* copy
 		draw.preload();
@@ -1360,6 +1360,39 @@ var	a = ['clip', 'mask', 'lighter', 'xor']
 	);
 }
 
+function getSaveLayers(k) {
+var	a = draw.history.layers
+,	e = ['pos', 'last', 'reversable', 'filtered', 'data'], d, f, i, j = '-'
+,	b = {time: draw.time.join(j)+(used.read?j+used.read:'')};
+	if (k) b.meta = getSendMeta();
+	b.layers = [];
+	for (i in a) {
+		d = {}, j = a[i];
+		for (k in j) if (e.indexOf(k) < 0) d[k] = j[k] || 0;
+		if (j[k = 'data']) {
+			if (f = j[k][j.pos]) {
+				ctx.temp.putImageData(f, 0, 0);
+				d[k] = cnv.temp.toDataURL();
+			} else continue;
+		}
+		b.layers.push(d);
+	}
+	return b;	//* <- object, needs JSON.stringify(b)
+}
+
+function readSavedLayers(b) {
+	if (!b.time || !b.layers) return false;
+	for (i in count) count[i] = 0;
+var	a = id('saveTime'), d = draw.history, j = '-', i = b.time.split(j);
+	if (i.length > 2) used.read = i.slice(2).join(j);
+	draw.time = i.slice(0,2);
+	a.title = new Date(i = +i[1]);
+	a.textContent = unixDateToHMS(i,0,1).split(' ',2)[1];
+	a = b.layers, i = j = a[0].max = a.length, d.layers = [a[d.layer = 0]];
+	while (--i) d = a[i], d.z = i, readPic(d);
+	return j;
+}
+
 function sendPic(dest, auto) {
 var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 	draw.view(1);
@@ -1394,24 +1427,9 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 					LS[CR[2].T] = t;
 					LS[CR[2].L] = l;
 				}
+				b = getSaveLayers();
 				LS[CR[1].R] = c;
-				LS[CR[1].T] = j = draw.time.join('-')+(used.read?'-'+used.read:'');
-				a = draw.history.layers, b = {time: j, layers: []}, e = ['pos', 'last', 'reversable', 'filtered'];
-				for (i in a) {
-					d = {};
-					for (k in a[i]) if (e.indexOf(k) < 0) {
-						if (k == 'data') {
-							if (f = a[i][k][a[i].pos]) {
-								ctx.temp.putImageData(f, 0, 0);
-								d[k] = cnv.temp.toDataURL();
-							} else {
-								d = 0;
-								break;
-							}
-						} else d[k] = a[i][k] || 0;
-					}
-					if (isNaN(d)) b.layers.push(d);
-				}
+				LS[CR[1].T] = b.time;
 				LS[CR[1].L] = JSON.stringify(b);
 			} catch(e) {
 				rem(1), rem(2);
@@ -1456,21 +1474,28 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 		} else
 //* load project
 		if (!LS[i] || (b = JSON.parse(LS[i])).time != t) alert(lang.no_layers); else
-		if (confirm(lang.confirm_load)) {
-			for (i in count) count[i] = 0;
-			t = t.split('-'), draw.time = t.slice(0,2), used = {LS:'Local Storage'};
-			if (t.length > 2) used.read = t.slice(2).join('-');
-			a = id('saveTime');
-			a.title = new Date(t = +t[1]);
-			a.textContent = (t = unixDateToHMS(t,0,1)).split(' ',2)[1];
-			a = b.layers, i = a[0].max = a.length, d = draw.history, d.layers = [a[d.layer = 0]];
-			while (--i) d = a[i], d.z = i, readPic(d);
-		}
+		if (confirm(lang.confirm_load)) used = {LS:'Local Storage'}, readSavedLayers(b);
 		break;
 	case 5:
 		if (a || ((outside.read || (outside.read = id('read'))) && (a = outside.read.value))) {
 	//		draw.time = [0, 0];
 			used.read = 'Read File: '+readPic(a);
+		}
+		break;
+//* save project text as file
+	case 6:
+		b = JSON.stringify(getSaveLayers(1));
+		try {
+		var	bb = new BlobBuilder();
+			bb.append(b);
+		var	blob = bb.getBlob('text/plain');
+			saveAs(blob, draw.time.join('-')+'.json');
+		} catch(e) {
+			try {
+				window.open('data:text/plain,'+encodeURIComponent(b.replace(/([[\]{}]+(,[[\]{}]+)*)/g, '\n$1\n')), '_blank');
+			} catch(d) {
+				alert(lang.copy_to_save+':\n\n'+b);
+			}
 		}
 		break;
 //* send
@@ -1574,10 +1599,12 @@ function hotKeys(event) {
 			case c('C'):	newLayer(1);	break;
 			case c('M'):	newLayer(-1);	break;
 			case c('E'):	moveLayer('del');break;
+
 		case 38:case c('U'):	moveLayer(0);	break;
 		case 40:case c('I'):	moveLayer(-1);	break;
 		case 37:case c('T'):	moveLayer();	break;
 		case 39:case c('Y'):	moveLayer(1);	break;
+
 			case c('A'):	toolSwap(3);	break;
 			case c('S'):	toggleMode(5);	break;
 		//	case c('G'):	toggleMode(8);	break;
@@ -1618,11 +1645,12 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *,
 
 			case 112:	resetAside();	break;	//* F1
 			case 120:	sendPic(0);	break;	//* F9
-			case 118:	sendPic(1);	break;
+		//	case 118:	sendPic(1);	break;
 			case 113:	sendPic(2);	break;
 			case 114:	sendPic(3);	break;
 			case 115:	sendPic(4);	break;
 			case 117:	sendPic(5);	break;
+			case 118:	sendPic(6);	break;
 			case 119:	sendPic();	break;
 
 			case c('Q'):	updateShape(0);	break;
@@ -1638,12 +1666,16 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *,
 			case c('W'):	toolTweak(String.fromCharCode(event.keyCode), 0); break;
 
 			case 106: case 42:
-				for (i = 1, k = ''; i < 3; i++) k +=
-'<br>Save'+i+'.time: '+LS[CR[i].T]+(LS[CR[i].R]?', pic size: '+LS[CR[i].R].length:'')+(LS[CR[i].L]?', layers sum: '+LS[CR[i].L].length:'');
-				text.debug.innerHTML = getSendMeta()+'<br>'+replaceAll(
+				for (i = 1, k = ''; i < 3; i++) k += '<br>Save'+i+'.time: '+LS[CR[i].T]
++(LS[CR[i].R]?', pic size: '+LS[CR[i].R].length:'')
++(LS[CR[i].L]?', layers sum: <a href="javascript:'+i+'">'+LS[CR[i].L].length+'</a>':'');
+				(a = text.debug).innerHTML = getSendMeta()+'<br>'+replaceAll(
 "\n<a href=\"javascript:var s=' ',t='';for(i in |)t+='\\n'+i+' = '+(|[i]+s).split(s,1);alert(t);\">self.props</a>"+
 "\n<a href=\"javascript:var t='',o=|.o;for(i in o)t+='\\n'+i+' = '+o[i];alert(t);\">self.outside</a>"+
-(outside.read?'':'<br>\nF6=read: <textarea id="|-read" value="/9.png"></textarea>'), '|', NS)+CR+','+CT+','+CL+k; break;
+(outside.read?'':'<br>\nF6=read: <textarea id="|-read" value="/9.png"></textarea>'), '|', NS)+CR+','+CT+','+CL+k;
+			var	a = a.getElementsByTagName('a'), i = a.length, m = /void\((\w+)\)/i, n = /\b(\d+)$/;
+				while (i--) if ((k = a[i].href) && (k = k.match(n))) a[i].href ='javascript:alert('+NS+'.LS[\''+CR[k[1]].L+'\'])';
+			break;
 
 			default: if (mode.debug) text.debug.innerHTML += '\n'+String.fromCharCode(event.keyCode)+'='+event.keyCode;
 		}
@@ -1809,9 +1841,21 @@ function drop(event) {
 	else
 //* Load images: from http://www.html5rocks.com/en/tutorials/file/dndfiles/
 	if (window.FileReader) {
-	var	d = event.dataTransfer.files, f, i = d?d.length:0, j = i, k = 0, r;
+	var	d = event.dataTransfer.files, f, i = (d?d.length:0), j = /\.(txt|json)$/i, k = 0, l = i, r, m = /^image/i;
+		while (i--) if (!(f = d[i]).type || !m.test(f.type)) {
+			(r = new FileReader()).onload = (function(f) {
+				return function(e) {
+					try {
+						readSavedLayers(JSON.parse(e.target.result));
+					} catch(e) {alert(lang.bad_data);}
+				};
+			})(f);
+			r.readAsText(f);
+			return;
+		}
+		i = l;
 		while (i--)
-		if ((f = d[i]).type.match('image.*')) {
+		if ((f = d[i]).type && m.test(f.type)) {
 			++k;
 			(r = new FileReader()).onload = (function(f) {
 				return function(e) {
@@ -1823,9 +1867,9 @@ function drop(event) {
 			})(f);
 			r.readAsDataURL(f);
 		}
-		if (j && !k) alert(lang.no_files);
+		if (l && !k) alert(lang.no_files);
 	}
-}
+}function showProps(o, z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; alert(t); return o;}
 
 //* Autoplace windows around canvas *------------------------------------------
 
@@ -1956,7 +2000,8 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 			btnArray([
 //* subtitle, hotkey, pictogram, function, id
 -9,	['png'	,'F9'	,'P'		,d+'0)'	,b+'P'
-],	['jpeg'	,'F7'	,'J'		,d+'1)'	,b+'J'
+],	['jpeg'	,s	,'J'		,d+'1)'	,b+'J'
+],	['json'	,'F7'	,'&#x25A4;'	,d+'6)'
 ],1,	['save'	,'F2'	,'!'		,d+'2)'
 ],	['load'	,'F3'	,'?'		,d+'3)'	,b+'L'
 ],
@@ -2120,11 +2165,13 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 ,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент']
 }, lang = {
 	lang: ['язык', 'Русский']
+,	bad_data:	'Неправильный формат данных.'
 ,	bad_id:		'Ошибка выбора.'
 ,	flood:		'Полотно пусто.'
 ,	confirm_send:	'Отправить рисунок в сеть?'
 ,	confirm_save:	'Сохранить слои в память браузера?'
 ,	confirm_load:	'Вернуть слои из памяти браузера?'
+,	copy_to_save:	'Откройте новый текстовый файл, скопируйте в него всё ниже этой линии'
 ,	found_swap:	'Рисунок был в запасе, поменялись местами.'
 ,	no_LS:		'Локальное Хранилище (память браузера) недоступно.'
 ,	no_space:	'Ошибка сохранения, нет места.'
@@ -2205,6 +2252,7 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 	},	fps:	{sub:'п.кадры',	t:'Уменьшить нагрузку, пропуская кадры.'
 	},	png:	{sub:'сохр.png',t:'Сохранить рисунок в PNG файл.'
 	},	jpeg:	{sub:'сохр.jpg',t:'Сохранить рисунок в JPEG файл.'
+	},	json:	{sub:'сох.json',t:'Сохранить слои в JSON файл.'
 	},	save:	{sub:'сохран.',	t:'Сохранить слои в память браузера, 2 позиции по очереди.'
 	},	load:	{sub:'загруз.',	t:'Вернуть слои из памяти браузера, 2 позиции по очереди. \r\n\
 Может не сработать в некоторых браузерах, если не настроить автоматическую загрузку и показ изображений.'
@@ -2233,11 +2281,13 @@ else o.lang = 'en'
 	compose	: ['above', 'under', 'clip', 'mask', 'light', 'exclude', 'eraser']
 }, lang = {
 	lang: ['language', 'English']
+,	bad_data:	'Invalid data format.'
 ,	bad_id:		'Invalid case.'
 ,	flood:		'Canvas is empty.'
 ,	confirm_send:	'Send image to server?'
 ,	confirm_save:	'Save layers to your browser memory?'
 ,	confirm_load:	'Restore layers from your browser memory?'
+,	copy_to_save:	'Open new text file, copy and paste to it after this line'
 ,	found_swap:	'Found image at slot 2, swapped slots.'
 ,	no_LS:		'Local Storage (browser memory) not supported.'
 ,	no_space:	'Saving failed, not enough space.'
@@ -2318,6 +2368,7 @@ else o.lang = 'en'
 	,	fps:	'Limit FPS when drawing to use less CPU.'
 	,	png:	'Save image as PNG file.'
 	,	jpeg:	'Save image as JPEG file.'
+	,	json:	'Save layers as JSON file.'
 	,	save:	'Save layers copy to your browser memory, 2 slots in a queue.'
 	,	load:	'Load layers copy from your browser memory, 2 slots in a queue. \r\n\
 May not work in some browsers until set to load and show new images automatically.'

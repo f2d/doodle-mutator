@@ -46,7 +46,7 @@ if ($me = $_REQUEST[ME]) {
 	} else {
 		list($u_qk, $u_opts, $u_per_page, $u_room_home) = explode('_', $me, 4);
 	}
-	if (($q = $_POST[ME]) && $u_qk != $q) $u_qk = $q;
+	if (($q = trim($_POST[ME])) && $u_qk != $q) $u_qk = $q;
 	if ($u_qk && data_check_u($u_qk, $q)) {
 		data_log_ip();
 		if ($u_flag['ban']) die(get_template_page(array(
