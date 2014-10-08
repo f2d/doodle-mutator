@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.12'
-,	INFO_DATE = '2014-07-16 — 2014-10-08'
+,	INFO_DATE = '2014-07-16 — 2014-10-09'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers'
@@ -1477,13 +1477,22 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 		if (confirm(lang.confirm_load)) used = {LS:'Local Storage'}, readSavedLayers(b);
 		break;
 	case 5:
+	case 6:
 		if (a || ((outside.read || (outside.read = id('read'))) && (a = outside.read.value))) {
 	//		draw.time = [0, 0];
-			used.read = 'Read File: '+readPic(a);
+			if (dest == 5) a = readPic(a);
+			else {
+				try {
+					readSavedLayers(JSON.parse(a.data)), a = a.name;
+				} catch(e) {
+					alert(lang.bad_data), a = '';
+				}
+			}
+			if (a.length) used.read = 'Read File: '+a;
 		}
 		break;
 //* save project text as file
-	case 6:
+	case 7:
 		b = JSON.stringify(getSaveLayers(1));
 		try {
 		var	bb = new BlobBuilder();
@@ -1650,7 +1659,7 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *,
 			case 114:	sendPic(3);	break;
 			case 115:	sendPic(4);	break;
 			case 117:	sendPic(5);	break;
-			case 118:	sendPic(6);	break;
+			case 118:	sendPic(7);	break;
 			case 119:	sendPic();	break;
 
 			case c('Q'):	updateShape(0);	break;
@@ -1841,33 +1850,25 @@ function drop(event) {
 	else
 //* Load images: from http://www.html5rocks.com/en/tutorials/file/dndfiles/
 	if (window.FileReader) {
-	var	d = event.dataTransfer.files, f, i = (d?d.length:0), j = /\.(txt|json)$/i, k = 0, l = i, r, m = /^image/i;
-		while (i--) if (!(f = d[i]).type || !m.test(f.type)) {
+	var	d = event.dataTransfer.files, f, i = (d?d.length:0), j = i, k = 0, r, m = /^image/i;
+		while (i--) if (rr()) return;
+		i = j;
+		while (i--) rr(1);
+		if (j && !k) alert(lang.no_files);
+
+		function rr(pic) {
+			if (!!((f = d[i]).type && m.test(f.type)) !== !!pic) return;
 			(r = new FileReader()).onload = (function(f) {
 				return function(e) {
-					try {
-						readSavedLayers(JSON.parse(e.target.result));
-					} catch(e) {alert(lang.bad_data);}
-				};
-			})(f);
-			r.readAsText(f);
-			return;
-		}
-		i = l;
-		while (i--)
-		if ((f = d[i]).type && m.test(f.type)) {
-			++k;
-			(r = new FileReader()).onload = (function(f) {
-				return function(e) {
-					sendPic(5, {
+					sendPic(pic?5:6, {
 						name: f.name
 					,	data: e.target.result
 					});
 				};
 			})(f);
-			r.readAsDataURL(f);
+			r[pic?'readAsDataURL':'readAsText'](f);
+			return ++k;
 		}
-		if (l && !k) alert(lang.no_files);
 	}
 }function showProps(o, z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; alert(t); return o;}
 
@@ -2001,12 +2002,12 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 //* subtitle, hotkey, pictogram, function, id
 -9,	['png'	,'F9'	,'P'		,d+'0)'	,b+'P'
 ],	['jpeg'	,s	,'J'		,d+'1)'	,b+'J'
-],	['json'	,'F7'	,'&#x25A4;'	,d+'6)'
+],	['json'	,'F7'	,'&#x25A4;'	,d+'7)'
 ],1,	['save'	,'F2'	,'!'		,d+'2)'
 ],	['load'	,'F3'	,'?'		,d+'3)'	,b+'L'
+],	['loadd','F4'	,'+'		,d+'4)'	,b+'A'
 ],
-1,	['loadd','F4'	,'+'		,d+'4)'	,b+'A'
-],!o.read || 0 == o.read?-1:
+1,!o.read || 0 == o.read?-1:
 	['read'	,'F6'	,'&#x21E7;'	,d+'5)'
 ],!o.send || 0 == o.send?-1:
 	['done'	,'F8'	,'&#x21B5;'	,d+')'
