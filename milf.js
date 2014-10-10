@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.12'
-,	INFO_DATE = '2014-07-16 — 2014-10-09'
+,	INFO_DATE = '2014-07-16 — 2014-10-11'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers'
@@ -450,14 +450,6 @@ Integral Image v0.4, modified (failed as it was)
 Copyright (c) 2011 Mario Klingemann
 http://opensource.org/licenses/MIT
 */
-var	ii = iiGetRGBA(c,0,0,w,h);
-	if (!ii) return null;
-var	c = ii.context, d = ii.imageData, p = ii.pixels;
-	iiBlurRGBA(ii, radius);
-	while (--iterations > 0)
-	iiBlurRGBA(iiCalculateRGBA(p,w,h), radius);
-	return c.putImageData(d,x0,y0);
-
 	function iiGetRGBA(c,x0,y0,w,h) {
 	var	p = iiGetPixelsRGBA(c,x0,y0,w,h);
 		if (!p) return null;
@@ -552,6 +544,14 @@ var	c = ii.context, d = ii.imageData, p = ii.pixels;
 		}
 		return { r:r, g:g, b:b, a:a, width:width, height:height, pixels:pixels };
 	}
+
+var	ii = iiGetRGBA(c,0,0,w,h);
+	if (!ii) return null;
+var	c = ii.context, d = ii.imageData, p = ii.pixels;
+	iiBlurRGBA(ii, radius);
+	while (--iterations > 0)
+	iiBlurRGBA(iiCalculateRGBA(p,w,h), radius);
+	return c.putImageData(d,x0,y0);
 }
 
 //* Strokes and shapes *-------------------------------------------------------
@@ -1398,7 +1398,7 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 	draw.view(1);
 	switch (dest) {
 	case 0:
-	case 1: window.open(c = cnv.view.toDataURL(dest?IJ:''), '_blank');
+	case 1:	window.open(c = cnv.view.toDataURL(dest?IJ:''), '_blank');
 		break;
 //* save project
 	case 2:
@@ -1493,7 +1493,7 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 		break;
 //* save project text as file
 	case 7:
-		b = JSON.stringify(getSaveLayers(1));
+		b = JSON.stringify(getSaveLayers(1), null, '\t');
 		try {
 		var	bb = new BlobBuilder();
 			bb.append(b);
@@ -1501,7 +1501,7 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 			saveAs(blob, draw.time.join('-')+'.json');
 		} catch(e) {
 			try {
-				window.open('data:text/plain,'+encodeURIComponent(b.replace(/([[\]{}]+(,[[\]{}]+)*)/g, '\n$1\n')), '_blank');
+				window.open('data:text/plain,'+encodeURIComponent(b), '_blank');
 			} catch(d) {
 				alert(lang.copy_to_save+':\n\n'+b);
 			}
@@ -1850,12 +1850,6 @@ function drop(event) {
 	else
 //* Load images: from http://www.html5rocks.com/en/tutorials/file/dndfiles/
 	if (window.FileReader) {
-	var	d = event.dataTransfer.files, f, i = (d?d.length:0), j = i, k = 0, r, m = /^image/i;
-		while (i--) if (rr()) return;
-		i = j;
-		while (i--) rr(1);
-		if (j && !k) alert(lang.no_files);
-
 		function rr(pic) {
 			if (!!((f = d[i]).type && m.test(f.type)) !== !!pic) return;
 			(r = new FileReader()).onload = (function(f) {
@@ -1869,13 +1863,19 @@ function drop(event) {
 			r[pic?'readAsDataURL':'readAsText'](f);
 			return ++k;
 		}
+
+	var	d = event.dataTransfer.files, f, i = (d?d.length:0), j = i, k = 0, r, m = /^image/i;
+		while (i--) if (rr()) return;
+		i = j;
+		while (i--) rr(1);
+		if (j && !k) alert(lang.no_files);
 	}
-}function showProps(o, z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; alert(t); return o;}
+}
 
 //* Autoplace windows around canvas *------------------------------------------
 
 function resetAside() {
-var	margin = 2, h = 234//Math.max(cnv.view.height, select.imgRes.height)
+var	margin = 2, h = 256//Math.max(cnv.view.height, select.imgRes.height)
 ,	off = getOffsetXY(draw.container), x = off.x + cnv.view.offsetWidth + margin, y = 0, z
 ,	a = container.getElementsByTagName('aside'), i = a.length, e;
 	while (i--) if ((e = a[i]).id) {
