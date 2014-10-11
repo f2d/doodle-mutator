@@ -9,7 +9,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 ,	INFO_DATE = '2014-07-16 — 2014-10-11'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
-,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers'
+,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
 ,	LS = this.LS = window.localStorage || localStorage
 ,	DRAW_PIXEL_OFFSET = -0.5
 ,	DRAW_HELPER = {lineWidth: 1, shadowBlur: 0, shadowColor: A0, strokeStyle: 'rgba(123,123,123,0.5)', globalCompositeOperation: SO}
@@ -1331,7 +1331,8 @@ function unixDateToHMS(t,u,y) {
 var	d = t ? new Date(t+(t >0?0:new Date())) : new Date(), t = ['Hours','Minutes','Seconds'], u = 'get'+(u?'UTC':'');
 	if (y) t = ['FullYear','Month','Date'].concat(t);
 	for (i in t) if ((t[i] = d[u+t[i]]()+(y && i == 1?1:0)) < 10) t[i] = '0'+t[i];
-	return y ? t[0]+'-'+t[1]+'-'+t[2]+' '+t[3]+':'+t[4]+':'+t[5] : t.join(':');
+	d = '-', u = (y > 1?d:':');
+	return y ? t[0]+d+t[1]+d+t[2]+(y > 1?'_':' ')+t[3]+u+t[4]+u+t[5] : t.join(u);
 }
 
 function getSendMeta(sz) {
@@ -1393,12 +1394,21 @@ var	a = id('saveTime'), d = draw.history, j = '-', i = b.time.split(j);
 	return j;
 }
 
+function saveDL(content, suffix) {
+	if (DL) {
+		container.appendChild(a = document.createElement('a'));
+		a.href = content, a[DL] = unixDateToHMS(0,0,2)+'_'+draw.time.join('-')+suffix;
+		a.click();
+		setTimeout(function() {container.removeChild(a);}, 5678);
+	} else window.open(content, '_blank');
+}
+
 function sendPic(dest, auto) {
 var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 	draw.view(1);
 	switch (dest) {
 	case 0:
-	case 1:	window.open(c = cnv.view.toDataURL(dest?IJ:''), '_blank');
+	case 1:	saveDL(c = cnv.view.toDataURL(dest?IJ:''), dest?'.jpg':'.png');
 		break;
 //* save project
 	case 2:
@@ -1501,7 +1511,7 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 			saveAs(blob, draw.time.join('-')+'.json');
 		} catch(e) {
 			try {
-				window.open('data:text/plain,'+encodeURIComponent(b), '_blank');
+				saveDL('data:text/plain,'+encodeURIComponent(b), '.json');
 			} catch(d) {
 				alert(lang.copy_to_save+':\n\n'+b);
 			}
@@ -1547,7 +1557,7 @@ function readPic(s) {
 	if (!s.data) s = {data: s, name: (0 === s.indexOf('data:') ? s.split(',', 1) : s)};
 var	d = draw.time, e = new Image(), t = +new Date, i;
 	for (i in d) if (!d[i]) d[i] = t;
-	e.setAttribute('onclick', 'this.parentNode.removeChild(this); return false');
+	setRemove(e);
 	e.onload = function () {
 		delete s.data;
 		for (i in select.imgRes) if (s.z || cnv.view[i] < e[i]) {
@@ -2096,7 +2106,7 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 
 	for (i in (a = {L:CL, A:CT})) if (!LS || !LS[a[i]]) setClass(id(b+i), b+'-disabled');
 
-	for (i in (a = ['a', 'input', 'select', 'p', b]))
+	for (i in (a = [b, 'input', 'select', 'p', 'a']))
 	for (c in (b = container.getElementsByTagName(a[i])))
 	for (e in (d = ['onchange', 'onclick', 'onmouseover']))
 	if ((f = b[c][d[e]])
@@ -2105,7 +2115,7 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 		if (f == 'toggleView' && !(m = b[c]).title) m.title = lang[h.test(m.parentNode.tagName)?'hide_hint':'show_hint'];
 	}
 
-	generatePalette(1, 85, 0);
+	d = 'download', DL = (d in b[0]?d:'');
 	a = select.options, c = select.translated || a, f = (LS && LS.lastPalette && palette[LS.lastPalette]) ? LS.lastPalette : 1;
 	a.affect = a.compose, c.affect = c.compose;
 	for (b in a) if (e = select[b] = id(b))
@@ -2118,6 +2128,7 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 	toggleView('hotkeys');
 	id('style').innerHTML += style;
 
+	generatePalette(1, 85, 0);
 	toolSwap(3);
 	updatePalette();
 	updateViewport();
@@ -2485,6 +2496,7 @@ var	a = ['class','id','onChange','onClick','onContextMenu'];
 	for (i in a) c = replaceAdd(c, ' '+a[i]+'="', NS+(a[i][0]=='o'?'.':'-'));
 	return e.innerHTML = c;
 }
+function setRemove(e,o) {e.setAttribute(o?o:'onclick', 'this.parentNode.removeChild(this); return false');}
 function clearContent(e) {while (e.childNodes.length) e.removeChild(e.lastChild);}	//* <- works without a blink, unlike e.innerHTML = '';
 function toggleView(e) {if (!e.tagName) e = id(e); return e.style.display = e.style.display?'':'none';}
 function propSwap(a, b) {

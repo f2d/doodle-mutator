@@ -2,10 +2,10 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; BTW, tabs align to 8 spaces
 ,	INFO_VERSION = 'v0.9.45'
-,	INFO_DATE = '2013-04-01 — 2014-10-06'
+,	INFO_DATE = '2013-04-01 — 2014-10-11'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640
-,	CR = 'CanvasRecover', CT = 'Time', DRAW_PIXEL_OFFSET = -0.5
+,	CR = 'CanvasRecover', CT = 'Time', DL, DRAW_PIXEL_OFFSET = -0.5
 ,	LS = window.localStorage || localStorage
 
 ,	TOOLS_REF = [
@@ -796,12 +796,12 @@ function toggleMode(i, keep) {
 	} else alert(lang.bad_id);
 }
 
-function unixDateToHMS(t,u) {
-var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
-	t = ['Hours','Minutes','Seconds'];
-	u = 'get'+(u?'UTC':'');
-	for (i in t) if ((t[i] = d[u+t[i]]()) < 10) t[i] = '0'+t[i];
-	return t.join(':');
+function unixDateToHMS(t,u,y) {
+var	d = t ? new Date(t+(t >0?0:new Date())) : new Date(), t = ['Hours','Minutes','Seconds'], u = 'get'+(u?'UTC':'');
+	if (y) t = ['FullYear','Month','Date'].concat(t);
+	for (i in t) if ((t[i] = d[u+t[i]]()+(y && i == 1?1:0)) < 10) t[i] = '0'+t[i];
+	d = '-', u = (y > 1?d:':');
+	return y ? t[0]+d+t[1]+d+t[2]+(y > 1?'_':' ')+t[3]+u+t[4]+u+t[5] : t.join(u);
 }
 
 function timeElapsed() {text.timer.textContent = unixDateToHMS(timer += 1000, 1);}
@@ -822,12 +822,21 @@ var	d = draw.time, i, j = [], u = [], t = outside.t0;
 	);
 }
 
+function saveDL(content, suffix) {
+	if (DL) {
+		container.appendChild(a = document.createElement('a'));
+		a.href = content, a[DL] = unixDateToHMS(0,0,2)+'_'+draw.time.join('-')+suffix;
+		a.click();
+		setTimeout(function() {container.removeChild(a);}, 5678);
+	} else window.open(content, '_blank');
+}
+
 function sendPic(dest, auto) {
 var	a = auto || false, c, d, e, i, t;
 	draw.screen();
 	switch (dest) {
 	case 0:
-	case 1: window.open(c = canvas.toDataURL(dest?IJ:''), '_blank');
+	case 1: saveDL(c = canvas.toDataURL(dest?IJ:''), dest?'.jpg':'.png');
 		break;
 //* save
 	case 2:
@@ -1200,10 +1209,11 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 		id('slider'+BOWL[i]).appendChild(e);
 	} else 	id(a+BOWL[i]).type = b;
 
-	for (i in (a = ['a', 'input', 'select', 'span', 'button']))
+	for (i in (a = ['input', 'select', 'span', 'button', 'a']))
 	for (c in (b = container.getElementsByTagName(a[i])))
 	for (e in (d = ['onchange', 'onclick', 'onmouseover'])) if ((f = b[c][d[e]]) && !self[f = (''+f).match(regFunc)[1]]) self[f] = eval(f);
 
+	d = 'download', DL = (d in b[0]?d:'');
 	a = select.options, c = select.translated || a, f = (LS && LS.lastPalette && palette[LS.lastPalette]) ? LS.lastPalette : 1;
 	for (b in a) {
 		e = select[b] = id(b);
@@ -1231,8 +1241,8 @@ var	letters = [0, 0, 0], l = p.length;
 			p[l+1] = '\n';
 	}
   }
-	generatePalette(1, 85, 0);
 
+	generatePalette(1, 85, 0);
 	toolSwap(3);
 	updatePalette();
 	updateSliders();

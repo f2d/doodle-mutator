@@ -616,20 +616,20 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data
 //* active room task and visible content --------------------------------------
 		if ($room) {
 			list($err_sign, $err_name) = get_req();
-			if (GET_Q && ($err_sign != '!')) {
-				if (data_is_thread_cap()) {
-					$err_sign = '!';
-					$err_name = 'trd_max';
-				} else $draw_free = 1;
-			}
 
 			data_lock($room);
 if (TIME_PARTS) time_check_point('inb4 aim, locked');
 			data_aim(!$u_opts[5], get_room_skip_list());
 			list($thread, $report) = data_get_visible_threads();
 			data_unlock();
-
 if (TIME_PARTS) time_check_point('got visible data, unlocked');
+
+			if (GET_Q && ($err_sign != '!') && !($target['task'])) {
+				if (data_is_thread_cap()) {
+					$err_sign = '!';
+					$err_name = 'trd_max';
+				} else $draw_free = 1;
+			}
 			$task_time = (($mt = $target['time'])?$mt:0);
 			if ($thread) foreach ($thread as $p) foreach ($p as $tab) if ($mt < $tab[1]) $mt = $tab[1];
 			exit_if_not_mod($mt?$mt:T0);
