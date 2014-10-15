@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.12'
-,	INFO_DATE = '2014-07-16 — 2014-10-11'
+,	INFO_DATE = '2014-07-16 — 2014-10-15'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -41,7 +41,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 	,	imgLimits: {width:[64,640], height:[64,800]}
 	,	lineCaps: {lineCap:0, lineJoin:0}
 	,	shapeFlags: [1,10,2,2,2,4]
-	,	clipBorder: ['', '#123', '#5ea']//, '#5ae', '#ff0', '#f40']
+	,	clipBorder: ['', '#123', '#5ea', '#5ae', '#ff0', '#f40']
 	,	options: {
 			shape	: ['line', 'poly', 'rectangle', 'circle', 'ellipse', 'pan']
 		,	lineCap	: ['round', 'butt', 'square']
@@ -112,7 +112,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 ,	regLimit = /^(\d+)\D+(\d+)$/
 
 ,	self = this, outside = this.o = {}, lang, container
-,	fps = 0, ticks = 0, timer = 0
+,	fps = 0, ticks = 0, timer = 0, loading = 0
 ,	interval = {fps:0, timer:0, save:0}, text = {debug:0, timer:0}
 ,	ctx = {}, cnv = {view:0, draw:0, lower:0, current:0, upper:0, filter:0, temp:0}
 ,	used = {}, cue = {upd:{}}, count = {layers:0, strokes:0, erases:0, undo:0}
@@ -265,7 +265,8 @@ var	y = draw.history, c = y.layer, d = y.layers, z, u;
 		return updateLayers(2);
 	}
 //* new
-var	x = {show:1, name: lang.layer.prefix+'_'+(++count.layers), alpha: RANGE.A.max, pos:0, last:0, data:[]};
+var	x = {name: lang.layer.prefix+'_'+(++count.layers), data:[]};
+	for (z in NEW_LAYER) x[z] = NEW_LAYER[z];
 	if (load === 1) {
 //* copy
 		draw.preload();
@@ -615,7 +616,7 @@ function drawStart(event) {
 
 //* Drawing on cnv.draw:
 var	y = draw.history, i = y.layer, sf = select.shapeFlags[select.shape.value];
-	if (!(i || (sf & 4)) || !y.layers[i].show) return false;
+	if (!(!i && (sf & 4)) && !(i && y.layers[i].show)) return false;
 
 	if (draw.step) {
 		if (mode.step && ((mode.shape && (sf & 1)) || (sf & 4))) {
@@ -1338,47 +1339,45 @@ var	d = t ? new Date(t+(t >0?0:new Date())) : new Date(), t = ['Hours','Minutes'
 function getSendMeta(sz) {
 var	a = ['clip', 'mask', 'lighter', 'xor']
 ,	b = ['resize', 'integral']
-,	d = draw.time, h = draw.history.layers, i, j = [], k, l, m = [], n = [], u = [], t = outside.t0;
-	for (i in d) u[i] = parseInt(d[i]) || (i > 0?+new Date:t);
-	for (i in count) if ((k = count[i]) > 1 || (i != 'layers' && k > 0)) j.push(k+' '+(k > 1?i:i.replace(/s+$/i, '')));
-	for (i in used) j.push(used[i]);
-	for (i in h) {
-		l = h[i];
-		if (l.clip > 0 && m.indexOf(k = a[l.clip    - 2]) < 0) m.push(k);
-		if (l.blur > 0 && m.indexOf(k = b[l.filter || 0]) < 0) n.push(k);
-	}
-	if (m.length) j.push('Composition: '+m.join(', '));
-	if (n.length) j.push('Filter: '+n.join(', '));
-//	return Math.floor(t/1000)+','+u.join('-')+','+NS+' '+INFO_VERSION + (j.length?' (used '+j.join(', ')+')':'');
+,	c = ', ', d = draw.time, i, j = [], m = [], n = [], u = [], t = outside.t0;
+	for (i in d) j[i] = parseInt(d[i]) || (i > 0?+new Date:t);
+	for (i in count) if ((d = count[i]) > 1 || (i != 'layers' && d > 0)) u.push(d+' '+(d > 1?i:i.replace(/s+$/i, '')));
+	for (i in used) u.push(used[i]);
+	draw.history.layers.map(function(v) {
+		if (v.clip > 0 && m.indexOf(k = a[v.clip    - 2]) < 0) m.push(k);
+		if (v.blur > 0 && n.indexOf(k = b[v.filter || 0]) < 0) n.push(k);
+	});
+	if (m.length) u.push('Composition: '+m.join(c));
+	if (n.length) u.push('Filter: '+n.join(c));
+//	return Math.floor(t/1000)+','+u.join('-')+','+NS+' '+INFO_VERSION + (j.length?' (used '+j.join(c)+')':'');
 	return 't0: '	+Math.floor(t/1000)
-	+'\ntime: '	+u.join('-')
+	+'\ntime: '	+j.join('-')
 	+'\napp: '	+NS+' '+INFO_VERSION
-	+(j.length
-	?'\nused: '	+j.join(', '):'')
+	+(u.length
+	?'\nused: '	+u.join(c):'')
 	+'\nlength: '	+(sz?sz:
 		'png = '	+ cnv.view.toDataURL().length
 		+', jpg = '	+ cnv.view.toDataURL(IJ).length
 	);
 }
 
-function getSaveLayers(k) {
-var	a = draw.history.layers
-,	e = ['pos', 'last', 'reversable', 'filtered', 'data'], d, f, i, j = '-'
-,	b = {time: draw.time.join(j)+(used.read?j+used.read:'')};
-	if (k) b.meta = getSendMeta();
-	b.layers = [];
-	for (i in a) {
-		d = {}, j = a[i];
-		for (k in j) if (e.indexOf(k) < 0) d[k] = j[k] || 0;
-		if (j[k = 'data']) {
-			if (f = j[k][j.pos]) {
-				ctx.temp.putImageData(f, 0, 0);
-				d[k] = cnv.temp.toDataURL();
-			} else continue;
+function getSaveLayers(c) {
+var	skip = ['pos', 'last', 'reversable', 'filtered', 'data']
+,	a = [], d = '-', i
+,	b = {time: draw.time.join(d)+(used.read?d+used.read:'')};
+	if (c) b.meta = getSendMeta();
+	draw.history.layers.map(function(v,k) {
+		c = {};
+		for (i in v) if (skip.indexOf(i) < 0 && (!k || (i in NEW_LAYER ? (v[i] != NEW_LAYER[i]) : v[i]))) c[i] = v[i];
+		if (v[i = 'data']) {
+			if (d = v[i][v.pos]) {
+				ctx.temp.putImageData(d, 0, 0);
+				c[i] = cnv.temp.toDataURL();
+			} else return;
 		}
-		b.layers.push(d);
-	}
-	return b;	//* <- object, needs JSON.stringify(b)
+		a.push(c);
+	});
+	return b.layers = a, b;	//* <- object, needs JSON.stringify(b)
 }
 
 function readSavedLayers(b) {
@@ -1389,7 +1388,7 @@ var	a = id('saveTime'), d = draw.history, j = '-', i = b.time.split(j);
 	draw.time = i.slice(0,2);
 	a.title = new Date(i = +i[1]);
 	a.textContent = unixDateToHMS(i,0,1).split(' ',2)[1];
-	a = b.layers, i = j = a[0].max = a.length, d.layers = [a[d.layer = 0]];
+	a = b.layers, i = j = a[d.layer = 0].max = a.length, d.layers = [a[0]];
 	while (--i) d = a[i], d.z = i, readPic(d);
 	return j;
 }
@@ -1555,7 +1554,8 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 function readPic(s) {
 	if (!s || s == 0 || (!s.data && !s.length)) return;
 	if (!s.data) s = {data: s, name: (0 === s.indexOf('data:') ? s.split(',', 1) : s)};
-var	d = draw.time, e = new Image(), t = +new Date, i;
+var	d = draw.time, e = new Image(), t = +new Date, i, lcd = id('lcd');
+	if (!lcd) setId(lcd = document.createElement('div'), 'lcd'), container.parentNode.insertBefore(lcd, container);
 	for (i in d) if (!d[i]) d[i] = t;
 	setRemove(e);
 	e.onload = function () {
@@ -1573,6 +1573,12 @@ var	d = draw.time, e = new Image(), t = +new Date, i;
 		historyAct(s.z ? draw.time[1] : null);
 		cue.autoSave = 0;
 		if (d = e.parentNode) d.removeChild(e);
+		if (--loading < 1) loading = 0, container.style.visibility = lcd.textContent = '';//, lcd.style.display = 'none';
+		else lcd.textContent = lang.loading+': '+loading;
+	}
+	if (!(mode.debug || text.debug.innerHTML) && ++loading > 1) {
+		container.style.visibility = 'hidden';
+		lcd.textContent = lang.loading+': '+loading;//, lcd.style.display = '', lcd.style.minHeight = cnv.view.height;
 	}
 	draw.container.appendChild(e);
 	return e.src = s.data, s.name;
@@ -1605,7 +1611,7 @@ function hotWheel(event) {
 }
 
 function hotKeys(event) {
-	if (browserHotKeyPrevent(event)) {
+	if (!loading && browserHotKeyPrevent(event)) {
 		function c(s) {return s.charCodeAt(0);}
 	var	n = event.keyCode - c('0');
 		if ((n?n:n=10) > 0 && n < 11) {
@@ -1687,13 +1693,13 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *,
 			case 106: case 42:
 				for (i = 1, k = ''; i < 3; i++) k += '<br>Save'+i+'.time: '+LS[CR[i].T]
 +(LS[CR[i].R]?', pic size: '+LS[CR[i].R].length:'')
-+(LS[CR[i].L]?', layers sum: <a href="javascript:'+i+'">'+LS[CR[i].L].length+'</a>':'');
-				(a = text.debug).innerHTML = getSendMeta()+'<br>'+replaceAll(
++(LS[CR[i].L]?', layers sum: <a href="javascript:alert('+NS+'.LS[\''+CR[i].L+'\'])">'+LS[CR[i].L].length+'</a>':'');
+
+				text.debug.innerHTML = replaceAll(
 "\n<a href=\"javascript:var s=' ',t='';for(i in |)t+='\\n'+i+' = '+(|[i]+s).split(s,1);alert(t);\">self.props</a>"+
 "\n<a href=\"javascript:var t='',o=|.o;for(i in o)t+='\\n'+i+' = '+o[i];alert(t);\">self.outside</a>"+
-(outside.read?'':'<br>\nF6=read: <textarea id="|-read" value="/9.png"></textarea>'), '|', NS)+CR+','+CT+','+CL+k;
-			var	a = a.getElementsByTagName('a'), i = a.length, m = /void\((\w+)\)/i, n = /\b(\d+)$/;
-				while (i--) if ((k = a[i].href) && (k = k.match(n))) a[i].href ='javascript:alert('+NS+'.LS[\''+CR[k[1]].L+'\'])';
+(outside.read?'':'<br>\nF6=read: <textarea id="|-read" value="/9.png"></textarea>'), '|', NS)
++', '+CT+', '+CL+': '+(CR.length || CR)+(loading?', loading: '+loading:'')+k+'<hr>'+getSendMeta().replace(/[\r\n]+/g, '<br>');
 			break;
 
 			default: if (mode.debug) text.debug.innerHTML += '\n'+String.fromCharCode(event.keyCode)+'='+event.keyCode;
@@ -1904,6 +1910,7 @@ function init() {
 var	a = {B:'GRST',W:'A'},b,c = 'canvas',d,e,f,g,h,i,j,k,l,m,n, o = outside, style = '', s = '&nbsp;';
 	for (i in a)
 	for (j in a[i]) RANGE[a[i][j]] = RANGE[i];
+	NEW_LAYER = {show:1, alpha: RANGE.A.max, pos: 0, last: 0};
 
 	a = '\n\
 <div id="load"><'+c+' id="'+c+'" tabindex="0">'+lang.no_canvas+'</'+c+'></div>\n\
@@ -2185,6 +2192,7 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 ,	confirm_load:	'Вернуть слои из памяти браузера?'
 ,	copy_to_save:	'Откройте новый текстовый файл, скопируйте в него всё ниже этой линии'
 ,	found_swap:	'Рисунок был в запасе, поменялись местами.'
+,	loading:	'Ожидание загрузки изображений'
 ,	no_LS:		'Локальное Хранилище (память браузера) недоступно.'
 ,	no_space:	'Ошибка сохранения, нет места.'
 ,	no_files:	'Среди файлов не найдено изображений.'
@@ -2275,10 +2283,10 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 Вместо этого рекомендуется перетаскивать файлы из других программ.'
 	},	done:	{sub:'готово',	t:'Завершить и отправить рисунок в сеть.'
 
-	},	new:	{sub:'новый',	t:'Создать новый слой.'
+	},	'new':	{sub:'новый',	t:'Создать новый слой.'
 	},	copy:	{sub:'копия',	t:'Создать копию слоя.'
 	},	merge:	{sub:'слить',	t:'Скопировать содержимое слоя вниз.'
-	},	delete:	{sub:'удалить',	t:'Удалить слой вместе с его историей отмен.'
+	},	'delete':{sub:'удалить',t:'Удалить слой вместе с его историей отмен.'
 	},	up:	{sub:'выше',	t:'Поднять слой выше.'
 	},	down:	{sub:'ниже',	t:'Опустить слой ниже.'
 	},	top:	{sub:'верх',	t:'Поднять слой на самый верх.'
@@ -2301,6 +2309,7 @@ else o.lang = 'en'
 ,	confirm_load:	'Restore layers from your browser memory?'
 ,	copy_to_save:	'Open new text file, copy and paste to it after this line'
 ,	found_swap:	'Found image at slot 2, swapped slots.'
+,	loading:	'Waitind for images to load'
 ,	no_LS:		'Local Storage (browser memory) not supported.'
 ,	no_space:	'Saving failed, not enough space.'
 ,	no_layers:	'Save position has no layer data.'
@@ -2391,10 +2400,10 @@ May not work at all, especially if sketcher itself is not started from disk. \r\
 Instead, it is recommended to drag and drop files from another program.'
 	,	done:	'Finish and send image to server.'
 
-	,	new:	'Add a new layer.'
+	,	'new':	'Add a new layer.'
 	,	copy:	'Add a copy of the current layer.'
 	,	merge:	'Copy layer contents to the lower layer.'
-	,	delete:	'Delete layer. Its undo history will be lost.'
+	,	'delete':'Delete layer. Its undo history will be lost.'
 	,	up:	'Move layer one step up.'
 	,	down:	'Move layer one step down.'
 	,	top:	'Move layer to the top.'
@@ -2446,7 +2455,7 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #| canvas:hover {border-color: #aaa;}\
 #| hr {border: 1px solid #aaa; border-top: none;}\
 #| {text-align: center; padding: 12px; background-color: #f8f8f8;}\
-#|, #| button, #| input, #| select {color: #111; font-family: "Arial"; font-size: 19px; line-height: normal;}\
+#|, #| button, #| input, #| select, #|-lcd {color: #111; font-family: "Arial"; font-size: 19px; line-height: normal;}\
 #|-colors .|-text {padding: 0 4px;}\
 #|-colors table {margin: 2px 0 0 0; border-collapse: collapse;}\
 #|-colors td {margin: 0; padding: 0; height: 16px;}\
@@ -2468,6 +2477,7 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #|-layers p {border: 2px solid #ddd;}\
 #|-layers p.|-button input[type="text"] {background-color: #f5f5f5; border-color: #ddd;}\
 #|-layers {max-width: 304px;}\
+#|-lcd {text-align: center; vertical-align: middle; font-size: 40px; color: #aaa;}\
 #|-load img {position: absolute; top: 1px; left: 1px; margin: 0;}\
 #|-load, #|-load canvas {position: relative; display: inline-block;}\
 #|-warn {background-color: #bbb; display: inline-block;}\

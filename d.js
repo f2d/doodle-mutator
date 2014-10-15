@@ -529,12 +529,12 @@ d+'</div>';
 c+'<div class="thread'+(flag.u?' al':'')+(hell?' '+hell:'')+'">'+o+
 c+'</div>';
 		h.innerHTML = (p?p+
-b+'<div class="thread task">'+
-c+'<p class="hint">'+
-d+'<a href="javascript:showContent()">'+la.close+'</a><span class="r">'+
-d+'<a href="javascript:document.body.firstElementChild.scrollIntoView(false)">'+la.top+'</a></span>'+
-c+'</p>'+
-b+'</div>':p);
+c+'<div class="thread task">'+
+d+'<p class="hint">'+
+e+'<a href="javascript:showContent()">'+la.close+'</a><span class="r">'+
+e+'<a href="javascript:document.body.firstElementChild.scrollIntoView(false)">'+la.top+'</a></span>'+
+d+'</p>'+
+c+'</div>'+b:p);
 		if (p&&mm) mm();
 	} else if (pre && (p = pre.parentNode)) {
 		if (a.length > 1) {
