@@ -45,15 +45,17 @@ function format_filesize($B, $D = 2) {
 function format_time_units($t) {
 	global $tmp_time_units;
 	foreach ($tmp_time_units as $k => $v) if ($t >= $k) {
-		if ($k) $t = round($t/$k, 2);
-		$k = 1;
+		if ($k) {$rem = $t%$k; $t = floor($t/$k);}
+		$i = 1;
 		if ($t < 11 || $t >= 20) {
-			$s = ($t % 10);
-			if ($s == 1) $k = 0; else
-			if (count($v) > 2 && ($s < 1 || $s >= 5)) $k = 2;
+			$s = $t%10;
+			if ($s == 1) $i = 0; else
+			if (count($v) > 2 && ($s < 1 || $s >= 5)) $i = 2;
 		}
-		return $t.' '.$v[$k];
+		$r .= ($r?' ':'').$t.' '.$v[$i];
+		if ($rem) $t = $rem; else break;
 	}
+	return $r;
 }
 function exit_if_not_mod($t) {
 	header('Cache-Control: max-age=0; must-revalidate; no-cache');
