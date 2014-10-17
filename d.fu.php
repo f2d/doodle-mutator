@@ -42,12 +42,26 @@ function format_filesize($B, $D = 2) {
 	else return $B.' B';
 	return sprintf("%.{$D}f", $B/pow(1024, $F)).' '.$S[$F].'B';
 }
+function format_time_units($t) {
+	global $tmp_time_units;
+	foreach ($tmp_time_units as $k => $v) if ($t >= $k) {
+		if ($k) $t = round($t/$k, 2);
+		$k = 1;
+		if ($t < 11 || $t >= 20) {
+			$s = ($t % 10);
+			if ($s == 1) $k = 0; else
+			if (count($v) > 2 && ($s < 1 || $s >= 5)) $k = 2;
+		}
+		return $t.' '.$v[$k];
+	}
+}
 function exit_if_not_mod($t) {
 	header('Cache-Control: max-age=0; must-revalidate; no-cache');
 	if (isset($_SERVER[$h = 'HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER[$h]) == $t) {
 		header('HTTP/1.0 304 Not Modified');
 		exit;
-	} else	header('Last-Modified: '.gmdate('r', $t));
+	}
+	header('Last-Modified: '.gmdate('r', $t?$t:T0));
 }
 
 function optimize_pic($filepath) {
@@ -122,7 +136,9 @@ function get_template_hint($t) {
 	return str_replace(
 		str_split('{|}[]\\')
 	,	array('<a href="', '">', '</a>', '<span class="', '</span>', NL)
-	, nl2br(htmlspecialchars($t)));
+	, nl2br(htmlspecialchars(preg_replace_callback('~\b(\d+)s\b~', function ($match) {
+		return format_time_units($match[1]);
+        }, $t))));
 }
 
 function get_template_pre($p, $R = 0) {

@@ -122,15 +122,15 @@ $tmp_rules = array(
 'Site does not guarantee keeping everything that anyone may post.'
 ),	'Mechanics' => array(
 'As a task you get random last post, except your own, or a prompt to start a new thread.
-You have '.(TARGET_DESC_TIME/60).' min. to describe or '.(TARGET_DRAW_TIME/3600).' hours to draw, after that your task can possibly be taken by other people.
+You have '.TARGET_DESC_TIME.'s to describe or '.TARGET_DRAW_TIME.'s to draw, after that your task can possibly be taken by other people.
 If not yet taken, or already dropped, you can still send your post and hit the target.
 Misfired pic makes a new thread with copy of your task, a text post just starts a new one.',
-'If your task is empty, you can try to change it anytime, if not — once in '.(TARGET_CHANGE_TIME/60).' min., by entering or refreshing room.
+'If your task is empty, you can try to change it anytime, if not — once in '.TARGET_CHANGE_TIME.'s, by entering or refreshing room.
 Do not open the same room in multiple tabs, the site keeps only single target per room for you, and it will change.
 If, after some time or room actions, you finally decide to perform your task, be sure to check it with the [a|⌈?⌋] button at right.
 While red-stripe message is displayed, refreshing room in-place (i.e., using the F5 key) will not change the task.
 The link to room in the page header will change the task regardless.',
-'Threads stay full at '.TRD_MAX_POSTS.' pics for '.(TRD_ARCH_TIME/3600).' hours (to let reports and moderation), then go to archive when the next new thread is created.
+'Threads stay full at '.TRD_MAX_POSTS.' pics for '.TRD_ARCH_TIME.'s (to let reports and moderation), then go to archive when the next new thread is created.
 Single-letter rooms keep only 1 page in archive (no more than '.TRD_PER_PAGE.' threads), have no reports and moderation, and full threads go to archive right away.'
 ));
 $tmp_stop_all = 'Game frozen.';
@@ -141,7 +141,13 @@ $tmp_target_status = array(
 , -1 =>	'This room is renamed or deleted'
 ,	'Your task is empty'
 ,	'This is your task, prolonged'
-,	'This task was dropped, now it\'s yours again'
+,	'This task was dropped, now it\'s yours'
+);
+$tmp_time_limit = 'Time limit';
+$tmp_time_units = array(
+	3600 =>	array('hour', 'hours')
+,	60 => 	array('minute', 'minutes')
+,	0 =>	array('second', 'seconds')
 );
 $tmp_title = ($tmp_title_var ? 'Doodle Mutator' : 'Mekurage: Endless Strand');
 $tmp_took = ', took %s sec.';

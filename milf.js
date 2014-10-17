@@ -41,7 +41,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 	,	imgLimits: {width:[64,640], height:[64,800]}
 	,	lineCaps: {lineCap:0, lineJoin:0}
 	,	shapeFlags: [1,10,2,2,2,4]
-	,	clipBorder: ['', '#123', '#5ea', '#5ae', '#ff0', '#f40']
+	,	clipBorder: ['', '#123', '#5ea']//, '#5ae', '#ff0', '#f40']
 	,	options: {
 			shape	: ['line', 'poly', 'rectangle', 'circle', 'ellipse', 'pan']
 		,	lineCap	: ['round', 'butt', 'square']

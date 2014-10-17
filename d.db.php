@@ -652,7 +652,7 @@ if (TIME_PARTS) time_check_point('done trd '.$fn);
 	return array($threads, $reports);
 }
 
-function data_check_my_task($status = 0) {
+function data_check_my_task($aim = 0) {
 global	$u_num, $u_flag, $u_task, $u_t_f, $room, $target;
 	if ($u_flag['nop']) return '';
 	$u_task = (is_file($u_t_f = DIR_DAUS."/$u_num.task") ? fln($u_t_f) : array());
@@ -668,23 +668,24 @@ global	$u_num, $u_flag, $u_task, $u_t_f, $room, $target;
 			break;
 		}
 	} else unset($u_task[$k]);
-	if ($status) {
-		if (!is_dir($d = DIR_ROOM.$room.'/')) return -1;	//* <- room deleted or renamed
-		if (!$tt || !preg_match(TRD_PLAY, $tt, $m)) return 0;	//* <- empty target
-		$a = array(
-			1 => $tt					//* <- own target still owned
-		,	2 => $m[1].$m[6]				//* <- taken and dropped by others
-		);
-		foreach ($a as $k => $v) if (is_file($v = $d.$v)) {	//* <- retake for new interval
-			$t = T0+($target['pic'] ? TARGET_DESC_TIME : TARGET_DRAW_TIME);
-			$t = "$m[1].u$u_num.t$t$m[6]";
-			rename($v, $d.$t);
-			data_put($u_t_f, BOM."$target[time]	$room	$t	$target[post]".NL.implode(NL, $u_task));
-			return $k;
-		}
-		return -2;						//* <- still taken or fulfilled
+	if ($aim) return $tt;
+
+	if (!is_dir($d = DIR_ROOM.$room.'/')) return -1;	//* <- room deleted or renamed
+	if (!$tt || !preg_match(TRD_PLAY, $tt, $m)) return 0;	//* <- empty target
+	$a = array(
+		1 => $tt					//* <- own target still owned
+	,	2 => $m[1].$m[6]				//* <- taken and dropped by others
+	);
+	foreach ($a as $k => $v) if (is_file($v = $d.$v)) {	//* <- retake for new interval
+		$td = ($target['pic'] ? TARGET_DESC_TIME : TARGET_DRAW_TIME);
+		if ($m[4] && $target['time'] && ($td < $m[4] - $target['time'])) $td =  TARGET_LONG_TIME;
+		$t = T0+$td;
+		$t = "$m[1].u$u_num.t$t$m[6]";
+		rename($v, $d.$t);
+		data_put($u_t_f, BOM."$target[time]	$room	$t	$target[post]".NL.implode(NL, $u_task));
+		return array($k, $td);
 	}
-	return $tt;
+	return -2;						//* <- still taken or fulfilled
 }
 
 function data_aim($unknown_1st = 0, $skip_list = 0) {
@@ -693,7 +694,7 @@ global	$u_num, $u_flag, $u_task, $u_t_f, $room, $target, $file_cache;
 	if ($u_flag['nop'] || !is_dir($d = DIR_ROOM.$room.'/')) return;
 
 //* check personal target list
-	$tt = data_check_my_task();
+	$tt = data_check_my_task(1);
 	if (POST || GET_Q) return;
 
 	if (!$tt

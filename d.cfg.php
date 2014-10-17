@@ -60,6 +60,7 @@ define(DRAW_REST, ';restyle=body,#task;restmin=document.body.firstElementChild')
 define(TARGET_CHANGE_TIME, 600);//* 10min
 define(TARGET_DESC_TIME, 1200);	//* 20min
 define(TARGET_DRAW_TIME, 7200);	//* 2h
+define(TARGET_LONG_TIME, 86400);//* 24h
 define(TRD_ARCH_TIME, 86400);	//* 24h
 define(TRD_MAX_POSTS, 10);
 define(TRD_MAX_COUNT, 30);

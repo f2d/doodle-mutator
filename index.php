@@ -473,7 +473,11 @@ if ($u_key) {
 			if ($etc[0] == '-') {
 				if (strlen($etc) == 1) die(
 data_lock($room)
-? '<meta charset="utf-8"><title>'.$tmp_target_status[data_check_my_task(1)].'</title><!--'.date(TIMESTAMP, T0).'-->'
+? '<meta charset="utf-8"><title>'.(
+	is_array($t = data_check_my_task())
+		? $tmp_target_status[$t[0]].'. '.$tmp_time_limit.': '.format_time_units($t[1])
+		: $tmp_target_status[$t]
+	).'</title><!--'.date(TIMESTAMP, T0).'-->'
 	.NL.$target['pic']
 	.NL.$target['task']
 : $tmp_post_err);
@@ -624,7 +628,7 @@ if (TIME_PARTS) time_check_point('got visible data, unlocked');
 
 			$task_time = (($mt = $target['time'])?$mt:0);
 			if ($thread) foreach ($thread as $p) foreach ($p as $tab) if ($mt < $tab[1]) $mt = $tab[1];
-			exit_if_not_mod($mt?$mt:T0);
+			exit_if_not_mod($mt);
 
 			list($err_sign, $err_name) = get_req();
 			if (GET_Q && ($err_sign != '!') && !($target['task'])) {
