@@ -512,17 +512,10 @@ preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',			//* <- transform data fields
 preg_replace('~\h+~u', ' ',
 preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)?\s~i', NL.'$1	',			//* <- preserve each multiline entry as one
 preg_replace('~\v+~u', '<br>', NL.htmlspecialchars($a)))));
-								$js[0]++;
 							}
 						}
-						foreach ($l as $ym => $m) {	//* <- array [Y-m][d]
-							$a = '';
-							foreach ($m as $d) $a .= '
-			'.(($t = $ym.'-'.$d) == $etc?$d:'<a href="'.$t.'">'.$d.'</a>');
-							$lnk .= '
-		<p>'.$ym.': '.$a.'
-		</p>';
-						}
+						foreach ($l as $ym => $d) $lnk .= '
+		<p>'.$ym.'-'.implode(',', $d).'</p>';
 					} else $done = $tmp_empty;
 				} else
 				if ($etc == 2) {
@@ -583,7 +576,6 @@ if (TIME_PARTS && $a) time_check_point("done $a users");
 						$t = data_get_mod_log($etc);
 					}
 					if ($etc < 5) {
-						$js[0]++;
 						$lnk .= get_template_form(';filter', $task_data['filter'] = 1);
 					}
 					if ($etc == 3) {
@@ -603,18 +595,14 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data
 					} else	$done = ($t?'
 		<textarea>'.$t.'</textarea>':$tmp_empty);
 				}
-				$a = array();
-				foreach ($tmp_mod_pages as $k => $v) $a[] = '
-			'.($etc == $k?($mod_page = $v):'<a href="'.$k.'">'.$v.'</a>').'	';
 				$task = '
-		<p>['.implode('|', $a).']
-		</p>'.$lnk.$done;
+		<p id="tabs">'.implode('|', $tmp_mod_pages).'</p>'.$lnk.$done;
 			} else {
 
 //* report form ---------------------------------------------------------------
 				$task = get_template_form('report', REPORT_MIN_LENGTH, REPORT_MAX_LENGTH, $rt = 1);
-				$js[0]++;
 			}
+			$js[0]++;
 		} else
 
 //* active room task and visible content --------------------------------------
@@ -646,15 +634,22 @@ if (TIME_PARTS) time_check_point('got visible data, unlocked');
 				$flag = 'ackgmp';
 				foreach (array($u_opts[6], !$u_opts[1], $desc && $u_opts[8], GOD, MOD, PIC_SUB) as $k => $v) if ($v) $content .= $flag[$k];
 				$a = array();
+				$b = '<br>';
 if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
 				foreach ($thread as $tid => $post) {
 					$t = '';
 					$k = $post[count($post)][1].'_'.$tid;
 					foreach ($post as $postnum => $tab) {
+						$r = NB;
+						if (!$u_opts[3] && $tab[2]) {
+							$r = explode($b, $tab[2], 2);
+							$r[0] = (isset($usernames[$r[0]])?$usernames[$r[0]]:NB);
+							$r = implode($b, $r);
+						}
 						$ta = array(
-							$u_opts[4]?0:$tab[0]		//* <- userbar color code
-						,	$u_opts[2]?NB:$tab[1]		//* <- take care in JS
-						,	($u_opts[3]||!$tab[2]||!$usernames[$tab[2]])?NB:$usernames[$tab[2]]
+							$u_opts[4]?0:$tab[0]		//* <- trd.num, userbar color code
+						,	$u_opts[2]?NB:$tab[1]		//* <- time: format in JS
+						,	$r				//* <- username
 						,	$tab[4]				//* <- post content
 						);
 					//	if ($ta[1] === NB && $ta[2] === NB) $ta[1] = $ta[2] = ' ';

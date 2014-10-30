@@ -118,10 +118,11 @@ function get_template_form($a, $min = 0, $max = 0, $area = 0) {
 	}
 	if ($min||$max) $name .= ' onKeyUp="submitLimit('.($min?$min:0).($max?','.$max:'').')"';
 	if ($name && $plhd) $name .= ' placeholder="'.$plhd.'"';
+	$name .= ' autofocus';
 	return ($head?'
 		<p>'.$head.'</p>'
 :'').(($name !== false)?(($name === 0 || $method === 0)?'
-		<p><b><input type="text'.($butn?'" id="'.$butn:'').'"'.($name?$name:'').'></b></p>'
+		<p><b><input type="text'.($butn?'" id="'.$butn:'').'"'.$name.'></b></p>'
 :'
 		<form'.$method.'>
 			<b>

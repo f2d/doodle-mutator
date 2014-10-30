@@ -83,45 +83,6 @@ if (lang == 'ru') la = {
 	,	total: 'Total'
 }};
 
-if (((i.length && i[0].type == 'text') || (i = gn('textarea')).length) && (i = i0 = i[0])) {
-	i.focus();
-	if (i.onkeyup) (i.onchange = i.onkeyup)();
-}
-
-if ((i = gn('pre')).length) showContent(i[0]);
-
-if (k) {
-	if ((filter = k.getAttribute('data-filter')) !== null) {
-		j = k.nextSibling;
-		while (!j.tagName) j = j.nextSibling;
-		j.id = 'filter';
-	}
-	if (j = k.getAttribute('data-t')) {
-		if ((i = gn('p',k)).length) i[0].innerHTML +=
-			(((j = j.split('-')).length > 1 && j[1])
-				? '<a class="r" href="-'+j[1]+'" title="'+la.skip_hint+'">「X」</a>'
-				:''
-			)+'<a class="r" href="'+
-			((j[0] && (j = parseInt(j[0])))
-				? 'javascript:checkMyTask()" title="'+new Date(j*1000)+'\r\n'+la.check+'">「<span id="'+cs+'">?</span>'
-				: '?">「'+la.draw
-			)+'」</a>';
-		if ((i = gn('img',k)).length && (i = i[0]) && (j = i.alt.indexOf(';')+1)) i.alt = i.alt
-			.replace(';',', ')
-			.replace('*','x'), setPicResize(i,j);
-	}
-	if (flag.k) k.lastElementChild.innerHTML +=
-		'<span class="r">'+la.checked+': <input type="checkbox" id="ok" onChange="'+i0.getAttribute('onkeyup')+'"></span>';
-	if (i = (j = gn('ul',k)).length) {
-		n = (m = gn('b')).length;
-		while (n--) if (AN.test(m[n].className)) {n = 1; break;}
-		while (i--) if (m = j[i].previousElementSibling) {
-			m.innerHTML = '<a href="javascript:;" onclick="toggleHide(this.parentNode.nextElementSibling)">'+m.innerHTML+'</a>';
-			if (n !== 1) toggleHide(j[i]);
-		}
-	}
-}
-
 function propNameForIE(n) {return n.split('-').map(function(v,i) {return i > 0 ? v.slice(0,1).toUpperCase()+v.slice(1).toLowerCase() : v;}).join('');}
 function getStyleValue(obj, prop) {
 var	o;
@@ -596,5 +557,53 @@ d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.gro
 	if (inout && g != ':') {
 	var	s = 'style', h = gn('header')[0], e = gn(s, h);
 		(e.length ? e[0] : h.appendChild(document.createElement(s))).innerHTML = '.post .center {max-width: 500px;}';
+	}
+}
+
+if (((i.length && i[0].type == 'text') || (i = gn('textarea')).length) && (i = i0 = i[0]) && i.onkeyup) (i.onchange = i.onkeyup)();
+
+if ((i = gn('pre')).length) showContent(i[0]);
+
+if (k) {
+	if ((filter = k.getAttribute('data-filter')) !== null) {
+		j = k.nextSibling;
+		while (!j.tagName) j = j.nextSibling;
+		j.id = 'filter';
+	}
+	if (j = k.getAttribute('data-t')) {
+		if ((i = gn('p',k)).length) i[0].innerHTML +=
+			(((j = j.split('-')).length > 1 && j[1])
+				? '<a class="r" href="-'+j[1]+'" title="'+la.skip_hint+'">「X」</a>'
+				:''
+			)+'<a class="r" href="'+
+			((j[0] && (j = parseInt(j[0])))
+				? 'javascript:checkMyTask()" title="'+new Date(j*1000)+'\r\n'+la.check+'">「<span id="'+cs+'">?</span>'
+				: '?">「'+la.draw
+			)+'」</a>';
+		if ((i = gn('img',k)).length && (i = i[0]) && (j = i.alt.indexOf(';')+1)) i.alt = i.alt
+			.replace(';',', ')
+			.replace('*','x'), setPicResize(i,j);
+	}
+	if (flag.k) k.lastElementChild.innerHTML +=
+		'<span class="r">'+la.checked+': <input type="checkbox" id="ok" onChange="'+i0.getAttribute('onkeyup')+'"></span>';
+	if (i = (j = gn('ul',k)).length) {
+		n = (m = gn('b')).length;
+		while (n--) if (AN.test(m[n].className)) {n = 1; break;}
+		while (i--) if (m = j[i].previousElementSibling) {
+			m.innerHTML = '<a href="javascript:;" onclick="toggleHide(this.parentNode.nextElementSibling)">'+m.innerHTML+'</a>';
+			if (n !== 1) toggleHide(j[i]);
+		}
+	}
+}
+
+if (k = id('tabs')) {
+	function a(r,t) {return '<a href="'+r+(r == l?'" class="at':'')+'">'+t+'</a>';}
+	h = '', l = l.split('/').slice(-1)[0], n = k.textContent.replace(WS, '').split('|'), r = /\d+-\d+-\d+(,\d+)*/;
+	for (i in n) h += (h?'\n|	':'')+a(+i+1, n[i]);
+	k.innerHTML = '[	'+h+'	]';
+	while ((k = k.nextElementSibling) && r.test(j = k.textContent.replace(WS, ''))) {
+		j = j.split('-'), n = j.pop(), n = n.split(','), h = (j = j.join('-'))+':';
+		for (i in n) h += '\n'+a(j+'-'+n[i], n[i]);
+		k.innerHTML = h;
 	}
 }

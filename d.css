@@ -41,6 +41,10 @@ a:hover	{		color: #000;}
 	background-color: #ace;
 	color: #fff;
 }
+.at, a.at {
+	background-color: #999;
+	color: #eee;
+}
 .room {	padding: 0 8px;
 	background-color: #def;
 }
