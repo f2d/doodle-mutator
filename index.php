@@ -2,21 +2,24 @@
 define(T0, end($t = explode(' ',microtime())));
 define(ME, 'me');
 define(POST, 'POST' == $_SERVER['REQUEST_METHOD']);
-define(GET_Q, strpos($_SERVER['REQUEST_URI'], '?'));
 
 if (POST) {
 	if (!isset($_REQUEST[ME])) goto post_refresh;	//* <- no anonymous posting
 	ignore_user_abort(true);
 }
-define(M0, $t[0]);
-define(NAMEPRFX, 'd');
-define(ROOTPRFX, substr($s = $_SERVER['PHP_SELF'], 0, strrpos($s, '/')+1));
-
 function time_check_point($comment) {global $tcp; $tcp[microtime()] = $comment;}
 
 time_check_point('inb4 cfg');
 ob_start();
+
+define(NAMEPRFX, 'd');
+define(M0, $t[0]);
+define(GET_Q, strpos($_SERVER['REQUEST_URI'], '?'));
+define(ROOTPRFX, substr($s = $_SERVER['PHP_SELF'], 0, strrpos($s, '/')+1));
+
 require(NAMEPRFX.'.cfg.php');
+foreach ($cfg_dir as $k => $v) define('DIR_'.strtoupper($k), $v.'/');
+
 require(NAMEPRFX.'.fu.php');
 require(NAMEPRFX.'.db.php');
 
@@ -66,7 +69,7 @@ if ($me = $_REQUEST[ME]) {
 		if (POST) $post_status = OQ.$tmp_post_ok_user_qk;
 	}
 	foreach ($opt_lvls as $i => $a) if (${$p = "u_opt$i"})
-	foreach (${'cfg_opts_'.$a.'_order'} as $k => $v) $u_opts[$v] = intval($$p[$k]);
+	foreach ($cfg_opts_order[$a] as $k => $v) $u_opts[$v] = intval($$p[$k]);
 }
 define(GOD, $u_flag['god']?1:0);
 define(TIME_PARTS, !$u_opts['time_check_points']);		//* <- profiling
@@ -141,11 +144,11 @@ if ($u_key) {
 		if (strlen($_POST[$p]) > 1) $u_opti = 'd';
 		else {
 			foreach ($opt_lvls as $k => $v) {
-				${$p = 'u_opt'.$k} = '';
-				foreach (${'cfg_opts_'.$v.'_order'} as $o) $$p .= ($_POST[O.abbr($o)]?1:0);
-				$$p = rtrim($$p, 0);
+				$p = '';
+				foreach ($cfg_opts_order[$v] as $o) $p .= ($_POST[O.abbr($o)]?1:0);
+				${'u_opt'.$k} = rtrim($p, 0);
 			}
-			foreach ($cfg_opts_input_order as $v) if (isset($_POST[$p = O.abbr($v)])) ${'u_'.$v} = $_POST[$p];
+			foreach ($cfg_opts_order['input'] as $v) if (isset($_POST[$p = O.abbr($v)])) ${'u_'.$v} = $_POST[$p];
 		}
 	} else
 	if (!$qd_room || !$room);		//* <- no posting outside room
@@ -441,9 +444,9 @@ if ($u_key) {
 		$s = ':	';
 		$a = $b = $c = '';
 		if (GOD)
-		foreach ($cfg_opts_admin_order as $k => $v) $a .= NL."$tmp_options_admin[$v]$s".abbr($v).'='.($u_opta[$k]?1:'');
-		foreach ($cfg_opts_input_order as $k => $v) $b .= NL."$tmp_options_field[$v]$s".abbr($v).'='.($$v?$$v:'='.${'u_'.$v});
-		foreach ($cfg_opts_check_order as $k => $v) $c .= NL."$tmp_options_show[$v]$s".abbr($v).'='.($u_opti[$k]?1:'');
+		foreach ($cfg_opts_order['admin'] as $k => $v) $a .= NL."$tmp_options_admin[$v]$s".abbr($v).'='.($u_opta[$k]?1:'');
+		foreach ($cfg_opts_order['input'] as $k => $v) $b .= NL."$tmp_options_field[$v]$s".abbr($v).'='.($$v?$$v:'='.${'u_'.$v});
+		foreach ($cfg_opts_order['check'] as $k => $v) $c .= NL."$tmp_options_show[$v]$s".abbr($v).'='.($u_opti[$k]?1:'');
 		$i = '
 |<input type="submit" value="';
 
