@@ -519,7 +519,7 @@ global	$u_num, $u_flag, $room, $merge;
 			if (count($l) > ($n = $a[1])) {
 				$ok .= '
 old = '.$l[$n];
-				$tc = substr_count($msg = preg_replace('~[ \v]+~', ' ', $msg), '	');
+				$tc = substr_count($msg = preg_replace('~[ \v]+~u', ' ', $msg), '	');
 				if ($un > 1) {	//* <- replace
 					$l[$n] = ($tc > 1?'':substr($prfx = str_replace(IMG, TXT, $l[$n]), 0, strrpos($prfx, TXT)).($tc?IMG:TXT));
 				} else		//* <- insert
@@ -610,6 +610,7 @@ global	$u_num, $u_flag, $room;
 	$u_chars = array('ban', 'god', 'mod', 'mod_'.$room, 'nor');
 	$threads = array();
 	$reports = array();
+	$last = 0;
 	$sd = array_diff(scandir($d), array('.', '..'));
 if (TIME_PARTS) time_check_point('done scan'.NL);
 	foreach ($sd as $fn) if (is_file($f = $d.$fn) && ($f = data_cache($f))) {
@@ -624,6 +625,7 @@ if (TIME_PARTS) time_check_point('done scan'.NL);
 			$posts = array(0);
 			foreach (explode(NL, $f) as $line) if (strpos($line = trim($line), '	')) {
 				$tab = explode('	', $line);
+				if ($last < ($t = intval($tab[0]))) $last = $t;
 
 				if (!($f = (($u = $tab[1]) == $u_num?'u':0)) && MOD) {	//* <- mods see other's status as color
 					if (!isset($u_cache[$u])) {
@@ -643,13 +645,20 @@ if (TIME_PARTS) time_check_point('done scan'.NL);
 
 			if ((MOD || $frz) && is_file($r = DIR_DOOM.$room."/$n[2].report.txt")) {
 				$repl = array();
-				foreach (fln($r) as $line) if (count($tab = explode('	', $line, 4)) > 3) $repl[$tab[1]][$tab[2]][$tab[0]] = $tab[3];
+				foreach (fln($r) as $line) if (count($tab = explode('	', $line, 4)) > 3) {
+					if ($last < ($t = intval($tab[0]))) $last = $t;
+					$repl
+					[$tab[1]]	//* row (postnum)
+					[$tab[2]]	//* column (left/right)
+					[$t]		//* time
+					= $tab[3];	//* content
+				}
 				$reports[$f] = $repl;
 			}
 		}
-if (TIME_PARTS) time_check_point('done trd '.$fn);
+if (TIME_PARTS) time_check_point("done trd $fn, last = $last");
 	}
-	return array($threads, $reports);
+	return array($threads, $reports, $last);
 }
 
 function data_check_my_task($aim = 0) {

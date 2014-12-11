@@ -11,11 +11,10 @@ if (POST) {
 define(M0, $t[0]);
 define(NAMEPRFX, 'd');
 define(ROOTPRFX, substr($s = $_SERVER['PHP_SELF'], 0, strrpos($s, '/')+1));
-define(TIME_PARTS, $_REQUEST[ME.'_tcp']);		//* <- profiling
 
 function time_check_point($comment) {global $tcp; $tcp[microtime()] = $comment;}
 
-if (TIME_PARTS) time_check_point('inb4 cfg');
+time_check_point('inb4 cfg');
 ob_start();
 require(NAMEPRFX.'.cfg.php');
 require(NAMEPRFX.'.fu.php');
@@ -23,7 +22,7 @@ require(NAMEPRFX.'.db.php');
 
 //* copycat from http://www.dyeager.org/blog/2008/10/getting-browser-default-language-php.html
 if (isset($_SERVER[$h = 'HTTP_ACCEPT_LANGUAGE'])) {
-	foreach (explode(',', $_SERVER[$h]) as $v) if (preg_match('~(\S+);q=([.\d]+)~i', $v, $m)) {
+	foreach (explode(',', $_SERVER[$h]) as $v) if (preg_match('~(\S+);q=([.\d]+)~ui', $v, $m)) {
 		$a[$m[1]] = (float)$m[2];
 	} else	$a[$v] = 1.0;
 //* check for highest q-value. No q-value means 1 by rule
@@ -37,14 +36,25 @@ require(NAMEPRFX.".cfg.$lang.php");
 define(FROZEN_HELL, data_global_announce('stop'));
 data_log_ref();
 ob_end_clean();
-if (TIME_PARTS) time_check_point('after cfg');
+time_check_point('after cfg');
+
+$opt_sufx = 'aopu';
+$opt_name = array('opta', 'opti', 'per_page', 'draw_max_undo');
+$opt_lvls = array('a' => 'admin', 'i' => 'check');
 
 if ($me = $_REQUEST[ME]) {
-	if (false !== strpos($me, '/')) {
-		list($u_qk, $u_opts, $u_room_home, $u_draw_app) = explode('/', $me, 4);
-		list($u_opts, $u_per_page, $u_draw_max_undo) = explode(false !== strpos($u_opts, '_')?'_':'.', $u_opts);
+	if (false === strpos($me, '/')) {
+		list($u_qk, $u_opti, $u_per_page, $u_room_home) = explode('_', $me, 4);		//* <- v1, one separator is not enough
 	} else {
-		list($u_qk, $u_opts, $u_per_page, $u_room_home) = explode('_', $me, 4);
+		list($u_qk, $u_opti, $u_room_home, $u_draw_app) = explode('/', $me, 4);
+		if (false !== strpos($u_opti, $sep = '_')
+		||  false !== strpos($u_opti, $sep = '.')) {
+			list($u_opti, $u_per_page, $u_draw_max_undo) = explode($sep, $u_opti);	//* <- v2 opts = plain ordered numbers, not enough
+		} else
+		if (preg_match_all('~(\d+)(\D)~', $u_opti, $m)) {	//* <- v3 opts = '01adm_0010opt_30per_page_99undo', or '0a1o2p3u', in any order
+			$u_opti = '';
+			foreach ($m[1] as $k => $v) if (false !== ($i = strpos($opt_sufx, $m[2][$k]))) ${'u_'.$opt_name[$i]} = $v;
+		}
 	}
 	if (($q = trim($_POST[ME])) && $u_qk != $q) $u_qk = $q;
 	if ($u_qk && data_check_u($u_qk, $q)) {
@@ -56,8 +66,11 @@ if ($me = $_REQUEST[ME]) {
 ,	'body' => 'burnt-hell')));
 		if (POST) $post_status = OQ.$tmp_post_ok_user_qk;
 	}
+	foreach ($opt_lvls as $i => $a)
+	foreach (${'cfg_opts_'.$a.'_order'} as $k => $v) $u_opts[$v] = intval(${"u_opt$i"}[$k]);
 }
 define(GOD, $u_flag['god']?1:0);
+define(TIME_PARTS, !$u_opts['time_check_points']);		//* <- profiling
 
 if (!($u_per_page = intval($u_per_page))) $u_per_page = TRD_PER_PAGE;
 $etc = trim($_REQUEST['etc'], '/');
@@ -126,11 +139,13 @@ if ($u_key) {
 	} else
 	if (isset($_POST[$p = O.'o'])) {	//* <- options work, no matter whatever else
 		$post_status = OQ.$tmp_post_ok_user_opt;
-		if (strlen($_POST[$p]) > 1) $u_opts = 'd'; else {
-			$u_opts = '';
-			foreach (str_split('hctnouask') as $o) $u_opts .= ($_POST[O.$o]?1:0);
-			foreach (explode(',','draw_app,draw_max_undo,per_page,room_home') as $o)
-				if (isset($_POST[$p = O.abbr($o)])) ${'u_'.$o} = $_POST[$p];
+		if (strlen($_POST[$p]) > 1) $u_opti = 'd'; else {
+			foreach ($opt_lvls as $k => $v) {
+				${$p = 'u_opt'.$k} = '';
+				foreach (${'cfg_opts_'.$v.'_order'} as $o) $$p .= ($_POST[O.abbr($o)]?1:0);
+				$$p = rtrim($$p, 0);
+			}
+			foreach ($cfg_opts_input_order as $v) if (isset($_POST[$p = O.abbr($v)])) ${'u_'.$v} = $_POST[$p];
 		}
 	} else
 	if (!$qd_room || !$room);		//* <- no posting outside room
@@ -175,7 +190,7 @@ if ($u_key) {
 			$a = explode(',', 'app,length,t0,time,used');
 			$x = preg_split('~\v+~u', $txt);
 			$y = array();
-			foreach ($x as $line) if (preg_match('~^(\w+)[\s:=]+(.+)$~', $line, $m) && in_array($k = strtolower($m[1]), $a)) $y[$k] = $m[2];
+			foreach ($x as $line) if (preg_match('~^(\w+)[\s:=]+(.+)$~u', $line, $m) && in_array($k = strtolower($m[1]), $a)) $y[$k] = $m[2];
 			if ($y['length'] && $y['length'] != $ppl) {
 				$post_status = 'file_part';
 				$log = $ppl.' bytes';
@@ -402,7 +417,7 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 		<p class="hint">'.$tmp_draw_hint.'</p>').'<noscript>
 		<p class="hint">'.$tmp_require_js.'</p></noscript>';
 		$subtask = '
-		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.DRAW_REST.($u_opts[7]?'':';saveprfx='.NAMEPRFX).'"></script>
+		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.DRAW_REST.($u_opti[7]?'':';saveprfx='.NAMEPRFX).'"></script>
 		<div class="task">
 			<p class="hint">'.$n['list'].'</p>
 		</div>';
@@ -415,7 +430,8 @@ if ($u_key) {
 		$nst = '
  	 	';
 		$draw_app = (($s = array_search($u_draw_app, $cfg_draw_app))?$s:0)
-.':'.implode('|', $cfg_draw_app).':'.implode('|', $tmp_draw_app).':?*:'//':'.ROOTPRFX.'*.htm:'
+.':'.implode('|', $cfg_draw_app).':'.implode('|', $tmp_draw_app).':?*:'
+//':'.ROOTPRFX.'*.htm:'
 .$tmp_draw_test;
 		if (!$u_draw_max_undo) $u_draw_max_undo = DRAW_MAX_UNDO;
 		if (!$u_room_home) {
@@ -423,11 +439,11 @@ if ($u_key) {
 			if (!$qdir) $o1 = "$nst<br>$nst<b class=\"anno\">$tmp_options_first</b>$nst<br>";
 		}
 		$s = ':	';
-
-		foreach (explode(',', 'draw_app,draw_max_undo,per_page,room_home') as $o) $content .= '
-'.$tmp_options_field[$o].$s.abbr($o).'='.($$o?$$o:'='.${'u_'.$o});
-		foreach (explode(',', 'head,count,times,names,own,unknown,active,save1forall,kbox') as $i => $o) $content .= '
-'.$tmp_options_show[$o].$s.abbr($o).'='.($u_opts[$i]?$u_opts[$i]:'');
+		$a = $b = $c = '';
+		if (GOD)
+		foreach ($cfg_opts_admin_order as $k => $v) $a .= NL."$tmp_options_admin[$v]$s".abbr($v).'='.($u_opta[$k]?1:'');
+		foreach ($cfg_opts_input_order as $k => $v) $b .= NL."$tmp_options_field[$v]$s".abbr($v).'='.($$v?$$v:'='.${'u_'.$v});
+		foreach ($cfg_opts_check_order as $k => $v) $c .= NL."$tmp_options_show[$v]$s".abbr($v).'='.($u_opti[$k]?1:'');
 		$i = '
 |<input type="submit" value="';
 
@@ -438,9 +454,9 @@ if ($u_key) {
 .$i.$tmp_options_reset.'" name="'.O.'o">
 </form><form method="post">'
 .NL.$tmp_options_name.$s.$usernames[$u_num]
-.NL.$tmp_options_qk.$s.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">'.$content
+.NL.$tmp_options_qk.$s.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">'.$b.$c
 .NL.$tmp_options_time.$s.date('e, T, P')
-.($u_flag ? NL.$tmp_options_flags.$s.implode(', ', $u_flag) : '')
+.($u_flag ? NL.$tmp_options_flags.$s.implode(', ', $u_flag) : '').$a
 .$i.$tmp_options_apply.'">
 </form>';
 		foreach ($tmp_rules as $head => $hint) {
@@ -499,23 +515,27 @@ data_lock($room)
 					die('<html><head><meta charset="utf-8"><title>'.$tmp_mod_pages[3].': #'.$a.'</title></head>
 <body><pre>'.date(TIMESTAMP, T0).NL.(($a = data_check_user_info($a))?$a:$tmp_empty).'</pre></body></html>');
 				}
-
 				$lnk = $done = '';
-				if (($ymd = preg_match(PAT_DATE, $etc, $m))	//* <- Y-m-d
-				|| $etc == 1) {
+				$ymd = preg_match(PAT_DATE, $etc, $m);		//* <- Y-m-d
+				if (!($mod_page = $tmp_mod_pages[intval($etc)])) $mod_page = $tmp_empty;
+				if ($ymd || $etc == 1) {
 					if ($l = data_get_mod_log()) {
 						if ($ymd) {
-							exit_if_not_mod(data_get_mod_log($mod_page = $etc, 1));
-							if ($a = data_get_mod_log($etc)) {
-								$content = 'rep'.
+							exit_if_not_mod(data_get_mod_log($etc, 1));
+							if ($a = data_get_mod_log($mod_page = $etc)) $content = 'rep'.
 preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',			//* <- transform data fields
 preg_replace('~\h+~u', ' ',
-preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)?\s~i', NL.'$1	',			//* <- preserve each multiline entry as one
+preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)?\s~ui', NL.'$1	',		//* <- keep multiline entries atomic
 preg_replace('~\v+~u', '<br>', NL.htmlspecialchars($a)))));
-							}
 						}
-						foreach ($l as $ym => $d) $lnk .= '
-		<p>'.$ym.'-'.implode(',', $d).'</p>';
+
+						$last = end(end($l));
+						$last = data_get_mod_log(key($l).'-'.$last, 1);
+						if (!$ymd) exit_if_not_mod($last);
+
+						foreach ($l as $ym => $d) $lnk .= ($lnk?'</p>':'').'
+		<p>'.$ym.'-'.implode(',', $d);
+						$lnk .= date(' (H:i:s)', $last).'</p>';
 					} else $done = $tmp_empty;
 				} else
 				if ($etc == 2) {
@@ -580,7 +600,7 @@ if (TIME_PARTS && $a) time_check_point("done $a users");
 					}
 					if ($etc == 3) {
 						$js['.mod'] = 0;
-					//	$a = ($u_opts[6]?'a':'').($u_opts[1]?'':'c');
+					//	$a = ($u_opti[6]?'a':'').($u_opti[1]?'':'c');
 						$content .= "$tmp_mod_user_info:$tmp_mod_user_hint::ugc
 0,u	&nbsp;	 	$u_num.
 
@@ -609,14 +629,14 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data
 		if ($room) {
 			data_lock($room);
 if (TIME_PARTS) time_check_point('inb4 aim, locked');
-			data_aim(!$u_opts[5], get_room_skip_list());
-			list($thread, $report) = data_get_visible_threads();
+			data_aim(!$u_opti[5], get_room_skip_list());
+			list($thread, $report, $last) = data_get_visible_threads();
 			data_unlock();
 if (TIME_PARTS) time_check_point('got visible data, unlocked');
 
-			$task_time = (($mt = $target['time'])?$mt:0);
-			if ($thread) foreach ($thread as $p) foreach ($p as $tab) if ($mt < $tab[1]) $mt = $tab[1];
-			exit_if_not_mod($mt);
+			$t = $target['time'];
+			exit_if_not_mod($t > $last?$t:$last);
+			$task_time = ($t?$t:0);
 
 			list($err_sign, $err_name) = get_req();
 			if (GET_Q && ($err_sign != '!') && !($target['task'])) {
@@ -632,7 +652,7 @@ if (TIME_PARTS) time_check_point('got visible data, unlocked');
 ? $tmp_mod_post_hint   .':'.$tmp_mod_user_hint : (R1 || $u_flag['nor']?':'
 : $tmp_report_post_hint.':'.$tmp_report_user_hint)).':'.ROOTPRFX.DIR_PICS.':';
 				$flag = 'ackgmp';
-				foreach (array($u_opts[6], !$u_opts[1], $desc && $u_opts[8], GOD, MOD, PIC_SUB) as $k => $v) if ($v) $content .= $flag[$k];
+				foreach (array($u_opti[6], !$u_opti[1], $desc && $u_opti[8], GOD, MOD, PIC_SUB) as $k => $v) if ($v) $content .= $flag[$k];
 				$a = array();
 				$b = '<br>';
 if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
@@ -640,15 +660,19 @@ if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
 					$t = '';
 					$k = $post[count($post)][1].'_'.$tid;
 					foreach ($post as $postnum => $tab) {
-						$r = NB;
-						if (!$u_opts[3] && $tab[2]) {
+						if ($u_opti[2] && $tab[1]) {
+							$l = explode($b, $tab[1], 2);
+							$l[0] = NB;
+							$l = implode($b, $l);
+						} else $l = $tab[1];
+						if ($tab[2]) {
 							$r = explode($b, $tab[2], 2);
-							$r[0] = (isset($usernames[$r[0]])?$usernames[$r[0]]:NB);
+							$r[0] = (!$u_opti[3] && isset($usernames[$r[0]])?$usernames[$r[0]]:NB);
 							$r = implode($b, $r);
-						}
+						} else $r = NB;
 						$ta = array(
-							$u_opts[4]?0:$tab[0]		//* <- trd.num, userbar color code
-						,	$u_opts[2]?NB:$tab[1]		//* <- time: format in JS
+							$u_opti[4]?0:$tab[0]		//* <- trd.num, userbar color code
+						,	$l				//* <- time: format in JS
 						,	$r				//* <- username
 						,	$tab[4]				//* <- post content
 						);
@@ -657,7 +681,7 @@ if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
 						if (/*MOD &&*/ is_array($r = $report[$tid][$postnum])) {
 							foreach ($r as $col => $l)
 							foreach ($l as $time => $line)
-							$ta[$col+1] .= '<br>'.intval($time).': '.$line;
+							$ta[$col+1] .= "<br>$time: $line";
 						}
 						$t .= (($postnum != 1)||$u_flag['nor']||(R1&&!MOD)?NL:NL.$tid.',').implode('	', $ta);
 					}
@@ -685,7 +709,7 @@ if (TIME_PARTS) time_check_point('after sort + join');
 				} else $task_time = '-';
 			} else {
 				$f = "t0=$task_time;send".DRAW_REST;
-				if (!$u_opts[7]) $f .= ';saveprfx='.NAMEPRFX;
+				if (!$u_opti[7]) $f .= ';saveprfx='.NAMEPRFX;
 				if (DRAW_JPG_PREF) $f .= ';jp='.DRAW_JPG_PREF;
 				if ($u_draw_max_undo) $f .= ';undo='.$u_draw_max_undo;
 				if ($err_sign && $err_sign != '!') {
@@ -719,18 +743,18 @@ if (TIME_PARTS) time_check_point('after sort + join');
 				exit_if_not_mod(array_shift($vr));
 
 				$rda = ROOTPRFX.DIR_ARCH;
-				$s = ($u_opts[1]?' ':', ');
-				$content = "$rda*$s*$cfg_room".($u_opts[1]?'':"
+				$s = ($u_opti[1]?' ':', ');
+				$content = "$rda*$s*$cfg_room".($u_opti[1]?'':"
 $tmp_room_count_threads	$tmp_room_count_posts");
 				foreach ($vr as $rn => $n) {
-					if ($u_opts[1]) {
+					if ($u_opti[1]) {
 						if ($n[7]) foreach ($n[7] as $v) $rn .= $s.($v?'?':0);
 						$content .=
 NL.($n[2]?'*':NB).'	'.NB."	$rn";
 					} else {
 						if ($n[7]) $rn .= $s.implode($s, $n[7]);	//* <- colored counts of reports, frozen, etc
 						if ($n[2]) $n[1] .= $s.$n[2];
-						if (!$u_opts[2]) {
+						if (!$u_opti[2]) {
 							if ($n[2]
 							&&  $n[3]) $n[1] .= $s.date(TIMESTAMP, $n[3]);	//* <- last archived
 							if ($n[6]) $n[5] .= $s.date(TIMESTAMP, $n[6]);	//* <- last active post
@@ -741,7 +765,7 @@ NL."$n[0]$s$n[1]	$n[4]$s$n[5]	$rn";
 					if ($n[8]) {
 						foreach ($n[8] as $k => $v) if ($k) $n[8][$k] = "$tmp_announce[$k]: $v"; else $content .= '/';
 						$content .=
-'/'.preg_replace('~\s+~', ' ', preg_replace('~<[^>]*>~', '', preg_replace('~<br[ /]*>~i', NL, implode(NL, $n[8]))));	//* <- announce/frozen
+'/'.preg_replace('~\s+~u', ' ', preg_replace('~<[^>]*>~', '', preg_replace('~<br[ /]*>~i', NL, implode(NL, $n[8]))));	//* <- announce/frozen
 					}
 				}
 			}
@@ -767,7 +791,7 @@ NL."$n[0]$s$n[1]	$n[4]$s$n[5]	$rn";
 
 $room_title = ($room == ROOM_DEFAULT ? $tmp_room_default : $tmp_room.' '.$room);
 $s = array();
-foreach (($short = $u_opts[0])
+foreach (($short = $u_opti[0])
 	? array('/','..','.','a','?','?','#')
 	: array($tmp_title, $tmp_rooms, $room_title, $tmp_archive, $tmp_options, $tmp_draw_test, $tmp_mod_panel)
 as $v) $s[] = $v.($short||(substr($v, -1) == '.')?'':'.').'</a>';
@@ -775,7 +799,7 @@ $r = ($a = '
 			<a href="').($qd_room ? ($room?'..':'.') : $cfg_room).'">'.$s[1];
 
 //* timings -------------------------------------------------------------------
-if (!MOD || !is_array($tcp)) $tcp = 0;
+if (!MOD || !TIME_PARTS || !is_array($tcp)) $tcp = 0;
 $t = explode(' ',microtime());
 $t = ($t[1]-T0) + ($t[0]-M0);
 $took = date(TIMESTAMP, T0).sprintf($tmp_took, ($tcp?'<a href="javascript:'.(++$js[0]).',toggleHide(took)">'.$t.'</a>':$t));
@@ -830,8 +854,8 @@ die(get_template_page(array(
 ,	'task' => $task?$task:'Err... What?'
 ,	'subtask' => $subtask
 ,	'content' => $content
-,	'footer' => $rt?'':($u_opts[2] || !$u_key?'':'
-		<p class="l hint">'.$took.'</p>').($u_opts[3] || !constant('FOOT_NOTE')?'':'
+,	'footer' => $rt?'':($u_opti[2] || !$u_key?'':'
+		<p class="l hint">'.$took.'</p>').($u_opti[3] || !constant('FOOT_NOTE')?'':'
 		<p class="r hint">'.vsprintf(FOOT_NOTE, $tmp_foot_notes).'</p>')
 ,	'js' => $js
 )));
@@ -860,15 +884,16 @@ $l = (($room = $_POST['rooms']) && ($room = trim_room(urldecode($room)))
 );
 if ($ok) {
 	if ($u_key) {
-		$q = ($u_key[0] == 'q');
+		$q = ($u_key[0] === 'q');
 		$h = 'Set-Cookie: ';
 		$x = '; expires='.gmdate(DATE_COOKIE, T0 + ($q?-1234:QK_EXPIRES)).'; Path='.ROOTPRFX;
 		$r = trim_room($u_room_home);
-		header($h.ME.'='.$u_key.(
-			($q || $u_opts[0] == 'd')
-			? ''
-			: "/$u_opts.$u_per_page.$u_draw_max_undo/$r/$u_draw_app"
-		).$x);
+		$o = '';
+		if (!$q || $u_opti[0] !== 'd') {
+			foreach ($opt_name as $k => $v) if (${$n = "u_$v"}) $o .= $$n.$opt_sufx[$k];
+			$o = "/$o/$r/$u_draw_app";
+		}
+		header($h.ME."=$u_key$o$x");
 		if ($add_qk) header($h.$add_qk.$x);
 	}
 } else $l .= '?!='.$p;

@@ -45,6 +45,9 @@ $tmp_name_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters.';
 $tmp_name_yourself = 'Name yourself:';
 $tmp_no_play_hint = 'Game playing turned off for you (no taking targets).';
 $tmp_options = 'Options';
+$tmp_options_admin = array(
+	'time_check_points'	=> 'Work time check points in footer'
+);
 $tmp_options_apply = 'Apply';
 $tmp_options_field = array(
 	'draw_app'	=> 'Sketcher variant'
@@ -62,11 +65,12 @@ $tmp_options_reset = 'Reset options';
 $tmp_options_show = array(
 	'active'	=> 'Autohide visible threads, if more than 1'
 ,	'count'	=> 'Show contents count'
+,	'focus'	=> 'Autofocus on text input fields'
 ,	'head'	=> 'Show full header'
 ,	'names'	=> 'Show poster names'
 ,	'kbox'	=> 'Skip description confirmation'
 ,	'own'	=> 'Mark own posts'
-,	'save1forall'	=> 'All draw apps share common save slots'
+,	'save2common'	=> 'All draw apps share common save slots'
 ,	'times'		=> 'Show post dates'
 ,	'unknown'	=> 'Prefer tasks from unknown threads'
 );
@@ -145,7 +149,9 @@ $tmp_target_status = array(
 );
 $tmp_time_limit = 'Time limit';
 $tmp_time_units = array(
-	3600 =>	array('hour', 'hours')
+/*	31536000 =>	array('year', 'years')
+,	86400 =>	array('day', 'days')
+,*/	3600 =>	array('hour', 'hours')
 ,	60 => 	array('minute', 'minutes')
 ,	0 =>	array('second', 'seconds')
 );

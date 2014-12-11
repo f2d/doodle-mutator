@@ -92,7 +92,7 @@ var	o;
 }
 
 function showProps(o, z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; alert(t); return o;}
-function gn(n,d) {return (d?d:document).getElementsByTagName(n);}
+function gn(n,p) {return (p||document).getElementsByTagName(n);}
 function gi(d) {return gn('input',d);}
 function id(i) {return document.getElementById(i);}
 function deleteCookie(c) {document.cookie = c+'=; expires=Thu, 01 Jan 1970 00:00:01 GMT; Path='+rootPath;}
@@ -598,12 +598,12 @@ if (k) {
 
 if (k = id('tabs')) {
 	function a(r,t) {return '<a href="'+r+(r == l?'" class="at':'')+'">'+t+'</a>';}
-	h = '', l = l.split('/').slice(-1)[0], n = k.textContent.replace(WS, '').split('|'), r = /\d+-\d+-\d+(,\d+)*/;
+	h = '', l = l.split('/').slice(-1)[0], n = k.textContent.replace(WS, '').split('|'), r = /\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
 	for (i in n) h += (h?'\n|	':'')+a(+i+1, n[i]);
 	k.innerHTML = '[	'+h+'	]';
 	while ((k = k.nextElementSibling) && r.test(j = k.textContent.replace(WS, ''))) {
 		j = j.split('-'), n = j.pop(), n = n.split(','), h = (j = j.join('-'))+':';
-		for (i in n) h += '\n'+a(j+'-'+n[i], n[i]);
+		for (i in n) h += '\n'+a(j+'-'+n[i].replace(w, ''), n[i]);
 		k.innerHTML = h;
 	}
 }

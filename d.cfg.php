@@ -8,24 +8,28 @@ define(OK, 'OK');
 define(OQ, 'OK. ');
 define(TIMESTAMP, 'Y-m-d H:i:s');
 define(PAT_DATE, '~((\d+)-(\d+))-(\d+)~');
-define(PAT_CONTENT, '~<pre>(.+\S)\s+</pre>~is');
+define(PAT_CONTENT, '~<pre>(.+\S)\s+</pre>~uis');
 
 define(FOOT_NOTE, '%s&copy; 2013-2014, <a href="/d/">%s</a>%s');	//* <- lang specific %s: prefix, link text, suffix
 
 $lang = reset(
 $cfg_langs = array('en', 'ru'));
 $cfg_draw_app = array('dfc', 'milf');
+$cfg_opts_admin_order = array('time_check_points');
+$cfg_opts_check_order = array('head', 'count', 'times', 'names', 'own', 'unknown', 'active', 'save2common', 'kbox', 'focus');
+$cfg_opts_input_order = array('draw_app', 'draw_max_undo', 'per_page', 'room_home');
+
 foreach ((
 $cfg_dir = array(
 	'arch' => 'archive'
 ,	'opts' => 'options'
 ,	'room' => 'room'
-)) as $k => $v)
-define('DIR_'.strtoupper($k), $v.'/');
+)) as $k => $v) define('DIR_'.strtoupper($k), $v.'/');
+
 define(DIR_PICS, 'i/');
 define(DIR_THUMB, 'th/');
 
-define(LINK_TIME, false);	//* <- src=file?modtime to force reload at clients
+define(LINK_TIME, true);	//* <- src=file?modtime to force reload at clients
 define(LOG_IP, true);		//* <- for each visit, add to separate file per user
 define(LOG_UA, false);		//* <- for each post with pic, add a field to the post itself
 define(PIC_SUB, false);		//* <- true: img src=/i/p/0/0123.png, false: src=/i/0123.png and leave it to rewrite rule

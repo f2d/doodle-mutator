@@ -1,9 +1,9 @@
 <?php
 function str_replace_first($f, $to, $s) {return (false !== ($pos = strpos($s, $f)) ? substr_replace($s, $to, $pos, strlen($f)) : $s);}
-function abbr($o) {foreach (explode('_', $o) as $word) $a .= $word[0]; return $a;}
+function abbr($a, $sep = '_') {foreach ((is_array($a)?$a:explode($sep, $a)) as $word) $r .= $word[0]; return $r;}
 function fln($f) {return file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);}
 function get_req() {return GET_Q ? explode('=', end(explode('?', $_SERVER['REQUEST_URI'])), 2) : array();}
-function trim_post($p, $len = 456) {return htmlspecialchars(mb_substr(stripslashes(trim(preg_replace('~\s+~s', ' ', $p))),0,$len,ENC));}
+function trim_post($p, $len = 456) {return htmlspecialchars(mb_substr(stripslashes(trim(preg_replace('~\s+~us', ' ', $p))),0,$len,ENC));}
 function trim_room($r) {
 	return strtolower(mb_substr(preg_replace('/\.+/', '.', preg_replace(
 '/[^\w\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}.!-]+/u', '_', trim(trim($r), '\\/')	//* <- add more unicode alphabets to complement \w?
@@ -67,19 +67,20 @@ function exit_if_not_mod($t) {
 }
 
 function optimize_pic($filepath) {
-	if (function_exists('exec') && (substr($filepath, -4) == '.png') && is_file('optipng.exe')) {
-		$f = './optipng.exe -fix -quiet "'.$filepath.'"';
+	if (function_exists('exec') && (substr($f = $filepath, -4) == '.png') && is_file('optipng.exe')) {
+		$e = './optipng.exe -fix "'.$f.'"';
+	//	$e = './optipng.exe -fix -quiet "'.$f.'"';
 		$output = array('');
 		data_lock('/pic');
-		exec(DIRECTORY_SEPARATOR == '/' ? $f : str_replace('/', DIRECTORY_SEPARATOR, $f), $output, $return);
+		exec(DIRECTORY_SEPARATOR == '/' ? $e : str_replace('/', DIRECTORY_SEPARATOR, $e), $output, $return);
 		data_unlock('/pic');
-		if (is_file($f = $filepath.'.bak') && filesize($f) && !filesize($filepath)) {
+		if (is_file($f .= '.bak') && filesize($f) && !filesize($filepath)) {
 			data_log_adm("Optimizing $filepath failed, restoring from $f");
 			unlink($filepath);
 			rename($f, $filepath);
 			if (!$return) $return = 'fallback';
 		}
-		if ($return) data_log_adm("Return code: $return, command output:".implode(NL, $output));
+		if ($return) data_log_adm("Command line: $e\nReturn code: $return\nOutput: ".implode(NL, $output));
 	}
 }
 
@@ -93,6 +94,7 @@ if (constant('ROOM_HIDE') && ROOM_HIDE) $tmp_room_new_hide = '{'.$cfg_room.($s =
 $tmp_title_var = 1;
 
 function get_template_form($a, $min = 0, $max = 0, $area = 0) {
+	global $u_opts;
 	if (is_array($a)) {
 		list($name, $head, $hint, $butn, $plhd) = $a;
 		$a = 0;
@@ -118,7 +120,7 @@ function get_template_form($a, $min = 0, $max = 0, $area = 0) {
 	}
 	if ($min||$max) $name .= ' onKeyUp="submitLimit('.($min?$min:0).($max?','.$max:'').')"';
 	if ($name && $plhd) $name .= ' placeholder="'.$plhd.'"';
-	$name .= ' autofocus';
+	$name .= ($u_opts['focus']?'':' autofocus').' required';
 	return ($head?'
 		<p>'.$head.'</p>'
 :'').(($name !== false)?(($name === 0 || $method === 0)?'
@@ -180,7 +182,7 @@ function get_template_page($t) {
 	<meta name="viewport" content="width=690">
 	<link rel="shortcut icon" type="image/png" href="'.($tmp_icon?ROOTPRFX.$tmp_icon:$n).'.png">
 	<link rel="stylesheet" type="text/css" href="'.$n.'.css'.($L?'?'.filemtime(NAMEPRFX.'.css'):'').'">'.($t['head']?'
-	'.preg_replace('~\v+~', NL.'	', $t['head']):'').($t['title']?'
+	'.preg_replace('~\v+~u', NL.'	', $t['head']):'').($t['title']?'
 	<title>'.$t['title'].'</title>':'').'
 </head>
 <body'.($class?' class="'.$class.'"':'').'>'.($t['header']?'

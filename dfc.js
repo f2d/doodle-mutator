@@ -2,7 +2,7 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; BTW, tabs align to 8 spaces
 ,	INFO_VERSION = 'v0.9.45'
-,	INFO_DATE = '2013-04-01 — 2014-10-11'
+,	INFO_DATE = '2013-04-01 — 2014-11-06'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640
 ,	CR = 'CanvasRecover', CT = 'Time', DL, DRAW_PIXEL_OFFSET = -0.5
@@ -911,11 +911,11 @@ var	a = auto || false, c, d, e, i, t;
 				e.setAttribute('method', (outside.send.length && outside.send.toLowerCase() == 'get')?'get':'post');
 				container.appendChild(outside.send = e);
 			}
-		var	pngData = sendPic(2, 1), jpgData, a = {txt:0,pic:0};
+		var	pngData = sendPic(2, 1), jpgData, a = {txt:0,pic:0}, f = outside.send;
 			for (i in a) if (!(a[i] = id(i))) {
 				setId(e = a[i] = document.createElement('input'), e.name = i);
 				e.type = 'hidden';
-				outside.send.appendChild(e);
+				f.appendChild(e);
 			}
 			e = pngData.length;
 			d = (((i = outside.jp || outside.jpg_pref)
@@ -926,10 +926,11 @@ var	a = auto || false, c, d, e, i, t;
 				|| (e > (i *= c/d)))
 				&& (e > (t = (jpgData = canvas.toDataURL(IJ)).length))
 			) ? jpgData : pngData);
+			if (mode.debug) alert('png limit = '+i+'\npng = '+e+'\njpg = '+t);
 			a.pic.value = d;
 			a.txt.value = sendMeta(d.length);
-			if (mode.debug) alert('png limit = '+i+'\npng = '+e+'\njpg = '+t);
-			outside.send.submit();
+			f.encoding = f.enctype = 'multipart/form-data';
+			f.submit();
 		}
 	}
 	return c;
