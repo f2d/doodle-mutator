@@ -91,10 +91,8 @@ $tmp_whu = array('WIDTH','HEIGHT');
 $tmp_room_new = '{'.($cfg_room = ROOTPRFX.DIR_ROOM).'new/|new}';
 if (constant('ROOM_HIDE') && ROOM_HIDE) $tmp_room_new_hide = '{'.$cfg_room.($s = ROOM_HIDE.'test')."/|$s}";
 //if (constant('ROOM_DUMP') && ROOM_DUMP) $tmp_room_new_dump = '{'.$cfg_room.($s = ROOM_DUMP.'dump')."/|$s}";
-$tmp_title_var = 1;
 
 function get_template_form($a, $min = 0, $max = 0, $area = 0) {
-	global $u_opts;
 	if (is_array($a)) {
 		list($name, $head, $hint, $butn, $plhd) = $a;
 		$a = 0;
@@ -109,8 +107,7 @@ function get_template_form($a, $min = 0, $max = 0, $area = 0) {
 			if ($k) $name = substr($name, 1);
 			break;
 		}
-		if ($a)
-		foreach (array(
+		if ($a) foreach (array(
 			'head' => ''
 		,	'hint' => '_hint'
 		,	'plhd' => '_placeholder'
@@ -120,7 +117,7 @@ function get_template_form($a, $min = 0, $max = 0, $area = 0) {
 	}
 	if ($min||$max) $name .= ' onKeyUp="submitLimit('.($min?$min:0).($max?','.$max:'').')"';
 	if ($name && $plhd) $name .= ' placeholder="'.$plhd.'"';
-	$name .= ($u_opts['focus']?'':' autofocus').' required';
+	$name .= ($GLOBALS['u_opts']['focus']?'':' autofocus').' required';
 	return ($head?'
 		<p>'.$head.'</p>'
 :'').(($name !== false)?(($name === 0 || $method === 0)?'
@@ -165,27 +162,32 @@ function get_template_page($t) {
 	$R = ($j === 'arch');
 	$L = (LINK_TIME && !$R);
 	$n = ROOTPRFX.NAMEPRFX;
-	global $cfg_langs, $tmp_icon, $tmp_announce;
+	global $tmp_announce;
 	foreach (data_global_announce() as $k => $v) $ano .= ($ano?'
 		<br>':'')."
 			$tmp_announce[$k]: $v";
-	if (!($class = $t['body']) && (FROZEN_HELL && !$R)) $class = 'frozen-hell';
+	$class = array();
+	if ($t['body']) $class[] = $t['body'];
+	if (!$R) {
+		if (FROZEN_HELL) $class[] = 'frozen-hell';
+		if (($d = date('md', T0)) > 1230 || $d < 110) $class[] = 'new-year';
+	}
 	if (is_array($a = $t['data'])) foreach ($a as $k => $v) $data .= ' data-'.$k.'="'.$v.'"';
 	if (is_array($a = $t['content'])) foreach ($a as $v) $pre .= get_template_pre($v, $R); else $pre = get_template_pre($a, $R);
 	if (is_array($a = $j) || ($j && ($a = array(".$j" => 0)))) foreach ($a as $k => $v) $scr .= '
 	<script src="'.$n.($v = ($v?'':$k).'.js').($L?'?'.filemtime(NAMEPRFX.$v):'').'"></script>';
 
 	return '<!doctype html>
-<html lang="'.(in_array($t['lang'], $cfg_langs)?$t['lang']:'en').'">
+<html lang="'.($t['lang']?$t['lang']:'en').'">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=690">
-	<link rel="shortcut icon" type="image/png" href="'.($tmp_icon?ROOTPRFX.$tmp_icon:$n).'.png">
+	<link rel="shortcut icon" type="image/png" href="'.($t['icon']?ROOTPRFX.$t['icon']:$n).'.png">
 	<link rel="stylesheet" type="text/css" href="'.$n.'.css'.($L?'?'.filemtime(NAMEPRFX.'.css'):'').'">'.($t['head']?'
 	'.preg_replace('~\v+~u', NL.'	', $t['head']):'').($t['title']?'
 	<title>'.$t['title'].'</title>':'').'
 </head>
-<body'.($class?' class="'.$class.'"':'').'>'.($t['header']?'
+<body'.($class?' class="'.implode(' ', $class).'"':'').'>'.($t['header']?'
 	<header>'.($ano?'
 		<p class="anno">'.$ano.'
 		</p>':'').$t['header'].'

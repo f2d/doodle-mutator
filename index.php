@@ -41,21 +41,18 @@ data_log_ref();
 ob_end_clean();
 time_check_point('after cfg');
 
-$opt_sufx = 'aopu';
-$opt_name = array('opta', 'opti', 'per_page', 'draw_max_undo');
-$opt_lvls = array('a' => 'admin', 'i' => 'check');
-
 if ($me = $_REQUEST[ME]) {
 	if (false === strpos($me, '/')) {
-		list($u_qk, $u_opti, $u_per_page, $u_room_home) = explode('_', $me, 4);		//* <- v1, one separator is not enough
+//* v1, one separator for all is not enough:
+		list($u_qk, $u_opti, $u_per_page, $u_room_home) = explode('_', $me, 4);
 	} else {
 		list($u_qk, $i, $u_room_home, $u_draw_app) = explode('/', $me, 4);
-		if (false !== strpos($i, $sep = '_')
-		||  false !== strpos($i, $sep = '.')) {
-			list($u_opti, $u_per_page, $u_draw_max_undo) = explode($sep, $i);	//* <- v2 opts = plain ordered numbers, not enough
-		} else
-		if (preg_match_all('~(\d+)(\D)~', $i, $m)) {		//* <- v3, '01adm_0010opt_30per_page_99undo', or '0a1o2p3u', in any order
+//* v3 opts, like '01adm_0010opt_30per_page_99undo', or '0a1o2p3u', in any order:
+		if (preg_match_all('~(\d+)([a-z])~', strtolower($i), $m)) {
 			foreach ($m[1] as $k => $v) if (false !== ($i = strpos($opt_sufx, $m[2][$k]))) ${'u_'.$opt_name[$i]} = $v;
+		} else {
+//* v2, plain ordered numbers, not enough:
+			list($u_opti, $u_per_page, $u_draw_max_undo) = explode(false !== strpos($i, '_')?'_':'.', $i);
 		}
 	}
 	if (($q = trim($_POST[ME])) && $u_qk != $q) $u_qk = $q;
@@ -66,10 +63,14 @@ if ($me = $_REQUEST[ME]) {
 ,	'title' => $tmp_ban
 ,	'task' => $tmp_ban
 ,	'body' => 'burnt-hell')));
+
 		if (POST) $post_status = OQ.$tmp_post_ok_user_qk;
+		$opt_sufx = 'aopu';
+		$opt_name = array('opta', 'opti', 'per_page', 'draw_max_undo');
+		$opt_lvls = array('a' => 'admin', 'i' => 'check');
+		foreach ($opt_lvls as $i => $a) if (${$p = "u_opt$i"})
+		foreach ($cfg_opts_order[$a] as $k => $v) $u_opts[$v] = intval($$p[$k]);
 	}
-	foreach ($opt_lvls as $i => $a) if (${$p = "u_opt$i"})
-	foreach ($cfg_opts_order[$a] as $k => $v) $u_opts[$v] = intval($$p[$k]);
 }
 define(GOD, $u_flag['god']?1:0);
 define(TIME_PARTS, !$u_opts['time_check_points']);		//* <- profiling
@@ -352,7 +353,7 @@ $ptx
 //* archive posts search ------------------------------------------------------
 			if (list($subj, $que) = get_req()) {
 				$s = $tmp_archive_find_by[$k = array_search($subj, $qa = explode(',', $qa))];
-				if (!mb_check_encoding($q = urldecode($que), ENC)) $q = iconv('windows-1251', ENC, $q);
+				if (!mb_check_encoding($q = urldecode($que), ENC)) $q = iconv(ENC_FALLBACK, ENC, $q);
 				$search_res = $tmp_archive_found.' '.$tmp_archive_found_by[$k].': <a id="r">'.$q.'</a>';
 				$q = mb_strtolower(trim_post($q, FIND_MAX_LENGTH), ENC);
 				$task .= '
@@ -414,7 +415,7 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 	if (($qd_opts || !$qdir) && (list($subj, $que) = get_req())) {
 		$qd_opts = 2;
 		$n = get_draw_app_list($subj);
-		$tmp_icon = $n['name'];
+		$icon = $n['name'];
 		$task = ('
 		<p>'.$tmp_draw_free.'</p>
 		<p class="hint">'.$tmp_draw_hint.'</p>').'<noscript>
@@ -683,7 +684,6 @@ if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
 						,	$r				//* <- username
 						,	$tab[4]				//* <- post content
 						);
-					//	if ($ta[1] === NB && $ta[2] === NB) $ta[1] = $ta[2] = ' ';
 						if (count($tab) > 5) $ta[] = $tab[5];	//* <- pic comment
 						if (/*MOD &&*/ is_array($r = $report[$tid][$postnum])) {
 							foreach ($r as $col => $l)
@@ -825,14 +825,15 @@ if ($tcp) {
 //* final page data to show ---------------------------------------------------
 define(S, '. ');
 die(get_template_page(array(
-	'lang' => $lang
+	'icon' => $icon
+,	'lang' => $lang
 ,	'title' =>
 		($qd_opts == 1 ? $tmp_options.S :
 		($qd_arch ? ($room ? $room_title.S : '').$tmp_archive.S :
 		($qd_room ? ($room ? (
 			$etc ? (GOD?$tmp_mod_panel.' - '.$mod_page:$tmp_report).S : ''
 		).$room_title.S : $tmp_rooms.S) : ''))).$tmp_title.
-		($qd_opts == 2 ? S/*.$tmp_draw_test.' '*/.$tmp_options_field['draw_app'] : '')
+		($qd_opts == 2 ? S.$tmp_options_field['draw_app'] : '')
 ,	'header' => $rt?'':
 		($u_key?('
 		<div>'.
@@ -845,7 +846,7 @@ die(get_template_page(array(
 		</div>
 		<div class="r">'.(GOD?
 			$a.$cfg_room.($room?$room:ROOM_DEFAULT).'/1">'.$s[6]:'').($short?'':$r).
-			$a.($qd_opts ? '.' : ROOTPRFX.DIR_OPTS.($room?$room.'/':'')).'">'.$s[4].'
+			$a.($qdir && $qd_opts?'.':ROOTPRFX.DIR_OPTS.($room?$room.'/':'')).'">'.$s[4].'
 		</div>'
 		):('
 		<div>'.

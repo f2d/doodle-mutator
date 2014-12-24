@@ -155,6 +155,6 @@ $tmp_time_units = array(
 ,	60 => 	array('minute', 'minutes')
 ,	0 =>	array('second', 'seconds')
 );
-$tmp_title = ($tmp_title_var ? 'Doodle Mutator' : 'Mekurage: Endless Strand');
+$tmp_title = ($tmp_title_var ? 'Mekurage: Endless Strand' : 'Doodle Mutator');
 $tmp_took = ', took %s sec.';
 ?>

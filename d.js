@@ -318,10 +318,10 @@ e+'<span title="'+tab[2]+'">'+tab[3].slice(1)+'</span>';
 							q = m[1]+', '+m[4], m = la.time+s+m[1]+s+la.using+s+m[4];
 						} else q = m = la.hax+s+tab[3];
 						if (tab[2].indexOf(j = ';') > 0) {
-							j = tab[2].split(j), res = 1;
+							j = tab[2].split(j);
+							tab[2] = j[0].replace(/(\.[^.]+)$/, '_res$1'), k = j[res = 1].replace('*', 'x');
 							tab[0] +=
-'<span class="a">'+(n+la.resized).replace(NL, '<br />')+': '+j[1].replace('*', 'x')+'</span>';
-							tab[2] = j[0].replace(/(\.[^.]+)$/, '_res$1');
+'<span class="a" title="'+k+'">'+(n+la.resized).replace(NL, '<br />')+': '+k+'</span>';
 						} else j = '';
 						post =
 e+'<img src="'+f[2]+(flag.p?getPicSubDir(tab[2]):'')+tab[2]+'" alt="'+tab[2]+', '+q+'" title="'+m+'">';
@@ -359,8 +359,8 @@ e+'</select>';
 						if (g == '*') {
 							if (l = tab[2].indexOf('/')+1) {
 								k = tab[2].slice(l).replace(/"/g, '&quot;');
-								m = 'room';
-								if (k[0] == '/') k = k.slice(1); else m += ' mod';	//* <- room frozen/announce
+								m = 'room-marked';
+								if (k[0] == '/') k = k.slice(1), m += ' frozen-hell';	//* <- room frozen/announce
 								an += '" class="'+m+'" title="'+k;
 								tab[2] = tab[2].slice(0,l-1);
 							}

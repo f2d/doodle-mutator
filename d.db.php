@@ -91,16 +91,16 @@ function data_check_u($u, $reg) {
 global	$u_key, $u_num, $u_flag, $usernames, $last_user, $room;
 	$d = DIR_DAUS;
 	if (is_file($f = "$d.log")) foreach (fln($f) as $line) if (strpos($line, '	')) {
-		$a = explode('	', $line);
-		if ($u == $a[1]) {
-			$u_key = $a[1];
-			$u_num = $a[0];
+		list($i, $k, $t, $name) = explode('	', $line);
+		if ($last_user < $i) $last_user = $i;
+		if ($u == $k) {
+			$u_key = $k;
+			$u_num = $i;
 			data_lock($n = '/'.$u_num);
 			if ($reg) return $u_num;
 			if (is_file($f = "$d$n.flag")) foreach (fln($f) as $g) $u_flag[$g] = $g;
 		}
-		if (POST) $last_user = $a[0];
-		if (!$reg) $usernames[$a[0]] = $a[3];
+		if (!$reg) $usernames[$i] = $name;
 	}
 	return $u_num;
 }

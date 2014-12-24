@@ -1,4 +1,7 @@
-body, body >* {
+body.new-year {
+	background-image: url(d.ny.png);
+}
+body, body>* {
 	margin: 0 auto;			/* <- centered */
 	min-width: 656px;
 	max-width: 1000px;
@@ -9,28 +12,42 @@ body, .task input:not([type="checkbox"]) {
 	line-height: 28px;
 	font-size: 21px;
 }
-#took {
-	white-space: pre;
-	font-family: monospace;
-}
-footer p {
-	line-height: normal;
-	border: 5px solid transparent;
-}
 header, .post.p p, .post p.e {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;	/* <- requires max-width */
 }
-header.a >* {
+header.a>* {
 	margin-bottom: 8px;
 }
-header.a >*>* {
+header.a>*>* {
 	width: 25%;
 	text-align: center;
 }
 header .anno {	margin-bottom: 0;}
 header .report {margin: 0 0 8px 0;}
+footer p {
+	line-height: normal;
+	border: 5px solid transparent;
+}
+.room-marked {
+	padding: 0 8px;
+	background-color: #fdc;
+}
+.post {	background-color: #f5f5f5;} body,
+.alt {	background-color: #eee;} .burnt-hell,
+.burnt .post {	background-color: #fdd;} .post .burnt, .hot,
+.burnt .alt {	background-color: #ecc;} .post:target, .ok,
+.full .post {	background-color: #dfd;} .post .full, .green,
+.full .alt {	background-color: #cec;} .frozen-hell,
+.frozen .post {	background-color: #def;} .post .frozen, .cold,
+.frozen .alt {	background-color: #cde;} .mod,
+.post.born p:hover {	border-color:	#f00; background-color: #fdc;}
+.post.burn p:hover {	border-color:	#900; background-color: #f55;}
+.post.goo p:hover {	border-color:	#b0f; background-color: #dcf;}
+.post.ice p:hover {	border-color:	#ace; background-color: #cdf;}
+.post.me p:hover {	border-color:	#4e7; background-color: #cfd;}
+.post.null p:hover {	border-color:	#888; background-color: #bbb;}
 a, .a	{		color: #888;}
 a:hover	{		color: #000;}
 .task a, .task .a {	color: #bbb;}
@@ -45,9 +62,6 @@ a:hover	{		color: #000;}
 	background-color: #999;
 	color: #eee;
 }
-.room {	padding: 0 8px;
-	background-color: #def;
-}
 .report {
 	background-color: #f77;
 	color: #ff7;
@@ -58,10 +72,14 @@ a:hover	{		color: #000;}
 .arr a {display: inline-block;
 	border: 5px solid transparent;
 }
-.arr > a:hover {border-left-color:	#eee;}
+.arr>a:hover {border-left-color:	#eee;}
 .arr .r a:hover {border-right-color:	#eee;}
 .task .arr {
 	padding: 0 !important;
+}
+#took {
+	white-space: pre;
+	font-family: monospace;
 }
 #tower .thread {
 	margin: 0;
@@ -77,11 +95,11 @@ a:hover	{		color: #000;}
 	padding: 8px 0;
 	background-color: #aaa;
 }
-#task > img, header >* {
+#task>img, header>* {
 	margin-top: 8px;
 	vertical-align: bottom;		/* <- removes extra bottom space (sub-baseline) */
 }
-#task > textarea {
+#task>textarea {
 	margin-top: 8px;
 	width: 978px;
 	height: 978px;
@@ -92,7 +110,7 @@ a:hover	{		color: #000;}
 	max-width: 950px;
 	max-height: 950px;
 }
-.task form:not(:empty), .task p, .task ul, .task ol, header > div {
+.task form:not(:empty), .task p, .task ul, .task ol, header>div {
 	text-align: left;
 	padding: 0 22px 8px 22px;
 }
@@ -105,14 +123,14 @@ a:hover	{		color: #000;}
 .task li {
 	margin: 0 0 12px 22px;
 }
-.task form >*, .a >* {
+.task form>*, .a>* {
 	display: table;
 	width: 100%;
 }
-.task form >*>*, .a >*>* {
+.task form>*>*, .a>*>* {
 	display: table-cell;
 }
-.task form >*>*:nth-child(2) {
+.task form>*>*:nth-child(2) {
 	width: 150px;
 	text-align: right;
 }
@@ -122,7 +140,7 @@ a:hover	{		color: #000;}
 .task input[type="text"] {
 	width: 100%;
 }
-.task p > b {
+.task p>b {
 	display: block;
 	padding-right: 6px;
 }
@@ -178,20 +196,6 @@ a:hover	{		color: #000;}
 	display: block;
 	margin: 1em 0;
 }
-.post {	background-color: #f5f5f5;} body,
-.alt {	background-color: #eee;} .burnt-hell,
-.burnt .post {	background-color: #fdd;} .post .burnt, .hot,
-.burnt .alt {	background-color: #ecc;} .post:target, .ok,
-.full .post {	background-color: #dfd;} .post .full, .green,
-.full .alt {	background-color: #cec;} .frozen-hell,
-.frozen .post {	background-color: #def;} .post .frozen, .cold,
-.frozen .alt {	background-color: #cde;} .mod,
-.post.born p:hover {	border-color:	#f00; background-color: #fdc;}
-.post.burn p:hover {	border-color:	#900; background-color: #f55;}
-.post.goo p:hover {	border-color:	#b0f; background-color: #dcf;}
-.post.ice p:hover {	border-color:	#ace; background-color: #cdf;}
-.post.me p:hover {	border-color:	#4e7; background-color: #cfd;}
-.post.null p:hover {	border-color:	#888; background-color: #bbb;}
 .post input[type="text"], .post select {
 	height: 14px;
 	width: 99px;
@@ -210,8 +214,14 @@ a:hover	{		color: #000;}
 	max-width:161px;
 	min-height:48px;
 }
-.post.p p, .post .date-out > * {
-	width: 165px;
+.post.p {
+	padding-bottom: 8px;
+}
+.post.p p, .post .date-out>* {
+	width: 169px;
+}
+.post.p p {
+	padding: 0 2px;
 }
 .post.p p .report {
 	display: block;
@@ -223,10 +233,7 @@ a:hover	{		color: #000;}
 	font-size: 11px;
 	line-height: normal;
 }
-.post.p {
-	padding-bottom: 8px;
-}
-.post.p.res, .post.p.res > p {
+.post.p.res, .post.p.res>p {
 	min-height: 56px;
 }
 .post .date-out {
@@ -234,30 +241,30 @@ a:hover	{		color: #000;}
 	position: absolute;
 	width: 0;
 }
-.post .date-out > * {
+.post .date-out>* {
 	display: block;
 	position: relative;
 }
-.post .date-out.l > * {
+.post .date-out.l>* {
 	top: -28px;
 	left: -177px;
 }
-.post .date-out.r > * {
+.post .date-out.r>* {
 	top: -28px;
 	left: 169px;
 	text-align: left;
 }
-.post .date-out > p {
+.post .date-out>p {
 	border: none;
 	left: 500px;
 }
-.post .date-out > p.r {
+.post .date-out>p.r {
 	left: 0;
 }
 .post .date-out .report {
 	background-color: rgba(234, 123, 123, 0.8);
 }
-.post .date-out > b {
+.post .date-out>b {
 	text-align: center;
 	padding: 1px;
 }
@@ -282,7 +289,7 @@ a:hover	{		color: #000;}
 .op:hover {
 	border-color: #09f;
 }
-.op >* {height: 100%;}
+.op>* {height: 100%;}
 .op * {	border: none;
 	text-align: center;
 	vertical-align: middle;
