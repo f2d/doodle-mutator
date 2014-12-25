@@ -1,4 +1,5 @@
-﻿﻿<?php
+﻿<?php
+
 $tmp_announce = array(
 'anno'	=>	'Общее объявление'
 ,'stop'	=>	'Игра заморожена'
@@ -155,4 +156,5 @@ $tmp_time_units = array(
 );
 $tmp_title = ($tmp_title_var ? 'Мекураге: Бесконечная нить' : 'Слепой телефон');
 $tmp_took = ', ушло %s сек.';
+
 ?>

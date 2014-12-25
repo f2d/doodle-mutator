@@ -1,4 +1,5 @@
 <?php
+
 function str_replace_first($f, $to, $s) {return (false !== ($pos = strpos($s, $f)) ? substr_replace($s, $to, $pos, strlen($f)) : $s);}
 function abbr($a, $sep = '_') {foreach ((is_array($a)?$a:explode($sep, $a)) as $word) $r .= $word[0]; return $r;}
 function fln($f) {return file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);}
@@ -7,7 +8,7 @@ function trim_post($p, $len = 456) {return htmlspecialchars(mb_substr(stripslash
 function trim_room($r) {
 	return strtolower(mb_substr(preg_replace('/\.+/', '.', preg_replace(
 '/[^\w\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}.!-]+/u', '_', trim(trim($r), '\\/')	//* <- add more unicode alphabets to complement \w?
-	)), 0, ROOM_NAME_MAX_LENGTH, 'UTF-8'));
+	)), 0, ROOM_NAME_MAX_LENGTH, ENC));
 }
 function get_room_skip_name($r) {return array(ME.'-skip-'.md5($r = rawurlencode($r)), $r);}
 function get_room_skip_list($k = '') {
@@ -23,6 +24,12 @@ function pic_subpath($f, $mk = 0) {
 	$n = DIR_PICS.$f[strrpos($f, '.')+1].'/'.$f[0].'/';
 	if ($mk && !is_dir($n)) mkdir($n, 0755, true);
 	return $n.($mk === ''?'':$f);
+}
+function get_date_class($first = 0, $last = 0) {
+	$first = intval(date('nd', $first?$first:T0));
+	$last = ($last ? intval(date('nd', $last)) : $first);
+	if ($first > $last) {$f = $first; $first = $last; $last = $f;}
+	if ($first > 1230 || $last < 110) return 'new-year';
 }
 function get_draw_app_list($n) {
 	global $cfg_draw_app, $tmp_draw_app, $tmp_options_field;
@@ -170,7 +177,7 @@ function get_template_page($t) {
 	if ($t['body']) $class[] = $t['body'];
 	if (!$R) {
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
-		if (($d = date('md', T0)) > 1230 || $d < 110) $class[] = 'new-year';
+		if ($d = get_date_class()) $class[] = $d;
 	}
 	if (is_array($a = $t['data'])) foreach ($a as $k => $v) $data .= ' data-'.$k.'="'.$v.'"';
 	if (is_array($a = $t['content'])) foreach ($a as $v) $pre .= get_template_pre($v, $R); else $pre = get_template_pre($a, $R);
@@ -180,7 +187,7 @@ function get_template_page($t) {
 	return '<!doctype html>
 <html lang="'.($t['lang']?$t['lang']:'en').'">
 <head>
-	<meta charset="utf-8">
+	<meta charset="'.ENC.'">
 	<meta name="viewport" content="width=690">
 	<link rel="shortcut icon" type="image/png" href="'.($t['icon']?ROOTPRFX.$t['icon']:$n).'.png">
 	<link rel="stylesheet" type="text/css" href="'.$n.'.css'.($L?'?'.filemtime(NAMEPRFX.'.css'):'').'">'.($t['head']?'

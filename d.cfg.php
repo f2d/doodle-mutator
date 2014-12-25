@@ -63,8 +63,8 @@ define(THUMB_EXT, '.png');
 define(THUMB_MAX_WIDTH, 160);
 define(THUMB_MAX_HEIGHT, 90);
 
-define(ENC_FALLBACK, 'windows-1251');
-define(ENC, 'UTF-8');
+define(ENC_FALLBACK, 'windows-1251');	//* <- search requests from weird browsers
+define(ENC, 'utf-8');
 define(NB, '&nbsp;');
 define(NL, "\n");
 define(O, 'opt_');

@@ -1,14 +1,15 @@
 <?php
-define(DIR_DATA, 'l/');				//* <- all that's not to scandir goes here
-define(DIR_USER, 'u');
-define(DIR_DOOM, DIR_DATA.DIR_ROOM);		//* <- room names alone, separate from any reserved filenames
-define(DIR_DAUS, DIR_DATA.DIR_USER);
-define(TRD_MOD, '~^((\d+)(\..+)?(\.log))(\.(s)top|\.(d)el)?$~i');
-define(TRD_PLAY, '~^(\d+)(?:\.p(\d+|f))?(?:\.u(\d+))?(?:\.t(\d+))?(\..+)?(\.log)$~i');
+
+define(DIR_DATA, 'l/');				//* <- all data except the threads content
+define(DIR_USER, 'u');				//* <- userlist filename
+define(DIR_DOOM, DIR_DATA.DIR_ROOM);		//* <- room names inside, separate from any reserved file/dirnames
+define(DIR_DAUS, DIR_DATA.DIR_USER);		//* <- per user files
 define(BOM, pack('CCC', 239, 187, 191).NL);	//* <- UTF-8 Byte Order Mark
-define(NOR, '&mdash;');				//* <- no request placeholder
+define(NOR, '&mdash;');				//* <- no-request placeholder
 define(TXT, '		');
 define(IMG, '	<	');
+define(TRD_MOD, '~^((\d+)(\..+)?(\.log))(\.(s)top|\.(d)el)?$~i');
+define(TRD_PLAY, '~^(\d+)(?:\.p(\d+|f))?(?:\.u(\d+))?(?:\.t(\d+))?(\..+)?(\.log)$~i');
 
 function data_dir($file_path) {
 	if (($dir = strrpos($file_path, '/')) && !is_dir($dir = substr($file_path, 0, $dir))) mkdir($dir, 0755, true);
@@ -804,4 +805,5 @@ global	$u_num, $room, $target;
 	data_post_refresh();
 	return (($target && $fork)?-$l:$l);
 }
+
 ?>

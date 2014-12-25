@@ -1,4 +1,5 @@
 ﻿<?php
+
 $tmp_announce = array(
 'anno'	=>	'Global announce'
 ,'stop'	=>	'Global freeze'
@@ -157,4 +158,5 @@ $tmp_time_units = array(
 );
 $tmp_title = ($tmp_title_var ? 'Mekurage: Endless Strand' : 'Doodle Mutator');
 $tmp_took = ', took %s sec.';
+
 ?>

@@ -1,4 +1,5 @@
 <?php
+
 define(T0, end($t = explode(' ',microtime())));
 define(ME, 'me');
 define(POST, 'POST' == $_SERVER['REQUEST_METHOD']);
@@ -74,7 +75,7 @@ if ($me = $_REQUEST[ME]) {
 	}
 }
 define(GOD, $u_flag['god']?1:0);
-define(TIME_PARTS, !$u_opts['time_check_points']);		//* <- profiling
+define(TIME_PARTS, !$u_opts['time_check_points']);	//* <- profiling
 
 if (!($u_per_page = intval($u_per_page))) $u_per_page = TRD_PER_PAGE;
 $etc = trim($_REQUEST['etc'], '/');
@@ -494,7 +495,7 @@ if ($u_key) {
 			if ($etc[0] == '-') {
 				if (strlen($etc) == 1) die(
 data_lock($room)
-? '<meta charset="utf-8"><title>'.(
+? '<meta charset="'.ENC.'"><title>'.(
 	is_array($t = data_check_my_task())
 		? $tmp_target_status[$t[0]].'. '.$tmp_time_limit.': '.format_time_units($t[1])
 		: $tmp_target_status[$t]
@@ -517,7 +518,7 @@ data_lock($room)
 			if (GOD) {
 				if ($etc == 3 && ($a = strpos($etc, '-'))) {
 					$a = intval(substr($etc, $a+1));
-					die('<html><head><meta charset="utf-8"><title>'.$tmp_mod_pages[3].': #'.$a.'</title></head>
+					die('<html><head><meta charset="'.ENC.'"><title>'.$tmp_mod_pages[3].': #'.$a.'</title></head>
 <body><pre>'.date(TIMESTAMP, T0).NL.(($a = data_check_user_info($a))?$a:$tmp_empty).'</pre></body></html>');
 				}
 				$lnk = $done = '';
@@ -907,4 +908,5 @@ if ($ok) {
 } else $l .= '?!='.$p;
 header('Location: '.$l);
 printf($tmp_post_ok_goto, $msg, $l);
+
 ?>
