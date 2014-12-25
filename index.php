@@ -41,6 +41,10 @@ data_log_ref();
 ob_end_clean();
 time_check_point('after cfg');
 
+$opt_sufx = 'aopu';
+$opt_name = array('opta', 'opti', 'per_page', 'draw_max_undo');
+$opt_lvls = array('a' => 'admin', 'i' => 'check');
+
 if ($me = $_REQUEST[ME]) {
 	if (false === strpos($me, '/')) {
 //* v1, one separator for all is not enough:
@@ -65,9 +69,6 @@ if ($me = $_REQUEST[ME]) {
 ,	'body' => 'burnt-hell')));
 
 		if (POST) $post_status = OQ.$tmp_post_ok_user_qk;
-		$opt_sufx = 'aopu';
-		$opt_name = array('opta', 'opti', 'per_page', 'draw_max_undo');
-		$opt_lvls = array('a' => 'admin', 'i' => 'check');
 		foreach ($opt_lvls as $i => $a) if (${$p = "u_opt$i"})
 		foreach ($cfg_opts_order[$a] as $k => $v) $u_opts[$v] = intval($$p[$k]);
 	}

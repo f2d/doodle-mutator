@@ -164,7 +164,7 @@ global	$room;
 		if (is_file($f = (
 strpos($t, '-') ? DIR_DOOM."$room/$t" :
 ($t-3 ? DIR_DATA.'ref' : DIR_DAUS)
-		).'.log')) return ($mt ? filemtime($f) : trim(file_get_contents($f), BOM));
+		).'.log')) return ($mt ? filemtime($f) : ltrim(file_get_contents($f), BOM));
 	} else {
 		$a = glob(DIR_DOOM.$room.'/*.log');
 		$t = array();
@@ -400,7 +400,7 @@ global	$u_num, $u_flag, $room, $merge;
 			} else if (is_array($merge) && count($merge)) {
 				$n = array_unique(explode(NL, ($old = file_get_contents($f = $d.$f)).NL.implode(NL, $merge)));
 				sort($n);
-				if ($old != ($new = BOM.trim(implode(NL, $n), BOM))) {
+				if ($old != ($new = BOM.ltrim(implode(NL, $n), BOM))) {
 					file_put_contents($f, $new);
 					$ok = $m[2].'<-'.implode(',', array_keys($merge));
 				} else $ok = 'no change';
