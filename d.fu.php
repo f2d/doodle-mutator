@@ -28,8 +28,7 @@ function pic_subpath($f, $mk = 0) {
 function get_date_class($first = 0, $last = 0) {
 	$first = intval(date('nd', $first?$first:T0));
 	$last = ($last ? intval(date('nd', $last)) : $first);
-	if ($first > $last) {$f = $first; $first = $last; $last = $f;}
-	if ($first > 1230 || $last < 110) return 'new-year';
+	if (/*$first > 1230 || $first < 110 || */$last > 1230 || $last < 110) return 'new-year';
 }
 function get_draw_app_list($n) {
 	global $cfg_draw_app, $tmp_draw_app, $tmp_options_field;

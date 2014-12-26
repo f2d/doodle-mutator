@@ -74,12 +74,12 @@ function data_put_thumb($src, $dest, $xMax, $yMax) {
 */	return imagePNG($gis['imgdata'], $dest);
 }
 
-function data_line2time($line) {return strtotime(reset(explode('	', $line, 1)));}
+function data_line2time($line) {return strtotime(substr($line, 0, strpos($line, '	')));}
 function data_get_template_page($room, $num, $tsv) {
 	if ($num <= 0) return $num;
 	$p = $num-1;
 	$n = $num+1;
-	$lines = explode(NL, $tsv);
+	$lines = explode(NL, trim($tsv));
 	return get_template_page(
 array(	'title' => $room
 ,	'head' => ($p ? '<link rel="prev" href="'.$p.PAGE_EXT.'">'.NL : '').
