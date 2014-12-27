@@ -25,7 +25,7 @@ $tmp_draw_hint = 'This page shares browser memory with the actual game. May be u
 $tmp_draw_test = 'Try out.';
 $tmp_draw_this = 'Try to draw:';
 $tmp_empty = 'Empty';
-$tmp_foot_notes = array('盲ゲ', 'f', 'message board', ' for contact.');
+$tmp_foot_notes = array('盲ゲ ', 'message board', ' for contact.');
 $tmp_mod_files = array(
 	'Pics to subfolders.'
 ,	'Rewrite arch with newest template.'

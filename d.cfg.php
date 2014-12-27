@@ -16,7 +16,7 @@ $cfg_dir = array(
 define(DIR_PICS, 'i/');
 define(DIR_THUMB, 'th/');
 
-define(LINK_TIME, true);	//* <- src=file?modtime to force reload at clients
+define(LINK_TIME, false);	//* <- src=file?modtime to force reload at clients
 define(LOG_IP, true);		//* <- for each visit, add IP Address to separate file per user
 define(LOG_UA, false);		//* <- for each post with pic, add User-Agent field to the post itself
 define(PIC_SUB, false);		//* <- true: img src=/i/p/0/0123.png, false: src=/i/0123.png and leave it to rewrite rule
@@ -73,9 +73,6 @@ define(OQ, 'OK. ');
 define(TIMESTAMP, 'Y-m-d H:i:s');
 define(PAT_DATE, '~((\d+)-(\d+))-(\d+)~');
 define(PAT_CONTENT, '~<pre>(.+\S)\s+</pre>~uis');
-define(FOOT_NOTE, '
-<a href="https://github.com/f2d/doodle-mutator">%s</a> &copy;
-<a href="/index.htm">%s</a>, 2013-2014,
-<a href="/d/">%s</a>%s');	//* <- lang specific %s: site engine link, author link, contact board link, plaintext suffix
+define(FOOT_NOTE, '%s&copy; 2013-2014, <a href="/d/">%s</a>%s');	//* <- lang specific %s: prefix, link text, suffix
 
 ?>
