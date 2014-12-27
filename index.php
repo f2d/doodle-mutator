@@ -807,6 +807,12 @@ as $v) $s[] = $v.($short||(substr($v, -1) == '.')?'':'.').'</a>';
 $r = ($a = '
 			<a href="').($qd_room ? ($room?'..':'.') : $cfg_room).'">'.$s[1];
 
+if (false !== strpos($links = vsprintf(FOOT_NOTE, $tmp_foot_notes), NL)) {
+	$links = str_replace(NL, '
+			', NL.trim($links)).'
+		';
+}
+
 //* timings -------------------------------------------------------------------
 if (!MOD || !TIME_PARTS || !is_array($tcp)) $tcp = 0;
 $t = explode(' ',microtime());
@@ -866,7 +872,7 @@ die(get_template_page(array(
 ,	'content' => $content
 ,	'footer' => $rt?'':($u_opts['times'] || !$u_key?'':'
 		<p class="l hint">'.$took.'</p>').($u_opts['names'] || !constant('FOOT_NOTE')?'':'
-		<p class="r hint">'.vsprintf(FOOT_NOTE, $tmp_foot_notes).'</p>')
+		<p class="r hint">'.$links.'</p>')
 ,	'js' => $js
 )));
 
