@@ -17,7 +17,6 @@ Web server scripts in PHP and client-side in JS.
 3. Someone else then gets to see that picture to describe its content, meaning or effect, whatever, without seeing its initial description.
 4. Draw by description of unknown origin.
 5. Describe a drawing of unknown origin.
-
 - May be continued as long as the participants wish to, then watch resulting chains of sense mutation.
 - Can be fun, depending on people's efforts and ideas.
 - Another way to name the game is "broken telephone", it can be played with just a pen and paper.
@@ -30,7 +29,6 @@ Web server scripts in PHP and client-side in JS.
 3. Кто-то ещё видит получившийся рисунок и должен описать, что видит. Изначальное описание не показывается.
 4. Рисовать по описанию неизвестно чего.
 5. Описывать рисунки неизвестно чего.
-
 - Можно продолжать, пока не надоест, потом смотреть на получившиеся цепочки.
 - Иногда забавно выходит, смотря кто как постарается и какие идеи принесёт.
 - Вариант названия - "испорченный телефон", в такое можно играть и на бумаге.
