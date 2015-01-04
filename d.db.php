@@ -481,8 +481,15 @@ global	$u_num, $u_flag, $room, $merge;
 			else {
 				data_post_refresh();
 				$ok = $room.' -> '.$msg;
+				$m = 'mod_'.$room;
+				$n = 'mod_'.$msg;
 				foreach (array('arch', 'room', 'doom') as $f) $ok .=
 ','.$f.':'.(is_dir($rr = ($r = constant('DIR_'.strtoupper($f))).$room) && rename($rr, $r.$msg));
+				foreach (glob(DIR_DAUS.'/*.flag') as $f) if (false !== ($i = array_search($m, $x = fln($f)))) {
+					$x[$i] = $n;
+					file_put_contents($f, implode(NL, $x));
+					$ok .= NL.'mod-change:'.substr($f, strrpos($f, '/')+1);
+				}
 				$room = $msg;
 			}
 		}
@@ -511,7 +518,13 @@ global	$u_num, $u_flag, $room, $merge;
 			}
 			delTree($r);
 		}
+		$m = 'mod_'.$room;
 		foreach (array('thrd', 'arch', 'pics') as $a) if ($c = ${"$a[0]c"}) $ok .= ",$a:$c";
+		foreach (glob(DIR_DAUS.'/*.flag') as $f) if (false !== ($i = array_search($m, $x = fln($f)))) {
+			unset($x[$i]);
+			if ($x = implode(NL, $x)) file_put_contents($f, $x); else unlink($f);
+			$ok .= NL.'unmod:'.substr($f, strrpos($f, '/')+1);
+		}
 	} else
 	if ($o == 'insert post') {
 		if (trim($msg) && list($d,$f,$m) = data_get_thread_by_num($a[0])) {
