@@ -283,22 +283,24 @@ var	i, j, k, l, m, n = '\n', o, p = data.ph, opt = 'opt_', q, s = ' ', t = '	'
 	function getThread(txt, preCount) {
 	var	line = txt.split(n), output = '', placeholder = '<!--?-->'
 	,	img = (flag.u?0:1), alt = 1, tr = []
-	,	desc_num = (g == ':'?1:0), post_num = 0, thread_num = 0, i, j, k, l, m;
+	,	desc_num = (g == ':'?1:0), post_num = 0, thread_num = 0, i, j, k, l, m, mark;
 		hell = 0;
 		for (i in line) if (line[i].indexOf(t) > 0) {
 		var	tab = line[i].split(t), u = (tab.length > 3?tab.shift():''), post = '<br>', res = 0;
 			if (u.indexOf(',') > -1) {
 				u = u.split(','), thread_num = u.shift(), u = u[0], j = thread_num[0];
 				if (isNaN(j)) {
-					hell = recl[k = 'asdf'.indexOf(j)]+'" id="'+(thread_num = thread_num.slice(1));
-					if (preCount) mt[recl[k]].push(thread_num);
+					j = recl[k = 'asdf'.indexOf(j)];
+					hell = j+'" id="'+(thread_num = thread_num.slice(1));
+					mt[j].push(mark = {i:thread_num});
 				}
 			}
 			if (preCount) {
+				++count[u == 'u'?u:u = 'o'];
 				if (tab.length > 3) ++count.img;
 				if (TU.test(post = tab[0])) post = unixTimeToStamp(post);
-				++count[u == 'u'?u:u = 'o'];
 				if (count[u += 'Last'] < post) count[u] = post;
+				if (mark && (!mark.t || mark.t < post)) mark.t = post;
 			} else {
 				++post_num;
 				if (tab.length > 3) {
@@ -517,11 +519,9 @@ c+'</div>'+b:p);
 				}
 				k = (h?e+'<span class="r">'+h+'</span>'+(m?e+m:(h.indexOf('<br>') > 0?'<br>&nbsp;':'')):'');
 			}
-			for (i in mt) if (mt[i].length) {
-				k += ', '+la[i];
-				for (j in mt[i]) h = mt[i][j], k += (j > 0?',':':')+
-e+'<a href="javascript:showOpen('+h+')"># '+h+'</a>';
-			}
+			for (i in mt) if ((j = mt[i]).length) k += '<br>'+la[i]+': '+j.length+','+j.map(function(v,i) {
+				return e+'<a href="javascript:showOpen('+v.i+')">'+v.t+'</a>';
+			}).join(',');
 			p.className += ' task';
 			p.innerHTML =
 d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.groups:la.active)+': '+a.length+'</a>'+k+'</p>'+b;

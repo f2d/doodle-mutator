@@ -25,7 +25,7 @@ $tmp_draw_hint = 'This page shares browser memory with the actual game. May be u
 $tmp_draw_test = 'Try out.';
 $tmp_draw_this = 'Try to draw:';
 $tmp_empty = 'Empty';
-$tmp_foot_notes = array('盲ゲ', 'f', 'message board', ' for contact.');
+$tmp_foot_notes = array('Project', 'author', 'message board', ' for contact.');
 $tmp_mod_files = array(
 	'Pics to subfolders.'
 ,	'Rewrite arch with newest template.'
@@ -45,7 +45,7 @@ $tmp_mod_user_info = 'Check flags of this user.';
 $tmp_name_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters.';
 $tmp_name_yourself = 'Name yourself:';
 $tmp_no_play_hint = 'Game playing turned off for you (no taking targets).';
-$tmp_options = 'Options';
+$tmp_options = 'Options. About';
 $tmp_options_admin = array(
 	'time_check_points'	=> 'Work time check points in footer'
 );
