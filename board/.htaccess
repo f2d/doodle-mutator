@@ -1,0 +1,35 @@
+# If you change this, remember to change the RewriteRule entry further down, too!
+AddCharset utf-8 html
+
+<Files *.txt>
+	Deny from all
+</Files>
+
+<Files config.pl>
+	Deny from all
+</Files>
+
+RedirectMatch 403 /(_bak|extras|include)/
+
+<IfModule headers_module>
+	<Files *.html>
+		Header add Expires "Mon, 26 Jul 1997 05:00:00 GMT"
+		Header add Pragma "no-cache"
+		Header add Cache-Control "max-age=0; must-revalidate; no-cache"
+		Header unset Vary
+	</Files>
+</IfModule>
+
+<IfModule rewrite_module>
+	RewriteEngine On
+	RewriteRule (^|/)(res|thumb|src)[/.]*$ d.htm
+	RewriteCond %{HTTP_ACCEPT} application/xhtml\+xml
+	RewriteRule \.html$ - [T=application/xhtml+xml;charset=utf-8]
+</IfModule>
+
+<IfModule dir_module>
+	DirectoryIndex index.html kareha.pl
+</IfModule>
+
+Options +ExecCGI
+AddHandler cgi-script cgi pl

@@ -5,9 +5,9 @@ Web server scripts in PHP and client-side in JS.
 
 ## Installation steps
 
-1. Put all its files in a clean folder of your web-server.
-2. Get the web-server up and running, index.php must be default root for that folder.
-3. Open the folder in a web-browser, input a name for the admin account.
+1. Put the folders onto your web-server. You can rename both folders as you wish (if you do, change the paths in respective config files), and use anything in place of the default board, which is modified Kareha (Public Domain), written in Perl. If you keep it, don't forget to change passwords in config.
+2. Get the web-server up and running, index.php must be default root for the doodle folder.
+3. Open the doodle folder in a web-browser, input a name for the admin account.
 
 ## EN: What is it all about?
 

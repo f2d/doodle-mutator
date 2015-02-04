@@ -1,0 +1,33 @@
+.abbrev {color: #707070;}
+.adminbar {text-align: right; clear: both; float: right;}
+.commentpostername {color: #174; font-weight: 800;}
+.delbuttons {text-align: center; padding-bottom: 4px;}
+.dellist {font-weight: bold; text-align: center;}
+.doubledash {vertical-align: top; clear: both; float: left;}
+.filesize {text-decoration: none;}
+.filetitle {background: inherit; font-size: 1.2em; color: #cc1105; font-weight: 800;}
+.footer {font-size: 12px; font-family: serif;}
+.highlight {background: #f0e0d6; color: #800; border: 2px dashed #ea8;}
+.logo {clear: both; text-align: center; font-size: 2em; color: #800; width: 100%;}
+.managehead {background: #a66; color: #400; padding: 0px;}
+.oldpost {color: #cc1105; font-weight: 800;}
+.omittedposts {color: #707070;}
+.passvalid {background: #ea8; text-align: center; width: 100%; color: #fff;}
+.postblock {background: #ea8; color: #800; font-weight: 800;}
+.postername {color: #174; font-weight: bold;}
+.postertrip {color: #285;}
+.postlists {background: #fff; width: 100%; padding: 0px; color: #800;}
+.reply {background: #f0e0d6; color: #800;}
+.reply:target {background: #fdc;}
+.replytitle {font-size: 1.2em; color: #cc1105; font-weight: 800;}
+.row1 {background: #eec; color: #800;}
+.row2 {background: #dda; color: #800;}
+.rules {font-size: 0.7em;}
+.spoiler, .spoiler a {background: #f0d0b6; color: #f0d0b6;}
+.spoiler:hover {color: #800;}
+.theader {background: #e04000; text-align: center; padding: 2px; color: #fff; width: 100%;}
+.thumbnailmsg {font-size: small; color: #800;}
+.unkfunc {background: inherit; color: #792;}
+a,	 .spoiler:hover a	{color: #00e;}
+a:hover, .spoiler:hover a:hover {color: #d00;}
+html, body {background: #ffe; color: #800;}

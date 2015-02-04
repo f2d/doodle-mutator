@@ -1,0 +1,40 @@
+.abbrev {color: #666;}
+.adminbar a {font-weight: bold;}
+.adminbar {clear: both; float: right; font-size: .8em;}
+.commentpostername {color: #049; font-weight: 800;}
+.delbuttons {text-align: center; padding-bottom: 4px;}
+.dellist, .theader, .passvalid {font-weight: bold; text-align: center;}
+.doubledash {display: none;}
+.filesize {text-decoration: none; color: #666; font-size: .8em;}
+.filetitle {background: inherit; font-size: 1.2em; color: #024; font-weight: bold;}
+.footer {font-size: 12px; font-family: serif;}
+.highlight {background: #edc; color: #333; border: 2px dashed #e60;}
+.logo {clear: both; text-align: left; font-size: 2em; font-weight: bold; color: #ace;}
+.managehead {background: #eee; color: #024; padding: 0px;}
+.nothumb {background-color: #fff; border-style: dotted; margin: .3em .5em;}
+.oldpost {color: #c10; font-weight: bold;}
+.omittedposts {color: #666;}
+.postblock {background: transparent; color: #024; font-weight: bold;}
+.postername {color: #049; font-weight: bold;}
+.postertrip {color: #f30;}
+.postlists {background: #fff; width: 100%; padding: 0px; color: #800;}
+.reflink {font-size: .8em; font-weight: bold;}
+.reply blockquote {margin: .5em;}
+.reply, blockquote p {padding: 0; margin: 0;}
+.reply, .theader, .passvalid {background: #eee; border: solid 1px #ccc; border-radius: 5px;}
+.reply:target {background: #e5f5ff; border-style: dashed;}
+.replytitle {font-size: 1.2em; color: #024; font-weight: bold;}
+.row1, .row2 {background: #eee; color: #024;}
+.row2 {background: #ccc;}
+.rules {font-size: 0.7em;}
+.spoiler, .spoiler a {background: #bbb; color: #bbb;}
+.spoiler:hover {color: #333;}
+.theader, .passvalid {color: #26a; clear: both; padding: 2px; margin-bottom: .5em;}
+.thumbnailmsg {font-size: .8em; color: #666;}
+.unkfunc {background: inherit; color: #792;}
+a,	 .spoiler:hover a	{color: #18b;}
+a:hover, .spoiler:hover a:hover	{color: #3bf;}
+blockquote {margin: .5em .5em .5em 1em;}
+hr {border-style: solid none none none; border-width: 1px; border-color: #bbb;}
+html, body {background-color: #f5f5f5; color: #333; font-family: "trebuchet ms", trebuchet, serif;}
+table, table td {border-style: none;}
