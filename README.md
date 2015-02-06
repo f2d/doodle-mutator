@@ -2,10 +2,11 @@
 
 Parallel turn-based multiplayer online drawing game.
 Web server scripts in PHP and client-side in JS.
+A Perl message/image board included for convenience.
 
 ## Installation steps
 
-1. Put the folders onto your web-server. You can rename both folders as you wish (if you do, change the paths in respective config files), and use anything in place of the default board, which is modified Kareha (Public Domain), written in Perl. If you keep it, don't forget to change passwords in config.
+1. Put the folders onto your web-server. You can rename both folders as you wish (if you do, change the paths in respective config files), and use anything in place of the default board, which is modified [Kareha](http://wakaba.c3.cx/s/web/wakaba_kareha), Public Domain and written in Perl by Dag Ågren/WAHa.06x36. If you keep it, don't forget to change passwords in config.
 2. Get the web-server up and running, index.php must be default root for the doodle folder.
 3. Open the doodle folder in a web-browser, input a name for the admin account.
 
