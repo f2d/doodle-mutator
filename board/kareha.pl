@@ -459,7 +459,7 @@ sub proxy_check($)
 sub format_comment($$$)
 {
 	my ($comment,$markup,$thread)=@_;
-	$thread=RES_DIR.$thread.PAGE_EXT;
+	$thread=S_BOARD_PATH.RES_DIR.$thread.PAGE_EXT;
 	$markup=DEFAULT_MARKUP unless grep $markup eq $_,MARKUP_FORMATS;
 
 	if($markup eq "none") { $comment=simple_format($comment,$thread) }
