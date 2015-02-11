@@ -27,8 +27,6 @@ use constant TITLE => 'Feedback and help';	# Name of this image board
 use constant S_HOME_PATH => '/doodle/';
 use constant S_BOARD_PATH => '/board/';
 use constant DEFAULT_STYLE => 'Ace';		# Default CSS style title
-use constant FAVICON => 'd.png';		# Path to the favicon for the board
-use constant MAIN_STYLE => 'd';
 
 # Limitations
 #use constant ALLOW_TEXT_THREADS => 1;		# Allow users to create text threads
@@ -37,7 +35,7 @@ use constant MAIN_STYLE => 'd';
 #use constant AUTOCLOSE_DAYS => 0;		# Maximum number of days with no activity before a thread closes. 0 to disable.
 #use constant AUTOCLOSE_SIZE => 0;		# Maximum size of the thread HTML file in kilobytes before a thread closes. 0 to disable.
 use constant MAX_RES => 200;			# Maximum topic bumps
-use constant MAX_THREADS => 200;		# Maximum number of threads - set to 0 to disable
+#use constant MAX_THREADS => 200;		# Maximum number of threads - set to 0 to disable
 #use constant MAX_POSTS => 500;			# Maximum number of posts - set to 0 to disable
 #use constant MAX_MEGABYTES => 0;		# Maximum size to use for all images in megabytes - set to 0 to disable
 #use constant MAX_FIELD_LENGTH => 100;		# Maximum number of characters in subject, name, and email
@@ -115,6 +113,8 @@ use constant COOKIE_PATH => 'current';		# Path argument for cookies ('root': coo
 #use constant HTML_BACKLOG => '';		# Name of backlog html file
 #use constant RSS_FILE => '';			# RSS file. Set to '' to disable RSS support.
 use constant JS_FILE => 'k.js';			# Location of the js file
+use constant CSS_FILE => 'd.css';		# Location of the css file
+use constant FAVICON => 'd.png';		# Path to the favicon for the board
 #use constant SPAM_FILES => ('spam.txt');	# Spam definition files, as a Perl list.
 				# Hints:
 				# * Set all boards to use the same file for easy updating.

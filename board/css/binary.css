@@ -23,8 +23,8 @@ a, .spoiler:hover a {background: inherit; color: #000;}
 a.quotejs {color: #fff; text-decoration: none;}
 a.quotejs:hover {font-weight: bold;}
 a.quotelink {background: inherit; color: #000;}
-a:hover, .replylink a:hover {color: #aaa; background: inherit;}
 a:visited {background: inherit; color: #000;}
+a:hover, .replylink a:hover {color: #aaa; background: inherit;}
 hr {border: none; color: #999; background-color: #999; height: 1px;}
 html, body {font-size: 10pt; background: #fff; color: #000;}
 input, textarea {background-color: #fff; border: 1px solid #444; color: #ccc;}

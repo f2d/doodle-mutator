@@ -11,6 +11,7 @@ BEGIN { require 'wakautils.pl' }
 use constant S_HOME => 'Back to game';						# Forwards to home page
 use constant S_BOARD => 'Board index';
 use constant S_RETURN => 'Return to board index';				# Back from reply mode
+use constant S_RETREF => 'Revisit previous page';				# Back from error
 use constant S_POSTING => 'Reply mode';						# Prints message in red bar atop the reply screen
 
 use constant S_NAME => 'Name';							# Describes name field
@@ -85,7 +86,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <title><const TITLE><if $title> — <var $title></if></title>
 <meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
 <link rel="shortcut icon" href="<const expand_filename(FAVICON)>" />
-<link rel="stylesheet" type="text/css" href="<const expand_filename(MAIN_STYLE)>.css" />
+<link rel="stylesheet" type="text/css" href="<const expand_filename(CSS_FILE)>" />
 
 <loop $stylesheets>
 <link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="<var expand_filename($filename)>" title="<var $title>" />
@@ -371,7 +372,8 @@ use constant RSS_TEMPLATE => compile_template( q{
 use constant ERROR_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 <h1 style="text-align: center"><var $error><br /><br />
-<a href="<var escamp($ENV{HTTP_REFERER})>"><const S_RETURN></a><br /><br />
+	[<a href="<var escamp($ENV{HTTP_REFERER})>"><const S_RETREF></a>]<br /><br />
+	[<a href="<var expand_filename(HTML_SELF)>"><const S_RETURN></a>]<br /><br />
 </h1>
 
 }.NORMAL_FOOT_INCLUDE);

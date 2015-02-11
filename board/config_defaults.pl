@@ -23,7 +23,6 @@ BEGIN {
 	eval "use constant REPLIES_PER_THREAD => 10" unless(defined &REPLIES_PER_THREAD);
 	eval "use constant S_ANONAME => 'Anonymous'" unless(defined &S_ANONAME);
 	eval "use constant DEFAULT_STYLE => 'Futaba'" unless(defined &DEFAULT_STYLE);
-	eval "use constant FAVICON => 'kareha.ico'" unless(defined &FAVICON);
 
 	# Limitations
 	eval "use constant ALLOW_TEXT_THREADS => 1" unless(defined &ALLOW_TEXT_THREADS);
@@ -103,6 +102,8 @@ BEGIN {
 	eval "use constant HTML_BACKLOG => ''" unless(defined &HTML_BACKLOG);
 	eval "use constant RSS_FILE => ''" unless(defined &RSS_FILE);
 	eval "use constant JS_FILE => 'kareha.js'" unless(defined &JS_FILE);
+	eval "use constant CSS_FILE => 'kareha.css'" unless(defined &CSS_FILE);
+	eval "use constant FAVICON => 'kareha.ico'" unless(defined &FAVICON);
 
 	unless(defined &SPAM_FILES)
 	{

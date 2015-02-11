@@ -459,14 +459,17 @@ sub proxy_check($)
 sub format_comment($$$)
 {
 	my ($comment,$markup,$thread)=@_;
-	$thread=S_BOARD_PATH.RES_DIR.$thread.PAGE_EXT;
+
+	$thread=expand_filename(RES_DIR.$thread.PAGE_EXT);
 	$markup=DEFAULT_MARKUP unless grep $markup eq $_,MARKUP_FORMATS;
 
-	if($markup eq "none") { $comment=simple_format($comment,$thread) }
-	elsif($markup eq "html") { $comment=html_format($comment,$thread) }
-	elsif($markup eq "raw") { $comment=raw_html_format($comment,$thread) }
-	elsif($markup eq "aa") { $comment=aa_format($comment,$thread) }
-	else { $comment=wakabamark_format($comment,$thread) }
+	my %formats = (
+		"none"	=> \&simple_format
+	,	"html"	=> \&html_format
+	,	"raw"	=> \&raw_html_format
+	,	"aa"	=> \&aa_format
+	);
+	$comment=($formats{$markup} || \&wakabamark_format)->($comment,$thread);
 
 	# fix <blockquote> styles for old stylesheets
 	$comment=~s/<blockquote>/<blockquote class="unkfunc">/g if(FUDGE_BLOCKQUOTES);
