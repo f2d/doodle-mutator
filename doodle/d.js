@@ -520,7 +520,7 @@ c+'</div>'+b:p);
 				k = (h?e+'<span class="r">'+h+'</span>'+(m?e+m:(h.indexOf('<br>') > 0?'<br>&nbsp;':'')):'');
 			}
 			for (i in mt) if ((j = mt[i]).length) k += '<br>'+la[i]+': '+j.length+','+j.map(function(v,i) {
-				return e+'<a href="javascript:showOpen('+v.i+')">'+v.t+'</a>';
+				return e+'<a href="javascript:showOpen('+v.i+')">'+v.t.replace(' ', ' <small>')+'</small></a>';
 			}).join(',');
 			p.className += ' task';
 			p.innerHTML =

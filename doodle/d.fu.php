@@ -12,8 +12,7 @@ function trim_room($r) {
 }
 function get_room_skip_name($r) {return array(ME.'-skip-'.md5($r = rawurlencode($r)), $r);}
 function get_room_skip_list($k = '') {
-	global $room;
-	return ($v = $_COOKIE[$k?$k:reset(get_room_skip_name($room))])
+	return ($v = $_COOKIE[$k?$k:reset(get_room_skip_name($GLOBALS['room']))])
 	?	array_slice(explode('/', $v, TRD_MAX_SKIP_PER_ROOM+1), 1, TRD_MAX_SKIP_PER_ROOM-($k?1:0))
 	:	array();
 }
@@ -65,7 +64,7 @@ function format_time_units($t) {
 }
 function exit_if_not_mod($t) {
 	header('Cache-Control: max-age=0; must-revalidate; no-cache');
-	if (isset($_SERVER[$h = 'HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER[$h]) == $t) {
+	if (!$GLOBALS['u_opts']['modtime304'] && isset($_SERVER[$h = 'HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER[$h]) == $t) {
 		header('HTTP/1.0 304 Not Modified');
 		exit;
 	}
@@ -153,12 +152,11 @@ function get_template_pre($p, $R = 0) {
 	if (is_array($a = $p)) {
 		foreach ($a as $k => $v) if (!$k) $p = $v; else if ($v) $attr .= " $k=\"$v\"";
 	}
-	global $tmp_require_js;
 	return ($p?'
 	<div class="thread">
 		<pre'.$attr.'>'.$p.'
 		</pre>
-		<noscript><p class="hint report">'.($R?'JavaScript support required.':$tmp_require_js).'</p></noscript>
+		<noscript><p class="hint report">'.($R?'JavaScript support required.':$GLOBALS['tmp_require_js']).'</p></noscript>
 	</div>
 ':'');
 }

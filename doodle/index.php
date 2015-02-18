@@ -70,8 +70,8 @@ if ($me = $_REQUEST[ME]) {
 ,	'body' => 'burnt-hell')));
 
 		if (POST) $post_status = OQ.$tmp_post_ok_user_qk;
-		foreach ($opt_lvls as $i => $a) if (${$p = "u_opt$i"})
-		foreach ($cfg_opts_order[$a] as $k => $v) $u_opts[$v] = intval($$p[$k]);
+		foreach ($opt_lvls as $i => $a) if ($p = ${"u_opt$i"})
+		foreach ($cfg_opts_order[$a] as $k => $v) if ($x = intval($p[$k])) $u_opts[$v] = $x;
 	}
 }
 define(GOD, $u_flag['god']?1:0);

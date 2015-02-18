@@ -5,7 +5,7 @@ $cfg_langs = array('en', 'ru');
 $cfg_draw_app = array('dfc', 'milf');
 $cfg_opts_order = array(
 	'admin' => array('time_check_points')
-,	'check' => array('head', 'count', 'times', 'names', 'own', 'unknown', 'active', 'save2common', 'kbox', 'focus')
+,	'check' => array('head', 'count', 'times', 'names', 'own', 'unknown', 'active', 'save2common', 'kbox', 'focus', 'modtime304')
 ,	'input' => array('draw_app', 'draw_max_undo', 'per_page', 'room_home')
 );
 $cfg_dir = array(
