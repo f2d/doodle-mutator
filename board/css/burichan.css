@@ -16,7 +16,7 @@
 .postername {background: inherit; font-size: 12px; font-family: serif; color: #174; font-weight: 800;}
 .postlists {background: #fff; width: 100%; padding: 0px; color: #000;}
 .reply {background: #d6daf0; color: #000; font-family: serif;}
-.reply: target {background:  #cdf;}
+.reply:target {background: #cdf;}
 .replytitle {background: inherit; font-size: 18px; font-family: serif; color: #0f0c5d; font-weight: 800;}
 .row1 {font-family: sans-serif; font-size: 12px; color: #000; background: #9ad2f6;}
 .row2 {font-family: sans-serif; font-size: 12px; color: #000; background: #fff;}
@@ -26,6 +26,6 @@
 .theader {background: #0010e0; color: #fff; width: 100%;}
 .thumbnailmsg {background: inherit; font-family: sans-serif; font-size: 9px; color: #000;}
 .unkfunc {background: #c4c2ee; color: #fff;}
-a, a:visited, .spoiler:hover a	{background: inherit; font-family: sans-serif; color: #34345c; text-decoration: none;}
+a, a:visited, .spoiler:hover a {background: inherit; font-family: sans-serif; color: #34345c; text-decoration: none;}
 a:hover, .spoiler:hover a:hover {background: inherit; font-family: sans-serif; color: #d00; text-decoration: underline;}
 html, body {font-size: 12pt; background: #eff; color: #000;}
