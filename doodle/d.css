@@ -95,7 +95,16 @@ a:hover	{		color: #000;}
 	padding: 8px 0;
 	background-color: #aaa;
 }
-#task>img, header>* {
+#task>.res {
+	cursor: move;
+}
+#task>.res>img[src*=res] {
+	padding: 0 8px;
+	border: 8px solid #ccc;
+	border-top: none;
+	border-bottom: none;
+}
+#task>.res>img, #task>img, header>* {
 	margin-top: 8px;
 	vertical-align: bottom;		/* <- removes extra bottom space (sub-baseline) */
 }

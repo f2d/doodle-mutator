@@ -131,12 +131,16 @@ var	s = id(cs), r = new XMLHttpRequest(), i, j, k, e, t;
 '<b class="date-out l">'+
 '<b class="report">'+la.mistype+'</b></b></b>';
 					if (j) {
-						if ((e = gn('p', k)).length && (e = e[1]).innerHTML != t) e.innerHTML = t;
+						if ((e = gn('p', k)).length > 1
+							&& !/^form$/i.test((e = e[1]).previousElementSibling.tagName)
+							&& e.innerHTML != t
+						) e.innerHTML = t;
 					} else if (i) {
 						e = e[0];
 						k = t.indexOf(';')+1;
-						if (!flag.pixr) flag.pixr = e.src.split('/').slice(0, flag.p?-3:-1).join('/')+'/';
-						j = flag.pixr+(flag.p?getPicSubDir(t):'')+(k?t:t.replace(/(\.[^.\/;]+);.+$/,'_res$1'));
+						j = (flag.pixr?flag.pixr:flag.pixr = e.src.split('/').slice(0, flag.p?-3:-1).join('/')+'/')
+							+(flag.p?getPicSubDir(t):'')
+							+(k?t.replace(/(\.[^.\/;]+);.+$/,'_res$1'):t);
 						if (e.src != j) e.src = j, e.alt = t, setPicResize(e, k);
 					}
 				}
@@ -153,14 +157,27 @@ var	s = id(cs), r = new XMLHttpRequest(), i, j, k, e, t;
 }
 
 function setPicResize(e,i) {
-	e.title = (i?e.alt.slice(i):'');
-	e.style.cursor = (i?'move':'auto');
-	e.setAttribute('onclick', i?'togglePicSize(this)':'');
+var	a = e.parentNode, nested = /^a$/i.test(a.tagName);
+	if (i) {
+		if (!nested) {
+			a = a.insertBefore(document.createElement('a'), e);
+			a.appendChild(e);
+			a.className = 'res';
+			a.href = 'javascript:;';
+			a.setAttribute('onclick', 'togglePicSize(this.firstElementChild)');
+		}
+		a.title = e.alt.slice(i);
+	} else if (nested) {
+		r = a.parentNode;
+		r.appendChild(e);
+		r.removeChild(a);
+	}
 	e.setAttribute('onload', 'setPicStyle(this)');
 }
 
 function setPicStyle(e) {
-var	i = e.offsetWidth+16, a = {minWidth: Math.max(656,i), maxWidth: Math.max(1000,i)}, b = document.body.style, e = e.parentNode.style;
+var	i = e.offsetWidth+16, b = document.body.style, a = e.parentNode, e = (a.href?a.parentNode:a).style
+,	a = {minWidth: Math.max(656,i), maxWidth: Math.max(1000,i)};
 	for (i in a) e[i] = b[i] = a[i]+'px';
 }
 

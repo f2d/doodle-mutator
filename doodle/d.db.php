@@ -94,7 +94,7 @@ global	$u_key, $u_num, $u_flag, $usernames, $last_user, $room;
 	if (is_file($f = "$d.log")) foreach (fln($f) as $line) if (strpos($line, '	')) {
 		list($i, $k, $t, $name) = explode('	', $line);
 		if ($last_user < $i) $last_user = $i;
-		if ($u == $k) {
+		if ($u === $k) {
 			$u_key = $k;
 			$u_num = $i;
 			data_lock($n = '/'.$u_num);
@@ -278,7 +278,8 @@ global	$room, $usernames;
 	&& preg_match(TRD_PLAY, $f, $n)
 	&& $n[2] && ($n[2] == 'f' || $n[2] >= TRD_MAX_POSTS)
 	&& (R1 || !$n[4] || ($n[4] + TRD_ARCH_TIME < T0))
-	&& is_file($f = $d.$f)) {
+	&& is_file($f = $d.$f)
+	) {
 		$a = array($f,'','');
 		foreach (fln($f) as $line) if (strpos($line, '	')) {
 			$tab = explode('	', $line);
@@ -471,7 +472,8 @@ global	$u_num, $u_flag, $room, $merge;
 				if ((list($d,$f,$m) = data_get_thread_by_num($a[0]))
 				&& data_lock($msg)
 				&& (($n = data_get_thread_count($msg)) >= 0)
-				&& copy($d.$f, DIR_ROOM."$msg/$n$m[3]$m[4]$m[5]")) {
+				&& copy($d.$f, DIR_ROOM."$msg/$n$m[3]$m[4]$m[5]")
+				) {
 					$ok = $msg;
 					data_put(0, $n+1, $msg);
 					data_post_refresh($msg);
@@ -480,15 +482,20 @@ global	$u_num, $u_flag, $room, $merge;
 			if (is_dir(DIR_ROOM.$msg)) $ok = $msg.' already exists';
 			else {
 				data_post_refresh();
-				$ok = $room.' -> '.$msg;
+				$ok = "$room -> $msg";
 				$m = 'mod_'.$room;
 				$n = 'mod_'.$msg;
-				foreach (array('arch', 'room', 'doom') as $f) $ok .=
-','.$f.':'.(is_dir($rr = ($r = constant('DIR_'.strtoupper($f))).$room) && rename($rr, $r.$msg));
-				foreach (glob(DIR_DAUS.'/*.flag') as $f) if (false !== ($i = array_search($m, $x = fln($f)))) {
-					$x[$i] = $n;
+				foreach (array('arch', 'room', 'doom') as $f) $ok .= ",$f:".(
+					is_dir($rr = ($r = constant('DIR_'.strtoupper($f))).$room)
+					&& rename($rr, $r.$msg)
+				);
+				foreach (glob(DIR_DAUS.'/*.flag') as $f)
+					if (data_lock($i = substr($f, $i = strrpos($f, '/'), strrpos($f, '.')-$i))
+					&& false !== ($line = array_search($m, $x = fln($f)))
+				) {
+					$x[$line] = $n;
 					file_put_contents($f, implode(NL, $x));
-					$ok .= NL.'mod-change:'.substr($f, strrpos($f, '/')+1);
+					$ok .= NL.'mod-change:'.substr($i, 1);
 				}
 				$room = $msg;
 			}
@@ -520,10 +527,13 @@ global	$u_num, $u_flag, $room, $merge;
 		}
 		$m = 'mod_'.$room;
 		foreach (array('thrd', 'arch', 'pics') as $a) if ($c = ${"$a[0]c"}) $ok .= ",$a:$c";
-		foreach (glob(DIR_DAUS.'/*.flag') as $f) if (false !== ($i = array_search($m, $x = fln($f)))) {
-			unset($x[$i]);
+		foreach (glob(DIR_DAUS.'/*.flag') as $f)
+			if (data_lock($i = substr($f, $i = strrpos($f, '/'), strrpos($f, '.')-$i))
+			&& false !== ($line = array_search($m, $x = fln($f)))
+		) {
+			unset($x[$line]);
 			if ($x = implode(NL, $x)) file_put_contents($f, $x); else unlink($f);
-			$ok .= NL.'unmod:'.substr($f, strrpos($f, '/')+1);
+			$ok .= NL.'unmod:'.substr($i, 1);
 		}
 	} else
 	if ($o == 'insert post') {
@@ -685,7 +695,7 @@ global	$u_num, $u_flag, $u_task, $u_t_f, $room, $target;
 			$target['time'] = $a[0];
 			$target['thread'] = $tt = $a[2];
 			if ((	$target['post'] = $a[3]
-			) == (	$target['task'] = substr($line, strrpos($line, '	')+1)
+			) === (	$target['task'] = substr($line, strrpos($line, '	')+1)
 			))	$target['pic'] = 1;
 			unset($u_task[$k]);
 			break;
@@ -786,7 +796,8 @@ global	$u_num, $room, $target;
 	&& (is_file($f = $d.$tt)				//* <- own target still owned
 	|| (($tt = preg_replace(TRD_PLAY, '$1$6', $tt))
 	&&  is_file($f = $d.$tt)				//* <- own target, taken and dropped by another user in meanwhile
-	)) && preg_match(TRD_PLAY, $tt, $m)) {
+	)) && preg_match(TRD_PLAY, $tt, $m)
+	) {
 
 //* update metadata in existing filename
 		$p = substr_count(file_get_contents($old = $f), IMG);
