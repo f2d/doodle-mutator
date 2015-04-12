@@ -1,21 +1,5 @@
 <?php
 
-function data_get_archive_count($r = 0, $re = 0) {
-	if (!$r) {global $room; $r = $room;}
-	return (is_dir($d = DIR_ARCH.$r)
-	? ((!$re && is_file($f = DIR_DOOM.$r.'/arch.count'))				//* <- seems ~2x faster than scandir() on ~50 files
-		? file_get_contents($f)
-		: count(array_diff(scandir($d), array('.', '..', trim(DIR_THUMB, '/')))	//* <- seems ~2x faster than glob()
-//			glob($d.'/*.htm', GLOB_NOSORT)
-	))
-	: 0);
-}
-
-function data_get_archive_mtime($r = 0) {
-global	$room;
-	return (is_file($r = DIR_DOOM.($r?$r:$room).'/arch.count') ? filemtime($r) : 0);
-}
-
 function data_get_visible_archives() {
 global	$u_flag;
 	$a = array(0);
@@ -105,7 +89,7 @@ global	$room;
 	}
 	data_put(1, $c);
 	if (R1 && R1_DEL
-	&& ($k = data_get_archive_count(0,1))	//* <- check number to keep 1 page
+	&& ($k = data_get_archive_count(0, 1))	//* <- check number to keep 1 page
 	&& (($k -= TRD_PER_PAGE) > 0)) {
 		$c -= TRD_PER_PAGE;
 		while ($k--) {
@@ -117,7 +101,7 @@ global	$room;
 }
 
 function data_archive_rewrite() {
-	$i = '	<img src="';	//* <- uniq for pics in posts
+	$i = '	<img src="';			//* <- uniq for pics in posts
 	if (!is_dir($da = DIR_ARCH)) return;
 	$sd1 = scandir($da);
 	natsort($sd1);

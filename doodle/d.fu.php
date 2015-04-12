@@ -16,6 +16,16 @@ function get_room_skip_list($k = '') {
 	?	array_slice(explode('/', $v, TRD_MAX_SKIP_PER_ROOM+1), 1, TRD_MAX_SKIP_PER_ROOM-($k?1:0))
 	:	array();
 }
+function get_dir_top_file_id($d) {
+	$i = 0;
+	if (is_dir($d)) foreach (scandir($d) as $f) if (preg_match('~^\d+~', $f, $m) && $i < ($n = intval($m[0]))) $i = $n;
+	return $i;
+}
+function get_dir_top_filemtime($d) {
+	$t = 0;
+	if (is_dir($d)) foreach (scandir($d) as $f) if (trim($f, '.') && $t < ($mt = filemtime("$d/$f"))) $t = $mt;
+	return $t;
+}
 function pic_normal_path($p) {return preg_replace('~(^|[\\/])([^._-]+)[^._-]*(\.[^.,;]+)([;,].*$)?~', '$2$3', $p);}
 function pic_resized_path($p) {return substr_replace($p, '_res', -4, 0);}
 function pic_subpath($f, $mk = 0) {

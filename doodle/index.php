@@ -567,27 +567,7 @@ if (TIME_PARTS && $a) time_check_point("done $a pics");
 							$done = data_archive_rewrite();
 						} else
 						if ($a == 2) {
-							$a = 0;
-							$e = '.log';
-							if (is_dir($d = DIR_DAUS))
-							foreach (glob($d.'/*'.$e, GLOB_NOSORT) as $f) if (is_file($f) && ($tasks = fln($f))) {
-								$flags = array();
-								$ips = array();
-								foreach (($csv = explode(',', trim(array_shift($tasks), BOM))) as $flag) {
-									if (rtrim($flag, '1234567890.')) $flags[] = $flag;
-									else $ips[] = ($ips?'':'old').'	'.$flag;
-								}
-								$new = rtrim($f, $e);
-								$done .= NL.(++$a).'	'.$f;
-								foreach (array('ip', 'flag', 'task') as $x) {
-									$s = $x.'s';
-									if ($i = trim(implode(NL, $$s))) {
-										$done .= '	'.$x.'s = '.count($$s);
-										file_put_contents($new.'.'.$x, $i);
-									}
-								}
-							}
-if (TIME_PARTS && $a) time_check_point("done $a users");
+							$done = data_fix_user_format();
 						}
 						$done = ($done?'
 		<textarea>Done:'.$done.'</textarea>':$tmp_empty);
@@ -898,7 +878,10 @@ if (isset($_POST['report'])) die(get_template_page(array(
 )));
 header('HTTP/1.1 303 Refresh after POST. '.($p = rawurlencode($p)));
 
-$l = (($room = $_POST['rooms']) && ($room = trim_room(urldecode($room)))
+$l = ((
+	($room && $room != $_REQUEST['room'] && ($room = '../'.$room))		//* <- move after rename
+	|| (($room = $_POST['rooms']) && ($room = trim_room(urldecode($room))))	//* <- create new room
+	)
 	? rawurlencode($room).'/'
 	: ($etc && $etc[0] != '-'?$etc:'.')
 );
