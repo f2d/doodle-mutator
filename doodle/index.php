@@ -39,6 +39,7 @@ if (isset($_SERVER[$h = 'HTTP_ACCEPT_LANGUAGE'])) {
 require(NAMEPRFX.".cfg.$lang.php");
 define(FROZEN_HELL, data_global_announce('stop'));
 data_log_ref();
+
 ob_end_clean();
 time_check_point('after cfg');
 
@@ -131,6 +132,7 @@ if (TIME_PARTS) time_check_point('inb4 action fork');
 
 
 if (POST) {//*	--------	post/setting/reg	--------
+ob_start();
 
 if ($u_key) {
 	$post_status = (($_POST[ME] || $_POST['rooms'])?OK:-1);
@@ -883,6 +885,8 @@ die(get_template_page(array(
 
 //* after posting -------------------------------------------------------------
 post_refresh:
+
+if ($o = ob_get_flush()) data_log_adm('PHP output: '.$o);
 
 $p = $post_status;
 $ok = (!$p || OK == substr($p, 0, strlen(OK)));

@@ -113,6 +113,7 @@ global	$last_user;
 	data_lock('/new');
 	if (($r = data_log($f = "$d.log", "$u_num	$u_key	".T0.'+'.M0."	$u_name"))
 	&& !$last_user) data_put("$d/$u_num.flag", 'god');	//* <- 1st registered = top supervisor
+	data_unlock('/new');
 	return $r;
 }
 
@@ -139,7 +140,8 @@ function data_log_adm($a) {			//* <- keep logs of administrative actions by date
 global	$u_num, $room;
 	$d = date('Y-m-d', T0);
 	$u = (GOD?'g':(MOD?'m':'r'));
-	return data_log(DIR_DOOM."$room/$d.log", T0.'+'.M0."	$u$u_num	$a");
+	$r = ($room?DIR_DOOM.$room.'/':'');
+	return data_log("$r$d.log", T0.'+'.M0."	$u$u_num	$a");
 }
 
 function data_log_report($r) {			//* <- r = array(t-r-c, reason, thread, row, column)
@@ -231,18 +233,19 @@ global	$u_num, $u_flag;
 	if (is_array($u)) $u = data_get_u_by_post($u);
 
 	if ($on < 0) {
-		if ($u && data_lock('/new') && ($ul = fln($f = DIR_DAUS.'.log'))) foreach ($ul as $k => $line) if (intval($line) == $u) {
+		if ($u && data_lock('/new') && ($ul = fln($f = DIR_DAUS.'.log')))
+		foreach ($ul as $k => $line)
+		if (intval($line) == $u) {
 			$ul[$k] = substr($line, 0, $s = strrpos($line, '	')+1).$flag;
 			data_put($f, implode(NL, $ul));
-			return $u.': '.substr($line, $s).' -> '.$flag;
+			return $u.': '.substr($line, $s).' -> '.$flag;		//* <- rename
 		}
 		return 'no user with ID '.$u;
 	}
 
 	if (!$u || (!(GOD || $harakiri) && ($u == $u_num))) return 0;		//* <- mods cannot ban self
-	$n = '/'.$u;
+	data_lock($n = '/'.$u);
 	if (is_file($f = DIR_DAUS.$n.'.flag')) {
-		data_lock($n);
 		$flags = array();
 		foreach (fln($f) as $k) $flags[$k] = $k;
 		if (!GOD && ($flags['god'] || $flags['mod'])) return -$u;	//* <- mods cannot ban mods
@@ -257,15 +260,17 @@ global	$u_num, $u_flag;
 		else if ($flags) data_put($f, implode(NL, $flags));
 		else unlink($f);
 	} else if ($on) data_put($f, $flag);		//* <- add, new file
-	else return 0;
+	else $u = 0;
 	return $u;
 }
 
 function data_check_user_info($u) {
-	$n = DIR_DAUS.($u = "/$u");
-	if (data_lock($u))
-	foreach (array('flag' => 'Flags','ip' => 'IPs') as $k => $v)
-	if (is_file($f = "$n.$k")) $r .= NL."$v: ".NL.file_get_contents($f).NL;
+	if (data_lock($u = '/'.$u)) {
+		$n = DIR_DAUS.$u;
+		foreach (array('flag' => 'Flags','ip' => 'IPs') as $k => $v)
+			if (is_file($f = "$n.$k")) $r .= NL."$v: ".NL.file_get_contents($f).NL;
+		data_unlock($u);
+	}
 	return $r;
 }
 
@@ -485,17 +490,19 @@ global	$u_num, $u_flag, $room, $merge;
 				$ok = "$room -> $msg";
 				$m = 'mod_'.$room;
 				$n = 'mod_'.$msg;
-				foreach (array('arch', 'room', 'doom') as $f) $ok .= ",$f:".(
-					is_dir($rr = ($r = constant('DIR_'.strtoupper($f))).$room)
-					&& rename($rr, $r.$msg)
-				);
-				foreach (glob(DIR_DAUS.'/*.flag') as $f)
-					if (data_lock($i = substr($f, $i = strrpos($f, '/'), strrpos($f, '.')-$i))
-					&& false !== ($line = array_search($m, $x = fln($f)))
-				) {
-					$x[$line] = $n;
-					file_put_contents($f, implode(NL, $x));
-					$ok .= NL.'mod-change:'.substr($i, 1);
+				foreach (array('arch', 'room', 'doom') as $f) {
+					$r = constant('DIR_'.strtoupper($f));
+					$ok .= ",$f:"
+						.(is_dir($rr = $r.$msg) && rename($rr, $rr.'.'.T0.'.old_bak') ?'old_bak+':'')
+						.(is_dir($rr = $r.$room) && rename($rr, $r.$msg) ?1:0);
+				}
+				foreach (glob(DIR_DAUS.'/*.flag') as $f) if (data_lock($i = substr($f, $i = strrpos($f, '/'), strrpos($f, '.')-$i))) {
+					if (false !== ($line = array_search($m, $x = fln($f)))) {
+						$x[$line] = $n;
+						file_put_contents($f, implode(NL, $x));
+						$ok .= NL.'mod-change:'.substr($i, 1);
+					}
+					data_unlock($i);
 				}
 				$room = $msg;
 			}
@@ -527,13 +534,13 @@ global	$u_num, $u_flag, $room, $merge;
 		}
 		$m = 'mod_'.$room;
 		foreach (array('thrd', 'arch', 'pics') as $a) if ($c = ${"$a[0]c"}) $ok .= ",$a:$c";
-		foreach (glob(DIR_DAUS.'/*.flag') as $f)
-			if (data_lock($i = substr($f, $i = strrpos($f, '/'), strrpos($f, '.')-$i))
-			&& false !== ($line = array_search($m, $x = fln($f)))
-		) {
-			unset($x[$line]);
-			if ($x = implode(NL, $x)) file_put_contents($f, $x); else unlink($f);
-			$ok .= NL.'unmod:'.substr($i, 1);
+		foreach (glob(DIR_DAUS.'/*.flag') as $f) if (data_lock($i = substr($f, $i = strrpos($f, '/'), strrpos($f, '.')-$i))) {
+			if (false !== ($line = array_search($m, $x = fln($f)))) {
+				unset($x[$line]);
+				if ($x = implode(NL, $x)) file_put_contents($f, $x); else unlink($f);
+				$ok .= NL.'unmod:'.substr($i, 1);
+			}
+			data_unlock($i);
 		}
 	} else
 	if ($o == 'insert post') {
@@ -610,7 +617,7 @@ if (TIME_PARTS) time_check_point('done scan'.NL);
 , data_get_archive_count($r)			//* <- archived
 , data_get_archive_mtime($r), $count_pics, $count_desc, $lpt);
 			file_put_contents($cf, $lmt.NL.implode(',', $c).(implode('', $mod)?NL.implode(',', $mod):($mod = '')));
-			data_unlock();
+			data_unlock($r);
 			if ($u_mod && $mod) {
 				if (!GOD) $mod['del'] = 0;
 				$c[] = $mod;
