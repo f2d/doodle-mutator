@@ -402,10 +402,15 @@ global	$u_num, $u_flag, $room, $merge;
 	} else
 	if ($o == 'delete thread') {
 		if ((list($d,$f,$m) = data_get_thread_by_num($a[0]))
-		&& (GOD
-			? data_del_thread($d.$f, $m[2], $un)
-			: rename($d.$f, $d.$m[1].'.del')
-		)) {$ok = OK; data_post_refresh();}
+		&& (GOD ? (
+				($bak = NL.'['.trim(file_get_contents($d.$f), BOM."\r\n").NL.']')
+				&& data_del_thread($d.$f, $m[2], $un)
+			)
+			: ($bak = rename($d.$f, $d.$m[1].'.del'))
+		)) {
+			$ok = OK.$bak;
+			data_post_refresh();
+		}
 	} else
 	if ($o == 'delete post') {
 		if (list($d,$f,$m) = data_get_thread_by_num($a[0])) {

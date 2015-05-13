@@ -5,8 +5,8 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v1.12'
-,	INFO_DATE = '2014-07-16 — 2014-10-15'
+,	INFO_VERSION = 'v1.14'
+,	INFO_DATE = '2014-07-16 — 2015-05-13'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -14,12 +14,12 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 ,	DRAW_PIXEL_OFFSET = -0.5
 ,	DRAW_HELPER = {lineWidth: 1, shadowBlur: 0, shadowColor: A0, strokeStyle: 'rgba(123,123,123,0.5)', globalCompositeOperation: SO}
 
-,	mode = {debug:	false
-	,	shape:	false	//* <- straight line	/ fill area	/ copy
-	,	step:	false	//* <- curve		/ outline	/ part
+,	mode = {debug:	false	//* <- safe to define here
+	,	shape:	false	//* <- safe to define here;	straight line	/ fill area	/ copy
+	,	step:	true	//* <- safe to define here;	curve		/ outline	/ part
 	,	lowQ:	false
 	,	erase:	false
-	,	brushView:	false
+	,	brushView:	false	//* <- safe to define here
 	,	limitFPS:	false
 	,	autoSave:	true
 	,	globalHistory:	false
@@ -40,13 +40,24 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 		imgRes: {width:640, height:360}
 	,	imgLimits: {width:[64,640], height:[64,800]}
 	,	lineCaps: {lineCap:0, lineJoin:0}
-	,	shapeFlags: [1,10,2,2,2,4]
+	,	shapeFig: [1,1,2,3,4,5]
+	,	shapeFlags: [1,10,2,2,2,66,20,50]
+/* flags (sum parts, be careful; such a mess, for now):
+1 = path, mode: step 1 line, step 2 curve
+2 = area, mode: outline, fill, erase
+4 = move, mode: copy, step 1 area
+8 = path, closed polygon
+16 = hide lineStyle
+32 = show textStyle; click once to draw
+64 = step 2 for all modes; click same point twice -> not 1 pixel drawn
+*/
 	,	clipBorder: ['', '#123', '#5ea']//, '#5ae', '#ff0', '#f40']
 	,	options: {
-			shape	: ['line', 'poly', 'rectangle', 'circle', 'ellipse', 'pan']
+			shape	: ['line', 'poly', 'rectangle', 'circle', 'ellipse', 'radiance', 'pan'/*, 'text'*/]
 		,	lineCap	: ['round', 'butt', 'square']
 		,	lineJoin: ['round', 'bevel', 'miter']
 		,	filter	: ['scale', 'integral']
+		,	font	: ['normal', 'compact', 'monospace']
 		,	compose	: [SO, 'destination-over', 'source-atop', 'destination-atop', 'lighter', 'xor', DO]
 		,	palette	: ['history', 'auto', 'legacy', 'Touhou', 'gradient']
 	}}
@@ -115,7 +126,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 ,	fps = 0, ticks = 0, timer = 0, loading = 0
 ,	interval = {fps:0, timer:0, save:0}, text = {debug:0, timer:0}
 ,	ctx = {}, cnv = {view:0, draw:0, lower:0, current:0, upper:0, filter:0, temp:0}
-,	used = {}, cue = {upd:{}}, count = {layers:0, strokes:0, erases:0, undo:0}
+,	used = {}, used_shape = {}, cue = {upd:{}}, count = {layers:0, strokes:0, erases:0, undo:0}
 
 ,	draw = {m:{}, o:{}, cur:{}, prev:{}
 	,	refresh:0, time: [0, 0]
@@ -558,13 +569,13 @@ var	c = ii.context, d = ii.imageData, p = ii.pixels;
 //* Strokes and shapes *-------------------------------------------------------
 
 function drawCursor() {
-var	c = ctx[mode.brushView?'draw':'view'], d = tool.grid;
-	if (d > 1) {
-	var	m, n = Math.floor(tool.width / d), o = draw.o, v = (n < 1 ? (n = 1) : n)*d, w = v+DRAW_PIXEL_OFFSET, v = v-DRAW_PIXEL_OFFSET;
+var	c = ctx[mode.brushView?'draw':'view'], g = tool.grid;
+	if (g > 1) {
+	var	m, n = Math.floor(tool.width/g), o = draw.o, v = (n < 1?(n = 1):n)*g, w = v+DRAW_PIXEL_OFFSET, v = v-DRAW_PIXEL_OFFSET;
 		for (i in DRAW_HELPER) c[i] = DRAW_HELPER[i];
 		c.beginPath();
 		for (i = -n; i <= n; i++) {
-			m = i*d+DRAW_PIXEL_OFFSET;
+			m = i*g+DRAW_PIXEL_OFFSET;
 			c.moveTo(o.x+m, o.y-v);
 			c.lineTo(o.x+m, o.y+w);
 			c.moveTo(o.x-v, o.y+m);
@@ -583,7 +594,7 @@ var	c = ctx[mode.brushView?'draw':'view'], d = tool.grid;
 		c.lineWidth = 1;
 	}
 	c.beginPath();
-	c.arc(draw.cur.x, draw.cur.y, tool.width/2, 0, 7/*Math.PI*2*/, false);
+	c.arc(draw.cur.x, draw.cur.y, tool.width/2, 0, 7);
 	mode.brushView ? c.fill() : c.stroke();
 	c.globalCompositeOperation = SO;
 }
@@ -615,16 +626,22 @@ function drawStart(event) {
 	if (draw.turn) return draw.turn.origin = getCursorRad();
 
 //* Drawing on cnv.draw:
-var	y = draw.history, i = y.layer, sf = select.shapeFlags[select.shape.value];
-	if (!(!i && (sf & 4)) && !(i && y.layers[i].show)) return false;
+var	y = draw.history, i = y.layer, s = select.shape.value, fig = select.shapeFig[s], sf = select.shapeFlags[s];
+	if ((i || fig) && !(i && y.layers[i].show)) return false;
 
 	if (draw.step) {
-		if (mode.step && ((mode.shape && (sf & 1)) || (sf & 4))) {
+		if (
+			(mode.step && (
+				(mode.shape && (sf & 1))	//* <- line+curve
+				|| !fig				//* <- move+area
+			))
+			|| (sf & 64)				//* <- any mode
+		) {
 			for (i in draw.o) draw.prev[i] = draw.cur[i];
 			return draw.step.done = 1;
 		} else draw.step = 0;
 	}
-//	if (event.shiftKey) mode.click = 1;	//* <- draw line/form chains, badly, forget for now
+//	if (event.shiftKey) mode.click = 1;	//* <- draw line/form chains, meh, forget for now
 
 	if ((draw.btn = event.which) != 1 && draw.btn != 3) pickColor();
 	else {
@@ -635,24 +652,25 @@ var	y = draw.history, i = y.layer, sf = select.shapeFlags[select.shape.value];
 			interval.save = setInterval(autoSave, 60000);
 		}
 	var	i = (event.which == 1)?1:0, j, t = tools[1-i]
-	,	b = ((sf & 4) ? 0 : t.blur)
+	,	b = (fig ? t.blur : 0)
 	,	pf = ((sf & 8) && (mode.shape || !mode.step))
-	,	fig = ((sf & 2) && (mode.shape || pf));
+	,	sh = ((sf & 2) && (mode.shape || pf));
 		draw.clip = t.clip;
 		for (i in (t = mode.erase ? DRAW_HELPER : {
-			lineWidth: (((sf & 4) || (pf && !mode.step))?1:t.width)
-		,	fillStyle: (fig ? 'rgba('+(mode.step?tools[i]:t).color+', '+t.opacity+')' : A0)
-		,	strokeStyle: (fig && !(mode.step || pf) ? A0 : 'rgba('+t.color+', '+((sf & 4)?(draw.step?0.33:0.66):t.opacity)+')')
+			lineWidth: ((!fig || (pf && !mode.step))?1:t.width)
+		,	fillStyle: (sh ? 'rgba('+(mode.step?tools[i]:t).color+', '+t.opacity+')' : A0)
+		,	strokeStyle: (sh && !(mode.step || pf) ? A0 : 'rgba('+t.color+', '+(fig?t.opacity:(draw.step?0.33:0.66))+')')
 		,	shadowColor: (b ? 'rgb('+t.color+')' : A0)
 		,	shadowBlur: b
 		})) for (j in y) ctx[j][i] = t[i];
-		updatePosition(event);
+		updatePosition(event);		//* <- update pixel offset based on tool width && draw.active
 		for (i in draw.o) draw.prev[i] = draw.cur[i];
 		for (i in draw.line) draw.line[i] = false;
 		for (i in select.lineCaps) {
 			t = select.options[i][select[i].value];
 			for (j in y) ctx[j][i] = t;
 		}
+		if (sf & 32) return drawEnd(event);
 		ctx.draw.beginPath();
 		ctx.draw.moveTo(draw.cur.x, draw.cur.y);
 	}
@@ -664,7 +682,8 @@ function drawMove(event) {
 	updatePosition(event);
 	if (draw.turn) return updateViewport(draw.turn.pan?1:draw.turn.delta = getCursorRad() - draw.turn.origin);
 
-var	redraw = true, s = select.shape.value, sf = select.shapeFlags[s], i
+var	s = select.shape.value, fig = select.shapeFig[s], sf = select.shapeFlags[s]
+,	redraw = true, i
 ,	newLine = (draw.active && !((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8)));
 
 	if (mode.click) mode.click = 1;
@@ -673,7 +692,7 @@ var	redraw = true, s = select.shape.value, sf = select.shapeFlags[s], i
 			drawShape(ctx.draw, s);
 		} else
 		if (draw.line.back = mode.step) {
-			if (o12) ctx.draw.shadowColor = A0, ctx.draw.shadowBlur = 0;	//* <- shadow, once used with CurveTo + stroke(), totally breaks for given cnv.view in Opera 12
+			if (o12) ctx.draw.shadowColor = A0, ctx.draw.shadowBlur = 0;	//* <- shadow, once used with CurveTo + stroke(), totally breaks for given canvas in Opera 12
 			if (draw.line.started) ctx.draw.quadraticCurveTo(draw.prev.x, draw.prev.y, (draw.cur.x + draw.prev.x)/2, (draw.cur.y + draw.prev.y)/2);
 		} else ctx.draw.lineTo(draw.cur.x, draw.cur.y);
 		draw.line.preview =	!(draw.line.started = true);
@@ -689,7 +708,7 @@ var	redraw = true, s = select.shape.value, sf = select.shapeFlags[s], i
 		redraw = 0;
 		if (i || (draw.active && !mode.lowQ)) draw.preload(), ++redraw;
 		if (draw.active) {
-			if (!(sf & 4)) ctx.draw.globalCompositeOperation = draw.clip;
+			if (fig) ctx.draw.globalCompositeOperation = draw.clip;
 			if ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8)) {
 				draw.line.preview = true;
 				if (mode.erase && (sf & 2)) {
@@ -698,7 +717,7 @@ var	redraw = true, s = select.shape.value, sf = select.shapeFlags[s], i
 				} else {
 					ctx.temp.clearRect(0, 0, cnv.view.width, cnv.view.height);
 					ctx.temp.beginPath();
-					drawShape(ctx.temp, (mode.step && (sf & 4) && (!draw.step || !draw.step.done))?2:s);
+					drawShape(ctx.temp, s);
 					ctx.temp.stroke();
 					ctx.draw.drawImage(cnv.temp, 0, 0), ++redraw;
 				}
@@ -715,14 +734,21 @@ var	redraw = true, s = select.shape.value, sf = select.shapeFlags[s], i
 }
 
 function drawEnd(event) {
-	if (!event || draw.turn) return draw.active = draw.step = draw.btn = draw.turn = 0;
+	if (!event || draw.turn) return draw.active = draw.step = draw.btn = draw.turn = 0, draw.view(1);
 	if (mode.click == 1 && event.shiftKey) return drawMove(event);
 	if (draw.active) {
 		if (draw.target != cnv.view) return;
 		draw.target = 0;
-	var	s = select.shape.value, sf = select.shapeFlags[s], m = ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8));
+	var	s = select.shape.value, fig = select.shapeFig[s], sf = select.shapeFlags[s]
+	,	m = ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8));
 	//* 2pt line, base for 4pt curve:
-		if (!draw.step && mode.step && ((mode.shape && (sf & 1)) || (sf & 4))) {
+		if (!draw.step && (
+			(mode.step && (
+				(mode.shape && (sf & 1))	//* <- line+curve
+				|| (sf & 4)			//* <- move+area
+			))
+			|| (sf & 64)				//* <- any mode
+		)) {
 			draw.step = {
 				prev:{x:draw.prev.x, y:draw.prev.y}
 			,	cur:{x:draw.cur.x, y:draw.cur.y}
@@ -743,20 +769,20 @@ function drawEnd(event) {
 			++count.erases;
 		} else {
 			ctx.draw.fillStyle = ctx.temp.fillStyle;
-			if (i = (sf & 4) ? 0 : ((ctx.draw.globalCompositeOperation = draw.clip) == DO)) ++count.erases;
+			if (i = (fig ? ((ctx.draw.globalCompositeOperation = draw.clip) == DO) : 0)) ++count.erases;
 			if (sf & 8) {
 				ctx.draw.closePath();
 				if (mode.shape || !mode.step) ctx.draw.fill();
 				used.poly = 'Poly';
 			} else
-			if (m && draw.line.preview) {
+			if ((sf & 64) || (m && draw.line.preview)) {
 				drawShape(ctx.draw, s);
-				if (!(sf & 4)) used.shape = 'Shape';
+				if (fig) ++used_shape[select.options.shape[s]];//used.shape = 'Shape';
 			} else
 			if (m || draw.line.back || !draw.line.started) {//* <- draw 1 pixel on short click, regardless of mode or browser
 				ctx.draw.lineTo(draw.cur.x, draw.cur.y + (draw.cur.y == draw.prev.y ? 0.01 : 0));
 			}
-			if (sf & 4) used.move = 'Move';
+			if (!fig) used.move = 'Move';
 			else if (!(sf & 8) || mode.step) {
 				ctx.draw.stroke();
 				if (!i) ++count.strokes;
@@ -772,70 +798,24 @@ function drawEnd(event) {
 }
 
 function drawShape(c, i, clear) {
-var	s = draw.step, r = draw.cur, v = draw.prev;
-	switch (parseInt(i)) {
-	//* rect
-		case 2:	if (s) {
-			//* show pan source area
-				c.strokeRect(s.prev.x, s.prev.y, s.cur.x-s.prev.x, s.cur.y-s.prev.y);
-			} else if (clear) ctx.draw.clearRect(v.x, v.y, r.x-v.x, r.y-v.y);
-			else {
-				if (c.fillStyle != A0)
-				c.fillRect(v.x, v.y, r.x-v.x, r.y-v.y);
-				c.strokeRect(v.x, v.y, r.x-v.x, r.y-v.y);
-			}
-			break;
-	//* circle
-		case 3:
-		var	xCenter = (v.x+r.x)/2
-		,	yCenter = (v.y+r.y)/2
-		,	radius = Math.sqrt(Math.pow(r.x-xCenter, 2) + Math.pow(r.y-yCenter, 2));
-			c.moveTo(xCenter+radius, yCenter);
-			c.arc(xCenter, yCenter, radius, 0, 7, false);
-			if (clear) {
-				ctx.draw.save();
-				ctx.draw.clip();
-				ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
-				ctx.draw.restore();
-			} else if (c.fillStyle != A0) c.fill();
-			c.moveTo(r.x, r.y);
-			break;
-	//* ellipse
-		case 4:
-		var	xCenter = (v.x+r.x)/2
-		,	yCenter = (v.y+r.y)/2
-		,	xRadius = Math.abs(r.x-xCenter)
-		,	yRadius = Math.abs(r.y-yCenter), qx = 1, qy = 1;
-			if (xRadius > 0 && yRadius > 0) {
-				c.save();
-				if (xRadius > yRadius) c.scale(1, qy = yRadius/xRadius); else
-				if (xRadius < yRadius) c.scale(qx = xRadius/yRadius, 1);
-				c.moveTo((xCenter+xRadius)/qx, yCenter/qy);
-				c.arc(xCenter/qx, yCenter/qy, Math.max(xRadius, yRadius), 0, 7, false);
-				c.restore();
-				if (clear) {
-					ctx.draw.save();
-					ctx.draw.clip();
-					ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
-					ctx.draw.restore();
-				} else if (c.fillStyle != A0) c.fill();
-			}
-			c.moveTo(r.x, r.y);
-			break;
+var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mode.step && !(s && s.done)?2:0);
+	switch (fig) {
 	//* pan
-		case 5:	if (v.x != r.x
+		case 0:	if (v.x != r.x
 			|| (v.y != r.y)) moveScreen(r.x-v.x, r.y-v.y, c != ctx.temp);
-			break;
+		break;
 	//* line
-		default:if (s) {
+		case 1:	if (s) {
 			var	d = r, old = propSwap(ctx.temp, DRAW_HELPER);
 				ctx.temp.beginPath();
-				if (s.prev.x != v.x || s.prev.y != v.y) {
-					ctx.temp.moveTo(d.x, d.y), d = v;
+
+				ctx.temp.moveTo(s.cur.x, s.cur.y);		//* <- control point 1 phantom
+				ctx.temp.lineTo(s.prev.x, s.prev.y);
+				if (s.done) {
+					ctx.temp.moveTo(d.x, d.y), d = v;	//* <- control point 2 phantom
 					ctx.temp.lineTo(d.x, d.y);
 				}
-				ctx.temp.moveTo(s.cur.x, s.cur.y);
-				ctx.temp.lineTo(s.prev.x, s.prev.y);
+
 				ctx.temp.stroke();
 				propSwap(ctx.temp, old);
 				ctx.temp.beginPath();
@@ -847,7 +827,117 @@ var	s = draw.step, r = draw.cur, v = draw.prev;
 				c.moveTo(v.x, v.y);
 				c.lineTo(r.x, r.y);
 			}
+		break;
+	//* rect
+		case 2:	if (s) {
+			//* show pan source area
+				c.strokeRect(s.prev.x, s.prev.y, s.cur.x-s.prev.x, s.cur.y-s.prev.y);
+			} else if (clear) ctx.draw.clearRect(v.x, v.y, r.x-v.x, r.y-v.y);
+			else {
+				if (c.fillStyle != A0)
+				c.fillRect(v.x, v.y, r.x-v.x, r.y-v.y);
+				c.strokeRect(v.x, v.y, r.x-v.x, r.y-v.y);
+			}
+		break;
+	//* circle
+		case 3:
+		var	xCenter = (v.x+r.x)/2
+		,	yCenter = (v.y+r.y)/2
+		,	radius = dist(r.x-xCenter, r.y-yCenter);
+			c.moveTo(xCenter+radius, yCenter);
+			c.arc(xCenter, yCenter, radius, 0, 7);
+			if (clear) {
+				ctx.draw.save();
+				ctx.draw.clip();
+				ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
+				ctx.draw.restore();
+			} else if (c.fillStyle != A0) c.fill();
+		break;
+	//* ellipse
+		case 4:
+		var	xCenter = (v.x+r.x)/2
+		,	yCenter = (v.y+r.y)/2
+		,	xRadius = Math.abs(r.x-xCenter)
+		,	yRadius = Math.abs(r.y-yCenter), qx = 1, qy = 1;
+			if (xRadius > 0 && yRadius > 0) {
+				c.save();
+				if (xRadius > yRadius) c.scale(1, qy = yRadius/xRadius); else
+				if (xRadius < yRadius) c.scale(qx = xRadius/yRadius, 1);
+				c.moveTo((xCenter+xRadius)/qx, yCenter/qy);
+				c.arc(xCenter/qx, yCenter/qy, Math.max(xRadius, yRadius), 0, 7);
+				c.restore();
+				if (clear) {
+					ctx.draw.save();
+					ctx.draw.clip();
+					ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
+					ctx.draw.restore();
+				} else if (c.fillStyle != A0) c.fill();
+			}
+		break;
+	//* radiance
+		case 5:	if (s) {
+
+		//* --------v-------- (TODO) --------v--------
+
+			var	x = s.prev.x, y = s.prev.y
+			,	r1 =		dist(s.cur.x-x, s.cur.y-y)
+			,	r2 =		dist(r.x-x, r.y-y)
+			,	r3 = (s.done ?	dist(v.x-x, v.y-y) : r2);
+
+				if (r3 < r1+1) r3 = dist(
+					Math.max(cnv.draw.width-x, x)
+				,	Math.max(cnv.draw.height-y, y)	//* <- infinite ray length = to farthest image corner + outline width
+				)+tool.width;
+
+				if (r2 > r3) r2 = 0;
+				if (r3 > 1) {
+				var	a1 =		Math.atan2(s.cur.y-y, s.cur.x-x)
+				,	a2 =		Math.atan2(r.y-y, r.x-x)
+				,	a3 = (s.done ?	Math.atan2(v.y-y, v.x-x) : a2)
+				,	d = Math.PI
+				,	i = Math.abs(ang_btw(a1, a3))
+			//	,	i = Math.ceil(d/Math.max(Math.abs(d/2-i), 0.01))	//* <- ray count by angular width
+				,	i = Math.max(Math.ceil(i/d*180), 2)			//* <- ray count by fraction/max allowed (180 rays)
+				,	d = d/i
+				,	r2g1 = (s.done && r2 > 1 && r2 > r1)
+				,	r4 = (r2g1?r2:r1);
+					if (r2g1) {
+					var	old = propSwap(ctx.temp, DRAW_HELPER);
+						ctx.temp.beginPath();
+
+						ctx.temp.moveTo(x+r1, y);
+						ctx.temp.arc(x, y, r1, 0, 7);	//* <- base circle phantom
+
+						ctx.temp.stroke();
+						propSwap(ctx.temp, old);
+						ctx.temp.beginPath();
+					} else		/* <- start linked */ t = a2-d,	c.moveTo(x + Math.cos(t)*r4, y + Math.sin(t)*r4);
+					while (i--) {
+					var	a = a2 + d*i*2, b = a-d, t = (r2g1?b:a+d);
+						if (r2g1)	/* <- start isolated */	c.moveTo(x + Math.cos(t)*r4, y + Math.sin(t)*r4);
+						c.arc(x, y, r4, t, a,!r2g1);		c.lineTo(x + Math.cos(a)*r3, y + Math.sin(a)*r3);
+						c.arc(x, y, r3, a, b, true);		c.lineTo(x + Math.cos(b)*r4, y + Math.sin(b)*r4);
+					}
+				} else if (	r1 > 1 && r2 < r1)	c.moveTo(x+r1, y),	c.arc(x, y, r1, 0, 7);	//* <- base circle, no cogs
+				if (s.done &&	r2 > 1 && r2 < r1)	c.moveTo(x+r2, y),	c.arc(x, y, r2, 0, 7);	//* <- hole inside
+
+		//* --------^-------- (TODO) --------^--------
+
+			} else {
+				radius = dist(r.x-v.x, r.y-v.y);
+				c.moveTo(v.x+radius, v.y), c.arc(v.x, v.y, radius, 0, 7);
+			}
+			if (clear) {
+				ctx.draw.save();
+				ctx.draw.clip();
+				ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
+				ctx.draw.restore();
+			} else if (c.fillStyle != A0) c.fill('evenodd');
+		break;
+	//* text (TODO)
+	//	case 6:	;
 	}
+	c.moveTo(r.x, r.y);
 }
 
 //* One-click all-screen manipulation *----------------------------------------
@@ -1208,7 +1298,8 @@ function updateSliders(s) {
 function updateShape(s) {
 	if (!isNaN(s)) select.shape.value = s, s = 0;
 	s = select.shapeFlags[(s?s:s=select.shape).value];
-var	a = id('warn'), b = a.firstElementChild, c = [], i;
+var	a = id('warn'), b = a.firstElementChild, c = [], f = {lineStyle:16, textStyle:32}, i;
+	for (i in f) id(i).style.display = ((!(s & f[i]) == !(f[i] < 32))?'none':'');
 	for (i in abc) if (!(s & (1<<i))) c.push(abc[i]);
 	setClass(a, (mode.erase = !(mode.shape || mode.step || !(s & 2)))?'red':'');
 	setClass(container, s = c.join(' '));
@@ -1253,19 +1344,21 @@ var	a = select.affect, i = a.value, a = (i == a.length-1), b = 'button', e = id(
 	return a;
 }
 
-function toggleMode(i, keep) {
-	if (i >= 0 && i < modes.length) {
-	var	n = modes[i], v = mode[n], e;
-		if (!keep) v = mode[n] = !v;
-		if (e = id('check'+modeL[i])) {
-			setClass(e, 'button'+(v?'-active':''));
-			if (e.parentNode.id == NS+'-warn') updateShape();
-		}
-		if (n == 'debug') {
-			text.debug.textContent = '';
-			interval.fps ? clearInterval(interval.fps) : (interval.fps = setInterval(fpsCount, 1000));
-		}
-	} else alert(lang.bad_id);
+function toggleMode(i, v) {
+	if (isNaN(i)) i = modes.indexOf[n = i];
+	if (i < 0 || i >= modes.length) return alert(lang.bad_id+'\n\nid='+i+'\nk='+v+','+n+'\nlen='+modes.length+'\n'+modes.join('\n'));
+	else var e, n = modes[i];
+
+	v = mode[n] = (isNaN(v) ? !mode[n] : v > 0);
+
+	if (e = id('check'+modeL[i])) {
+		setClass(e, 'button'+(v?'-active':''));
+		if (e.parentNode.id == NS+'-warn') updateShape();
+	}
+	if (n == 'debug') {
+		text.debug.textContent = '';
+		interval.fps ? clearInterval(interval.fps) : (interval.fps = setInterval(fpsCount, 1000));
+	}
 }
 
 function toolTweak(prop, value) {
@@ -1280,8 +1373,8 @@ function toolTweak(prop, value) {
 	}
 }
 
-function toolSwap(t) {
-var	i, j, k = select.affect;
+function toolSwap(t, k) {
+var	i, j, a = select.affect;
 
 //* exchange working sets
 	if (isNaN(t)) {
@@ -1295,7 +1388,7 @@ var	i, j, k = select.affect;
 		for (j in TOOLS_REF)
 		for (i in TOOLS_REF[j]) tools[j][i] = TOOLS_REF[j][i];
 		for (i in select.lineCaps) select[i].value = 0;
-		toolSwap(-1);
+		toolSwap(-1, k);
 		tool.width = t;
 	} else
 
@@ -1307,15 +1400,14 @@ var	i, j, k = select.affect;
 
 //* drop switches, set shape
 	if (t) {
-		if (mode.shape) toggleMode(1);
-		if (mode.step) toggleMode(2);
+		if (!k) for (i in {shape:0, step:0}) if (mode[i]) toggleMode(modes.indexOf[i]);
 		return updateShape(-t-1);
 
 //* toggle eraser mode
 	} else {
-		return k.value = (k.value > 0?0:k.length-1), updateEraser();
+		return a.value = (a.value > 0?0:a.length-1), updateEraser();
 	}
-	i = select.options.affect.indexOf(tool.clip), k.value = (i < 0?0:i);
+	i = select.options.affect.indexOf(tool.clip), a.value = (i < 0?0:i);
 	updateColor(tool.color);
 	updateColor(0,1);
 	updateEraser();
@@ -1339,17 +1431,19 @@ var	d = t ? new Date(t+(t >0?0:new Date())) : new Date(), t = ['Hours','Minutes'
 function getSendMeta(sz) {
 var	a = ['clip', 'mask', 'lighter', 'xor']
 ,	b = ['resize', 'integral']
-,	c = ', ', d = draw.time, i, j = [], m = [], n = [], u = [], t = outside.t0;
+,	c = ', ', d = draw.time, i, j = [], k, m = [], n = [], u = [], s = [], t = outside.t0;
 	for (i in d) j[i] = parseInt(d[i]) || (i > 0?+new Date:t);
 	for (i in count) if ((d = count[i]) > 1 || (i != 'layers' && d > 0)) u.push(d+' '+(d > 1?i:i.replace(/s+$/i, '')));
+	for (i in used_shape) s.push(i);
 	for (i in used) u.push(used[i]);
 	draw.history.layers.map(function(v) {
 		if (v.clip > 0 && m.indexOf(k = a[v.clip    - 2]) < 0) m.push(k);
 		if (v.blur > 0 && n.indexOf(k = b[v.filter || 0]) < 0) n.push(k);
 	});
-	if (m.length) u.push('Composition: '+m.join(c));
-	if (n.length) u.push('Filter: '+n.join(c));
+	for (i in (a = {Shape:s, Composition:m, Filter:n})) if (a[i].length) u.push(i+': '+a[i].join(c));
+
 //	return Math.floor(t/1000)+','+u.join('-')+','+NS+' '+INFO_VERSION + (j.length?' (used '+j.join(c)+')':'');
+
 	return 't0: '	+Math.floor(t/1000)
 	+'\ntime: '	+j.join('-')
 	+'\napp: '	+NS+' '+INFO_VERSION
@@ -1518,7 +1612,7 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 		break;
 //* send
 	default:
-		if (dest) alert(lang.bad_id); else
+		if (dest) alert(lang.bad_id+'\n\nid='+dest+'\na='+auto); else
 		if (!outside.send) alert(lang.no_form); else
 		if (fillCheck()) alert(lang.flood); else
 		if (confirm(lang.confirm_send)) {
@@ -1527,11 +1621,11 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 				e.setAttribute('method', (outside.send.length && outside.send.toLowerCase() == 'get')?'get':'post');
 				container.appendChild(outside.send = e);
 			}
-		var	pngData = sendPic(2, 1), jpgData, a = {txt:0,pic:0};
+		var	pngData = sendPic(2, 1), jpgData, a = {txt:0,pic:0}, f = outside.send;
 			for (i in a) if (!(a[i] = id(i))) {
 				setId(e = a[i] = document.createElement('input'), e.name = i);
 				e.type = 'hidden';
-				outside.send.appendChild(e);
+				f.appendChild(e);
 			}
 			e = pngData.length;
 			d = (((i = outside.jp || outside.jpg_pref)
@@ -1542,10 +1636,11 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 				|| (e > (i *= c/d)))
 				&& (e > (t = (jpgData = cnv.view.toDataURL(IJ)).length))
 			) ? jpgData : pngData);
+			if (mode.debug) alert('png limit = '+i+'\npng = '+e+'\njpg = '+t);
 			a.pic.value = d;
 			a.txt.value = getSendMeta(d.length);
-			if (mode.debug) alert('png limit = '+i+'\npng = '+e+'\njpg = '+t);
-			outside.send.submit();
+			f.encoding = f.enctype = 'multipart/form-data';
+			f.submit();
 		}
 	}
 	return c;
@@ -1682,8 +1777,10 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *,
 			case c('P'):	updateShape(1);	break;
 			case c('R'):	updateShape(2);	break;
 			case c('T'):	updateShape(3);	break;
-			case c('Y'):	updateShape(4);	break;
-			case c('M'):	updateShape(5);	break;
+		//	case c('Ell'):	updateShape(4);	break;
+			case c('Y'):	updateShape(5);	break;
+			case c('M'):	updateShape(6);	break;
+		//	case c('T'):	updateShape(7);	break;
 
 			case c('G'):
 			case c('B'):
@@ -1725,8 +1822,8 @@ var	i, t = '', p = ['-moz-','-webkit-','-o-',''];
 		draw.zoom = i;
 	} else {
 		draw.angle = draw.turn.prev + delta;
-		draw.a360 = Math.floor(draw.angle*180/Math.PI)%360;
-		draw.arad = draw.a360/180*Math.PI;
+		if (draw.a360 = Math.floor(draw.angle*180/Math.PI)%360) draw.aRad = draw.a360/180*Math.PI;
+		else draw.angle = draw.a360 = draw.aRad = 0;
 	}
 	if (draw.pan) t += 'translate('+draw.pan.x+'px,'+draw.pan.y+'px)';
 	if (draw.angle) t += 'rotate('+draw.a360+'deg)';
@@ -1738,37 +1835,37 @@ var	i, t = '', p = ['-moz-','-webkit-','-o-',''];
 function updateDebugScreen() {
 	if (!mode.debug) return;
 	ticks ++;
-var	t = '</td><td>', r = '</td></tr>	<tr><td>', a, b = 'turn: ', c = draw.step, i;
-	if (a = draw.turn) for (i in a) b += i+'='+a[i]+'; ';
+var	t = '</td><td>', r = '</td></tr>	<tr><td>', a = draw.turn, b = 'turn: ', c = draw.step, i;
+//	if (a) for (i in a) b += i+'='+a[i]+'; ';
 	i = isMouseIn();
 	text.debug.innerHTML = '<table><tr><td>'
 +draw.refresh+t+'1st='+draw.time[0]+t+'last='+draw.time[1]+t+'fps='+fps
 +r+'Relative'+t+'x='+draw.o.x+t+'y='+draw.o.y+''+t+i+(i?',rgb='+pickColor(1):'')
-+r+'DrawOfst'+t+'x='+draw.cur.x+t+'y='+draw.cur.y+t+'btn='+draw.btn
++r+'DrawOfst'+t+'x='+draw.cur.x+t+'y='+draw.cur.y+t+'btn='+draw.btn+',active='+draw.active
 +r+'Previous'+t+'x='+draw.prev.x+t+'y='+draw.prev.y+t+'chain='+mode.click+(c?''
-+r+'StpStart'+t+'x='+c.prev.x+t+'y='+c.prev.y
-+r+'Step_End'+t+'x='+c.cur.x+t+'y='+c.cur.y:'')+'</td></tr></table>'+b;
++r+'StpStart'+t+'x='+c.prev.x+t+'y='+c.prev.y+',step1done='+c.done
++r+'Step_End'+t+'x='+c.cur.x+t+'y='+c.cur.y:'')+'</td></tr></table>'+showProps(tool,1,1)+(a?b+showProps(a,1):'');
 }
 
 function updatePosition(event) {
-var	i = select.shapeFlags[select.shape.value], d = tool.grid, o = (
-	!  ((i & 2) && mode.shape && !mode.step)
-	&& ((i & 4) || ((draw.active?ctx.draw.lineWidth:tool.width) % 2))
-	? DRAW_PIXEL_OFFSET : 0);	//* <- maybe not a 100% fix yet
+var	i = select.shape.value, g = tool.grid, o = (
+		(!mode.step && mode.shape && (select.shapeFlags[i] & 2))
+	||	(select.shapeFig[i] && !((draw.active ? ctx.draw.lineWidth : tool.width) % 2))
+	? 0 : DRAW_PIXEL_OFFSET);	//* <- maybe not a 100% fix yet
 
 	draw.o.x = (draw.m.x = event.pageX) - draw.container.offsetLeft;
 	draw.o.y = (draw.m.y = event.pageY) - draw.container.offsetTop;
 	if (draw.pan && !(draw.turn && draw.turn.pan)) for (i in draw.o) draw.o[i] -= draw.pan[i];
 	if (!draw.turn && (draw.angle || draw.zoom != 1)) {
 	var	r = getCursorRad(2, draw.o.x, draw.o.y);
-		if (draw.angle) r.a -= draw.arad;
+		if (draw.angle) r.a -= draw.aRad;
 		if (draw.zoom != 1) r.d /= draw.zoom;
 		draw.o.x = Math.cos(r.a)*r.d + cnv.view.width/2;
 		draw.o.y = Math.sin(r.a)*r.d + cnv.view.height/2;
 		o = 0;
 	}
 	for (i in draw.o) {
-		if (d > 0) draw.o[i] = Math.round(draw.o[i]/d)*d;
+		if (g > 0) draw.o[i] = Math.round(draw.o[i]/g)*g;
 		draw.cur[i] = o + draw.o[i];
 	}
 }
@@ -1779,10 +1876,10 @@ function getCursorRad(r, x, y) {
 	y = (isNaN(y) ? draw.cur.y : y) - cnv.view.height/2;
 	return (r
 	? {	a:Math.atan2(y, x)
-	,	d:Math.sqrt(x*x+y*y)	//* <- looks stupid, will do for now
+	,	d:dist(y, x)	//* <- looks stupid, will do for now
 	}
 	: (draw.turn.zoom
-		? Math.sqrt(x*x+y*y)
+		? dist(y, x)
 		: Math.atan2(y, x)
 	));
 }
@@ -1970,10 +2067,11 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 		} else
 
 		if (k == 'tool') {
-			d = '<select id="', b = '"></select><br>', j = select.lineCaps;
-			c += '<div class="selects"><div class="rf">'+d+'shape" onChange="updateShape(this)'+l+lang.shape+b;
-			for (i in j) c += d+i+l+(j[i] || i)+b;
-			c += d+'affect" onChange="updateEraser()'+l+lang.compose+b+'</div><div id="'+k+'-sliders">';
+			d = '<select id="', b = '"></select>', j = select.lineCaps;
+			c += '<div class="selects"><div class="rf">'+d+'shape" onChange="updateShape(this)'+l+lang.shape+b+'<div id="lineStyle">';
+			for (i in j) c += d+i+l+(j[i] || i)+b+'<br>';
+			c += d+'affect" onChange="updateEraser()'+l+lang.compose+b+'</div><div id="textStyle">'
++d+'font'+l+lang.font+b+'<br><textarea placeholder="'+lang.text_hint+'"></textarea></div></div><div id="'+k+'-sliders">';
 			i = BOW.length;
 			while (i--) c += getSlider(BOWL[i]);
 			c += '</div></div>';
@@ -2092,32 +2190,21 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 
 //* Global events, etc *-------------------------------------------------------
 
-	document.addEventListener('dragover'	, dragOver	, f = false);
-	document.addEventListener('drop'	, drop		, f);
-	document.addEventListener('mousedown'	, drawStart	, f);
-	document.addEventListener('mousemove'	, drawMove	, f);	//* <- using 'document' to prevent negative clipping
-	document.addEventListener('mouseup'	, drawEnd	, f);
-	document.addEventListener('keypress'	, browserHotKeyPrevent, f);
-	document.addEventListener('keydown'	, hotKeys	, f);
-	document.addEventListener('mousewheel'	, e = hotWheel	, f);
-	document.addEventListener('wheel'	, e, f);
-	document.addEventListener('scroll'	, e, f);
-	cnv.view.setAttribute('onscroll'		, f = 'return false;');
-	cnv.view.setAttribute('oncontextmenu'	, f);
-
-	for (name in mode) if (mode[modes[i = modes.length] = name]) toggleMode(i,1);
-	for (i in text) text[i] = id(i);
 
 	draw.container = id('load'), b = 'button', i = (a = 'JP').length, h = /^header$/i;
 	while (i--) if (e = id(b+a[i])) setEvent(e, 'onmouseover', 'updateSaveFileSize(this)');
 
+	for (i in mode) modes.push(i);
+	for (i in text) text[i] = id(i);
 	for (i in (a = {L:CL, A:CT})) if (!LS || !LS[a[i]]) setClass(id(b+i), b+'-disabled');
 
 	for (i in (a = [b, 'input', 'select', 'p', 'a']))
 	for (c in (b = container.getElementsByTagName(a[i])))
 	for (e in (d = ['onchange', 'onclick', 'onmouseover']))
-	if ((f = b[c][d[e]])
-	&& (m = (''+f).match(regFunc))) {
+	if (
+		(f = b[c][d[e]])
+	&&	(m = (''+f).match(regFunc))
+	) {
 		if (!self[f = m[1]]) self[f] = eval(f);
 		if (f == 'toggleView' && !(m = b[c]).title) m.title = lang[h.test(m.parentNode.tagName)?'hide_hint':'show_hint'];
 	}
@@ -2130,13 +2217,28 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 		e.options[e.options.length] = new Option((c[b]?c:a)[b][i], i)
 	).selected = (b == 'palette'?(i == f):!i);
 
+	for (i in modes) if (mode[modes[i]]) toggleMode(i, 1);		//* <- only after select lists are defined
+
+	document.addEventListener('dragover'	, dragOver	, f = false);
+	document.addEventListener('drop'	, drop		, f);
+	document.addEventListener('mousedown'	, drawStart	, f);
+	document.addEventListener('mousemove'	, drawMove	, f);	//* <- using 'document' to prevent negative clipping
+	document.addEventListener('mouseup'	, drawEnd	, f);
+	document.addEventListener('keypress'	, browserHotKeyPrevent, f);
+	document.addEventListener('keydown'	, hotKeys	, f);
+	document.addEventListener('mousewheel'	, e = hotWheel	, f);
+	document.addEventListener('wheel'	, e, f);
+	document.addEventListener('scroll'	, e, f);
+	cnv.view.setAttribute('onscroll'	, f = 'return false;');
+	cnv.view.setAttribute('oncontextmenu'	, f);
+
 //* Get ready to work *--------------------------------------------------------
 
 	toggleView('hotkeys');
 	id('style').innerHTML += style;
 
 	generatePalette(1, 85, 0);
-	toolSwap(3);
+	toolSwap(3, 1);	//* <- arbitrary default, also not changing switches
 	updatePalette();
 	updateViewport();
 	resetAside();
@@ -2176,7 +2278,7 @@ var	o = outside, v = id('vars'), e, i, j, k
 	if (o.lang == 'ru')
 select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы линий'}
 , select.translated = {
-	shape	: ['линия', 'многоугольник', 'прямоугольник', 'круг', 'овал', 'сдвиг']
+	shape	: ['линия', 'многоугольник', 'прямоугольник', 'круг', 'овал', 'излучение', 'сдвиг', 'текст']
 ,	lineCap	: ['круг <->', 'срез |-|', 'квадрат [-]']
 ,	lineJoin: ['круг -x-', 'срез \\_/', 'угол V']
 ,	filter	: ['масштаб', 'интеграл']
@@ -2222,6 +2324,8 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 	,	R:	'Размытие'
 	,	S:	'Насыщенность'
 },	shape:		'Форма'
+,	font:		'Шрифт'
+,	text_hint:	'Ваш текст тут.'
 ,	filter:		'Фильтр'
 ,	compose:	'Режим наложения'
 ,	palette:	'Палитра'
@@ -2230,17 +2334,30 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 ,	hide_hint:	'Кликните, чтобы спрятать.'
 ,	show_hint:	'Кликните, чтобы спрятать или показать.'
 ,	info: [	'{toggleView=\'hotkeys\';Управление}: [hotkeys;(указатель над полотном)'
-	,,	'C / средний клик = подобрать цвет с рисунка.'
-	,	'Q / P / R / T / Y / M = выбор формы.'
-	,,	'1-10 / колесо мыши	/ (Alt +) W = толщина кисти.'
+	,
+	,	'C / средний клик = подобрать цвет с рисунка.'
+//	,	'Q / P / R / T / Y / M = выбор формы.'
+	,
+	,	'Выбор формы инструмента:'
+	,	'Q = линия, прямая, кривая.'
+	,	'P = лассо, многоугольник.'
+	,	'R = прямоугольник.'
+//	,	'T = печатный текст.'
+	,	'Y = лучи солнца, шестерёнка.'
+	,	'M = сдвиг, копия.'
+	,
+	,	'1-10 / колесо мыши	/ (Alt +) W = толщина кисти.'
 	,	'Ctrl	+ 1-10 / колесо / (Alt +) O = прозрачность.'
 	,	'Alt	+ 1-10 / колесо / (Alt +) B = размытие тени.'
 	,	'Shift	+ 1-10 / колесо / (Alt +) G = шаг сетки.'
-	,,	'Shift	+ стрелки = выбирать слой.'
+	,
+	,	'Shift	+ стрелки = выбирать слой.'
 	,	'Alt	+ стрелки = двигать слой по списку.'
-	,,	'Ctrl	+ тяга = поворот полотна, Home = {updateViewport;сброс}.'
+	,
+	,	'Ctrl	+ тяга = поворот полотна, Home = {updateViewport;сброс}.'
 	,	'Alt	+ тяга = масштаб, Shift + т. = сдвиг рамки.'
-	,,	']F1 = {resetAside;вернуть} панельки по местам.-'
+	,
+	,	']F1 = {resetAside;вернуть} панельки по местам.-'
 	,	'Автосохранение раз в минуту'
 ],	info_no_save:	'ещё не было'
 ,	info_no_time:	'ещё нет'
@@ -2339,6 +2456,8 @@ else o.lang = 'en'
 	,	R:	'Blur'
 	,	S:	'Saturation'
 },	shape:		'Shape'
+,	font:		'Font'
+,	text_hint:	'Your text here.'
 ,	filter:		'Filter'
 ,	compose:	'Composition mode'
 ,	palette:	'Palette'
@@ -2347,17 +2466,30 @@ else o.lang = 'en'
 ,	hide_hint:	'Click to hide.'
 ,	show_hint:	'Click to show/hide.'
 ,	info: [	'{toggleView=\'hotkeys\';Hot keys}: [hotkeys;(mouse over image only)'
-	,,	'C / mouse mid = pick color from image.'
-	,	'Q / P / R / T / Y / M = select shape.'
-	,,	'1-10 / mouse wheel	/ (Alt +) W = brush width.'
+	,
+	,	'C / mouse mid = pick color from image.'
+//	,	'Q / P / R / T / Y / M = select shape.'
+	,
+	,	'Select tool shape:'
+	,	'Q = line, straight, curve.'
+	,	'P = lasso, polygon.'
+	,	'R = rectangle.'
+//	,	'T = print text.'
+	,	'Y = sun rays, gear wheel.'
+	,	'M = move, copy.'
+	,
+	,	'1-10 / mouse wheel	/ (Alt +) W = brush width.'
 	,	'Ctrl	+ 1-10 / wheel	/ (Alt +) O = brush opacity.'
 	,	'Alt	+ 1-10 / wheel	/ (Alt +) B = brush shadow blur.'
 	,	'Shift	+ 1-10 / wheel	/ (Alt +) O = grid step.'
-	,,	'Shift	+ arrows = select layer.'
+	,
+	,	'Shift	+ arrows = select layer.'
 	,	'Alt	+ arrows = move layer on the list.'
-	,,	'Ctrl	+ drag = rotate canvas, Home = {updateViewport;reset}.'
+	,
+	,	'Ctrl	+ drag = rotate canvas, Home = {updateViewport;reset}.'
 	,	'Alt	+ drag = zoom, Shift + d. = move canvas.'
-	,,	']F1 = {resetAside;reset} floating panels.-'
+	,
+	,	']F1 = {resetAside;reset} floating panels.-'
 	,	'Autosave every minute, last saved'
 ],	info_no_save:	'not yet'
 ,	info_no_time:	'no yet'
@@ -2449,6 +2581,8 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #| aside p {line-height: 22px; margin: 0.5em;}\
 #| aside p, #|-info hr, #|-layers hr, #|-colors table {font-size: small;}\
 #| aside {position: absolute; left: 0; top: 0; text-align: left; padding: 2px; border: 2px solid #888; background-color: rgba(234,234,234,0.90);}\
+#| aside, #|-load canvas {box-shadow: 3px 3px rgba(0,0,0, 0.1);}\
+#| aside:hover {background-color: #eaeaea;}\
 #| canvas {border: 1px solid #ddd; margin: 0; vertical-align: bottom; cursor:\
 	url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC\'),\
 	auto;}\
@@ -2480,6 +2614,7 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #|-lcd {text-align: center; vertical-align: middle; font-size: 40px; color: #aaa;}\
 #|-load img {position: absolute; top: 1px; left: 1px; margin: 0;}\
 #|-load, #|-load canvas {position: relative; display: inline-block;}\
+#|-textStyle textarea {width: 80px; height: 68px;}\
 #|-warn {background-color: #bbb; display: inline-block;}\
 #|-warn.|-red {background-color: #f77;}'
 +abc.map(function(i) {return '.|-'+i+' .|-'+i;}).join(', ')+' {display: none;}\
@@ -2514,6 +2649,10 @@ var	r = {};
 	for (i in b) r[i] = a[i], a[i] = b[i];
 	return r;
 }
+function dist(x,y) {return Math.sqrt(x*x + y*y)};
+function cut_period(x,y,z) {if (!y) y = -Math.PI; if (!z) z = Math.PI; return (x < y ? x-y+z : (x > z ? x+y-z : x));}
+function ang_btw(x,y) {return cut_period(y-x);}
+function showProps(o,r,z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; if(r)return t; alert(t); return o;}
 
 //* To get started *-----------------------------------------------------------
 

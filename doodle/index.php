@@ -533,7 +533,7 @@ data_lock($room)
 							if ($a = data_get_mod_log($mod_page = $etc)) $content = 'rep'.
 preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',			//* <- transform data fields
 preg_replace('~\h+~u', ' ',
-preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)?\s~ui', NL.'$1	',		//* <- keep multiline entries atomic
+preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1	',			//* <- keep multiline entries atomic
 preg_replace('~\v+~u', '<br>', NL.htmlspecialchars($a)))));
 						}
 

@@ -1,8 +1,8 @@
 ﻿var dfc = new function () {
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; BTW, tabs align to 8 spaces
-,	INFO_VERSION = 'v0.9.45'
-,	INFO_DATE = '2013-04-01 — 2014-11-06'
+,	INFO_VERSION = 'v0.9.46'
+,	INFO_DATE = '2013-04-01 — 2015-04-13'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640
 ,	CR = 'CanvasRecover', CT = 'Time', DL, DRAW_PIXEL_OFFSET = -0.5
@@ -276,8 +276,8 @@ var	i, t = '', p = ['-moz-','-webkit-','-o-',''];
 		draw.zoom = i;
 	} else {
 		draw.angle = draw.turn.prev + delta;
-		draw.a360 = Math.floor(draw.angle*180/Math.PI)%360;
-		draw.arad = draw.a360/180*Math.PI;
+		if (draw.a360 = Math.floor(draw.angle*180/Math.PI)%360) draw.aRad = draw.a360/180*Math.PI;
+		else draw.angle = draw.a360 = draw.aRad = 0;
 	}
 	if (draw.pan) t += 'translate('+draw.pan.x+'px,'+draw.pan.y+'px)';
 	if (draw.angle) t += 'rotate('+draw.a360+'deg)';
@@ -297,7 +297,7 @@ var	i = select.shapeFlags[select.shape.value], o = (
 	if (draw.pan && !(draw.turn && draw.turn.pan)) for (i in draw.o) draw.o[i] -= draw.pan[i];
 	if (!draw.turn && (draw.angle || draw.zoom != 1)) {
 	var	r = getCursorRad(2, draw.o.x, draw.o.y);
-		if (draw.angle) r.a -= draw.arad;
+		if (draw.angle) r.a -= draw.aRad;
 		if (draw.zoom != 1) r.d /= draw.zoom;
 		draw.o.x = Math.cos(r.a)*r.d + canvas.width/2;
 		draw.o.y = Math.sin(r.a)*r.d + canvas.height/2;
@@ -1449,8 +1449,7 @@ document.write(replaceAll(replaceAdd('\n<style>\
 #| .|-paletdark:hover {border-color: #fff;}\
 #| .|-palettine:hover {border-color: #000;}\
 #| .|-r {text-align: right;}\
-/*#| .|-rf {display: block; float: right;}\
-*/#| a {color: #888;}\
+#| a {color: #888;}\
 #| a:hover {color: #000;}\
 #| abbr {border-bottom: 1px dotted #111;}\
 #| canvas {border: 1px solid #ddd; margin: 0; vertical-align: bottom; cursor:\
@@ -1463,6 +1462,7 @@ document.write(replaceAll(replaceAdd('\n<style>\
 #| {text-align: center; padding: 12px; background-color: #f8f8f8;}\
 #|, #| input, #| select {font-family: "Arial"; font-size: 14pt; line-height: normal;}\
 #|-bottom > button {border: 1px solid #000; width: 38px; height: 38px; margin: 2px; padding: 2px; font-size: 15px; line-height: 7px; text-align: center; cursor: pointer;}\
+#|-bottom > button, #|-load canvas {box-shadow: 3px 3px rgba(0,0,0, 0.1);}\
 #|-bottom {margin: 10px 0 -2px;}\
 #|-debug td {width: 234px;}\
 #|-info p {padding-left: 22px; line-height: 22px; margin: 0;}\

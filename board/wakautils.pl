@@ -1205,7 +1205,6 @@ sub make_thumbnail($$$$$;$)
 {
 	my ($filename,$thumbnail,$width,$height,$quality,$convert)=@_;
 
-if (0) {# v DISABLED v	8x------	--------	--------	--------
 	# first try ImageMagick
 
 	my $magickname=$filename;
@@ -1216,6 +1215,7 @@ if (0) {# v DISABLED v	8x------	--------	--------	--------
 
 	return 1 unless($?);
 
+if (0) {# v DISABLED v	8x------	--------	--------	--------
 	# if that fails, try pnmtools instead
 
 	if($filename=~/\.jpg$/)
@@ -1260,13 +1260,13 @@ if (0) {# v DISABLED v	8x------	--------	--------	--------
 	}
 }# ^ DISABLED ^	8x------	--------	--------	--------
 
-	# try GD lib (also sucks, and untested)	# > 2013 > worked best for me on Debian, lol
+	# try GD lib (also sucks, and untested)
 	eval 'use GD';
 	unless($@)
 	{
 		GD::Image->trueColor(1);
 		my $src;
-		if($filename=~/\.jpg$/i) { $src=GD::Image->newFromJpeg($filename) }
+		if($filename=~/\.jp[eg]+$/i) { $src=GD::Image->newFromJpeg($filename) }
 		elsif($filename=~/\.png$/i) { $src=GD::Image->newFromPng($filename) }
 		elsif($filename=~/\.gif$/i)
 		{
@@ -1285,7 +1285,7 @@ if (0) {# v DISABLED v	8x------	--------	--------	--------
 		$thumb->alphaBlending(0);
 		$thumb->saveAlpha(1);
 		$thumb->copyResampled($src,0,0,0,0,$width,$height,$img_w,$img_h);
-	#	$thumb->trueColorToPalette();
+	#	$thumb->trueColorToPalette(); # <- sometimes discards more valuable colors
 		my $out=$thumb->png();
 		open THUMBNAIL,">$thumbnail";
 		binmode THUMBNAIL;
