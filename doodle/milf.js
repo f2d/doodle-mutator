@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.14'
-,	INFO_DATE = '2014-07-16 — 2015-05-13'
+,	INFO_DATE = '2014-07-16 — 2015-05-14'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -40,8 +40,8 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 		imgRes: {width:640, height:360}
 	,	imgLimits: {width:[64,640], height:[64,800]}
 	,	lineCaps: {lineCap:0, lineJoin:0}
-	,	shapeFig: [1,1,2,3,4,5]
-	,	shapeFlags: [1,10,2,2,2,66,20,50]
+	,	shapeFig: [1,1,6,2,3,4,5]
+	,	shapeFlags: [1,10,66,2,2,2,66,20,28,50]
 /* flags (sum parts, be careful; such a mess, for now):
 1 = path, mode: step 1 line, step 2 curve
 2 = area, mode: outline, fill, erase
@@ -53,7 +53,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 */
 	,	clipBorder: ['', '#123', '#5ea']//, '#5ae', '#ff0', '#f40']
 	,	options: {
-			shape	: ['line', 'poly', 'rectangle', 'circle', 'ellipse', 'radiance', 'pan'/*, 'text'*/]
+			shape	: ['line', 'freehand poly', 'regular poly', 'rectangle', 'circle', 'ellipse', 'radiance', 'pan'/*, 'lasso', 'text'*/]
 		,	lineCap	: ['round', 'butt', 'square']
 		,	lineJoin: ['round', 'bevel', 'miter']
 		,	filter	: ['scale', 'integral']
@@ -844,28 +844,9 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 		var	xCenter = (v.x+r.x)/2
 		,	yCenter = (v.y+r.y)/2
 		,	radius = dist(r.x-xCenter, r.y-yCenter);
-			c.moveTo(xCenter+radius, yCenter);
-			c.arc(xCenter, yCenter, radius, 0, 7);
-			if (clear) {
-				ctx.draw.save();
-				ctx.draw.clip();
-				ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
-				ctx.draw.restore();
-			} else if (c.fillStyle != A0) c.fill();
-		break;
-	//* ellipse
-		case 4:
-		var	xCenter = (v.x+r.x)/2
-		,	yCenter = (v.y+r.y)/2
-		,	xRadius = Math.abs(r.x-xCenter)
-		,	yRadius = Math.abs(r.y-yCenter), qx = 1, qy = 1;
-			if (xRadius > 0 && yRadius > 0) {
-				c.save();
-				if (xRadius > yRadius) c.scale(1, qy = yRadius/xRadius); else
-				if (xRadius < yRadius) c.scale(qx = xRadius/yRadius, 1);
-				c.moveTo((xCenter+xRadius)/qx, yCenter/qy);
-				c.arc(xCenter/qx, yCenter/qy, Math.max(xRadius, yRadius), 0, 7);
-				c.restore();
+			if (radius > 0) {
+				c.moveTo(xCenter+radius, yCenter);
+				c.arc(xCenter, yCenter, radius, 0, 7);
 				if (clear) {
 					ctx.draw.save();
 					ctx.draw.clip();
@@ -874,58 +855,106 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 				} else if (c.fillStyle != A0) c.fill();
 			}
 		break;
-	//* radiance
-		case 5:	if (s) {
-
-		//* --------v-------- (TODO) --------v--------
-
-			var	x = s.prev.x, y = s.prev.y
+	//* ellipse
+		case 4:
+		var	xCenter = (v.x+r.x)/2
+		,	yCenter = (v.y+r.y)/2
+		,	xRadius = Math.abs(r.x-xCenter)
+		,	yRadius = Math.abs(r.y-yCenter);
+			if (xRadius > 0 && yRadius > 0) {
+				if (c.ellipse) {
+					c.moveTo(xCenter+xRadius, yCenter);
+					c.ellipse(xCenter, yCenter, xRadius, yRadius, 0, 0, 7);
+				} else {
+					c.save();
+					if (xRadius > yRadius) c.scale(x = 1, y = yRadius/xRadius); else
+					if (xRadius < yRadius) c.scale(x = xRadius/yRadius, y = 1);
+					c.moveTo((xCenter+xRadius)/x, yCenter/y);
+					c.arc(xCenter/x, yCenter/y, Math.max(xRadius, yRadius), 0, 7);
+					c.restore();
+				}
+				if (clear) {
+					ctx.draw.save();
+					ctx.draw.clip();
+					ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
+					ctx.draw.restore();
+				} else if (c.fillStyle != A0) c.fill();
+			}
+		break;
+	//* polar figures
+		case 5:
+		case 6:	if (s) {
+			var	x = s.prev.x, y = s.prev.y, GEAR = (fig == 5)
 			,	r1 =		dist(s.cur.x-x, s.cur.y-y)
 			,	r2 =		dist(r.x-x, r.y-y)
 			,	r3 = (s.done ?	dist(v.x-x, v.y-y) : r2);
 
-				if (r3 < r1+1) r3 = dist(
-					Math.max(cnv.draw.width-x, x)
-				,	Math.max(cnv.draw.height-y, y)	//* <- infinite ray length = to farthest image corner + outline width
-				)+tool.width;
-
-				if (r2 > r3) r2 = 0;
+				if (GEAR) {
+					if (r3 < r1+1) r3 = dist(
+						Math.max(cnv.draw.width-x, x)
+					,	Math.max(cnv.draw.height-y, y)	//* <- infinite ray length = to farthest image corner + outline width
+					)+tool.width;
+					if (r2 > r3) r2 = 0;
+				}
 				if (r3 > 1) {
 				var	a1 =		Math.atan2(s.cur.y-y, s.cur.x-x)
 				,	a2 =		Math.atan2(r.y-y, r.x-x)
 				,	a3 = (s.done ?	Math.atan2(v.y-y, v.x-x) : a2)
-				,	d = Math.PI
-				,	i = Math.abs(ang_btw(a1, a3))
-			//	,	i = Math.ceil(d/Math.max(Math.abs(d/2-i), 0.01))	//* <- ray count by angular width
-				,	i = Math.max(Math.ceil(i/d*180), 2)			//* <- ray count by fraction/max allowed (180 rays)
-				,	d = d/i
-				,	r2g1 = (s.done && r2 > 1 && r2 > r1)
-				,	r4 = (r2g1?r2:r1);
-					if (r2g1) {
-					var	old = propSwap(ctx.temp, DRAW_HELPER);
-						ctx.temp.beginPath();
+				,	d = Math.PI, t = d/2
+				,	b = Math.abs(ang_btw(a1, a3))
+				,	i = Math.floor(d/Math.max(Math.abs(b-t), 3/t/r3))	//* <- ray count by angular width (3px minimum here)
+			//	,	i = Math.ceil(b/d*360)					//* <- ray count by fraction/max allowed (360 rays here)
+				,	R2G1 = ((!GEAR || s.done) && r2 > 1 && r2 > r1)
+				,	r4 = (R2G1?r2:r1);
+					d /= i = Math.max(i, GEAR?2:3);		//* <- minimum ray count
+				}
+				if (GEAR) {
+			//* radiance
+					if (r3 > 1) {
+						if (R2G1) {
+						var	old = propSwap(ctx.temp, DRAW_HELPER);
+							ctx.temp.beginPath();
 
-						ctx.temp.moveTo(x+r1, y);
-						ctx.temp.arc(x, y, r1, 0, 7);	//* <- base circle phantom
+							ctx.temp.moveTo(x+r1, y);
+							ctx.temp.arc(x, y, r1, 0, 7);	//* <- base circle phantom
 
-						ctx.temp.stroke();
-						propSwap(ctx.temp, old);
-						ctx.temp.beginPath();
-					} else		/* <- start linked */ t = a2-d,	c.moveTo(x + Math.cos(t)*r4, y + Math.sin(t)*r4);
+							ctx.temp.stroke();
+							propSwap(ctx.temp, old);
+							ctx.temp.beginPath();
+						} else		/* <- start linked */ t = a2-d,	c.moveTo(x + Math.cos(t)*r4, y + Math.sin(t)*r4);
+						while (i--) {
+						var	a = a2 + d*i*2, b = a-d, t = (R2G1?b:a+d);
+							if (R2G1)	/* <- start isolated */	c.moveTo(x + Math.cos(t)*r4, y + Math.sin(t)*r4);
+							c.arc(x, y, r4, t, a,!R2G1);		c.lineTo(x + Math.cos(a)*r3, y + Math.sin(a)*r3);
+							c.arc(x, y, r3, a, b, true);		c.lineTo(x + Math.cos(b)*r4, y + Math.sin(b)*r4);
+						}
+					} else if (	r1 > 1 && r2 < r1)	c.moveTo(x+r1, y),	c.arc(x, y, r1, 0, 7);	//* <- base circle, no cogs
+					if (s.done &&	r2 > 1 && r2 < r1)	c.moveTo(x+r2, y),	c.arc(x, y, r2, 0, 7);	//* <- hole inside
+				} else {
+			//* regular polygon
+				var	old = propSwap(ctx.temp, DRAW_HELPER);
+					ctx.temp.beginPath();
+
+					if (R2G1)
+					ctx.temp.moveTo(x+r2, y),	ctx.temp.arc(x, y, r2, 0, 7);	//* <- spike radius phantom
+					ctx.temp.moveTo(x+r1, y),	ctx.temp.arc(x, y, r1, 0, 7);	//* <- base radius phantom
+
+					ctx.temp.stroke();
+					propSwap(ctx.temp, old);
+					ctx.temp.beginPath();
+
+					c.moveTo(x + Math.cos(a2)*r4, y + Math.sin(a2)*r4);
 					while (i--) {
-					var	a = a2 + d*i*2, b = a-d, t = (r2g1?b:a+d);
-						if (r2g1)	/* <- start isolated */	c.moveTo(x + Math.cos(t)*r4, y + Math.sin(t)*r4);
-						c.arc(x, y, r4, t, a,!r2g1);		c.lineTo(x + Math.cos(a)*r3, y + Math.sin(a)*r3);
-						c.arc(x, y, r3, a, b, true);		c.lineTo(x + Math.cos(b)*r4, y + Math.sin(b)*r4);
+					var	a = a2 + d*i*2, b = a+d;
+						if (R2G1)
+						c.lineTo(x + Math.cos(b)*r1, y + Math.sin(b)*r1);
+						c.lineTo(x + Math.cos(a)*r4, y + Math.sin(a)*r4);
 					}
-				} else if (	r1 > 1 && r2 < r1)	c.moveTo(x+r1, y),	c.arc(x, y, r1, 0, 7);	//* <- base circle, no cogs
-				if (s.done &&	r2 > 1 && r2 < r1)	c.moveTo(x+r2, y),	c.arc(x, y, r2, 0, 7);	//* <- hole inside
-
-		//* --------^-------- (TODO) --------^--------
-
+				}
 			} else {
 				radius = dist(r.x-v.x, r.y-v.y);
-				c.moveTo(v.x+radius, v.y), c.arc(v.x, v.y, radius, 0, 7);
+				c.moveTo(v.x+radius, v.y);
+				c.arc(v.x, v.y, radius, 0, 7);	//* <- base circle
 			}
 			if (clear) {
 				ctx.draw.save();
@@ -934,8 +963,6 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 				ctx.draw.restore();
 			} else if (c.fillStyle != A0) c.fill('evenodd');
 		break;
-	//* text (TODO)
-	//	case 6:	;
 	}
 	c.moveTo(r.x, r.y);
 }
@@ -1715,24 +1742,24 @@ function hotKeys(event) {
 		} else
 		if (event.altKey)
 		switch (event.keyCode) {
-			case c('L'):	newLayer();	break;
-			case c('C'):	newLayer(1);	break;
-			case c('M'):	newLayer(-1);	break;
+			case 38:	moveLayer(0);	break;
+			case 40:	moveLayer(-1);	break;
+			case 37:	moveLayer();	break;
+			case 39:	moveLayer(1);	break;
+
 			case c('E'):	moveLayer('del');break;
+			case c('L-new'):newLayer();	break;
+			case c('Copy'):	newLayer(1);	break;
+			case c('Merge'):newLayer(-1);	break;
 
-		case 38:case c('U'):	moveLayer(0);	break;
-		case 40:case c('I'):	moveLayer(-1);	break;
-		case 37:case c('T'):	moveLayer();	break;
-		case 39:case c('Y'):	moveLayer(1);	break;
+			case c('A-def'):toolSwap(3);	break;
+			case c('SCurs'):toggleMode(5);	break;
+		//	case c('GlobalHistory'):toggleMode(8);	break;
 
-			case c('A'):	toolSwap(3);	break;
-			case c('S'):	toggleMode(5);	break;
-		//	case c('G'):	toggleMode(8);	break;
-
-			case c('G'):
-			case c('B'):
-			case c('O'):
-			case c('W'):	toolTweak(String.fromCharCode(event.keyCode), -1);
+			case c('Grid'):
+			case c('Blur'):
+			case c('Opacity'):
+			case c('Width'):toolTweak(String.fromCharCode(event.keyCode), -1);
 		} else
 		if (event.shiftKey)
 		switch (event.keyCode) {
@@ -1744,28 +1771,14 @@ function hotKeys(event) {
 		switch (event.keyCode) {
 			case 27:	drawEnd();	break;	//* Esc
 			case 36: updateViewport();	break;	//* Home
-			case c('Z'):	historyAct(-1);	break;
-			case c('X'):	historyAct(1);	break;
-			case c('C'):	pickColor();	break;
-			case c('F'):	fillScreen(0);	break;
-			case c('D'):	fillScreen(1);	break;
-			case c('I'):	fillScreen(-1);	break;
-			case c('H'):	fillScreen(-2);	break;
-			case c('V'):	fillScreen(-3);	break;
-			case c('S'):	toolSwap();	break;
-			case c('E'):	toolSwap(0);	break;
-			case c('A'):	toolSwap(1);	break;
-			case c('K'):	toolSwap(2);	break;
-		//	case c('G'):	toolSwap(3);	break;
-
 			case 8:
 if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *, 8=bksp
-			case c('L'):	toggleMode(1);	break;
-			case c('U'):	toggleMode(2);	break;
+			case c('L/shp'):toggleMode(1);	break;
+			case c('U/stp'):toggleMode(2);	break;
 
 			case 112:	resetAside();	break;	//* F1
 			case 120:	sendPic(0);	break;	//* F9
-		//	case 118:	sendPic(1);	break;
+		//	case 118:	sendPic(1);	break;	//* jpeg
 			case 113:	sendPic(2);	break;
 			case 114:	sendPic(3);	break;
 			case 115:	sendPic(4);	break;
@@ -1773,19 +1786,34 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *,
 			case 118:	sendPic(7);	break;
 			case 119:	sendPic();	break;
 
-			case c('Q'):	updateShape(0);	break;
-			case c('P'):	updateShape(1);	break;
-			case c('R'):	updateShape(2);	break;
-			case c('T'):	updateShape(3);	break;
-		//	case c('Ell'):	updateShape(4);	break;
-			case c('Y'):	updateShape(5);	break;
-			case c('M'):	updateShape(6);	break;
-		//	case c('T'):	updateShape(7);	break;
+			case c('ZUndo'):historyAct(-1);	break;
+			case c('XRedo'):historyAct(1);	break;
+			case c('CPick'):pickColor();	break;
+			case c('Fill'):	fillScreen(0);	break;
+			case c('Del'):	fillScreen(1);	break;
+			case c('Invrt'):fillScreen(-1);	break;
+			case c('Hflip'):fillScreen(-2);	break;
+			case c('Vflip'):fillScreen(-3);	break;
+			case c('Swap'):	toolSwap();	break;
+			case c('Erase'):toolSwap(0);	break;
+			case c('A-pen'):toolSwap(1);	break;
+			case c('K-wht'):toolSwap(2);	break;
 
-			case c('G'):
-			case c('B'):
-			case c('O'):
-			case c('W'):	toolTweak(String.fromCharCode(event.keyCode), 0); break;
+			case c('QLine'):updateShape(0);	break;
+			case c('Poly'):	updateShape(1);	break;
+		//	case c('RPoly'):updateShape(2);	break;
+			case c('Rectg'):updateShape(3);	break;
+		//	case c('Circl'):updateShape(4);	break;
+		//	case c('Elips'):updateShape(5);	break;
+			case c('YRadi'):updateShape(6);	break;
+			case c('Move'):	updateShape(7);	break;
+		//	case c('Lasso'):updateShape(8);	break;
+		//	case c('Text'):	updateShape(9);	break;
+
+			case c('Grid'):
+			case c('Blur'):
+			case c('Opacity'):
+			case c('Width'):toolTweak(String.fromCharCode(event.keyCode), 0); break;
 
 			case 106: case 42:
 				for (i = 1, k = ''; i < 3; i++) k += '<br>Save'+i+'.time: '+LS[CR[i].T]
@@ -2278,7 +2306,7 @@ var	o = outside, v = id('vars'), e, i, j, k
 	if (o.lang == 'ru')
 select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы линий'}
 , select.translated = {
-	shape	: ['линия', 'многоугольник', 'прямоугольник', 'круг', 'овал', 'излучение', 'сдвиг', 'текст']
+	shape	: ['линия', 'замкнутая линия', 'многоугольник', 'прямоугольник', 'круг', 'овал', 'излучение', 'сдвиг', 'сдвиг лассо', 'текст']
 ,	lineCap	: ['круг <->', 'срез |-|', 'квадрат [-]']
 ,	lineJoin: ['круг -x-', 'срез \\_/', 'угол V']
 ,	filter	: ['масштаб', 'интеграл']
@@ -2336,11 +2364,10 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 ,	info: [	'{toggleView=\'hotkeys\';Управление}: [hotkeys;(указатель над полотном)'
 	,
 	,	'C / средний клик = подобрать цвет с рисунка.'
-//	,	'Q / P / R / T / Y / M = выбор формы.'
 	,
 	,	'Выбор формы инструмента:'
 	,	'Q = линия, прямая, кривая.'
-	,	'P = лассо, многоугольник.'
+	,	'P = лассо, замкнутая линия.'
 	,	'R = прямоугольник.'
 //	,	'T = печатный текст.'
 	,	'Y = лучи солнца, шестерёнка.'
@@ -2468,11 +2495,10 @@ else o.lang = 'en'
 ,	info: [	'{toggleView=\'hotkeys\';Hot keys}: [hotkeys;(mouse over image only)'
 	,
 	,	'C / mouse mid = pick color from image.'
-//	,	'Q / P / R / T / Y / M = select shape.'
 	,
 	,	'Select tool shape:'
 	,	'Q = line, straight, curve.'
-	,	'P = lasso, polygon.'
+	,	'P = lasso, freehand polygon.'
 	,	'R = rectangle.'
 //	,	'T = print text.'
 	,	'Y = sun rays, gear wheel.'
