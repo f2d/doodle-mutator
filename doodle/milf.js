@@ -5,8 +5,8 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v1.14'
-,	INFO_DATE = '2014-07-16 — 2015-05-14'
+,	INFO_VERSION = 'v1.15'
+,	INFO_DATE = '2014-07-16 — 2015-05-18'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -895,15 +895,21 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 					,	Math.max(cnv.draw.height-y, y)	//* <- infinite ray length = to farthest image corner + outline width
 					)+tool.width;
 					if (r2 > r3) r2 = 0;
+				} else {
+					if (r1 < 1) r1 = dist(
+						Math.max(cnv.draw.width-x, x)
+					,	Math.max(cnv.draw.height-y, y)
+					)+tool.width;
+					if (r3 > r1) r3 = r1;
 				}
 				if (r3 > 1) {
 				var	a1 =		Math.atan2(s.cur.y-y, s.cur.x-x)
 				,	a2 =		Math.atan2(r.y-y, r.x-x)
 				,	a3 = (s.done ?	Math.atan2(v.y-y, v.x-x) : a2)
-				,	d = Math.PI, t = d/2
 				,	b = Math.abs(ang_btw(a1, a3))
-				,	i = Math.floor(d/Math.max(Math.abs(b-t), 3/t/r3))	//* <- ray count by angular width (3px minimum here)
-			//	,	i = Math.ceil(b/d*360)					//* <- ray count by fraction/max allowed (360 rays here)
+				,	d = Math.PI, t = d/2, i = Math.ceil(tool.width+2)
+				,	i = Math.floor(d/Math.max(Math.abs(b-t), i/t/r3))	//* <- ray count to fit angular width (i px minimum here)
+			//	,	i = Math.ceil(b/d*360)					//* <- ray count by angle fraction (max 360 rays here)
 				,	R2G1 = ((!GEAR || s.done) && r2 > 1 && r2 > r1)
 				,	r4 = (R2G1?r2:r1);
 					d /= i = Math.max(i, GEAR?2:3);		//* <- minimum ray count
@@ -921,12 +927,12 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 							ctx.temp.stroke();
 							propSwap(ctx.temp, old);
 							ctx.temp.beginPath();
-						} else		/* <- start linked */ t = a2-d,	c.moveTo(x + Math.cos(t)*r4, y + Math.sin(t)*r4);
+						} else	t = a2-d, c.moveTo(x + Math.cos(t)*r3, y + Math.sin(t)*r3);	//* <- start linked
 						while (i--) {
 						var	a = a2 + d*i*2, b = a-d, t = (R2G1?b:a+d);
-							if (R2G1)	/* <- start isolated */	c.moveTo(x + Math.cos(t)*r4, y + Math.sin(t)*r4);
-							c.arc(x, y, r4, t, a,!R2G1);		c.lineTo(x + Math.cos(a)*r3, y + Math.sin(a)*r3);
-							c.arc(x, y, r3, a, b, true);		c.lineTo(x + Math.cos(b)*r4, y + Math.sin(b)*r4);
+							if (R2G1) c.moveTo(x + Math.cos(t)*r3, y + Math.sin(t)*r3);	//* <- start isolated
+							c.arc(x, y, r4, t, a,!R2G1);
+							c.arc(x, y, r3, a, b, true);	//* <- arc adds lineTo itself by standard, wanted or not
 						}
 					} else if (	r1 > 1 && r2 < r1)	c.moveTo(x+r1, y),	c.arc(x, y, r1, 0, 7);	//* <- base circle, no cogs
 					if (s.done &&	r2 > 1 && r2 < r1)	c.moveTo(x+r2, y),	c.arc(x, y, r2, 0, 7);	//* <- hole inside
@@ -935,20 +941,28 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 				var	old = propSwap(ctx.temp, DRAW_HELPER);
 					ctx.temp.beginPath();
 
-					if (R2G1)
-					ctx.temp.moveTo(x+r2, y),	ctx.temp.arc(x, y, r2, 0, 7);	//* <- spike radius phantom
-					ctx.temp.moveTo(x+r1, y),	ctx.temp.arc(x, y, r1, 0, 7);	//* <- base radius phantom
+					if (r2 > r1) r2 = 0;
+					if (i > 4) {
+						if (r2 < r3) a = Math.PI/i, r2 = Math.abs(
+							i > 6 && r2 < r3/2
+							? r1/(i%2?3:2)/Math.cos(a)	//* <- fit to connect 2nd farthest peak
+							: r1*Math.cos(a*2)/Math.cos(a)	//* <- fit to connect 2nd neighbour
+						);
+						for (t in (a = (i > 6 ? [r3, r3/2] : [r3]))) if (a[t] < r1)
+						ctx.temp.moveTo(x+a[t], y),	ctx.temp.arc(x, y, a[t], 0, 7);	//* <- inner "reset to regular" zones
+					}
+					ctx.temp.moveTo(x+r1, y),	ctx.temp.arc(x, y, r1, 0, 7);		//* <- spike radius phantom
 
 					ctx.temp.stroke();
 					propSwap(ctx.temp, old);
 					ctx.temp.beginPath();
 
-					c.moveTo(x + Math.cos(a2)*r4, y + Math.sin(a2)*r4);
+					c.moveTo(x + Math.cos(a2)*r1, y + Math.sin(a2)*r1);
 					while (i--) {
 					var	a = a2 + d*i*2, b = a+d;
-						if (R2G1)
-						c.lineTo(x + Math.cos(b)*r1, y + Math.sin(b)*r1);
-						c.lineTo(x + Math.cos(a)*r4, y + Math.sin(a)*r4);
+						if (!R2G1)
+						c.lineTo(x + Math.cos(b)*r2, y + Math.sin(b)*r2);
+						c.lineTo(x + Math.cos(a)*r1, y + Math.sin(a)*r1);
 					}
 				}
 			} else {
@@ -1801,7 +1815,7 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *,
 
 			case c('QLine'):updateShape(0);	break;
 			case c('Poly'):	updateShape(1);	break;
-		//	case c('RPoly'):updateShape(2);	break;
+			case c('TestRPoly'):updateShape(2);	break;
 			case c('Rectg'):updateShape(3);	break;
 		//	case c('Circl'):updateShape(4);	break;
 		//	case c('Elips'):updateShape(5);	break;
