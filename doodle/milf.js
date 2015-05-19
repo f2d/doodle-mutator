@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.15'
-,	INFO_DATE = '2014-07-16 — 2015-05-18'
+,	INFO_DATE = '2014-07-16 — 2015-05-19'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -885,9 +885,9 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 		case 5:
 		case 6:	if (s) {
 			var	x = s.prev.x, y = s.prev.y, GEAR = (fig == 5)
-			,	r1 =		dist(s.cur.x-x, s.cur.y-y)
-			,	r2 =		dist(r.x-x, r.y-y)
-			,	r3 = (s.done ?	dist(v.x-x, v.y-y) : r2);
+			,	r1 =		dist(s.cur.x-x, s.cur.y-y)	//* <- 1st radius (at releasing 1st click)
+			,	r2 =		dist(r.x-x, r.y-y)		//* <- always current (2nd or 3rd)
+			,	r3 = (s.done ?	dist(v.x-x, v.y-y) : r2);	//* <- 2nd or current (2nd click down)
 
 				if (GEAR) {
 					if (r3 < r1+1) r3 = dist(
@@ -900,7 +900,6 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 						Math.max(cnv.draw.width-x, x)
 					,	Math.max(cnv.draw.height-y, y)
 					)+tool.width;
-					if (r3 > r1) r3 = r1;
 				}
 				if (r3 > 1) {
 				var	a1 =		Math.atan2(s.cur.y-y, s.cur.x-x)
@@ -911,8 +910,8 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 				,	i = Math.floor(d/Math.max(Math.abs(b-t), i/t/r3))	//* <- ray count to fit angular width (i px minimum here)
 			//	,	i = Math.ceil(b/d*360)					//* <- ray count by angle fraction (max 360 rays here)
 				,	R2G1 = ((!GEAR || s.done) && r2 > 1 && r2 > r1)
-				,	r4 = (R2G1?r2:r1);
-					d /= i = Math.max(i, GEAR?2:3);		//* <- minimum ray count
+				,	R1G3 = (r1 > r3), r4 = (R2G1?r2:r1)
+				;	d /= i = Math.max(i, (GEAR || !R1G3)?2:3);		//* <- minimum ray count
 				}
 				if (GEAR) {
 			//* radiance
@@ -922,53 +921,68 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 							ctx.temp.beginPath();
 
 							ctx.temp.moveTo(x+r1, y);
-							ctx.temp.arc(x, y, r1, 0, 7);	//* <- base circle phantom
+							ctx.temp.arc(x, y, r1, 0, 7);		//* <- base circle phantom
 
 							ctx.temp.stroke();
 							propSwap(ctx.temp, old);
 							ctx.temp.beginPath();
-						} else	t = a2-d, c.moveTo(x + Math.cos(t)*r3, y + Math.sin(t)*r3);	//* <- start linked
+						} else	t = a2-d, c.moveTo(x + Math.cos(t)*r3, y + Math.sin(t)*r3);		//* <- start linked
 						while (i--) {
 						var	a = a2 + d*i*2, b = a-d, t = (R2G1?b:a+d);
-							if (R2G1) c.moveTo(x + Math.cos(t)*r3, y + Math.sin(t)*r3);	//* <- start isolated
+							if (R2G1) c.moveTo(x + Math.cos(t)*r3, y + Math.sin(t)*r3);		//* <- start isolated
 							c.arc(x, y, r4, t, a,!R2G1);
-							c.arc(x, y, r3, a, b, true);	//* <- arc adds lineTo itself by standard, wanted or not
+							c.arc(x, y, r3, a, b, true);		//* <- arc adds lineTo itself by standard, wanted or not
 						}
 					} else if (	r1 > 1 && r2 < r1)	c.moveTo(x+r1, y),	c.arc(x, y, r1, 0, 7);	//* <- base circle, no cogs
 					if (s.done &&	r2 > 1 && r2 < r1)	c.moveTo(x+r2, y),	c.arc(x, y, r2, 0, 7);	//* <- hole inside
 				} else {
 			//* regular polygon
-				var	old = propSwap(ctx.temp, DRAW_HELPER);
+				var	old = propSwap(ctx.temp, DRAW_HELPER), r4 = r1;
 					ctx.temp.beginPath();
 
-					if (r2 > r1) r2 = 0;
-					if (i > 4) {
-						if (r2 < r3) a = Math.PI/i, r2 = Math.abs(
-							i > 6 && r2 < r3/2
-							? r1/(i%2?3:2)/Math.cos(a)	//* <- fit to connect 2nd farthest peak
-							: r1*Math.cos(a*2)/Math.cos(a)	//* <- fit to connect 2nd neighbour
-						);
-						for (t in (a = (i > 6 ? [r3, r3/2] : [r3]))) if (a[t] < r1)
-						ctx.temp.moveTo(x+a[t], y),	ctx.temp.arc(x, y, a[t], 0, 7);	//* <- inner "reset to regular" zones
-					}
-					ctx.temp.moveTo(x+r1, y),	ctx.temp.arc(x, y, r1, 0, 7);		//* <- spike radius phantom
+					if (R1G3) {
+				//* fixed spike length + autoconnect peaks
+						R2G1 = 0;
+						if (s.done) {
+							if (i > 4) {
+							var	a = Math.PI/i
+							,	j = Math.floor((i-3)/2)+1;	//* <- max peak connection variants
+								while (--j) {
+									t = b = r1*Math.cos(a*(j+1))/Math.cos(a*j);
+									if (r2 > r1) b += r1;
+									ctx.temp.moveTo(x+b, y), ctx.temp.arc(x, y, b, 0, 7);	//* <- snap levels phantom
+									if (!R2G1 && r2 < b) R2G1 = 1, r4 = t;
+								}
+							}
+						} else {
+						var	j = d*2, t = Math.PI*2, a = t+(t+a2)%j;
+							while ((a -= j) >= 0) {
+								ctx.temp.moveTo(x, y);
+								ctx.temp.lineTo(x + Math.cos(a)*r1, y + Math.sin(a)*r1);	//* <- ray count phantom
+							}
+						}
+						r2 = r1;
+					} else if (r2 != r1)
+				//* variable spike length
+					ctx.temp.moveTo(x+r2, y),	ctx.temp.arc(x, y, r2, 0, 7);
+					ctx.temp.moveTo(x+r1, y),	ctx.temp.arc(x, y, r1, 0, 7);				//* <- base radius phantom
 
 					ctx.temp.stroke();
 					propSwap(ctx.temp, old);
 					ctx.temp.beginPath();
 
-					c.moveTo(x + Math.cos(a2)*r1, y + Math.sin(a2)*r1);
+					c.moveTo(x + Math.cos(a2)*r2, y + Math.sin(a2)*r2);
 					while (i--) {
 					var	a = a2 + d*i*2, b = a+d;
-						if (!R2G1)
-						c.lineTo(x + Math.cos(b)*r2, y + Math.sin(b)*r2);
-						c.lineTo(x + Math.cos(a)*r1, y + Math.sin(a)*r1);
+						if (!R1G3 || R2G1)
+						c.lineTo(x + Math.cos(b)*r4, y + Math.sin(b)*r4);
+						c.lineTo(x + Math.cos(a)*r2, y + Math.sin(a)*r2);
 					}
 				}
 			} else {
 				radius = dist(r.x-v.x, r.y-v.y);
 				c.moveTo(v.x+radius, v.y);
-				c.arc(v.x, v.y, radius, 0, 7);	//* <- base circle
+				c.arc(v.x, v.y, radius, 0, 7);	//* <- base circle, 1st step
 			}
 			if (clear) {
 				ctx.draw.save();
@@ -2377,6 +2391,7 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 ,	show_hint:	'Кликните, чтобы спрятать или показать.'
 ,	info: [	'{toggleView=\'hotkeys\';Управление}: [hotkeys;(указатель над полотном)'
 	,
+	,	'Esc = сбросить незавершённое действие.'
 	,	'C / средний клик = подобрать цвет с рисунка.'
 	,
 	,	'Выбор формы инструмента:'
@@ -2508,6 +2523,7 @@ else o.lang = 'en'
 ,	show_hint:	'Click to show/hide.'
 ,	info: [	'{toggleView=\'hotkeys\';Hot keys}: [hotkeys;(mouse over image only)'
 	,
+	,	'Esc = cancel current unfinished change.'
 	,	'C / mouse mid = pick color from image.'
 	,
 	,	'Select tool shape:'
