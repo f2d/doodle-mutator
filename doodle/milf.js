@@ -571,15 +571,18 @@ var	c = ii.context, d = ii.imageData, p = ii.pixels;
 function drawCursor() {
 var	c = ctx[mode.brushView?'draw':'view'], g = tool.grid;
 	if (g > 1) {
-	var	m, n = Math.floor(tool.width/g), o = draw.o, v = (n < 1?(n = 1):n)*g, w = v+DRAW_PIXEL_OFFSET, v = v-DRAW_PIXEL_OFFSET;
+	var	m, n = Math.floor(tool.width/g), o = draw.o, v = (n < 1?(n = 1):n)*g, p = DRAW_PIXEL_OFFSET, w = v+p, v = v-p;
 		for (i in DRAW_HELPER) c[i] = DRAW_HELPER[i];
 		c.beginPath();
-		for (i = -n; i <= n; i++) {
-			m = i*g+DRAW_PIXEL_OFFSET;
+		for (i = -n; i <= n; i++) if (i) {
+			m = i*g+p;
 			c.moveTo(o.x+m, o.y-v);
 			c.lineTo(o.x+m, o.y+w);
 			c.moveTo(o.x-v, o.y+m);
 			c.lineTo(o.x+w, o.y+m);
+		} else {
+			c.moveTo(o.x+p, p), c.lineTo(o.x+p, cnv.draw.height+p);
+			c.moveTo(p, o.y+p), c.lineTo(cnv.draw.width+p, o.y+p);
 		}
 		c.stroke();
 	}
@@ -798,27 +801,34 @@ function drawEnd(event) {
 }
 
 function drawShape(c, i, clear) {
-var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mode.step && !(s && s.done)?2:0);
+var	cd = ctx.draw, v = draw.prev, r = draw.cur
+,	ct = ctx.temp, s = draw.step
+,	fig = select.shapeFig[i] || (mode.step && !(s && s.done)?2:0);
+
+	function circle(r, c, a, b) {
+		(c?c:c = ct).moveTo(
+		(a?a:a = x)+r,
+		(b?b:b = y));
+		c.arc(a, b, r, 0, 7);
+	}
+
 	switch (fig) {
 	//* pan
 		case 0:	if (v.x != r.x
-			|| (v.y != r.y)) moveScreen(r.x-v.x, r.y-v.y, c != ctx.temp);
+			|| (v.y != r.y)) moveScreen(r.x-v.x, r.y-v.y, c != ct);
 		break;
 	//* line
 		case 1:	if (s) {
-			var	d = r, old = propSwap(ctx.temp, DRAW_HELPER);
-				ctx.temp.beginPath();
+			var	old = propSwap(ct, DRAW_HELPER), d = r;
 
-				ctx.temp.moveTo(s.cur.x, s.cur.y);		//* <- control point 1 phantom
-				ctx.temp.lineTo(s.prev.x, s.prev.y);
+				ct.moveTo(s.cur.x, s.cur.y);		//* <- control point 1 phantom
+				ct.lineTo(s.prev.x, s.prev.y);
 				if (s.done) {
-					ctx.temp.moveTo(d.x, d.y), d = v;	//* <- control point 2 phantom
-					ctx.temp.lineTo(d.x, d.y);
+					ct.moveTo(d.x, d.y), d = v;	//* <- control point 2 phantom
+					ct.lineTo(d.x, d.y);
 				}
 
-				ctx.temp.stroke();
-				propSwap(ctx.temp, old);
-				ctx.temp.beginPath();
+				propSwap(ct, old, 0);
 		//* curve
 				c.moveTo(s.prev.x, s.prev.y);
 				c.bezierCurveTo(s.cur.x, s.cur.y, d.x, d.y, r.x, r.y);
@@ -832,7 +842,7 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 		case 2:	if (s) {
 			//* show pan source area
 				c.strokeRect(s.prev.x, s.prev.y, s.cur.x-s.prev.x, s.cur.y-s.prev.y);
-			} else if (clear) ctx.draw.clearRect(v.x, v.y, r.x-v.x, r.y-v.y);
+			} else if (clear) cd.clearRect(v.x, v.y, r.x-v.x, r.y-v.y);
 			else {
 				if (c.fillStyle != A0)
 				c.fillRect(v.x, v.y, r.x-v.x, r.y-v.y);
@@ -845,14 +855,9 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 		,	yCenter = (v.y+r.y)/2
 		,	radius = dist(r.x-xCenter, r.y-yCenter);
 			if (radius > 0) {
-				c.moveTo(xCenter+radius, yCenter);
-				c.arc(xCenter, yCenter, radius, 0, 7);
-				if (clear) {
-					ctx.draw.save();
-					ctx.draw.clip();
-					ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
-					ctx.draw.restore();
-				} else if (c.fillStyle != A0) c.fill();
+				circle(radius, c, xCenter, yCenter);
+				if (clear) insideClear(cd);
+				else if (c.fillStyle != A0) c.fill();
 			}
 		break;
 	//* ellipse
@@ -873,12 +878,8 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 					c.arc(xCenter/x, yCenter/y, Math.max(xRadius, yRadius), 0, 7);
 					c.restore();
 				}
-				if (clear) {
-					ctx.draw.save();
-					ctx.draw.clip();
-					ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
-					ctx.draw.restore();
-				} else if (c.fillStyle != A0) c.fill();
+				if (clear) insideClear(cd);
+				else if (c.fillStyle != A0) c.fill();
 			}
 		break;
 	//* polar figures
@@ -905,91 +906,93 @@ var	s = draw.step, r = draw.cur, v = draw.prev, fig = select.shapeFig[i] || (mod
 				var	a1 =		Math.atan2(s.cur.y-y, s.cur.x-x)
 				,	a2 =		Math.atan2(r.y-y, r.x-x)
 				,	a3 = (s.done ?	Math.atan2(v.y-y, v.x-x) : a2)
-				,	b = Math.abs(ang_btw(a1, a3))
-				,	d = Math.PI, t = d/2, i = Math.ceil(tool.width+2)
-				,	i = Math.floor(d/Math.max(Math.abs(b-t), i/t/r3))	//* <- ray count to fit angular width (i px minimum here)
+				,	a = ang_btw(a1, a3)
+				,	b = Math.abs(a), d = Math.PI, h = d/2
+				,	w = Math.ceil(tool.width+2)				//* <- minimum ray width, pixels
+				,	i = Math.floor(d/Math.max(Math.abs(b-h), w/h/r3))	//* <- ray count to fit angular width
 			//	,	i = Math.ceil(b/d*360)					//* <- ray count by angle fraction (max 360 rays here)
 				,	R2G1 = ((!GEAR || s.done) && r2 > 1 && r2 > r1)
-				,	R1G3 = (r1 > r3), r4 = (R2G1?r2:r1)
-				;	d /= i = Math.max(i, (GEAR || !R1G3)?2:3);		//* <- minimum ray count
+				,	R1G3 = (r1 > r3)
+				,	r4 = (GEAR && R2G1?r2:r1)
+				,	j = (GEAR || !R1G3)?2:3					//* <- minimum ray count
+				;	d /= i = Math.max(i, j);
 				}
+				old = propSwap(ct, DRAW_HELPER);
+
+				if (!s.done) {
+				var	rm = Math.max(r2-4, 4)
+				,	rn = rm+8
+				,	am = a1+(b > h?Math.PI:0)
+				,	an = ((a < 0) != (b > h)?-h:h)
+				,	k = Math.min(90, Math.floor(rm/3))
+				;	function r2line(a) {
+						c.moveTo(x + Math.cos(a)*rm, y + Math.sin(a)*rm);
+						c.lineTo(x + Math.cos(a)*rn, y + Math.sin(a)*rn);
+					}
+					while (++j < k) r2line(am + an*(1-2/j));	//* <- possible ray count marks phantom
+					r2line(am + an);
+					r2line(am);					//* <- 90 degree marks
+				}
+
 				if (GEAR) {
-			//* radiance
+			//* radiance, cog wheel
+					if (r3 > 1 && R2G1) circle(r1);			//* <- base circle phantom
+
+					propSwap(ct, old, 0);
+
 					if (r3 > 1) {
-						if (R2G1) {
-						var	old = propSwap(ctx.temp, DRAW_HELPER);
-							ctx.temp.beginPath();
-
-							ctx.temp.moveTo(x+r1, y);
-							ctx.temp.arc(x, y, r1, 0, 7);		//* <- base circle phantom
-
-							ctx.temp.stroke();
-							propSwap(ctx.temp, old);
-							ctx.temp.beginPath();
-						} else	t = a2-d, c.moveTo(x + Math.cos(t)*r3, y + Math.sin(t)*r3);		//* <- start linked
+						if (!R2G1) h = a2-d, c.moveTo(x + Math.cos(h)*r3, y + Math.sin(h)*r3);	//* <- start linked
 						while (i--) {
-						var	a = a2 + d*i*2, b = a-d, t = (R2G1?b:a+d);
-							if (R2G1) c.moveTo(x + Math.cos(t)*r3, y + Math.sin(t)*r3);		//* <- start isolated
-							c.arc(x, y, r4, t, a,!R2G1);
+							a = a2 + d*i*2, b = a-d, h = (R2G1?b:a+d);
+							if (R2G1) c.moveTo(x + Math.cos(h)*r3, y + Math.sin(h)*r3);	//* <- start isolated
+							c.arc(x, y, r4, h, a,!R2G1);
 							c.arc(x, y, r3, a, b, true);		//* <- arc adds lineTo itself by standard, wanted or not
 						}
-					} else if (	r1 > 1 && r2 < r1)	c.moveTo(x+r1, y),	c.arc(x, y, r1, 0, 7);	//* <- base circle, no cogs
-					if (s.done &&	r2 > 1 && r2 < r1)	c.moveTo(x+r2, y),	c.arc(x, y, r2, 0, 7);	//* <- hole inside
+					} else if (	r1 > 1 && r2 < r1) circle(r1, c);	//* <- base circle, no cogs
+					if (s.done &&	r2 > 1 && r2 < r1) circle(r2, c);	//* <- hole inside
 				} else {
-			//* regular polygon
-				var	old = propSwap(ctx.temp, DRAW_HELPER), r4 = r1;
-					ctx.temp.beginPath();
-
+			//* regular polygon, star
 					if (R1G3) {
 				//* fixed spike length + autoconnect peaks
 						R2G1 = 0;
 						if (s.done) {
 							if (i > 4) {
-							var	a = Math.PI/i
-							,	j = Math.floor((i-3)/2)+1;	//* <- max peak connection variants
+								a = Math.PI/i;
+								j = Math.floor((i-3)/2)+1;	//* <- max peak connection variants
 								while (--j) {
-									t = b = r1*Math.cos(a*(j+1))/Math.cos(a*j);
-									if (r2 > r1) b += r1;
-									ctx.temp.moveTo(x+b, y), ctx.temp.arc(x, y, b, 0, 7);	//* <- snap levels phantom
-									if (!R2G1 && r2 < b) R2G1 = 1, r4 = t;
+									b = h = r1*Math.cos(a*(j+1))/Math.cos(a*j);
+									if (r2 > r1) h += r1;
+									circle(h);		//* <- snap levels phantom
+									if (!R2G1 && r2 < h) R2G1 = 1, r4 = b;
 								}
 							}
 						} else {
-						var	j = d*2, t = Math.PI*2, a = t+(t+a2)%j;
+							j = d*2, h = Math.PI*2, a = h+(h+a2)%j;
 							while ((a -= j) >= 0) {
-								ctx.temp.moveTo(x, y);
-								ctx.temp.lineTo(x + Math.cos(a)*r1, y + Math.sin(a)*r1);	//* <- ray count phantom
+								ct.moveTo(x, y);
+								ct.lineTo(x + Math.cos(a)*r1, y + Math.sin(a)*r1);	//* <- ray count phantom
 							}
 						}
 						r2 = r1;
 					} else if (r2 != r1)
 				//* variable spike length
-					ctx.temp.moveTo(x+r2, y),	ctx.temp.arc(x, y, r2, 0, 7);
-					ctx.temp.moveTo(x+r1, y),	ctx.temp.arc(x, y, r1, 0, 7);				//* <- base radius phantom
+					circle(r2);
+					circle(r1);				//* <- base radius phantom
 
-					ctx.temp.stroke();
-					propSwap(ctx.temp, old);
-					ctx.temp.beginPath();
+					propSwap(ct, old, 0);
 
 					c.moveTo(x + Math.cos(a2)*r2, y + Math.sin(a2)*r2);
 					while (i--) {
-					var	a = a2 + d*i*2, b = a+d;
+						a = a2 + d*i*2, b = a+d;
 						if (!R1G3 || R2G1)
 						c.lineTo(x + Math.cos(b)*r4, y + Math.sin(b)*r4);
 						c.lineTo(x + Math.cos(a)*r2, y + Math.sin(a)*r2);
 					}
 				}
-			} else {
-				radius = dist(r.x-v.x, r.y-v.y);
-				c.moveTo(v.x+radius, v.y);
-				c.arc(v.x, v.y, radius, 0, 7);	//* <- base circle, 1st step
-			}
-			if (clear) {
-				ctx.draw.save();
-				ctx.draw.clip();
-				ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
-				ctx.draw.restore();
-			} else if (c.fillStyle != A0) c.fill('evenodd');
+			} else circle(dist(r.x-v.x, r.y-v.y), c, v.x, v.y);	//* <- base radius, 1st step
+
+			if (clear) insideClear(cd);
+			else if (c.fillStyle != A0) c.fill('evenodd');
 		break;
 	}
 	c.moveTo(r.x, r.y);
@@ -2700,9 +2703,17 @@ var	a = ['class','id','onChange','onClick','onContextMenu'];
 function setRemove(e,o) {e.setAttribute(o?o:'onclick', 'this.parentNode.removeChild(this); return false');}
 function clearContent(e) {while (e.childNodes.length) e.removeChild(e.lastChild);}	//* <- works without a blink, unlike e.innerHTML = '';
 function toggleView(e) {if (!e.tagName) e = id(e); return e.style.display = e.style.display?'':'none';}
-function propSwap(a, b) {
-var	r = {};
+function insideClear(c) {
+	c.save();
+	c.clip();
+	c.clearRect(0, 0, cnv.view.width, cnv.view.height);
+	c.restore();
+}
+function propSwap(a, b, c, r) {
+	if ((!r && !c && c !== null ? (r = 'stroke') : r) && a[r]) a[r]();
+	r = {};
 	for (i in b) r[i] = a[i], a[i] = b[i];
+	if ((c?c:c = 'beginPath') && a[c]) a[c]();
 	return r;
 }
 function dist(x,y) {return Math.sqrt(x*x + y*y)};
