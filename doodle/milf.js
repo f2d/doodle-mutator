@@ -5,8 +5,8 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v1.15'
-,	INFO_DATE = '2014-07-16 — 2015-05-19'
+,	INFO_VERSION = 'v1.16'
+,	INFO_DATE = '2014-07-16 — 2015-05-26'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -865,15 +865,15 @@ var	cd = ctx.draw, v = draw.prev, r = draw.cur
 		var	xCenter = (v.x+r.x)/2
 		,	yCenter = (v.y+r.y)/2
 		,	xRadius = Math.abs(r.x-xCenter)
-		,	yRadius = Math.abs(r.y-yCenter);
+		,	yRadius = Math.abs(r.y-yCenter), x = 1, y = 1;
 			if (xRadius > 0 && yRadius > 0) {
 				if (c.ellipse) {
 					c.moveTo(xCenter+xRadius, yCenter);
 					c.ellipse(xCenter, yCenter, xRadius, yRadius, 0, 0, 7);
 				} else {
 					c.save();
-					if (xRadius > yRadius) c.scale(x = 1, y = yRadius/xRadius); else
-					if (xRadius < yRadius) c.scale(x = xRadius/yRadius, y = 1);
+					if (xRadius > yRadius) c.scale(x, y = yRadius/xRadius); else
+					if (xRadius < yRadius) c.scale(x = xRadius/yRadius, y);
 					c.moveTo((xCenter+xRadius)/x, yCenter/y);
 					c.arc(xCenter/x, yCenter/y, Math.max(xRadius, yRadius), 0, 7);
 					c.restore();
@@ -998,6 +998,21 @@ var	cd = ctx.draw, v = draw.prev, r = draw.cur
 	c.moveTo(r.x, r.y);
 }
 
+function insideClear(c) {
+	c.save();
+	c.clip();
+	c.clearRect(0, 0, cnv.view.width, cnv.view.height);
+	c.restore();
+}
+
+function propSwap(a, b, c, r) {
+	if ((!r && !c && c !== null ? (r = 'stroke') : r) && a[r]) a[r]();
+	r = {};
+	for (i in b) r[i] = a[i], a[i] = b[i];
+	if ((c?c:c = 'beginPath') && a[c]) a[c]();
+	return r;
+}
+
 //* One-click all-screen manipulation *----------------------------------------
 
 function moveScreen(dx, dy, fin) {
@@ -1059,8 +1074,10 @@ function fillScreen(i,t) {
 	} else
 	if (!i) {
 		used.fill = 'Fill';
+		ctx.draw.globalCompositeOperation = tool.clip;
 		ctx.draw.fillStyle = 'rgb(' + tools[i].color + ')';
 		ctx.draw.fillRect(0, 0, cnv.view.width, cnv.view.height);
+		ctx.draw.globalCompositeOperation = SO;
 	} else {
 		draw.preload(), historyAct(-t || false), d = y.cur(), z = l[z];
 		if (!d) return;
@@ -2703,19 +2720,6 @@ var	a = ['class','id','onChange','onClick','onContextMenu'];
 function setRemove(e,o) {e.setAttribute(o?o:'onclick', 'this.parentNode.removeChild(this); return false');}
 function clearContent(e) {while (e.childNodes.length) e.removeChild(e.lastChild);}	//* <- works without a blink, unlike e.innerHTML = '';
 function toggleView(e) {if (!e.tagName) e = id(e); return e.style.display = e.style.display?'':'none';}
-function insideClear(c) {
-	c.save();
-	c.clip();
-	c.clearRect(0, 0, cnv.view.width, cnv.view.height);
-	c.restore();
-}
-function propSwap(a, b, c, r) {
-	if ((!r && !c && c !== null ? (r = 'stroke') : r) && a[r]) a[r]();
-	r = {};
-	for (i in b) r[i] = a[i], a[i] = b[i];
-	if ((c?c:c = 'beginPath') && a[c]) a[c]();
-	return r;
-}
 function dist(x,y) {return Math.sqrt(x*x + y*y)};
 function cut_period(x,y,z) {if (!y) y = -Math.PI; if (!z) z = Math.PI; return (x < y ? x-y+z : (x > z ? x+y-z : x));}
 function ang_btw(x,y) {return cut_period(y-x);}

@@ -104,6 +104,9 @@ a:hover	{		color: #000;}
 	border-top: none;
 	border-bottom: none;
 }
+#task>.res:hover>img {
+	border-color: #eee;
+}
 #task>.res>img, #task>img, header>* {
 	margin-top: 8px;
 	vertical-align: bottom;		/* <- removes extra bottom space (sub-baseline) */

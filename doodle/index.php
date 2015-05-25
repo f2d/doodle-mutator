@@ -623,7 +623,7 @@ if (TIME_PARTS) time_check_point('inb4 aim, locked');
 if (TIME_PARTS) time_check_point('got visible data, unlocked');
 
 			$t = $target['time'];
-			exit_if_not_mod($t > $last?$t:$last);
+		//	exit_if_not_mod($t > $last?$t:$last);
 			$task_time = ($t?$t:0);
 
 			list($err_sign, $err_name) = get_req();
