@@ -111,15 +111,18 @@ if ($qdir) {
 	if (!($e = is_file($f = '.htaccess')) || !strpos($e = file_get_contents($f), $rd)) file_put_contents($f, ($e?NL:'')
 .'<IfModule rewrite_module>
 	RewriteEngine On
-	RewriteBase '.ROOTPRFX
+	RewriteBase '.ROOTPRFX.'
+'
 .(defined('DIR_DATA')?$rr.DIR_DATA.'.*$ .':'')
 .$rr.'('.DIR_PICS.')(([^/])[^/]+\.([^/])[^/]+)$ $1$4/$3/$2'
 .$rd.'$ $0/ [NC,R=301,L]'
-.$rd.'(/[-\d]*)$ index.php?dir=$1&room=$3&etc=$4'
+.$rd.'(/[-\d]*)$ index.php?dir=$1&room=$3&etc=$4 [E=nocache:1]
+'
 .$rc.'f [OR]'.$rc.'d'
 .$rr.'.? - [S=2]'
 .$rr.'('.DIR_PICS.'|'.DIR_ARCH.'[^/]+/'.DIR_THUMB.').*$ err.png [L]'
 .$rr.'('.$d.'/([^/]+/)?).+$ $1. [R,L,E=nocache:1]'.'
+
 	<IfModule headers_module>
 		Header always set Cache-Control "no-store, no-cache, must-revalidate" env=nocache
 		Header always set Expires "Thu, 01 Jan 1970 00:00:00 GMT" env=nocache
@@ -623,7 +626,7 @@ if (TIME_PARTS) time_check_point('inb4 aim, locked');
 if (TIME_PARTS) time_check_point('got visible data, unlocked');
 
 			$t = $target['time'];
-		//	exit_if_not_mod($t > $last?$t:$last);
+			exit_if_not_mod($t > $last?$t:$last);
 			$task_time = ($t?$t:0);
 
 			list($err_sign, $err_name) = get_req();

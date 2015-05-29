@@ -13,9 +13,9 @@ RedirectMatch 403 /(_bak|extras|include)/
 
 <IfModule headers_module>
 	<Files *.html>
-		Header add Expires "Mon, 26 Jul 1997 05:00:00 GMT"
-		Header add Pragma "no-cache"
-		Header add Cache-Control "max-age=0; must-revalidate; no-cache"
+		Header set Expires "Mon, 26 Jul 1997 05:00:00 GMT"
+		Header set Pragma "no-cache"
+		Header set Cache-Control "max-age=0; must-revalidate; no-cache"
 		Header unset Vary
 	</Files>
 </IfModule>
