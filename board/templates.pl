@@ -31,7 +31,7 @@ use constant S_PICNAME => 'File: ';						# Prints text before upload name/link
 use constant S_REPLY => 'Reply';						# Prints text for reply link
 use constant S_ABBR => '%d posts omitted. Click Reply to view.';		# Prints text to be shown when replies are hidden
 use constant S_ABBRIMG => '%d posts and %d images omitted. Click Reply to view.';	# Prints text to be shown when replies and images are hidden
-use constant S_ABBRTEXT => 'Comment too long. Click <a href="%s">here</a> to view the full text.';
+use constant S_ABBRTEXT => '8&lt;--- Comment too long. Click <a href="%s">here</a> to view the full text. ---';
 
 use constant S_REPDEL => 'Delete Post ';					# Prints text next to S_DELPICONLY (left)
 use constant S_DELPICONLY => 'File Only';					# Prints text next to checkbox for file deletion (right)
@@ -171,9 +171,9 @@ use constant MAIN_PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 <loop $threads>
 	<loop $posts>
-		<var $text>
+		<var $abbreviation or $text>
 
-		<if $abbreviated><div class="abbrev"><var sprintf(S_ABBRTEXT,"$self/$thread/$num","$self/$thread/")></div></if>
+		<if $abbreviation><p class="abbrev"><var sprintf(S_ABBRTEXT,"$self/$thread/$num","$self/$thread/")></p></if>
 		<if $omit and $num==1>
 			<span class="omittedposts">
 			<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>

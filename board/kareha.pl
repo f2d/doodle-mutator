@@ -940,9 +940,7 @@ sub filter_post_ranges($$;$)
 
 		if($lines)
 		{
-			my $abbrev=abbreviate_post($text,$lines);
-			$post{abbreviation}=$abbrev||$text;
-			$post{abbreviated}=$abbrev?1:0;
+			$post{abbreviation}=abbreviate_post($text,$lines)||'';
 		}
 		else
 		{
@@ -955,6 +953,14 @@ sub filter_post_ranges($$;$)
 	$$thread{posts}=\@posts;
 
 	return $thread;
+}
+
+sub is_nonwhitespace_text_eq($$)
+{
+	my ($a,$b)=@_;
+	$a=~s/\s+/ /g;
+	$b=~s/\s+/ /g;
+	return ($a eq $b);
 }
 
 sub abbreviate_post($$)
@@ -970,8 +976,8 @@ sub abbreviate_post($$)
 #	}
 #	else
 #	{
-		my $abbrev=abbreviate_html($post,$lines,APPROX_LINE_LENGTH);
-		return $abbrev if($abbrev);
+		my $a=abbreviate_html($post,$lines,APPROX_LINE_LENGTH);
+		return $a if($a and !is_nonwhitespace_text_eq($a, $post));
 #	}
 
 	return undef;

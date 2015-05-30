@@ -205,21 +205,27 @@ window.onunload = function(e)
 
 window.onload = function(e)
 {
+var	a = gn('p'), i = a.length, r = /\babbrev\b/i, t, d;
+	while (i--) if ((d = a[i]).className && r.test(d.className))
+	{
+		t = gn('td', d.previousElementSibling);
+		t[t.length-1].appendChild(d);
+	}
 	if (i = id('postform'))
 	{
 		if (!i.comment.value && (a = /#i(.+)/.exec(document.location.toString()))) insert(unescape(a[1]),'');
 	}
 	else
 	{
-		gn('hr')[0].nextElementSibling.innerHTML =
+		gn('hr')[1].previousElementSibling.innerHTML =
 '<table><tr><td><ul>'+
-'<li>EN: If post form is not found here, try to disable your extensions for this site.</li>'+
+'<li>EN: If post form is not found here, try to disable your extensions/userscripts for this site.</li>'+
 '<li>RU: Если нет формы отправки поста, отключите убравшие её расширения (например Куклоскрипт).</li>'+
 '</ul></td></tr></table>';
 		document.body.setAttribute('style', '');
 	}
 
-var	i = gn('select'), a = {postform: set_new_inputs, delform: set_delpass};
+	i = gn('select'), a = {postform: set_new_inputs, delform: set_delpass};
 	if (i.length) i[0].value = get_active_stylesheet();
 	for (i in a) if (id(i)) a[i](i);
 }
