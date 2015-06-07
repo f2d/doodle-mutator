@@ -107,10 +107,22 @@ var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
 	return t.slice(0,3).join('-')+' '+t.slice(3).join(':');
 }
 
-function unskip() {
+function getSkipList() {
 var	a = document.cookie.split(/;\s*/), i = a.length, j = [], k = [], m, r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+)\//i;
-	while (i--) if (m = a[i].match(r)) k.push(m[1]), j.push(decodeURIComponent(m[2]));
-	if (k.length && confirm(la.unskip+'\n\n'+j.join('\n'))) for (i in k) deleteCookie(k[i]);
+	while (i--) if (m = a[i].match(r)) j.push(decodeURIComponent(m[2])), k.push(m[1]);
+	return {rooms:j, qk:k};
+}
+
+function checkSkipList(e) {
+	e.disabled = !(getSkipList().qk.length);
+}
+
+function clearSkipList(e) {
+var	a = getSkipList(), k = a.qk;
+	if (k.length && confirm(la.unskip+'\n\n'+a.rooms.join('\n'))) {
+		for (i in k) deleteCookie(k[i]);
+		if (e) e.disabled = true;
+	}
 }
 
 function checkMyTask() {
@@ -230,12 +242,17 @@ var	i = gi(), k = id('ok'), t = id('task'), v;
 	for (t in i) if (i[t].type == 'text') return r(i[t]);
 }
 
+function allowApply(n) {
+	apply.disabled = (n < 0);
+}
+
 function toggleOpt(e) {
 var	p = e.parentNode, i = gi(p)[0], v = 0, s = gn('span',p);
 	if (e == i) v = (parseInt(i.value)?1:0);
 	else i.value = v = (e == s[1]?1:0);
 	s[v].innerHTML = '<b>'+s[v].textContent+'</b>';
 	s[1-v].innerHTML = '<a href="javascript:void(\''+i.name+'=o'+(v?'n':'ff')+'\')" onClick="toggleOpt(this.parentNode)">'+s[1-v].textContent+'</a>';
+	allowApply();
 }
 
 function selectLink(e,r,t) {
@@ -354,11 +371,11 @@ e+'</a>';
 					if (g == '|' && ((k = tab[1])[0] != '<') && (k.indexOf('=') > 0)) {
 						k = k.split('=');
 						if (k.length > 2) {
-							tab[1] = '<input type="text" name="'+opt+k[0]+'" value="'+k[2]+'">';
+							tab[1] = '<input type="text" name="'+opt+k[0]+'" value="'+k[2]+'" onChange="allowApply()">';
 						} else
 						if (k[1].indexOf(g) > 0) {
 							l = k[1].split(':'), m = parseInt(l.shift());
-						var	opts = opt+k[0]+(l.length > 3?'" onChange="selectLink(this,\''+l[2]+'\',\''+l[3]+'\')':'')+'">';
+						var	opts = opt+k[0]+(l.length > 3?'" onChange="allowApply(); selectLink(this,\''+l[2]+'\',\''+l[3]+'\')':'')+'">';
 							k = l[0].split(g);
 							l = l[1].split(g);
 							for (j in k) opts +=
@@ -604,11 +621,11 @@ if (k) {
 	if (flag.k) k.lastElementChild.innerHTML +=
 		'<span class="r">'+la.checked+': <input type="checkbox" id="ok" onChange="'+i0.getAttribute('onkeyup')+'"></span>';
 	if (i = (j = gn('ul',k)).length) {
-		n = (m = gn('b')).length;
-		while (n--) if (AN.test(m[n].className)) {n = 1; break;}
+		n = (m = gn('b')).length, k = 1;
+		while (n--) if (AN.test(m[n].className)) {k = 0; break;}
 		while (i--) if (m = j[i].previousElementSibling) {
 			m.innerHTML = '<a href="javascript:;" onclick="toggleHide(this.parentNode.nextElementSibling)">'+m.innerHTML+'</a>';
-			if (n !== 1) toggleHide(j[i]);
+			if (k) toggleHide(j[i]), allowApply(-1);
 		}
 	}
 }
@@ -624,3 +641,5 @@ if (k = id('tabs')) {
 		k.innerHTML = h;
 	}
 }
+
+if (i = id('unskip')) i.onmouseover();

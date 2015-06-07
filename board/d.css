@@ -1,4 +1,4 @@
-#delform .reply > blockquote {margin: 0;}
+#delform .reply > blockquote {margin-left: 0;}
 #delform .reply blockquote blockquote, .reply p {margin: 1em 0.5em 0 1em;}
 #delform > blockquote, #delform > blockquote blockquote, #delform > blockquote p {margin: 1em 0 1em 0;}
 .cap {color: #969;}

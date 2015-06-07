@@ -5,8 +5,8 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v1.16'
-,	INFO_DATE = '2014-07-16 — 2015-05-26'
+,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2015-05-31'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -124,13 +124,14 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 ,	self = this, outside = this.o = {}, lang, container
 ,	fps = 0, ticks = 0, timer = 0, loading = 0
-,	interval = {fps:0, timer:0, save:0}, text = {debug:0, timer:0}
-,	ctx = {}, cnv = {view:0, draw:0, lower:0, current:0, upper:0, filter:0, temp:0}
-,	used = {}, used_shape = {}, cue = {upd:{}}, count = {layers:0, strokes:0, erases:0, undo:0}
+,	interval = o0('fps,timer,save'), cue = {upd:{}}
+,	text = o0('debug,timer')
+,	cnv = o0('view,draw,lower,current,upper,filter,temp'), ctx = {}
+,	count = o0('layers,strokes,erases,undo'), used = {}, used_shape = {}
 
 ,	draw = {m:{}, o:{}, cur:{}, prev:{}
 	,	refresh:0, time: [0, 0]
-	,	line: {started:0, back:0, preview:0}
+	,	line: o0('started,back,preview')
 	,	history: {layer:0, layers:[{show:1, color:'#f'}]
 		,	cur: function(t) {
 				return ((t || (t = this.layer)) && (t = this.layers[t]) ? t.data[t.pos] : 0);
@@ -1074,7 +1075,7 @@ function fillScreen(i,t) {
 	} else
 	if (!i) {
 		used.fill = 'Fill';
-		ctx.draw.globalCompositeOperation = tool.clip;
+		ctx.draw.globalCompositeOperation = (id('lineStyle').style.display == 'none' ? SO : tool.clip);
 		ctx.draw.fillStyle = 'rgb(' + tools[i].color + ')';
 		ctx.draw.fillRect(0, 0, cnv.view.width, cnv.view.height);
 		ctx.draw.globalCompositeOperation = SO;
@@ -1724,10 +1725,14 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 function readPic(s) {
 	if (!s || s == 0 || (!s.data && !s.length)) return;
 	if (!s.data) s = {data: s, name: (0 === s.indexOf('data:') ? s.split(',', 1) : s)};
-var	d = draw.time, e = new Image(), t = +new Date, i, lcd = id('lcd');
-	if (!lcd) setId(lcd = document.createElement('div'), 'lcd'), container.parentNode.insertBefore(lcd, container);
+var	d = draw.time, e = new Image(), t = +new Date, i = 'lcd', lcd = id(i);
+	if (!lcd) setId(lcd = document.createElement('div'), i), container.parentNode.insertBefore(lcd, container);
 	for (i in d) if (!d[i]) d[i] = t;
 	setRemove(e);
+	function setLCD() {
+		lcd.textContent = lang.loading+': '+loading;
+		lcd.style.lineHeight = cnv.view.height+'px';
+	}
 	e.onload = function () {
 		delete s.data;
 		for (i in select.imgRes) if (s.z || cnv.view[i] < e[i]) {
@@ -1743,13 +1748,10 @@ var	d = draw.time, e = new Image(), t = +new Date, i, lcd = id('lcd');
 		historyAct(s.z ? draw.time[1] : null);
 		cue.autoSave = 0;
 		if (d = e.parentNode) d.removeChild(e);
-		if (--loading < 1) loading = 0, container.style.visibility = lcd.textContent = '';//, lcd.style.display = 'none';
-		else lcd.textContent = lang.loading+': '+loading;
+		if (--loading < 1) loading = 0, container.style.visibility = lcd.textContent = '';
+		else setLCD();
 	}
-	if (!(mode.debug || text.debug.innerHTML) && ++loading > 1) {
-		container.style.visibility = 'hidden';
-		lcd.textContent = lang.loading+': '+loading;//, lcd.style.display = '', lcd.style.minHeight = cnv.view.height;
-	}
+	if (!(mode.debug || text.debug.innerHTML) && ++loading > 1) container.style.visibility = 'hidden', setLCD();
 	draw.container.appendChild(e);
 	return e.src = s.data, s.name;
 }
@@ -2687,7 +2689,7 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #|-layers p {border: 2px solid #ddd;}\
 #|-layers p.|-button input[type="text"] {background-color: #f5f5f5; border-color: #ddd;}\
 #|-layers {max-width: 304px;}\
-#|-lcd {text-align: center; vertical-align: middle; font-size: 40px; color: #aaa;}\
+#|-lcd {text-align: center; vertical-align: middle; font-size: 40px; color: #aaa; background-color: #f5f5f5;}\
 #|-load img {position: absolute; top: 1px; left: 1px; margin: 0;}\
 #|-load, #|-load canvas {position: relative; display: inline-block;}\
 #|-textStyle textarea {width: 80px; height: 68px;}\
@@ -2723,6 +2725,7 @@ function toggleView(e) {if (!e.tagName) e = id(e); return e.style.display = e.st
 function dist(x,y) {return Math.sqrt(x*x + y*y)};
 function cut_period(x,y,z) {if (!y) y = -Math.PI; if (!z) z = Math.PI; return (x < y ? x-y+z : (x > z ? x+y-z : x));}
 function ang_btw(x,y) {return cut_period(y-x);}
+function o0(line,delim) {var a=line.split(delim||','),i,o={}; for(i in a) o[a[i]]=0; return o;}
 function showProps(o,r,z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; if(r)return t; alert(t); return o;}
 
 //* To get started *-----------------------------------------------------------

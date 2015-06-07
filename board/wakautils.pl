@@ -1211,7 +1211,7 @@ sub make_thumbnail($$$$$;$)
 	$magickname.="[0]" if($magickname=~/\.gif$/);
 
 	$convert="convert" unless($convert);
-	`$convert -background white -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
+	`$convert -background none -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
 
 	return 1 unless($?);
 

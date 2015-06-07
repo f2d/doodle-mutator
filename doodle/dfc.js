@@ -1,8 +1,8 @@
 ﻿var dfc = new function () {
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; BTW, tabs align to 8 spaces
-,	INFO_VERSION = 'v0.9.46'
-,	INFO_DATE = '2013-04-01 — 2015-04-13'
+,	INFO_VERSION = 'v0.9.47'
+,	INFO_DATE = '2013-04-01 — 2015-06-07'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640
 ,	CR = 'CanvasRecover', CT = 'Time', DL, DRAW_PIXEL_OFFSET = -0.5
@@ -834,17 +834,26 @@ function saveDL(content, suffix) {
 function sendPic(dest, auto) {
 var	a = auto || false, c, d, e, i, t;
 	draw.screen();
+
+	function confirmShowTime(la, s) {
+		if (s) {
+		var	a = s.split('-'), i,t,n = ' \r\n', r = la.join(n);
+			for (i = 0; i < 2; i++) t = +a[i], r += n+(t ? unixDateToHMS(t,0,1) : '-');
+		} else r = la[0]
+		return confirm(r);
+	}
+
 	switch (dest) {
 	case 0:
 	case 1: saveDL(c = canvas.toDataURL(dest?IJ:''), dest?'.jpg':'.png');
 		break;
 //* save
 	case 2:
-		if (fillCheck()) return a?c:alert(lang.flood);
+		if (fillCheck()) return a?c:alert(lang.no.drawn);
 		c = canvas.toDataURL();
-		if (!LS) return a?c:alert(lang.no_LS);
+		if (!LS) return a?c:alert(lang.no.LS);
 		d = LS[CR[1].R];
-		if (d == c) return a?c:alert(lang.no_change);
+		if (d == c) return a?c:alert(lang.no.change);
 		t = LS[CR[1].T], e = LS[CR[2].R] || 0;
 		if (!a && e == c) {
 			LS[CR[1].R] = e;
@@ -853,7 +862,7 @@ var	a = auto || false, c, d, e, i, t;
 			LS[CR[2].T] = t;
 			alert(lang.found_swap);
 		} else
-		if (a || confirm(lang.confirm_save)) {
+		if (a || confirmShowTime(lang.confirm.save, t)) {
 			function rem(a) {var r = 'RT', i = r.length; while (i--) LS.removeItem(CR[a][r[i]]);}
 			try {
 				if (e) rem(2);
@@ -870,7 +879,7 @@ var	a = auto || false, c, d, e, i, t;
 					LS[CR[1].R] = d;
 					LS[CR[1].T] = t;
 				} catch(i) {rem(1); e.message += '\n'+i.message;}
-				return alert(lang.no_space+'\nError code: '+e.code+', '+e.message), c;
+				return alert(lang.no.space+'\nError code: '+e.code+', '+e.message), c;
 			}
 			id('saveTime').textContent = unixDateToHMS();
 			setClass(id('buttonL'), 'button');
@@ -879,14 +888,14 @@ var	a = auto || false, c, d, e, i, t;
 		break;
 //* load
 	case 3:
-		if (!LS) return alert(lang.no_LS);
+		if (!LS) return alert(lang.no.LS);
 		t = LS[CR[1].T];
 		if (!t) return;
 		d = LS[CR[1].R];
 		if (d == (c = canvas.toDataURL())) {
-			if ((!(t = LS[CR[2].T]) || ((d = LS[CR[2].R]) == c))) return alert(lang.no_change);
+			if ((!(t = LS[CR[2].T]) || ((d = LS[CR[2].R]) == c))) return alert(lang.no.change);
 		}
-		if (confirm(lang.confirm_load)) {
+		if (confirmShowTime(lang.confirm.load, t)) {
 			t = t.split('-');
 			if (t.length > 2) used.read = t.slice(2).join('-');
 			draw.time = t.slice(0,2), a = id('saveTime'), a.textContent = unixDateToHMS(+t[1]), a.title = new Date(+t[1]);
@@ -902,10 +911,13 @@ var	a = auto || false, c, d, e, i, t;
 		break;
 //* send
 	default:
-		if (dest) alert(lang.bad_id); else
-		if (!outside.send) alert(lang.no_form); else
-		if (fillCheck()) alert(lang.flood); else
-		if (confirm(lang.confirm_send)) {
+		if (dest) alert(lang.bad_id+'\n\nid='+dest+'\na='+auto); else
+		if (!outside.send) alert(lang.no.form); else
+		if (fillCheck()) alert(lang.no.drawn); else {
+			a = select.imgLimits, c = 'send';
+			for (i in a) if (canvas[i] < a[i][0] || canvas[i] > a[i][1]) c = 'size';
+		}
+		if (c && confirm(lang.confirm[c])) {
 			if (!outside.send.tagName) {
 				setId(e = document.createElement('form'), 'send');
 				e.setAttribute('method', (outside.send.length && outside.send.toLowerCase() == 'get')?'get':'post');
@@ -981,7 +993,7 @@ var	d = event.dataTransfer.files, i = (d?d.length:0), f, r;
 		r.readAsDataURL(f);
 		return;
 	}
-	alert(lang.no_files);
+	alert(lang.no.files);
 }
 
 function isMouseIn() {return (draw.o.x >= 0 && draw.o.y >= 0 && draw.o.x < canvas.width && draw.o.y < canvas.height);}
@@ -1071,7 +1083,7 @@ this.init = function() {
 	if (isTest()) document.title += ': '+NS+' '+INFO_VERSION;
 var	a, b, c = 'canvas', d = '<div id="', e = '"></div>', f, g, h, i, j, k, n = '\n	', o = outside, p, s = '&nbsp;';
 	setContent(container = id(),
-n+d+'load"><'+c+' id="'+c+'" tabindex="0">'+lang.no_canvas+'</'+c+'></div>'+
+n+d+'load"><'+c+' id="'+c+'" tabindex="0">'+lang.no.canvas+'</'+c+'></div>'+
 //n+
 d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 
@@ -1289,18 +1301,21 @@ select.lineCaps = {lineCap: 'край', lineJoin: 'сгиб'}
 ,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент']
 }, lang = {
 	bad_id:		'Ошибка выбора.'
-,	flood:		'Полотно пусто.'
-,	confirm_send:	'Отправить рисунок в сеть?'
-,	confirm_save:	'Сохранить рисунок в память браузера?'
-,	confirm_load:	'Вернуть рисунок из памяти браузера?'
-,	found_swap:	'Рисунок был в запасе, поменялись местами.'
-,	no_LS:		'Локальное Хранилище (память браузера) недоступно.'
-,	no_space:	'Ошибка сохранения, нет места.'
-,	no_files:	'Среди файлов не найдено изображений.'
-,	no_form:	'Назначение недоступно.'
-,	no_change:	'Нет изменений.'
-,	no_canvas:	'Ваша программа не поддерживает HTML5-полотно.'
-, tool: {	B:	'Тень'
+,	confirm: {
+		send:	'Отправить рисунок в сеть?'
+	,	size:	'Превышен размер полотна. Отправить всё равно?'
+	,	save: [	'Сохранить рисунок в память браузера?', 'Перезаписать копию, изменённую:']
+	,	load: [	'Вернуть рисунок из памяти браузера?', 'Восстановить копию, изменённую:']
+},	found_swap:	'Рисунок был в запасе, поменялись местами.'
+,	no: {
+		LS:	'Локальное Хранилище (память браузера) недоступно.'
+	,	space:	'Ошибка сохранения, нет места.'
+	,	files:	'Среди файлов не найдено изображений.'
+	,	form:	'Назначение недоступно.'
+	,	change:	'Нет изменений.'
+	,	canvas:	'Ваша программа не поддерживает HTML5-полотно.'
+	,	drawn:	'Полотно пусто.'
+}, tool: {	B:	'Тень'
 	,	O:	'Непрозр.'
 	,	W:	'Толщина'
 },	shape:		'Форма'
@@ -1359,18 +1374,21 @@ select.lineCaps = {lineCap: 'край', lineJoin: 'сгиб'}
 }}};
 else lang = {
 	bad_id:		'Invalid case.'
-,	flood:		'Canvas is empty.'
-,	confirm_send:	'Send image to server?'
-,	confirm_save:	'Save image to your browser memory?'
-,	confirm_load:	'Restore image from your browser memory?'
-,	found_swap:	'Found image at slot 2, swapped slots.'
-,	no_LS:		'Local Storage (browser memory) not supported.'
-,	no_space:	'Saving failed, not enough space.'
-,	no_files:	'No image files found.'
-,	no_form:	'Destination unavailable.'
-,	no_change:	'Nothing changed.'
-,	no_canvas:	'Your browser does not support HTML5 canvas.'
-, tool: {	B:	'Shadow'
+,	confirm: {
+		send:	'Send image to server?'
+	,	size:	'Canvas size exceeds limit. Send anyway?'
+	,	save: [	'Save image to your browser memory?', 'Saved copy edited at:']
+	,	load: [	'Restore image from your browser memory?', 'Load copy edited at:']
+},	found_swap:	'Found image at slot 2, swapped slots.'
+,	no: {
+		LS:	'Local Storage (browser memory) not supported.'
+	,	space:	'Saving failed, not enough space.'
+	,	files:	'No image files found.'
+	,	form:	'Destination unavailable.'
+	,	change:	'Nothing changed.'
+	,	canvas:	'Your browser does not support HTML5 canvas.'
+	,	drawn:	'Canvas is empty.'
+}, tool: {	B:	'Shadow'
 	,	O:	'Opacity'
 	,	W:	'Width'
 },	shape:		'Shape'

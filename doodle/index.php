@@ -101,13 +101,14 @@ if (FROZEN_HELL && !GOD && !($u_key && $qd_opts) && !$qd_arch) {
 
 if ($qdir) {
 	if ($l = mb_strlen($room = trim_room($room_url = urldecode($_REQUEST['room'])))) define(R1, $l = (mb_strlen(ltrim($room, '.')) <= 1));
-	define(MOD, (GOD || $u_flag['mod'] || $u_flag['mod_'.$room])?1:0);
 } else if ($u_key) {
 	if (!$u_room_home) $qd_opts = 1;
 	$rd = ($rr = '
 	RewriteRule ^').($d = '('.implode('|', $cfg_dir).')').($sub = '(/([^/]+))?');
 	$rc = '
 	RewriteCond %{REQUEST_FILENAME} -';
+
+//* rewrite htaccess, if there is none, and logged in, and viewing root folder:
 	if (!($e = is_file($f = '.htaccess')) || !strpos($e = file_get_contents($f), $rd)) file_put_contents($f, ($e?NL:'')
 .'<IfModule rewrite_module>
 	RewriteEngine On
@@ -129,6 +130,8 @@ if ($qdir) {
 	</IfModule>
 </IfModule>', FILE_APPEND);
 }
+
+define(MOD, (GOD || $u_flag['mod'] || $u_flag['mod_'.$room])?1:0);
 if (TIME_PARTS) time_check_point('inb4 action fork');
 
 
@@ -461,14 +464,14 @@ if ($u_key) {
 		$content = $tmp_options_turn_on.'|'.$tmp_options_turn_off.$o1.'
 <form method="post">'
 .$i.$tmp_options_logout.'" name="quit">'
-.$i.$tmp_options_unskip.'" onClick="unskip(); return false">'
+.$i.$tmp_options_unskip.'" onClick="clearSkipList(this); return false" onMouseOver="checkSkipList(this)" id="unskip">'
 .$i.$tmp_options_reset.'" name="'.O.'o">
 </form><form method="post">'
 .NL.$tmp_options_name.$s.$usernames[$u_num]
 .NL.$tmp_options_qk.$s.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">'.$b.$c
 .NL.$tmp_options_time.$s.date('e, T, P')
 .($u_flag ? NL.$tmp_options_flags.$s.implode(', ', $u_flag) : '').$a
-.$i.$tmp_options_apply.'">
+.$i.$tmp_options_apply.'" id="apply">
 </form>';
 		foreach ($tmp_rules as $head => $hint) {
 			if (is_array($hint)) {

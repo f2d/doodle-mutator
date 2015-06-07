@@ -162,7 +162,7 @@ use constant FILETYPES => (
 	bz2 => 'icons/archive-bz2.png',
 	'7z' => 'icons/archive-7z.png',
 #	# Other files
-#	swf => 'icons/flash.png',
+	swf => 'icons/flash.png',
 #	torrent => 'icons/torrent.png',
 #	# To stop Wakaba from renaming image files, put their names in here like this:
 #	gif => '.',
