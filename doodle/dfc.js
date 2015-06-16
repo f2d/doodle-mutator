@@ -1,8 +1,8 @@
 ﻿var dfc = new function () {
 
-var	NS = 'dfc'	//* <- namespace prefix, change here and above; BTW, tabs align to 8 spaces
-,	INFO_VERSION = 'v0.9.47'
-,	INFO_DATE = '2013-04-01 — 2015-06-07'
+var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
+,	INFO_VERSION = 'v0.9.48'
+,	INFO_DATE = '2013-04-01 — 2015-06-17'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640
 ,	CR = 'CanvasRecover', CT = 'Time', DL, DRAW_PIXEL_OFFSET = -0.5
@@ -30,7 +30,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; BTW, tabs align t
 ,	used = {}, cue = {upd:{}}
 ,	select = {
 		imgRes: {width:640, height:360}
-	,	imgLimits: {width:[64,1920], height:[64,1080]}
+	,	imgLimits: {width:[64,640], height:[64,800]}
 	,	lineCaps: {lineCap:0, lineJoin:0}
 	,	shapeFlags: [1,10, 2,2,2, 4]
 	,	options: {
@@ -807,19 +807,21 @@ var	d = t ? new Date(t+(t >0?0:new Date())) : new Date(), t = ['Hours','Minutes'
 function timeElapsed() {text.timer.textContent = unixDateToHMS(timer += 1000, 1);}
 function autoSave() {if (mode.autoSave && cue.autoSave && !(cue.autoSave = (draw.active?-1:0))) sendPic(2,true);}
 
-function sendMeta(sz) {
+function getSendMeta(sz) {
 var	d = draw.time, i, j = [], u = [], t = outside.t0;
 	for (i in d) u[i] = parseInt(d[i]) || (i > 0?+new Date:t);
 	for (i in used) j.push(used[i]);
 	return 't0: '	+Math.floor(t/1000)
 	+'\ntime: '	+u.join('-')
 	+'\napp: '	+NS+' '+INFO_VERSION
-	+(j.length
-	?'\nused: '	+j.join(', '):'')
-	+'\nlength: '	+(sz?sz:
+	+'\npixels: '	+canvas.width+'x'+canvas.height
+	+'\nbytes: '	+(sz?sz:
 		'png = '	+ canvas.toDataURL().length
 		+', jpg = '	+ canvas.toDataURL(IJ).length
-	);
+	)
+	+(j.length
+	?'\nused: '	+j.join(', ')
+	:'');
 }
 
 function saveDL(content, suffix) {
@@ -897,7 +899,7 @@ var	a = auto || false, c, d, e, i, t;
 		}
 		if (confirmShowTime(lang.confirm.load, t)) {
 			t = t.split('-');
-			if (t.length > 2) used.read = t.slice(2).join('-');
+			if (t.length > 2) used.read = 'Read File: '+t.slice(2).join('-').replace(/^[^:]+:\s+/, '').split('\n').join(', ');
 			draw.time = t.slice(0,2), a = id('saveTime'), a.textContent = unixDateToHMS(+t[1]), a.title = new Date(+t[1]);
 			readPic(d);
 			used.LS = 'Local Storage';
@@ -940,7 +942,7 @@ var	a = auto || false, c, d, e, i, t;
 			) ? jpgData : pngData);
 			if (mode.debug) alert('png limit = '+i+'\npng = '+e+'\njpg = '+t);
 			a.pic.value = d;
-			a.txt.value = sendMeta(d.length);
+			a.txt.value = getSendMeta(d.length);
 			f.encoding = f.enctype = 'multipart/form-data';
 			f.submit();
 		}
@@ -1055,7 +1057,7 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *,
 			case 106: case 42:
 				for (i = 1, k = ''; i < 3; i++) k +=
 '<br>Save'+i+'.time: '+LS[CR[i].T]+(LS[CR[i].R]?', size: '+LS[CR[i].R].length:'');
-				text.debug.innerHTML = sendMeta()+'<br>'+replaceAll(
+				text.debug.innerHTML = getSendMeta()+'<br>'+replaceAll(
 "\n<a href=\"javascript:var s=' ',t='';for(i in |)t+='\\n'+i+' = '+(|[i]+s).split(s,1);alert(t);\">|.props</a>"+
 "\n<a href=\"javascript:var t='',o=|.o;for(i in o)t+='\\n'+i+' = '+o[i];alert(t);\">|.outside</a>"+
 (outside.read?'':'<br>\nF6=read: <textarea id="|-read" value="/9.png"></textarea>'), '|', NS)+CR+','+CT+k; break;
@@ -1129,7 +1131,7 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 
 	a = '<a href="javascript:void(0);" onClick="', b = '">', c = '</abbr>', d = '';
 	for (i in select.imgRes) d += (d?' x ':'')
-+'<input type="text" value="'+o[i[0]]+'" id="img-'+i+'" onChange="updateDim(\''+i+'\')" title="'+lang.size_hint+select.imgLimits[i]+'">';
++'<input type="text" value="'+o[i[0]]+'" id="img-'+i+'" onChange="updateDim(\''+i+'\')" title="'+lang.size_hint+select.imgLimits[i].join(lang.range_hint)+'">';
 
 	b = '<abbr title="', h = '<span class="rf">', g = h+s+b
 +NS.toUpperCase()+', '+INFO_ABBR+', '+lang.info_pad+', '+INFO_DATE+'">'+INFO_VERSION+'</abbr>.</span>';
@@ -1304,7 +1306,7 @@ select.lineCaps = {lineCap: 'край', lineJoin: 'сгиб'}
 ,	confirm: {
 		send:	'Отправить рисунок в сеть?'
 	,	size:	'Превышен размер полотна. Отправить всё равно?'
-	,	save: [	'Сохранить рисунок в память браузера?', 'Перезаписать копию, изменённую:']
+	,	save: [	'Сохранить рисунок в память браузера?', 'Заменить старую копию, изменённую:']
 	,	load: [	'Вернуть рисунок из памяти браузера?', 'Восстановить копию, изменённую:']
 },	found_swap:	'Рисунок был в запасе, поменялись местами.'
 ,	no: {
@@ -1340,7 +1342,8 @@ select.lineCaps = {lineCap: 'край', lineJoin: 'сгиб'}
 ,	info_pad:	'доска для набросков'
 ,	info_drop:	'Можно перетащить сюда файлы с диска.'
 ,	size:		'Размер полотна'
-,	size_hint:	'Число между '
+,	size_hint:	'Число от '
+,	range_hint:	' до '
 , b: {	undo:	{sub:'назад',	t:'Отменить последнее действие.'
 },	redo:	{sub:'вперёд',	t:'Отменить последнюю отмену.'
 },	fill:	{sub:'залить',	t:'Залить полотно основным цветом.'
@@ -1377,7 +1380,7 @@ else lang = {
 ,	confirm: {
 		send:	'Send image to server?'
 	,	size:	'Canvas size exceeds limit. Send anyway?'
-	,	save: [	'Save image to your browser memory?', 'Saved copy edited at:']
+	,	save: [	'Save image to your browser memory?', 'Replace saved copy edited at:']
 	,	load: [	'Restore image from your browser memory?', 'Load copy edited at:']
 },	found_swap:	'Found image at slot 2, swapped slots.'
 ,	no: {
@@ -1413,7 +1416,8 @@ else lang = {
 ,	info_pad:	'sketch pad'
 ,	info_drop:	'You can drag files from disk and drop here.'
 ,	size:		'Image size'
-,	size_hint:	'Number between '
+,	size_hint:	'Number from '
+,	range_hint:	' to '
 , b: {	undo:	'Revert last change.'
 ,	redo:	'Redo next reverted change.'
 ,	fill:	'Fill image with main color.'

@@ -201,13 +201,18 @@ if ($u_key) {
 		$txt = (($ptx = $_POST['txt']) ? $ptx : '0-0,(?)');
 	//* metadata, newline separated tagged format:
 		if (false !== strpos($txt, NL)) {
-			$a = explode(',', 'app,length,t0,time,used');
+			$a = explode(',', 'app,t0,time,used');	//* <- to add to picture mouseover text
+			$b = explode(',', 'bytes,length');	//* <- to validate
 			$x = preg_split('~\v+~u', $txt);
 			$y = array();
-			foreach ($x as $line) if (preg_match('~^(\w+)[\s:=]+(.+)$~u', $line, $m) && in_array($k = strtolower($m[1]), $a)) $y[$k] = $m[2];
-			if ($y['length'] && $y['length'] != $ppl) {
+			$z = 0;
+			foreach ($x as $line) if (preg_match('~^(\w+)[\s:=]+(.+)$~u', $line, $m) && ($k = strtolower($m[1]))) {
+				if (in_array($k, $a)) $y[$k] = $m[2]; else
+				if (in_array($k, $b)) $z = $m[2];
+			}
+			if ($z && $z != $ppl) {
 				$post_status = 'file_part';
-				$log = $ppl.' bytes';
+				$log = "$ppl != $z";
 			} else {
 				if (!preg_match('~^(\d+:)+\d+$~', $y['time'])) {
 					$t = array(($y['t0']?$y['t0']:$target['time']).'000', T0.'000');
@@ -431,7 +436,7 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 		<p class="hint">'.$tmp_draw_hint.'</p>').'<noscript>
 		<p class="hint">'.$tmp_require_js.'</p></noscript>';
 		$subtask = '
-		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.DRAW_REST.($u_opts['save2common']?'':';saveprfx='.NAMEPRFX).'"></script>
+		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.get_draw_vars().'"></script>
 		<div class="task">
 			<p class="hint">'.$n['list'].'</p>
 		</div>';
@@ -705,28 +710,14 @@ if (TIME_PARTS) time_check_point('after sort + join');
 		<img src="'.ROOTPRFX.(PIC_SUB?pic_subpath($src):DIR_PICS.$src).'" alt="'.$t.'">';
 				} else $task_time = '-';
 			} else {
-				$f = "t0=$task_time;send".DRAW_REST;
-				if (!$u_opts['save2common']) $f .= ';saveprfx='.NAMEPRFX;
-				if (DRAW_JPG_PREF) $f .= ';jp='.DRAW_JPG_PREF;
-				if ($u_draw_max_undo) $f .= ';undo='.$u_draw_max_undo;
-				if ($err_sign && $err_sign != '!') {
-					$u_draw_app = $err_sign;
-					if (strpos($err_name, 'x')) $wh = explode('x', $err_name);
-				}
-				foreach (array('DEFAULT_', 'LIMIT_') as $i => $j)
-				foreach ($tmp_whu as $k => $l) {
-					$p = $tmp_wh[$k].($i?'l':'');
-					if ((!$i && $wh && ($v = $wh[$k]))
-					|| (defined($v = "DRAW_$j$l") && ($v = constant($v)))
-					) $f .= ";$p=$v";
-				}
+				$vars = "t0=$task_time;send".(DRAW_JPG_PREF?';jp='.DRAW_JPG_PREF:'').get_draw_vars();
 				$task = '
 		<p>'.($t?$tmp_draw_this.'</p>
 		<p>'.$t:$tmp_draw_free).'</p><noscript>
 		<p class="hint">'.$tmp_require_js.'</p></noscript>';
 				$n = get_draw_app_list($u_draw_app);
 				$subtask = '
-		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.$f.'"></script>
+		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.$vars.'"></script>
 		<div class="task">
 			<p class="hint">'.$n['list'].'</p>
 		</div>';

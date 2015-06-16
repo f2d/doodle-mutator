@@ -52,6 +52,25 @@ function get_draw_app_list($n) {
 	if (false !== ($s = strrpos($n, '/'))) $n = substr($n, $s+1);
 	return array('name' => $n, 'src' => ROOTPRFX.$f.(LINK_TIME?'?'.filemtime($f):''), 'list' => $a);
 }
+function get_draw_vars() {
+	global $tmp_wh, $tmp_whu, $u_draw_app, $u_draw_max_undo, $u_opts;
+	$vars = DRAW_REST;
+	if (!$u_opts['save2common']) $vars .= ';saveprfx='.NAMEPRFX;
+	if ($u_draw_max_undo) $vars .= ';undo='.$u_draw_max_undo;
+	$r = get_req();
+	if ($r[0] && $r[0] != '!') {
+		$u_draw_app = $r[0];
+		if (strpos($r[1], 'x')) $wh = explode('x', $r[1]);
+	}
+	foreach (array('DEFAULT_', 'LIMIT_') as $i => $j)
+	foreach ($tmp_whu as $k => $l) {
+		$p = $tmp_wh[$k].($i?'l':'');
+		if ((!$i && $wh && ($v = $wh[$k]))
+		|| (defined($v = "DRAW_$j$l") && ($v = constant($v)))
+		) $vars .= ";$p=$v";
+	}
+	return $vars;
+}
 function format_filesize($B, $D = 2) {
 	if ($F = floor((strlen($B) - 1) / 3)) $S = 'BkMGTPEZY';
 	else return $B.' B';
