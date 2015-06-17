@@ -82,6 +82,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	, '\n', 'etc'
 	], '\rg', '\rl']
 
+,	o12 = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)
 ,	regHex = /^#?[0-9a-f]{6}$/i
 ,	regHex3 = /^#?([0-9a-f])([0-9a-f])([0-9a-f])$/i
 ,	reg255 = /^([0-9]{1,3}),\s*([0-9]{1,3}),\s*([0-9]{1,3})$/
@@ -411,6 +412,7 @@ var	redraw = true, s = select.shape.value, sf = select.shapeFlags[s]
 			drawShape(c2d, s);
 		} else
 		if (draw.line.back = mode.step) {
+			if (o12) c2d.shadowColor = A0, c2d.shadowBlur = 0;		//* <- shadow, once used with CurveTo + stroke(), totally breaks for given canvas in Opera 12
 			if (draw.line.started) c2d.quadraticCurveTo(draw.prev.x, draw.prev.y, (draw.cur.x + draw.prev.x)/2, (draw.cur.y + draw.prev.y)/2);
 		} else c2d.lineTo(draw.cur.x, draw.cur.y);
 		draw.line.preview =	!(draw.line.started = true);
