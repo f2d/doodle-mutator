@@ -1,8 +1,8 @@
 ﻿var dfc = new function () {
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
-,	INFO_VERSION = 'v0.9.48'
-,	INFO_DATE = '2013-04-01 — 2015-06-17'
+,	INFO_VERSION = 'v0.9.49'
+,	INFO_DATE = '2013-04-01 — 2015-06-18'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640
 ,	CR = 'CanvasRecover', CT = 'Time', DL, DRAW_PIXEL_OFFSET = -0.5
@@ -32,9 +32,9 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 		imgRes: {width:640, height:360}
 	,	imgLimits: {width:[64,640], height:[64,800]}
 	,	lineCaps: {lineCap:0, lineJoin:0}
-	,	shapeFlags: [1,10, 2,2,2, 4]
+	,	shapeFlags: [1,10, 2,2,2,66, 4]
 	,	options: {
-			shape	: ['line', 'poly', 'rectangle', 'circle', 'ellipse', 'pan']
+			shape	: ['line', 'poly', 'rectangle', 'circle', 'ellipse', 'speech balloon', 'pan']
 		,	lineCap	: ['round', 'butt', 'square']
 		,	lineJoin: ['round', 'bevel', 'miter']
 		,	palette	: ['history', 'auto', 'legacy', 'Touhou', 'gradient']
@@ -90,9 +90,9 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 ,	regFunc = /\{[^.]+\.([^(]+)\(/
 ,	regLimit = /^(\d+)\D+(\d+)$/
 
-,	self = this, container, canvas, c2d, canvasShape, c2s
+,	self = this, container, canvas, c2d, canvasShape, c2s, lang, outside = this.o = {}
 ,	fps = 0, ticks = 0, timer = 0
-,	interval = {fps: 0, timer: 0, save: 0}, text = {debug:0, timer:0}, outside = this.o = {}, lang
+,	interval = {fps: 0, timer: 0, save: 0}, text = {debug:0, timer:0}
 
 ,	draw = {o:{}, cur:{}, prev:{}
 	,	refresh:0, time: [0, 0]
@@ -125,11 +125,21 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	};
 
 function historyAct(i) {if (draw.history.act(i)) updateDebugScreen(), updateHistoryButtons();}
+function fpsCount() {fps = ticks; ticks = 0;}
 
+function dist(x,y) {return Math.sqrt(x*x + y*y)};
+function ang_btw(x,y) {return cut_period(y-x);}
+function cut_period(x,y,z) {
+	if (isNaN(y)) y = -Math.PI;
+	if (isNaN(z)) z = Math.PI;
+	return (x < y ? x-y+z : (x > z ? x+y-z : x));
+}
+function orz(n) {return parseInt(n||0)||0;}
 function repeat(t,n) {return new Array(n+1).join(t);}
 function replaceAll(t,s,j) {return t.split(s).join(j);}
 function replaceAdd(t,s,a) {return replaceAll(t,s,s+a);}
 
+function id(id) {return document.getElementById(NS+(id?'-'+id:''));}
 function setId(e,id) {return e.id = NS+'-'+id;}
 function setClass(e,c) {return e.className = NS+'-'+replaceAll(c,' ',' '+NS+'-');}
 function setEvent(e,onWhat,func) {return e.setAttribute(onWhat, NS+'.'+func);}
@@ -138,14 +148,12 @@ var	a = ['class','id','onChange','onClick'];
 	for (i in a) c = replaceAdd(c, ' '+a[i]+'="', NS+(a[i][0]=='o'?'.':'-'));
 	return e.innerHTML = c;
 }
-function id(id) {return document.getElementById(NS+(id?'-'+id:''));}
 function toggleView(e) {e = id(e); return e.style.display = (e.style.display?'':'none');}
 function showInfo() {
 	if (id('colors').style.display == id('info').style.display) return;
 	toggleView('colors');
 	setClass(id('buttonH'), toggleView('info') ? 'button' : 'button-active');
 }
-function fpsCount() {fps = ticks; ticks = 0;}
 
 function updatePalette() {
 var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
@@ -312,10 +320,10 @@ function getCursorRad(r, x, y) {
 	y = (isNaN(y) ? draw.cur.y : y) - canvas.height/2;
 	return (r
 	? {	a:Math.atan2(y, x)
-	,	d:Math.sqrt(x*x+y*y)	//* <- looks stupid, will do for now
+	,	d:dist(y, x)	//* <- looks stupid, will do for now
 	}
 	: (draw.turn.zoom
-		? Math.sqrt(x*x+y*y)
+		? dist(y, x)
 		: Math.atan2(y, x)
 	));
 }
@@ -355,7 +363,7 @@ function drawStart(event) {
 
 var	sf = select.shapeFlags[select.shape.value];
 	if (draw.step) {
-		if (mode.step && ((mode.shape && (sf & 1)) || (sf & 4))) {
+		if ((mode.step && ((mode.shape && (sf & 1)) || (sf & 4))) || (sf & 64)) {
 			for (i in draw.o) draw.prev[i] = draw.cur[i];
 			return draw.step.done = 1;
 		} else draw.step = 0;
@@ -437,7 +445,7 @@ function drawEnd(event) {
 	if (mode.click == 1 && event.shiftKey) return drawMove(event);
 	if (draw.active) {
 	var	s = select.shape.value, sf = select.shapeFlags[s], m = ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8));
-		if (!draw.step && mode.step && ((mode.shape && (sf & 1)) || (sf & 4))) {
+		if (!draw.step && ((mode.step && ((mode.shape && (sf & 1)) || (sf & 4))) || (sf & 64))) {
 			draw.step = {prev:{x:draw.prev.x, y:draw.prev.y}, cur:{x:draw.cur.x, y:draw.cur.y}};	//* <- normal straight line as base
 			return;
 		}
@@ -449,7 +457,7 @@ function drawEnd(event) {
 			if (mode.shape || !mode.step) c2d.fill();
 			used.poly = 'Poly';
 		} else
-		if (m && draw.line.preview) {
+		if ((sf & 64) || (m && draw.line.preview)) {
 			drawShape(c2d, s);
 			if (!(sf & 4)) used.shape = 'Shape';
 		} else if (m || draw.line.back || !draw.line.started) {//* <- draw 1 pixel on short click, regardless of mode or browser
@@ -465,68 +473,80 @@ function drawEnd(event) {
 }
 
 function drawShape(ctx, i, clear) {
-var	s = draw.step;
+var	s = draw.step, v = draw.prev, r = draw.cur;
 	switch (parseInt(i)) {
 	//* rect
 		case 2:	if (s) {
 			//* show pan source area
 				ctx.strokeRect(s.prev.x, s.prev.y, s.cur.x-s.prev.x, s.cur.y-s.prev.y);
-			} else if (clear) c2d.clearRect(draw.prev.x, draw.prev.y, draw.cur.x-draw.prev.x, draw.cur.y-draw.prev.y);
-			else {
+			} else
+			if (clear) {
+				c2d.clearRect(v.x, v.y, r.x-v.x, r.y-v.y);
+			} else {
 				if (ctx.fillStyle != A0)
-				ctx.fillRect(draw.prev.x, draw.prev.y, draw.cur.x-draw.prev.x, draw.cur.y-draw.prev.y);
-				ctx.strokeRect(draw.prev.x, draw.prev.y, draw.cur.x-draw.prev.x, draw.cur.y-draw.prev.y);
+				ctx.fillRect(v.x, v.y, r.x-v.x, r.y-v.y);
+				ctx.strokeRect(v.x, v.y, r.x-v.x, r.y-v.y);
 			}
-			break;
+		break;
 	//* circle
 		case 3:
-		var	xCenter = (draw.prev.x+draw.cur.x)/2
-		,	yCenter = (draw.prev.y+draw.cur.y)/2
-		,	radius = Math.sqrt(Math.pow(draw.cur.x-xCenter, 2) + Math.pow(draw.cur.y-yCenter, 2));
-			ctx.moveTo(xCenter+radius, yCenter);
-			ctx.arc(xCenter, yCenter, radius, 0, 7, false);
-			if (clear) {
-				c2d.save();
-				c2d.clip();
-				c2d.clearRect(0, 0, canvas.width, canvas.height);
-				c2d.restore();
-			} else if (ctx.fillStyle != A0) ctx.fill();
-			ctx.moveTo(draw.cur.x, draw.cur.y);
-			break;
+		var	xCenter = (v.x+r.x)/2
+		,	yCenter = (v.y+r.y)/2
+		,	radius = Math.max(1, dist(r.x-xCenter, r.y-yCenter));
+
+			ctx.moveTo(xCenter + radius, yCenter);
+			ctx.arc(xCenter, yCenter, radius, 0, 7);
+
+			if (clear) insideClear(c2d);
+			else if (ctx.fillStyle != A0) ctx.fill();
+		break;
 	//* ellipse
 		case 4:
-		var	xCenter = (draw.prev.x+draw.cur.x)/2
-		,	yCenter = (draw.prev.y+draw.cur.y)/2
-		,	xRadius = Math.abs(draw.cur.x-xCenter)
-		,	yRadius = Math.abs(draw.cur.y-yCenter), qx = 1, qy = 1;
-			if (xRadius > 0 && yRadius > 0) {
-				ctx.save();
-				if (xRadius > yRadius) ctx.scale(1, qy = yRadius/xRadius); else
-				if (xRadius < yRadius) ctx.scale(qx = xRadius/yRadius, 1);
-				ctx.moveTo((xCenter+xRadius)/qx, yCenter/qy);
-				ctx.arc(xCenter/qx, yCenter/qy, Math.max(xRadius, yRadius), 0, 7, false);
-				ctx.restore();
-				if (clear) {
-					c2d.save();
-					c2d.clip();
-					c2d.clearRect(0, 0, canvas.width, canvas.height);
-					c2d.restore();
-				} else if (ctx.fillStyle != A0) ctx.fill();
+		case 5:	if (s) x = r.x, y = r.y, v = s.prev, r = s.cur;
+		var	xCenter = (v.x+r.x)/2
+		,	yCenter = (v.y+r.y)/2
+		,	xRadius = Math.max(1, Math.abs(r.x-xCenter))
+		,	yRadius = Math.max(1, Math.abs(r.y-yCenter)), a = 1, b = 1;
+
+			ctx.save();
+			if (s) {
+				if (xRadius < yRadius) xCenter /= a = xRadius/yRadius, ctx.scale(a, b); else
+				if (xRadius > yRadius) yCenter /= b = yRadius/xRadius, ctx.scale(a, b);
+
+			var	x = x/a - xCenter
+			,	y = y/b - yCenter
+			,	r1 = Math.max(xRadius, yRadius)
+			,	r2 = dist(x, y)
+			,	a3 = Math.min(Math.PI*2*(tool.width+1)/r1, Math.PI/18)
+			,	a2 = Math.atan2(y, x)
+			,	a1 = a2-a3;
+
+				ctx.moveTo(xCenter + Math.cos(a1)*r1, yCenter + Math.sin(a1)*r1);
+				ctx.lineTo(xCenter + Math.cos(a2)*r2, yCenter + Math.sin(a2)*r2);
+				ctx.arc(xCenter, yCenter, r1, a2+a3, a1+Math.PI*2);
+			} else {
+				if (xRadius < yRadius) ctx.scale(a = xRadius/yRadius, 1), xCenter /= a; else
+				if (xRadius > yRadius) ctx.scale(1, b = yRadius/xRadius), yCenter /= b;
+
+				ctx.moveTo(xCenter + xRadius/a, yCenter);
+				ctx.arc(xCenter, yCenter, Math.max(xRadius, yRadius), 0, 7);
 			}
-			ctx.moveTo(draw.cur.x, draw.cur.y);
-			break;
+			ctx.restore();
+
+			if (clear) insideClear(c2d);
+			else if (ctx.fillStyle != A0) ctx.fill();
+		break;
 	//* pan
-		case 5:	if (draw.prev.x != draw.cur.x
-			|| (draw.prev.y != draw.cur.y)) moveScreen(draw.cur.x-draw.prev.x, draw.cur.y-draw.prev.y);
-			break;
+		case 6:	if (v.x != r.x
+			|| (v.y != r.y)) moveScreen(r.x-v.x, r.y-v.y);
+		break;
 	//* line
 		default:if (s) {
-			var	d = draw.cur, old = {}, t = {lineWidth: 1, shadowBlur: 0, shadowColor: A0, strokeStyle: 'rgba(123,123,123,0.5)'};
+			var	d = r, old = {}, t = {lineWidth: 1, shadowBlur: 0, shadowColor: A0, strokeStyle: 'rgba(123,123,123,0.5)'};
 				for (i in t) old[i] = c2s[i], c2s[i] = t[i];
 				c2s.beginPath();
-				if (s.prev.x != draw.prev.x || s.prev.y != draw.prev.y) {
-					c2s.moveTo(d.x, d.y);
-					d = draw.prev;
+				if (s.prev.x != v.x || s.prev.y != v.y) {
+					c2s.moveTo(d.x, d.y), d = v;
 					c2s.lineTo(d.x, d.y);
 				}
 				c2s.moveTo(s.cur.x, s.cur.y);
@@ -536,13 +556,21 @@ var	s = draw.step;
 				c2s.beginPath();
 		//* curve
 				ctx.moveTo(s.prev.x, s.prev.y);
-				ctx.bezierCurveTo(s.cur.x, s.cur.y, d.x, d.y, draw.cur.x, draw.cur.y);
+				ctx.bezierCurveTo(s.cur.x, s.cur.y, d.x, d.y, r.x, r.y);
 			} else {
 		//* straigth
-				ctx.moveTo(draw.prev.x, draw.prev.y);
-				ctx.lineTo(draw.cur.x, draw.cur.y);
+				ctx.moveTo(v.x, v.y);
+				ctx.lineTo(r.x, r.y);
 			}
 	}
+	ctx.moveTo(r.x, r.y);
+}
+
+function insideClear(c) {
+	c.save();
+	c.clip();
+	c.clearRect(0, 0, canvas.width, canvas.height);
+	c.restore();
 }
 
 function moveScreen(x, y) {
@@ -665,13 +693,17 @@ var	a = t.color.split(reg255split), e = id((t == tool) ? 'colorF' : 'colorB');
 }
 
 function updateSlider(i,e) {
-var	j = (e?i:BOWL[i])
-,	s = id('range'+j)
-,	t = id('text'+j) || s
-,	r = (e?s:RANGE[i]), v = (e?parseFloat(e.value):tool[i = BOW[i]]);
+var	k = (e?i:BOWL[i])
+,	s = id('range'+k)
+,	t = id('text'+k) || s
+,	r = (e?s:RANGE[i])
+,	f = (r.step < 1)
+,	v = (e?parseFloat(e.value):tool[i = BOW[i]]);
+	if (isNaN(v)) v = 1;
+	if (f && v > r.max && v.toString().indexOf('.') < 0) v = '0.'+v;
 	if (v < r.min) v = r.min; else
 	if (v > r.max) v = r.max;
-	if (r.step < 1) v = parseFloat(v).toFixed(2);
+	if (f) v = parseFloat(v).toFixed(2);
 	if (e && (e = id('gradient'))) {
 		e.updateSat(v);
 	} else tool[i] = v;
@@ -718,7 +750,7 @@ var	i = e.id.slice(-1);
 
 function updateDim(i) {
 	if (i) {
-	var	a = id('img-'+i), b, c = canvas[i], v = parseInt(a.value) || 0;
+	var	a = id('img-'+i), b, c = canvas[i], v = orz(a.value);
 		canvasShape[i] = canvas[i] = a.value = v = (
 			v < (b = select.imgLimits[i][0]) ? b : (
 			v > (b = select.imgLimits[i][1]) ? b : v)
@@ -810,7 +842,7 @@ function autoSave() {if (mode.autoSave && cue.autoSave && !(cue.autoSave = (draw
 function getSendMeta(sz) {
 var	d = draw.time, i, j = [], u = [], t = outside.t0;
 	for (i in d) u[i] = parseInt(d[i]) || (i > 0?+new Date:t);
-	for (i in used) j.push(used[i]);
+	for (i in used) j.push(used[i].replace(/[\r\n]+/g, ', '));
 	return 't0: '	+Math.floor(t/1000)
 	+'\ntime: '	+u.join('-')
 	+'\napp: '	+NS+' '+INFO_VERSION
@@ -899,7 +931,7 @@ var	a = auto || false, c, d, e, i, t;
 		}
 		if (confirmShowTime(lang.confirm.load, t)) {
 			t = t.split('-');
-			if (t.length > 2) used.read = 'Read File: '+t.slice(2).join('-').replace(/^[^:]+:\s+/, '').split('\n').join(', ');
+			if (t.length > 2) used.read = 'Read File: '+t.slice(2).join('-').replace(/^[^:]+:\s+/, '');
 			draw.time = t.slice(0,2), a = id('saveTime'), a.textContent = unixDateToHMS(+t[1]), a.title = new Date(+t[1]);
 			readPic(d);
 			used.LS = 'Local Storage';
@@ -1030,7 +1062,7 @@ function hotKeys(event) {
 			case c('G'):	toolSwap(3);	break;
 
 			case 8:
-if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *, 8=bksp
+if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 8=bksp, 45=Ins, 42=106=[Num *]
 			case c('L'):	toggleMode(1);	break;
 			case c('U'):	toggleMode(2);	break;
 			case 114:	toggleMode(4);	break;
@@ -1043,18 +1075,20 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *,
 			case 117:	sendPic(4);	break;
 			case 119:	sendPic();	break;
 
-			case c('Q'):	updateShape(0);	break;
+			case c('N'):	updateShape(0);	break;
 			case c('P'):	updateShape(1);	break;
 			case c('R'):	updateShape(2);	break;
 			case c('T'):	updateShape(3);	break;
 			case c('Y'):	updateShape(4);	break;
-			case c('M'):	updateShape(5);	break;
+			case c('Q'):	updateShape(5);	break;
+			case c('M'):	updateShape(6);	break;
 
 			case c('B'):
 			case c('O'):
 			case c('W'): toolTweak(String.fromCharCode(event.keyCode), event.altKey?-1:0); break;
 
-			case 106: case 42:
+			case 42:
+			case 106:
 				for (i = 1, k = ''; i < 3; i++) k +=
 '<br>Save'+i+'.time: '+LS[CR[i].T]+(LS[CR[i].R]?', size: '+LS[CR[i].R].length:'');
 				text.debug.innerHTML = getSendMeta()+'<br>'+replaceAll(
@@ -1093,7 +1127,7 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 	canvasShape = document.createElement(c);
 	for (i in select.imgRes) {
 		canvasShape[i] = canvas[i] = (o[a = i[0]]?o[a]:o[a] = (o[i]?o[i]:select.imgRes[i]));
-		if ((o[b = a+'l'] || o[b = i+'Limit']) && (f = o[b].match(regLimit))) select.imgLimits[i] = [parseInt(f[1]), parseInt(f[2])];
+		if ((o[b = a+'l'] || o[b = i+'Limit']) && (f = o[b].match(regLimit))) select.imgLimits[i] = [orz(f[1]), orz(f[2])];
 	}
 
 	c2s = canvasShape.getContext('2d');
@@ -1155,7 +1189,7 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 	a = 'historyAct(', b = 'button', d = 'toggleMode(', e = 'sendPic(', f = 'fillScreen(';
 	a = [
 //* subtitle, hotkey, pictogram, function, id
-	['undo'	,'Z'	,'&#x2190;'	,a+'-1)'	,b+'U'
+	['undo'	,'Z'	,'&#x2190;'	,a+'-1)',b+'U'
 ],	['redo'	,'X'	,'&#x2192;'	,a+'1)'	,b+'R'
 ],
 0,	['fill'	,'F'	,s		,f+'0)'	,(a='color')+'F'
@@ -1174,8 +1208,8 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 ],	['curve|outline|rect','U'	,'~|&#x25A1;|&#x25AD;'	,d+'2)'	,a+'U'
 ],	['cursor','F3'	,'&#x25CF;'	,d+'4)'	,a+'V'
 ],
-0,	['png'	,'F9'	,'P'		,e+'0)'	,b+'P'
-],	['jpeg'	,'F7'	,'J'		,e+'1)'	,b+'J'
+0,	['png'	,'F9'	,'P'	,e+'0)'	,b+'P'
+],	['jpeg'	,'F7'	,'J'	,e+'1)'	,b+'J'
 ],	['save'	,'F2'	,'!'	,e+'2)'
 ],	['load'	,'F4'	,'?'	,e+'3)'	,b+'L'
 ],!o.read || 0 == o.read?1:
@@ -1292,12 +1326,12 @@ var	o = outside, v = id('vars'), e, i, j, k
 	while (i) CR[i--] = {R:e = j+k[i], T:e+CT};
 	CT = CR[1].T;
 	o.t0 = o.t0 > 0 ? o.t0+'000' : +new Date;
-	if (!o.undo || isNaN(o.undo) || o.undo < 3) o.undo = 123; else o.undo = parseInt(o.undo);
+	if ((o.undo = orz(o.undo)) < 3) o.undo = 123;
 	if (!o.lang) o.lang = document.documentElement.lang || 'en';
 	if (o.lang == 'ru')
 select.lineCaps = {lineCap: 'край', lineJoin: 'сгиб'}
 , select.translated = {
-	shape	: ['линия', 'многоугольник', 'прямоугольник', 'круг', 'овал', 'сдвиг']
+	shape	: ['линия', 'многоугольник', 'прямоугольник', 'круг', 'овал', 'овал: речь', 'сдвиг']
 ,	lineCap	: ['круг <->', 'срез |-|', 'квадрат [-]']
 ,	lineJoin: ['круг -x-', 'срез \\_/', 'угол V']
 ,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент']
@@ -1328,13 +1362,13 @@ select.lineCaps = {lineCap: 'край', lineJoin: 'сгиб'}
 ,	hide_hint:	'Кликните, чтобы спрятать или показать.'
 ,	info_top:	'Управление (указатель над полотном):'
 ,	info: [	'C / средний клик = подобрать цвет с рисунка'
-	,	'Q / P / R / T / Y / M = выбор формы'
+	,	'N / P / R / T / Y / Q / M = выбор формы'
 //	,	'Shift + клик = цепочка форм, Esc = {drawEnd;отмена}'
 	,	'Ctrl + тяга = поворот полотна, Home = {updateViewport;сброс}'
 	,	'Alt + тяга = масштаб, Shift + т. = сдвиг рамки'
-	,	'1-10 / колесо мыши / (Alt +) W = толщина кисти'
-	,	'Ctrl + 1-10 / колесо / (Alt +) O = прозрачность'
-	,	'Alt + 1-10 / колесо / (Alt +) B = размытие тени'
+	,	'1-10		/ колесо мыши	/ (Alt +) W = толщина кисти'
+	,	'Ctrl + 1-10	/ колесо	/ (Alt +) O = прозрачность'
+	,	'Alt + 1-10	/ колесо	/ (Alt +) B = размытие тени'
 	,	'Автосохранение раз в минуту'
 ],	info_no_save:	'ещё не было'
 ,	info_no_time:	'ещё нет'
@@ -1402,13 +1436,13 @@ else lang = {
 ,	hide_hint:	'Click to show/hide.'
 ,	info_top:	'Hot keys (mouse over image only):'
 ,	info: [	'C / Mouse Mid = pick color from image'
-	,	'Q / P / R / T / Y / M = select shape'
+	,	'N / P / R / T / Y / Q / M = select shape'
 //	,	'Shift + click = chain shapes, Esc = {drawEnd;cancel}'
 	,	'Ctrl + drag = rotate canvas, Home = {updateViewport;reset}'
 	,	'Alt + d. = zoom, Shift + d. = move canvas frame'
-	,	'1-10 / Mouse Wheel / (Alt +) W = brush width'
-	,	'Ctrl + 1-10 / Wheel / (Alt +) O = brush opacity'
-	,	'Alt + 1-10 / Wheel / (Alt +) B = brush shadow blur'
+	,	'1-10		/ Mouse Wheel /	(Alt +) W = brush width'
+	,	'Ctrl + 1-10	/ Wheel /	(Alt +) O = brush opacity'
+	,	'Alt + 1-10	/ Wheel /	(Alt +) B = brush shadow blur'
 	,	'Autosave every minute, last saved'
 ],	info_no_save:	'not yet'
 ,	info_no_time:	'no yet'
