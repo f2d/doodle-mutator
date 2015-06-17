@@ -34,7 +34,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	,	lineCaps: {lineCap:0, lineJoin:0}
 	,	shapeFlags: [1,10, 2,2,2,66, 4]
 	,	options: {
-			shape	: ['line', 'poly', 'rectangle', 'circle', 'ellipse', 'speech balloon', 'pan']
+			shape	: ['line', 'freehand poly', 'rectangle', 'circle', 'ellipse', 'speech balloon', 'move']
 		,	lineCap	: ['round', 'butt', 'square']
 		,	lineJoin: ['round', 'bevel', 'miter']
 		,	palette	: ['history', 'auto', 'legacy', 'Touhou', 'gradient']
@@ -1331,7 +1331,7 @@ var	o = outside, v = id('vars'), e, i, j, k
 	if (o.lang == 'ru')
 select.lineCaps = {lineCap: 'край', lineJoin: 'сгиб'}
 , select.translated = {
-	shape	: ['линия', 'многоугольник', 'прямоугольник', 'круг', 'овал', 'овал: речь', 'сдвиг']
+	shape	: ['линия', 'замкнутая линия', 'прямоугольник', 'круг', 'овал', 'овал: речь', 'сдвиг']
 ,	lineCap	: ['круг <->', 'срез |-|', 'квадрат [-]']
 ,	lineJoin: ['круг -x-', 'срез \\_/', 'угол V']
 ,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент']
