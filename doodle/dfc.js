@@ -26,7 +26,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	,	brushView:	false
 	,	limitFPS:	false
 	,	autoSave:	true
-	}, modes = [], modeL = 'DLUQVFA'
+	}, modes = [], modeL = 'DLUQVFA', shapeHotKey = 'NPRTYQM'
 ,	used = {}, cue = {upd:{}}
 ,	select = {
 		imgRes: {width:640, height:360}
@@ -802,6 +802,7 @@ function toolSwap(back) {
 		for (i in TOOLS_REF[t]) tools[t][i] = TOOLS_REF[t][i];
 		for (i in select.lineCaps) select[i].value = 0;
 		if (mode.shape) toggleMode(1);
+		if (mode.step) toggleMode(2);
 		updateShape(0);
 		tool.width = 3; //* <- arbitrary default
 	} else
@@ -1040,11 +1041,12 @@ function browserHotKeyPrevent(event) {
 }
 function hotKeys(event) {
 	if (browserHotKeyPrevent(event)) {
+		for (i in shapeHotKey) if (event.keyCode == shapeHotKey.charCodeAt(i)) return updateShape(i), false;
 		function c(s) {return s.charCodeAt(0);}
 	var	n = event.keyCode - c('0');
 		if ((n?n:n=10) > 0 && n < 11) {
 		var	k = [event.altKey, event.ctrlKey, 1], i;
-			for (i in k) if (k[i]) return toolTweak(BOWL[i], RANGE[i].step < 1 ? n/10 : (n>5 ? (n-5)*10 : n));
+			for (i in k) if (k[i]) return toolTweak(BOWL[i], RANGE[i].step < 1 ? n/10 : (n>5 ? (n-5)*10 : n)), false;
 		} else
 		switch (event.keyCode) {
 			case 27:	drawEnd();	break;	//* Esc
@@ -1269,7 +1271,7 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 	for (b in a) {
 		e = select[b] = id(b);
 		for (i in a[b]) (
-			e.options[e.options.length] = new Option(c[b][i], i)
+			e.options[e.options.length] = new Option(c[b][i]+(b == 'shape'?' ['+shapeHotKey[i]+']':''), i)
 		).selected = (b == 'palette'?(i == f):!i);
 	}
 
@@ -1326,7 +1328,7 @@ var	o = outside, v = id('vars'), e, i, j, k
 	}
 	k = 'y2', i = k.length, j = (o.saveprfx?o.saveprfx:NS)+CR, CR = [];
 	while (i) CR[i--] = {R:e = j+k[i], T:e+CT};
-	CT = CR[1].T;
+	CT = CR[1].T, j = shapeHotKey.split('').join(' / ');
 	o.t0 = o.t0 > 0 ? o.t0+'000' : +new Date;
 	if ((o.undo = orz(o.undo)) < 3) o.undo = 123;
 	if (!o.lang) o.lang = document.documentElement.lang || 'en';
@@ -1364,7 +1366,7 @@ select.lineCaps = {lineCap: 'край', lineJoin: 'сгиб'}
 ,	hide_hint:	'Кликните, чтобы спрятать или показать.'
 ,	info_top:	'Управление (указатель над полотном):'
 ,	info: [	'C / средний клик = подобрать цвет с рисунка'
-	,	'N / P / R / T / Y / Q / M = выбор формы'
+	,	j+' = выбор формы'
 //	,	'Shift + клик = цепочка форм, Esc = {drawEnd;отмена}'
 	,	'Ctrl + тяга = поворот полотна, Home = {updateViewport;сброс}'
 	,	'Alt + тяга = масштаб, Shift + т. = сдвиг рамки'
@@ -1438,7 +1440,7 @@ else lang = {
 ,	hide_hint:	'Click to show/hide.'
 ,	info_top:	'Hot keys (mouse over image only):'
 ,	info: [	'C / Mouse Mid = pick color from image'
-	,	'N / P / R / T / Y / Q / M = select shape'
+	,	j+' = select shape'
 //	,	'Shift + click = chain shapes, Esc = {drawEnd;cancel}'
 	,	'Ctrl + drag = rotate canvas, Home = {updateViewport;reset}'
 	,	'Alt + d. = zoom, Shift + d. = move canvas frame'
