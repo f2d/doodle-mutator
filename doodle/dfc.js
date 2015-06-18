@@ -1041,8 +1041,11 @@ function browserHotKeyPrevent(event) {
 }
 function hotKeys(event) {
 	if (browserHotKeyPrevent(event)) {
+		for (i in BOWL) if (event.keyCode == BOWL.charCodeAt(i)) return toolTweak(BOWL[i], event.altKey?-1:0), false;
 		for (i in shapeHotKey) if (event.keyCode == shapeHotKey.charCodeAt(i)) return updateShape(i), false;
+
 		function c(s) {return s.charCodeAt(0);}
+
 	var	n = event.keyCode - c('0');
 		if ((n?n:n=10) > 0 && n < 11) {
 		var	k = [event.altKey, event.ctrlKey, 1], i;
@@ -1078,18 +1081,6 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 8=bksp, 45=Ins, 42=10
 			case 115:	sendPic(3);	break;
 			case 117:	sendPic(4);	break;
 			case 119:	sendPic();	break;
-
-			case c('N'):	updateShape(0);	break;
-			case c('P'):	updateShape(1);	break;
-			case c('R'):	updateShape(2);	break;
-			case c('T'):	updateShape(3);	break;
-			case c('Y'):	updateShape(4);	break;
-			case c('Q'):	updateShape(5);	break;
-			case c('M'):	updateShape(6);	break;
-
-			case c('B'):
-			case c('O'):
-			case c('W'): toolTweak(String.fromCharCode(event.keyCode), event.altKey?-1:0); break;
 
 			case 42:
 			case 106:
