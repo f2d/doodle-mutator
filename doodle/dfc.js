@@ -1,7 +1,7 @@
 ﻿var dfc = new function () {
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
-,	INFO_VERSION = 'v0.9.49'
+,	INFO_VERSION = 'v0.9.50'
 ,	INFO_DATE = '2013-04-01 — 2015-06-18'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640
@@ -479,7 +479,7 @@ var	s = draw.step, v = draw.prev, r = draw.cur;
 	switch (parseInt(i)) {
 	//* rect
 		case 2:	if (s) {
-			//* show pan source area
+		//* show pan source area
 				ctx.strokeRect(s.prev.x, s.prev.y, s.cur.x-s.prev.x, s.cur.y-s.prev.y);
 			} else
 			if (clear) {
@@ -504,34 +504,35 @@ var	s = draw.step, v = draw.prev, r = draw.cur;
 		break;
 	//* ellipse
 		case 4:
-		case 5:	if (s) x = r.x, y = r.y, v = s.prev, r = s.cur;
+		case 5:	if (s) p = v, q = r, v = s.prev, r = s.cur;
 		var	xCenter = (v.x+r.x)/2
 		,	yCenter = (v.y+r.y)/2
 		,	xRadius = Math.max(1, Math.abs(r.x-xCenter))
-		,	yRadius = Math.max(1, Math.abs(r.y-yCenter)), a = 1, b = 1;
+		,	yRadius = Math.max(1, Math.abs(r.y-yCenter))
+		,	radius = Math.max(xRadius, yRadius), a = 1, b = 1;
 
+			if (s && s.done) {
+				xCenter += q.x-p.x;
+				yCenter += q.y-p.y;
+			}
 			ctx.save();
+			if (xRadius < yRadius) xCenter /= a = xRadius/yRadius, ctx.scale(a, b); else
+			if (xRadius > yRadius) yCenter /= b = yRadius/xRadius, ctx.scale(a, b);
+
 			if (s) {
-				if (xRadius < yRadius) xCenter /= a = xRadius/yRadius, ctx.scale(a, b); else
-				if (xRadius > yRadius) yCenter /= b = yRadius/xRadius, ctx.scale(a, b);
-
-			var	x = x/a - xCenter
-			,	y = y/b - yCenter
-			,	r1 = Math.max(xRadius, yRadius)
-			,	r2 = dist(x, y)
-			,	a3 = Math.min(Math.PI*2*(tool.width+1)/r1, Math.PI/18)
+		//* speech balloon
+			var	x = q.x/a - xCenter, q,p
+			,	y = q.y/b - yCenter
+			,	a1 = Math.min(Math.PI*2*(tool.width+1)/radius, Math.PI/18)
 			,	a2 = Math.atan2(y, x)
-			,	a1 = a2-a3;
+			,	r2 = dist(x, y);
 
-				ctx.moveTo(xCenter + Math.cos(a1)*r1, yCenter + Math.sin(a1)*r1);
-				ctx.lineTo(xCenter + Math.cos(a2)*r2, yCenter + Math.sin(a2)*r2);
-				ctx.arc(xCenter, yCenter, r1, a2+a3, a1+Math.PI*2);
+				ctx.moveTo(xCenter + Math.cos(a2)*r2, yCenter + Math.sin(a2)*r2);
+				ctx.arc(xCenter, yCenter, radius, a2+a1, a2-a1+Math.PI*2);
+				ctx.closePath();
 			} else {
-				if (xRadius < yRadius) ctx.scale(a = xRadius/yRadius, 1), xCenter /= a; else
-				if (xRadius > yRadius) ctx.scale(1, b = yRadius/xRadius), yCenter /= b;
-
 				ctx.moveTo(xCenter + xRadius/a, yCenter);
-				ctx.arc(xCenter, yCenter, Math.max(xRadius, yRadius), 0, 7);
+				ctx.arc(xCenter, yCenter, radius, 0, 7);
 			}
 			ctx.restore();
 
@@ -560,7 +561,7 @@ var	s = draw.step, v = draw.prev, r = draw.cur;
 				ctx.moveTo(s.prev.x, s.prev.y);
 				ctx.bezierCurveTo(s.cur.x, s.cur.y, d.x, d.y, r.x, r.y);
 			} else {
-		//* straigth
+		//* straight
 				ctx.moveTo(v.x, v.y);
 				ctx.lineTo(r.x, r.y);
 			}
@@ -1112,7 +1113,7 @@ function hotWheel(event) {
 
 this.init = function() {
 	if (isTest()) document.title += ': '+NS+' '+INFO_VERSION;
-var	a, b, c = 'canvas', d = '<div id="', e = '"></div>', f, g, h, i, j, k, n = '\n	', o = outside, p, s = '&nbsp;';
+var	a,b,c = 'canvas', d = '<div id="', e = '"></div>', f,g,h,i,j,k,n = '\n	', o = outside, p,s = '&nbsp;';
 	setContent(container = id(),
 n+d+'load"><'+c+' id="'+c+'" tabindex="0">'+lang.no.canvas+'</'+c+'></div>'+
 //n+
@@ -1217,9 +1218,7 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 
 	function btnContent(e, subt, pict) {
 	var	t = lang.b[subt];
-		e.title = (t.t?t.t:t);
-		setContent(e, d+'key">'+k[1]+c+pict+d+'subtitle"><br>'+(t.t?t.sub:subt)+c);
-		return e;
+		return setContent(e, d+'key">'+k[1]+c+pict+d+'subtitle"><br>'+(t.t?t.sub:subt)+c), e.title = t.t||t, e;
 	}
 
 	for (i in a) if (1 !== (k = a[i])) {
@@ -1258,11 +1257,14 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 	for (e in (d = ['onchange', 'onclick', 'onmouseover'])) if ((f = b[c][d[e]]) && !self[f = (''+f).match(regFunc)[1]]) self[f] = eval(f);
 
 	d = 'download', DL = (d in b[0]?d:'');
+	d = {	lineCap	: ['<->', '|-|', '[-]']
+	,	lineJoin: ['-x-', '\\_/', 'V']
+	};
 	a = select.options, c = select.translated || a, f = (LS && LS.lastPalette && palette[LS.lastPalette]) ? LS.lastPalette : 1;
 	for (b in a) {
 		e = select[b] = id(b);
 		for (i in a[b]) (
-			e.options[e.options.length] = new Option(c[b][i]+(b == 'shape'?' ['+shapeHotKey[i]+']':''), i)
+			e.options[e.options.length] = new Option(c[b][i]+(b == 'shape'?' ['+shapeHotKey[i]+']':(b in d?' '+d[b][i]:'')), i)
 		).selected = (b == 'palette'?(i == f):!i);
 	}
 
@@ -1299,7 +1301,7 @@ var	letters = [0, 0, 0], l = p.length;
 
 function isTest() {
 	if (CR[0] !== 'C') return !o.send;
-var	o = outside, v = id('vars'), e, i, j, k
+var	o = outside, v = id('vars'), e,i,j,k
 ,	f = o.send = id('send')
 ,	r = o.read = id('read'), a = [v,f,r];
 	for (i in a) if ((e = a[i]) && (e = (e.getAttribute('data-vars') || e.name))) {
@@ -1326,9 +1328,9 @@ var	o = outside, v = id('vars'), e, i, j, k
 	if (o.lang == 'ru')
 select.lineCaps = {lineCap: 'край', lineJoin: 'сгиб'}
 , select.translated = {
-	shape	: ['линия', 'замкнутая линия', 'прямоугольник', 'круг', 'овал', 'овал: речь', 'сдвиг']
-,	lineCap	: ['круг <->', 'срез |-|', 'квадрат [-]']
-,	lineJoin: ['круг -x-', 'срез \\_/', 'угол V']
+	shape	: ['линия', 'замкнутая линия', 'прямоугольник', 'круг', 'овал', 'овал для речи', 'сдвиг']
+,	lineCap	: ['круг', 'срез', 'квадрат']
+,	lineJoin: ['круг', 'срез', 'угол']
 ,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент']
 }, lang = {
 	bad_id:		'Ошибка выбора.'
