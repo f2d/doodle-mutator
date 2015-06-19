@@ -2,7 +2,7 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 ,	INFO_VERSION = 'v0.9.50'
-,	INFO_DATE = '2013-04-01 — 2015-06-18'
+,	INFO_DATE = '2013-04-01 — 2015-06-20'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640
 ,	CR = 'CanvasRecover', CT = 'Time', DL, DRAW_PIXEL_OFFSET = -0.5
@@ -1131,18 +1131,19 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 	c2d.fillStyle = 'white';
 	c2d.fillRect(0, 0, o.w, o.h);
 
-	document.addEventListener('dragover'	, dragOver	, f = false);
-	document.addEventListener('drop'	, drop		, f);
-	document.addEventListener('mousedown'	, drawStart	, f);
-	document.addEventListener('mousemove'	, drawMove	, f);	//* <- using 'document' to prevent negative clipping
-	document.addEventListener('mouseup'	, drawEnd	, f);
-	document.addEventListener('keypress'	, browserHotKeyPrevent, f);
-	document.addEventListener('keydown'	, hotKeys	, f);
-	document.addEventListener('mousewheel'	, e = hotWheel	, f);
-	document.addEventListener('wheel'	, e, f);
-	document.addEventListener('scroll'	, e, f);
-	canvas.setAttribute('onscroll'		, f = 'return false;');
-	canvas.setAttribute('oncontextmenu'	, f);
+	for (i in {onscroll:0, oncontextmenu:0}) canvas.setAttribute(i, 'return false;');
+	for (i in (a = {
+		dragover:	dragOver
+	,	drop:		drop
+	,	mousedown:	drawStart
+	,	mousemove:	drawMove
+	,	mouseup:	drawEnd
+	,	keypress:	browserHotKeyPrevent
+	,	keydown:	hotKeys
+	,	mousewheel:	e = hotWheel
+	,	wheel:		e
+	,	scroll:		e
+	})) document.addEventListener(i, a[i], false);			//* <- using 'document' to prevent negative clipping
 
 	c = '</td><td class="r">', a = ': '+c+'	', e = n+'	', f = e+'	', b = e+d+'colors">'+d+'sliders">', i = BOW.length;
 	while (i--) {
@@ -1321,8 +1322,8 @@ var	o = outside, v = id('vars'), e,i,j,k
 	}
 	k = 'y2', i = k.length, j = (o.saveprfx?o.saveprfx:NS)+CR, CR = [];
 	while (i) CR[i--] = {R:e = j+k[i], T:e+CT};
-	CT = CR[1].T, j = shapeHotKey.split('').join(' / ');
-	o.t0 = o.t0 > 0 ? o.t0+'000' : +new Date;
+	CT = CR[1].T;
+	o.t0 = (o.t0 > 0 ? o.t0+'000' : +new Date), j = shapeHotKey.split('').join(k = ', ');
 	if ((o.undo = orz(o.undo)) < 3) o.undo = 123;
 	if (!o.lang) o.lang = document.documentElement.lang || 'en';
 	if (o.lang == 'ru')
@@ -1358,14 +1359,14 @@ select.lineCaps = {lineCap: 'край', lineJoin: 'сгиб'}
 ,	hex_hint:	'Формат ввода — #a, #f90, #ff9900, или 0,123,255'
 ,	hide_hint:	'Кликните, чтобы спрятать или показать.'
 ,	info_top:	'Управление (указатель над полотном):'
-,	info: [	'C / средний клик = подобрать цвет с рисунка'
-	,	j+' = выбор формы'
-//	,	'Shift + клик = цепочка форм, Esc = {drawEnd;отмена}'
-	,	'Ctrl + тяга = поворот полотна, Home = {updateViewport;сброс}'
-	,	'Alt + тяга = масштаб, Shift + т. = сдвиг рамки'
-	,	'1-10		/ колесо мыши	/ (Alt +) W = толщина кисти'
-	,	'Ctrl + 1-10	/ колесо	/ (Alt +) O = прозрачность'
-	,	'Alt + 1-10	/ колесо	/ (Alt +) B = размытие тени'
+,	info: [	'C'+k+'средний клик = подобрать цвет с рисунка.'
+	,	j+' = выбор формы.'
+//	,	'Shift + клик = цепочка форм, Esc = {drawEnd;отмена}.'
+	,	'Ctrl + тяга = поворот полотна, Home = {updateViewport;сброс}.'
+	,	'Alt + тяга = масштаб, Shift + т. = сдвиг рамки.'
+	,	'1-10'		+k+'колесо мыши'+k+'(Alt +) W = толщина кисти.'
+	,	'Ctrl + (1-10'	+k+'колесо)'	+k+'(Alt +) O = прозрачность.'
+	,	'Alt + (1-10'	+k+'колесо)'	+k+'(Alt +) B = размытие тени.'
 	,	'Автосохранение раз в минуту'
 ],	info_no_save:	'ещё не было'
 ,	info_no_time:	'ещё нет'
@@ -1432,14 +1433,14 @@ else lang = {
 ,	hex_hint:	'Valid formats — #a, #f90, #ff9900, or 0,123,255'
 ,	hide_hint:	'Click to show/hide.'
 ,	info_top:	'Hot keys (mouse over image only):'
-,	info: [	'C / Mouse Mid = pick color from image'
-	,	j+' = select shape'
-//	,	'Shift + click = chain shapes, Esc = {drawEnd;cancel}'
-	,	'Ctrl + drag = rotate canvas, Home = {updateViewport;reset}'
-	,	'Alt + d. = zoom, Shift + d. = move canvas frame'
-	,	'1-10		/ Mouse Wheel /	(Alt +) W = brush width'
-	,	'Ctrl + 1-10	/ Wheel /	(Alt +) O = brush opacity'
-	,	'Alt + 1-10	/ Wheel /	(Alt +) B = brush shadow blur'
+,	info: [	'C'+k+'Mouse Mid = pick color from image.'
+	,	j+' = select shape.'
+//	,	'Shift + click = chain shapes, Esc = {drawEnd;cancel}.'
+	,	'Ctrl + drag = rotate canvas, Home = {updateViewport;reset}.'
+	,	'Alt + d. = zoom, Shift + d. = move canvas frame.'
+	,	'1-10'		+k+'Mouse Wheel'+k+'(Alt +) W = brush width.'
+	,	'Ctrl + (1-10'	+k+'Wheel)'	+k+'(Alt +) O = brush opacity.'
+	,	'Alt + (1-10'	+k+'Wheel)'	+k+'(Alt +) B = brush shadow blur.'
 	,	'Autosave every minute, last saved'
 ],	info_no_save:	'not yet'
 ,	info_no_time:	'no yet'
