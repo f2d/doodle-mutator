@@ -711,32 +711,32 @@ var	k = (e?i:BOWL[i])
 		e.updateSat(v);
 	} else tool[i] = v;
 	s.value = t.value = v;
+	return false;
 }
 
 function updateSliders(s) {
 	if (s && s.id) {
-	var	prop = s.id[s.id.length-1];
-		for (i in BOW) if (prop == BOWL[i]) {
-			tool[BOW[i]] = parseFloat(s.value);
-			return updateSlider(i);
-		}
-		return updateSlider(prop, s);
-	} else {
-		if (s) updateSlider(s); else
-		for (i in BOW) updateSlider(i);
-		if (draw.o.length) {
-			drawEnd();
-			s = tool.width+4;
-			c2d.putImageData(draw.history.cur(), 0, 0, draw.o.x - s/2, draw.o.y - s/2, s, s);
-			drawCursor();
-		}
+	var	prop = s.id[s.id.length-1], i = BOWL.indexOf(prop);
+		if (i < 0) return updateSlider(prop, s);
+		return tool[BOW[i]] = parseFloat(s.value), updateSlider(i);
 	}
+	if (s) updateSlider(s);
+	else for (i in BOW) updateSlider(i);
+
+	if (draw.o.length) {
+		drawEnd();
+		s = tool.width+4;
+		c2d.putImageData(draw.history.cur(), 0, 0, draw.o.x - s/2, draw.o.y - s/2, s, s);
+		drawCursor();
+	}
+	return false;
 }
 
 function updateShape(s) {
 	if (!isNaN(s)) select.shape.value = s, s = 0;
 	s = select.shapeFlags[(s?s:s=select.shape).value];
 	setClass(id('bottom'), (s & 1?'b c':(s & 4?'a b':'a c')));
+	return false;
 }
 
 function updateHistoryButtons() {
@@ -786,15 +786,15 @@ function updateDim(i) {
 }
 
 function toolTweak(prop, value) {
-	for (i in BOW) if (prop == BOWL[i]) {
-	var	b = BOW[i];
-		if (value > 0) tool[b] = value;
-		else {
-		var	v = new Number(tool[b]), s = RANGE[i].step;
-			tool[b] = (value ? v-s : v+s);
-		}
-		return updateSliders(i);
+var	i = BOWL.indexOf(prop);
+	if (i < 0) return alert(lang.bad_id+'\nNo '+prop+' in '+BOWL), false;
+var	b = BOW[i];
+	if (value > 0) tool[b] = value;
+	else {
+	var	v = new Number(tool[b]), s = RANGE[i].step;
+		tool[b] = (value ? v-s : v+s);
 	}
+	return updateSliders(i);
 }
 
 function toolSwap(back) {
@@ -821,15 +821,15 @@ function toolSwap(back) {
 }
 
 function toggleMode(i, keep) {
-	if (i >= 0 && i < modes.length) {
-	var	n = modes[i], v = mode[n];
-		if (!keep) v = mode[n] = !v;
-		if (e = id('check'+modeL[i])) setClass(e, v ? 'button-active' : 'button');
-		if (n == 'debug') {
-			text.debug.textContent = '';
-			interval.fps ? clearInterval(interval.fps) : (interval.fps = setInterval(fpsCount, 1000));
-		}
-	} else alert(lang.bad_id);
+	if (i < 0 || i >= modes.length) return alert(lang.bad_id+'\nNo '+i+' in '+modes.length), false;
+var	n = modes[i], v = mode[n], e = id('check'+modeL[i]);
+	if (!keep) v = mode[n] = !v;
+	if (e) setClass(e, v ? 'button-active' : 'button');
+	if (n == 'debug') {
+		text.debug.textContent = '';
+		interval.fps ? clearInterval(interval.fps) : (interval.fps = setInterval(fpsCount, 1000));
+	}
+	return false;
 }
 
 function unixDateToHMS(t,u,y) {
@@ -1042,19 +1042,20 @@ function browserHotKeyPrevent(event) {
 }
 function hotKeys(event) {
 	if (browserHotKeyPrevent(event)) {
-		for (i in BOWL) if (event.keyCode == BOWL.charCodeAt(i)) return toolTweak(BOWL[i], event.altKey?-1:0), false;
-		for (i in shapeHotKey) if (event.keyCode == shapeHotKey.charCodeAt(i)) return updateShape(i), false;
+	var	s = String.fromCharCode(event.keyCode), i = shapeHotKey.indexOf(s);
+		if (i >= 0) return updateShape(i);
+		if (BOWL.indexOf(s) >= 0) return toolTweak(s, event.altKey?-1:0);
 
 		function c(s) {return s.charCodeAt(0);}
 
 	var	n = event.keyCode - c('0');
 		if ((n?n:n=10) > 0 && n < 11) {
-		var	k = [event.altKey, event.ctrlKey, 1], i;
-			for (i in k) if (k[i]) return toolTweak(BOWL[i], RANGE[i].step < 1 ? n/10 : (n>5 ? (n-5)*10 : n)), false;
+		var	k = [event.altKey, event.ctrlKey, 1];
+			for (i in k) if (k[i]) return toolTweak(BOWL[i], RANGE[i].step < 1 ? n/10 : (n>5 ? (n-5)*10 : n));
 		} else
 		switch (event.keyCode) {
 			case 27:	drawEnd();	break;	//* Esc
-			case 36:updateViewport();	break;	//* Home
+			case 36: updateViewport();	break;	//* Home
 
 			case c('Z'):	historyAct(-1);	break;
 			case c('X'):	historyAct(1);	break;
@@ -1086,13 +1087,15 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 8=bksp, 45=Ins, 42=10
 			case 42:
 			case 106:
 				for (i = 1, k = ''; i < 3; i++) k +=
-'<br>Save'+i+'.time: '+LS[CR[i].T]+(LS[CR[i].R]?', size: '+LS[CR[i].R].length:'');
-				text.debug.innerHTML = getSendMeta()+'<br>'+replaceAll(
-"\n<a href=\"javascript:var s=' ',t='';for(i in |)t+='\\n'+i+' = '+(|[i]+s).split(s,1);alert(t);\">|.props</a>"+
-"\n<a href=\"javascript:var t='',o=|.o;for(i in o)t+='\\n'+i+' = '+o[i];alert(t);\">|.outside</a>"+
-(outside.read?'':'<br>\nF6=read: <textarea id="|-read" value="/9.png"></textarea>'), '|', NS)+CR+','+CT+k; break;
+(k?'<br>':'<hr>')+'Save'+i+'.time: '+LS[CR[i].T]+(LS[CR[i].R]?', size: '+LS[CR[i].R].length:'');
+				text.debug.innerHTML = replaceAll(
+(outside.read?'':'\nF6=read: <textarea id="|-read" value="/9.png"></textarea><hr>')+
+"\n<a href=\"javascript:var s=' ',t='';for(i in |)t+='\\n'+i+' = '+(|[i]+s).split(s,1);alert(t);\">|.props</a>,"+
+"\n<a href=\"javascript:var t='',o=|.o;for(i in o)t+='\\n'+i+' = '+o[i];alert(t);\">|.outside</a>,", '|', NS)+CT+': '+(CR.length || CR)+k
++'<hr>'+getSendMeta().replace(/[\r\n]+/g, '<br>');
+			break;
 
-			default: if (mode.debug) text.debug.innerHTML += '\n'+String.fromCharCode(event.keyCode)+'='+event.keyCode;
+			default: if (mode.debug) text.debug.innerHTML += '\n'+s+'='+event.keyCode;
 		}
 	}
 	return false;
@@ -1253,9 +1256,10 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 		id('slider'+BOWL[i]).appendChild(e);
 	} else 	id(a+BOWL[i]).type = b;
 
+	d = ['onchange', 'onclick', 'onmouseover'];
 	for (i in (a = ['input', 'select', 'span', 'button', 'a']))
 	for (c in (b = container.getElementsByTagName(a[i])))
-	for (e in (d = ['onchange', 'onclick', 'onmouseover'])) if ((f = b[c][d[e]]) && !self[f = (''+f).match(regFunc)[1]]) self[f] = eval(f);
+	for (e in d) if ((f = b[c][d[e]]) && !self[f = (''+f).match(regFunc)[1]]) self[f] = eval(f);
 
 	d = 'download', DL = (d in b[0]?d:'');
 	d = {	lineCap	: ['<->', '|-|', '[-]']
