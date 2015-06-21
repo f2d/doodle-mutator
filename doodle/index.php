@@ -81,6 +81,7 @@ define(TIME_PARTS, !$u_opts['time_check_points']);	//* <- profiling
 if (!($u_per_page = intval($u_per_page))) $u_per_page = TRD_PER_PAGE;
 $etc = trim($_REQUEST['etc'], '/');
 $qdir = strtolower($_REQUEST['dir']);
+$qredir = $qdir.'s';
 foreach ($cfg_dir as $k => $v) if ($qdir == $v) ${'qd_'.$k} = 1;
 
 if (FROZEN_HELL && !GOD && !($u_key && $qd_opts) && !$qd_arch) {
@@ -141,9 +142,9 @@ if (POST) {//*	--------	post/setting/reg	--------
 ob_start();
 
 if ($u_key) {
-	$post_status = (($_POST[ME] || $_POST['rooms'])?OK:-1);
+	$post_status = (($_POST[ME] || $_POST[$qredir])?OK:-1);
 
-	if (isset($_POST['rooms'])) goto post_refresh;
+	if (isset($_POST[$qredir])) goto post_refresh;
 
 //* options change ------------------------------------------------------------
 	if (isset($_POST[$p = 'quit'])) {
@@ -408,7 +409,7 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 		} else {
 
 //* archive rooms list --------------------------------------------------------
-			$task = get_template_form(array('archive'
+			$task = get_template_form(array($qredir
 			,	$tmp_archive
 			,	$tmp_archive_hint
 			,	$tmp_rooms_submit
@@ -762,7 +763,7 @@ NL."$n[0]$s$n[1]	$n[4]$s$n[5]	$rn";
 					}
 				}
 			}
-			$task = get_template_form('rooms', ROOM_NAME_MIN_LENGTH);
+			$task = get_template_form($qredir, ROOM_NAME_MIN_LENGTH);
 			$task_data['filter'] = 2;
 			$js[0]++;
 		}
@@ -882,7 +883,7 @@ header('HTTP/1.1 303 Refresh after POST. '.($p = rawurlencode($p)));
 
 $l = ((
 	($room && $room != $_REQUEST['room'] && ($room = '../'.$room))		//* <- move after rename
-	|| (($room = $_POST['rooms']) && ($room = trim_room(urldecode($room))))	//* <- create new room
+	|| (($room = $_POST[$qredir]) && ($room = trim_room(urldecode($room))))	//* <- create new room
 	)
 	? rawurlencode($room).'/'
 	: ($etc && $etc[0] != '-'?$etc:'.')
