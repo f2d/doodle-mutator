@@ -881,11 +881,12 @@ if (isset($_POST['report'])) die(get_template_page(array(
 )));
 header('HTTP/1.1 303 Refresh after POST. '.($p = rawurlencode($p)));
 
+$up = ($room?'../':'');
 $l = ((
-	($room && $room != $_REQUEST['room'] && ($room = '../'.$room))		//* <- move after rename
+	($room && $room != $_REQUEST['room'])					//* <- move after rename
 	|| (($room = $_POST[$qredir]) && ($room = trim_room(urldecode($room))))	//* <- create new room
 	)
-	? rawurlencode($room).'/'
+	? $up.rawurlencode($room).'/'
 	: ($etc && $etc[0] != '-'?$etc:'.')
 );
 if ($ok) {
