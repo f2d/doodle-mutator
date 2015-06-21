@@ -408,7 +408,12 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 		} else {
 
 //* archive rooms list --------------------------------------------------------
-			$task = get_template_form('archive', ROOM_NAME_MIN_LENGTH);
+			$task = get_template_form(array('archive'
+			,	$tmp_archive
+			,	$tmp_archive_hint
+			,	$tmp_rooms_submit
+			,	$tmp_rooms_placeholder
+			), ROOM_NAME_MIN_LENGTH);
 			$task_data['filter'] = 2;
 			if ($vr = data_get_visible_archives()) {
 				$mt = array_shift($vr);
