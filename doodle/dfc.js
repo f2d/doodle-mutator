@@ -2,7 +2,7 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 ,	INFO_VERSION = 'v0.9.50'
-,	INFO_DATE = '2013-04-01 — 2015-06-20'
+,	INFO_DATE = '2013-04-01 — 2015-06-21'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640
 ,	CR = 'CanvasRecover', CT = 'Time', DL, DRAW_PIXEL_OFFSET = -0.5
@@ -174,7 +174,7 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 		],	bw = [	[  0,  0,  0]
 			,	[127,127,127]
 			,	[255,255,255]
-		],	l = hues.length, f = 'return false;';
+		],	l = hues.length, f = 'return false;', r = RANGE[0];
 
 			function linearBlend(from, to, frac, max) {
 				if (frac <= 0) return from;
@@ -183,7 +183,7 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 				while (i--) r[i] = Math.round(from[i]*k + to[i]*j);
 				return r;
 			}
-			c.width = 300, c.height = 133, c.sat = 100, c.ctx = ctx;
+			c.width = 300, c.height = 133, c.sat = r.max, c.ctx = ctx;
 
 			(c.updateSat = function (sat) {
 			var	x = c.width, y = c.height, y2 = Math.floor(y/2), h, i, j, k = c.width/l
@@ -208,9 +208,8 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 			c.setAttribute('oncontextmenu', f);
 			c.addEventListener('mousedown', function (event) {pickColor(0, c, event || window.event);}, false);
 			setId(c, 'gradient');
-			setContent(pt, '<span id="sliderS">'
-+'<input onChange="updateSliders(this)" type="range" id="rangeS" value="'+c.sat+'" min="0" max="'+c.sat+'" step="1">'
-+'<input onChange="updateSliders(this)" type="text" id="textS" value="'+c.sat+'"></span> '+lang.sat+'<br>');
+			setContent(pt, getSlider('S', -1));
+			setSlider('S'), updateSliders(id('rangeS'));
 		} else c = 'TODO';
 		pt.appendChild(c.tagName ? c : document.createTextNode(c));
 	} else {
@@ -695,11 +694,32 @@ var	a = t.color.split(reg255split), e = id((t == tool) ? 'colorF' : 'colorB');
 	return v;
 }
 
+function getSlider(b,z) {
+var	i = BOWL.indexOf(b), j
+,	r = RANGE[i > 0?i:0]
+,	s = '<span id="slider'+b+'"><input type="range" id="range'+b+'" onChange="updateSliders(this)';
+	for (j in r) s += '" '+j+'="'+r[j];
+	return s+'" value="'+(z > 0?r.min:r.max)+'"></span>	'+(i < 0?lang.sat:lang.tool[b])+(z?'<br>':'');
+}
+
+function setSlider(b) {
+var	r = 'range', s = 'slider', t = 'text', y = 'type', e = id(r+b);
+	if (e[y] != r) {
+		e.setAttribute(y, t);
+	} else {
+		e = document.createElement('input');
+		setId(e, (e[y] = t)+b);
+		setEvent(e, 'onchange', 'updateSliders(this)');
+		id(s+b).appendChild(e);
+	}
+	r = RANGE[Math.max(BOWL.indexOf(b), 0)], e.title = r.min+' - '+r.max;
+}
+
 function updateSlider(i,e) {
 var	k = (e?i:BOWL[i])
 ,	s = id('range'+k)
 ,	t = id('text'+k) || s
-,	r = (e?s:RANGE[i])
+,	r = RANGE[e?0:i]
 ,	f = (r.step < 1)
 ,	v = (e?parseFloat(e.value):tool[i = BOW[i]]);
 	if (isNaN(v)) v = 1;
@@ -1114,7 +1134,7 @@ function hotWheel(event) {
 
 
 
-this.init = function() {
+function init() {
 	if (isTest()) document.title += ': '+NS+' '+INFO_VERSION;
 var	a,b,c = 'canvas', d = '<div id="', e = '"></div>', f,g,h,i,j,k,n = '\n	', o = outside, p,s = '&nbsp;';
 	setContent(container = id(),
@@ -1149,11 +1169,7 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 	})) document.addEventListener(i, a[i], false);			//* <- using 'document' to prevent negative clipping
 
 	c = '</td><td class="r">', a = ': '+c+'	', e = n+'	', f = e+'	', b = e+d+'colors">'+d+'sliders">', i = BOW.length;
-	while (i--) {
-		b += f+'<span id="slider'+BOWL[i]+'"><input type="range" id="range'+BOWL[i]+'" onChange="updateSliders(this)';
-		for (j in RANGE[i]) b += '" '+j+'="'+RANGE[i][j];
-		b += '"></span>	'+lang.tool[BOWL[i]]+(i?'<br>':'');
-	}
+	while (i--) b += f+getSlider(BOWL[i], i);
 
 	b += e+'</div>'+e+'<table width="100%"><tr><td>'
 +f+lang.shape	+a+'<select id="shape" onChange="updateShape(this)"></select>';
@@ -1182,35 +1198,36 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 +f+'</div>'+e);
 
 	if (c = (canvas.height < BOTH_PANELS_HEIGHT)) toggleView('info');
+	for (i in BOW) setSlider(BOWL[i]);
 	for (i in text) text[i] = id(i);
 	draw.field = id('load');
 	draw.history.data = new Array(o.undo);
 
-	a = 'historyAct(', b = 'button', d = 'toggleMode(', e = 'sendPic(', f = 'fillScreen(';
+	a = 'historyAct(', b = 'button', d = 'toggleMode(', e = 'sendPic(', f = 'fillScreen(', c = 'color', g = 'toolSwap(', k = 'check';
 	a = [
 //* subtitle, hotkey, pictogram, function, id
 	['undo'	,'Z'	,'&#x2190;'	,a+'-1)',b+'U'
 ],	['redo'	,'X'	,'&#x2192;'	,a+'1)'	,b+'R'
 ],
-0,	['fill'	,'F'	,s		,f+'0)'	,(a='color')+'F'
+0,	['fill'	,'F'	,s		,f+'0)'	,c+'F'
 ],	['swap'	,'S'	,'&#X21C4;'	,'toolSwap()'
-],	['erase','D'	,s		,f+'1)'	,a+'B'
+],	['erase','D'	,s		,f+'1)'	,c+'B'
 ],
 0,	['invert','I'	,'&#x25D0;'	,f+'-1)'
 ],	['flip_h','H'	,'&#x2194;'	,f+'-2)'
 ],	['flip_v','V'	,'&#x2195;'	,f+'-3)'
 ],
-0,	['pencil','A'	,'i'		,(a='toolSwap(')+'1)'
-],	['eraser','E'	,'&#x25CB;'	,a+'2)'
-],	['reset' ,'G'	,'&#x25CE;'	,a+'3)'
+0,	['pencil','A'	,'i'		,g+'1)'
+],	['eraser','E'	,'&#x25CB;'	,g+'2)'
+],	['reset' ,'G'	,'&#x25CE;'	,g+'3)'
 ],
-0,	['line|area|copy','L'	,'&ndash;|&#x25A0;|&#x25A4;'	,d+'1)'	,(a='check')+'L'
-],	['curve|outline|rect','U'	,'~|&#x25A1;|&#x25AD;'	,d+'2)'	,a+'U'
-],	['cursor','F3'	,'&#x25CF;'	,d+'4)'	,a+'V'
+0,	['line|area|copy'	,'L'	,'&ndash;|&#x25A0;|&#x25A4;'	,d+'1)'	,k+'L'
+],	['curve|outline|rect'	,'U'	,'~|&#x25A1;|&#x25AD;'		,d+'2)'	,k+'U'
+],	['cursor'		,'F3'	,'&#x25CF;'			,d+'4)'	,k+'V'
 ],
 0,	['png'	,'F9'	,'P'	,e+'0)'	,b+'P'
 ],	['jpeg'	,'F7'	,'J'	,e+'1)'	,b+'J'
-],	['save'	,'F2'	,'!'	,e+'2)'
+],	['save'	,'F2'	,'!'	,e+'2)'	,b+'S'
 ],	['load'	,'F4'	,'?'	,e+'3)'	,b+'L'
 ],!o.read || 0 == o.read?1:
 	['read'	,'F6'	,'&#x21E7;'	,e+'4)'
@@ -1241,23 +1258,12 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 			f.appendChild(e);
 		} else f.innerHTML += '&nbsp;';
 	}
-	for (name in mode) if (mode[modes[i = modes.length] = name]) toggleMode(i,1);
-
-	if (!LS || !LS[CT]) setClass(id('buttonL'), 'button-disabled');
-
-	i = (a = 'JP').length;
-	while (i--) if (b = id('button'+a[i])) setEvent(b, 'onmouseover', 'updateSaveFileSize(this)');
-
-	a = 'range', b = 'text', d = (id(a+'W').type == a);
-	for (i in BOW) if (d) {
-		e = document.createElement('input');
-		setId(e, (e.type = b)+BOWL[i]);
-		setEvent(e, 'onchange', 'updateSliders(this)');
-		id('slider'+BOWL[i]).appendChild(e);
-	} else 	id(a+BOWL[i]).type = b;
+	for (i in mode) if (mode[modes[j = modes.length] = i]) toggleMode(j,1);
+	for (i in (a = {S:0, L:CT})) if (!LS || ((k = a[i]) && !LS[k])) setClass(id(b+i), b+'-disabled');
+	for (i in (a = 'JP')) if (e = id(b+a[i])) setEvent(e, 'onmouseover', 'updateSaveFileSize(this)');
 
 	d = ['onchange', 'onclick', 'onmouseover'];
-	for (i in (a = ['input', 'select', 'span', 'button', 'a']))
+	for (i in (a = [b, 'input', 'select', 'span', 'a']))
 	for (c in (b = container.getElementsByTagName(a[i])))
 	for (e in d) if ((f = b[c][d[e]]) && !self[f = (''+f).match(regFunc)[1]]) self[f] = eval(f);
 
@@ -1299,7 +1305,7 @@ var	letters = [0, 0, 0], l = p.length;
 	updateSliders();
 	updateViewport();
 	historyAct(0);
-}; //* END this.init()
+}; //* <- END init()
 
 
 
@@ -1327,7 +1333,7 @@ var	o = outside, v = id('vars'), e,i,j,k
 	k = 'y2', i = k.length, j = (o.saveprfx?o.saveprfx:NS)+CR, CR = [];
 	while (i) CR[i--] = {R:e = j+k[i], T:e+CT};
 	CT = CR[1].T;
-	o.t0 = (o.t0 > 0 ? o.t0+'000' : +new Date), j = shapeHotKey.split('').join(k = ', ');
+	o.t0 = (o.t0 > 0 ? o.t0+'000' : +new Date), i = ' \r\n', j = shapeHotKey.split('').join(k = ', ');
 	if ((o.undo = orz(o.undo)) < 3) o.undo = 123;
 	if (!o.lang) o.lang = document.documentElement.lang || 'en';
 	if (o.lang == 'ru')
@@ -1403,11 +1409,11 @@ select.lineCaps = {lineCap: 'край', lineJoin: 'сгиб'}
 },	png:	{sub:'сохр.png',t:'Сохранить рисунок в PNG файл.'
 },	jpeg:	{sub:'сохр.jpg',t:'Сохранить рисунок в JPEG файл.'
 },	save:	{sub:'сохран.',	t:'Сохранить рисунок в память браузера, 2 последние позиции по очереди.'
-},	load:	{sub:'загруз.',	t:'Вернуть рисунок из памяти браузера, 2 последние позиции по очереди. \r\n\
-Может не сработать в некоторых браузерах, если не настроить автоматическую загрузку и показ изображений.'
-},	read:	{sub:'зг.файл',	t:'Прочитать локальный файл. \r\n\
-Может не сработать вообще, особенно при запуске самой рисовалки не с диска. \r\n\
-Вместо этого рекомендуется перетаскивать файлы из других программ.'
+},	load:	{sub:'загруз.',	t:'Вернуть рисунок из памяти браузера, 2 последние позиции по очереди.'
+			+	i+'Может не сработать в некоторых браузерах, если не настроить автоматическую загрузку и показ изображений.'
+},	read:	{sub:'зг.файл',	t:'Прочитать локальный файл.'
+			+	i+'Может не сработать вообще, особенно при запуске самой рисовалки не с диска.'
+			+	i+'Вместо этого рекомендуется перетаскивать файлы из других программ.'
 },	done:	{sub:'готово',	t:'Завершить и отправить рисунок в сеть.'
 },	info:	{sub:'помощь',	t:'Показать или скрыть информацию.'
 }}};
@@ -1477,21 +1483,21 @@ else lang = {
 ,	png:	'Save image as PNG file.'
 ,	jpeg:	'Save image as JPEG file.'
 ,	save:	'Save image copy to your browser memory, two slots in a queue.'
-,	load:	'Load image copy from your browser memory, two slots in a queue. \r\n\
-May not work in some browsers until set to load and show new images automatically.'
-,	read:	'Load image from your local file. \r\n\
-May not work at all, especially if sketcher itself is not started from disk. \r\n\
-Instead, it is recommended to drag and drop files from another program.'
+,	load:		'Load image copy from your browser memory, two slots in a queue.'
+		+i+	'May not work in some browsers until set to load and show new images automatically.'
+,	read:		'Load image from your local file.'
+		+i+	'May not work at all, especially if sketcher itself is not started from disk.'
+		+i+	'Instead, it is recommended to drag and drop files from another program.'
 ,	done:	'Finish and send image to server.'
 ,	info:	'Show/hide information.'
 }};
 	return !o.send;
-}
+} //* <- END isTest()
 
 
 
 
-document.addEventListener('DOMContentLoaded', this.init, false);
+document.addEventListener('DOMContentLoaded', init, false);
 document.write(replaceAll(replaceAdd('\n<style>\
 #| .|-L-close {padding-bottom: 24px; border-bottom: 1px solid #000; border-right: 1px solid #000;}\
 #| .|-L-open {padding-top: 24px; border-top: 1px solid #000; border-left: 1px solid #000;}\
