@@ -2,16 +2,18 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 ,	INFO_VERSION = 'v0.9.50'
-,	INFO_DATE = '2013-04-01 — 2015-06-23'
+,	INFO_DATE = '2013-04-01 — 2015-06-24'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640
-,	CR = 'CanvasRecover', CT = 'Time', DL, DRAW_PIXEL_OFFSET = -0.5
-,	LS = window.localStorage || localStorage
+,	CR = 'CanvasRecover', CT = 'Time', DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
 
 ,	TOOLS_REF = [
 		{blur: 0, opacity: 1.00, width:  1, color: '0, 0, 0'}		//* <- draw
 	,	{blur: 0, opacity: 1.00, width: 20, color: '255, 255, 255'}	//* <- back
-	], tools = [{}, {}], tool = tools[0], BOW = ['blur', 'opacity', 'width'], BOWL = 'BOW'
+	]
+,	tools = [{}, {}], tool = tools[0]
+,	BOW = ['blur', 'opacity', 'width']
+,	BOWL = 'BOW'
 ,	RANGE = [
 		{min: 0   , max: 100, step: 1}
 	,	{min: 0.01, max: 1  , step: 0.01}
@@ -27,8 +29,10 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	,	brushView:	false
 	,	limitFPS:	false
 	,	autoSave:	true
-	}, modes = [], modeL = 'DLUQVFA', shapeHotKey = 'NPRTYQM'
-,	used = {}, cue = {upd:{}}
+	}
+,	modes = []
+,	modeL = 'DLUQVFA'
+,	shapeHotKey = 'NPRTYQM'
 ,	select = {
 		imgRes: {width:640, height:360}
 	,	imgLimits: {width:[64,640], height:[64,800]}
@@ -39,51 +43,57 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 		,	lineCap	: ['round', 'butt', 'square']
 		,	lineJoin: ['round', 'bevel', 'miter']
 		,	palette	: ['history', 'auto', 'legacy', 'Touhou', 'gradient']
-	}}
+		}
+	}
 ,	PALETTE_COL_COUNT = 16	//* <- used if no '\n' found
-,	palette = [(LS && LS.historyPalette) ? JSON.parse(LS.historyPalette) : ['#f']
+,	palette = [
+		(LS = window.localStorage || localStorage) && (h = LS.historyPalette) ? JSON.parse(h) : ['#f']
 //* '\t' = title, '\n' = line break + optional title, '\r' = special cases, '#f00' = hex color field, anything else = title + plaintext spacer
-	, [	'#f', '#d', '#a', '#8', '#5', '#2', '#0',				'#a00', '#740', '#470', '#0a0', '#074', '#047', '#00a', '#407', '#704'
-	, '\n',	'#7f0000', '#007f00', '#00007f', '#ff007f', '#7fff00', '#007fff', '#3', '#e11', '#b81', '#8b1', '#1e1', '#1b8', '#18b', '#11e', '#81b', '#b18'
-	, '\n',	'#ff0000', '#00ff00', '#0000ff', '#ff7f00', '#00ff7f', '#7f00ff', '#6', '#f77', '#db7', '#bd7', '#7f7', '#7db', '#7bd', '#77f', '#b7d', '#d7b'
-	, '\n',	'#ff7f7f', '#7fff7f', '#7f7fff', '#ffff00', '#00ffff', '#ff00ff', '#9', '#faa', '#eca', '#cea', '#afa', '#aec', '#ace', '#aaf', '#cae', '#eac'
-	, '\n',	'#ffbebe', '#beffbe', '#bebeff', '#ffff7f', '#7fffff', '#ff7fff', '#c', '#fcc', '#fdc', '#dfc', '#cfc', '#cfd', '#cdf', '#ccf', '#dcf', '#fcd'
-	], ['\tWin7'
-	,	'#0', '#7f7f7f', '#880015', '#ed1c24', '#ff7f27', '#fff200', '#22b14c', '#00a2e8', '#3f48cc', '#a349a4'
-	, '\n',	'#f', '#c3c3c3', '#b97a57', '#ffaec9', '#ffc90e', '#efe4b0', '#b5e61d', '#99d9ea', '#7092be', '#c8bfe7'
-	, '\nClassic', '#000000', '#000080', '#008000', '#008080', '#800000', '#800080', '#808000', '#c0c0c0', '\tCGA', '#0', '#00a', '#0a0', '#0aa', '#a00', '#a0a', '#aa0', '#a'
-	, '\nClassic', '#808080', '#0000ff', '#00ff00', '#00ffff', '#ff0000', '#ff00ff', '#ffff00', '#ffffff', '\tCGA', '#5', '#55f', '#5f5', '#5ff', '#f55', '#f5f', '#ff5', '#f'
-	, '\nGrayScale', '#f', '#e', '#d', '#c', '#b', '#a', '#9', '#8', '#7', '#6', '#5', '#4', '#3', '#2', '#1', '#0'
-	, '\nPaint.NET'
-	,	'#000000', '#404040', '#ff0000', '#ff6a00', '#ffd800', '#b6ff00', '#4cff00', '#00ff21'
-	,	'#00ff90', '#00ffff', '#0094ff', '#0026ff', '#4800ff', '#b200ff', '#ff00dc', '#ff006e'
-	, '\n',	'#ffffff', '#808080', '#7f0000', '#7f3300', '#7f6a00', '#5b7f00', '#267f00', '#007f0e'
-	,	'#007f46', '#007f7f', '#004a7f', '#00137f', '#21007f', '#57007f', '#7f006e', '#7f0037'
-	, '\n',	'#a0a0a0', '#303030', '#ff7f7f', '#ffb27f', '#ffe97f', '#daff7f', '#a5ff7f', '#7fff8e'
-	,	'#7fffc5', '#7fffff', '#7fc9ff', '#3f647f', '#a17fff', '#d67fff', '#ff7fed', '#ff7fb6'
-	, '\n',	'#c0c0c0', '#606060', '#7f3f3f', '#7f593f', '#7f743f', '#6d7f3f', '#527f3f', '#3f7f47'
-	,	'#3f7f62', '#3f7f7f', '#3f647f', '#3f497f', '#503f7f', '#6b3f7f', '#7f3f76', '#7f3f5b'
-	, '\nApple II', '#000000', '#7e3952', '#524689', '#df4ef2', '#1e6952', '#919191', '#35a6f2', '#c9bff9', '\tMSX', '#0', '#0', '#3eb849', '#74d07d', '#5955e0', '#8076f1', '#b95e51', '#65dbef'
-	, '\nApple II', '#525d0d', '#df7a19', '#919191', '#efb5c9', '#35cc19', '#c9d297', '#a2dcc9', '#ffffff', '\tMSX', '#db6559', '#ff897d', '#ccc35e', '#ded087', '#3aa241', '#b766b5', '#c', '#f'
-	, '\nIBM PC/XT CGA', '#000000', '#0000b6', '#00b600', '#00b6b6', '#b60000', '#b600b6', '#b66700', '#b6b6b6', '\tC-64', '#000000', '#ffffff', '#984a43', '#79c1c7', '#9b51a5', '#67ae5b', '#52429d', '#c9d683'
-	, '\nIBM PC/XT CGA', '#676767', '#6767ff', '#67ff67', '#67ffff', '#ff6767', '#ff67ff', '#ffff67', '#ffffff', '\tC-64', '#9b6639', '#695400', '#c37b74', '#626262', '#898989', '#a3e599', '#897bcd', '#adadad'
-	, '\nZX Spectrum', '#0', '#0000ca', '#ca0000', '#ca00ca', '#00ca00', '#00caca', '#caca00', '#cacaca', '\tVIC-20', '#000000', '#ffffff', '#782922', '#87d6dd', '#aa5fb6', '#55a049', '#40318d', '#bfce72'
-	, '\nZX Spectrum', '#0', '#0000ff', '#ff0000', '#ff00ff', '#00ff00', '#00ffff', '#ffff00', '#ffffff', '\tVIC-20', '#aa7449', '#eab489', '#b86962', '#c7ffff', '#ea9ff6', '#94e089', '#8071cc', '#ffffb2'
-	], [	'all'	, '#0', '#f', '#fcefe2'
-	, '\n', 'Reimu'	, '#fa5946', '#e5ff41', '', '', ''
-	,	'Marisa', '#fff87d', '#a864a8'
-	, '\n', 'Cirno'	, '#1760f3', '#97ddfd', '#fd3727', '#00d4ae', ''
-	,	'Alice'	, '#8787f7', '#fafab0', '#fabad2', '#f2dcc6', '#8'
-	, '\n', 'Sakuya', '#59428b', '#bcbccc', '#fe3030', '#00c2c6', '#585456'
-	,	'Remilia','#cf052f', '#cbc9fd', '#f22c42', '#f2dcc6', '#464646'
-	, '\n', 'Chen'	, '#fa5946', '#6b473b', '#339886', '#464646', '#ffdb4f'
-	,	'Ran'	, '#393c90', '#ffff6e', '#c096c0'
-	, '\n', 'Yukari', '#c096c0', '#ffff6e', '#fa0000', '#464646', ''
-	,	'Reisen', '#dcc3ff', '#2e228c', '#e94b6d'
-	, '\n', 'etc'
-	], '\rg', '\rl']
+	,	[	'#f', '#d', '#a', '#8', '#5', '#2', '#0',				'#a00', '#740', '#470', '#0a0', '#074', '#047', '#00a', '#407', '#704'
+		, '\n',	'#7f0000', '#007f00', '#00007f', '#ff007f', '#7fff00', '#007fff', '#3', '#e11', '#b81', '#8b1', '#1e1', '#1b8', '#18b', '#11e', '#81b', '#b18'
+		, '\n',	'#ff0000', '#00ff00', '#0000ff', '#ff7f00', '#00ff7f', '#7f00ff', '#6', '#f77', '#db7', '#bd7', '#7f7', '#7db', '#7bd', '#77f', '#b7d', '#d7b'
+		, '\n',	'#ff7f7f', '#7fff7f', '#7f7fff', '#ffff00', '#00ffff', '#ff00ff', '#9', '#faa', '#eca', '#cea', '#afa', '#aec', '#ace', '#aaf', '#cae', '#eac'
+		, '\n',	'#ffbebe', '#beffbe', '#bebeff', '#ffff7f', '#7fffff', '#ff7fff', '#c', '#fcc', '#fdc', '#dfc', '#cfc', '#cfd', '#cdf', '#ccf', '#dcf', '#fcd'
+		]
+	,	[ '\tWin7'
+		,	'#0', '#7f7f7f', '#880015', '#ed1c24', '#ff7f27', '#fff200', '#22b14c', '#00a2e8', '#3f48cc', '#a349a4'
+		, '\n',	'#f', '#c3c3c3', '#b97a57', '#ffaec9', '#ffc90e', '#efe4b0', '#b5e61d', '#99d9ea', '#7092be', '#c8bfe7'
+		, '\nClassic', '#000000', '#000080', '#008000', '#008080', '#800000', '#800080', '#808000', '#c0c0c0', '\tCGA', '#0', '#00a', '#0a0', '#0aa', '#a00', '#a0a', '#aa0', '#a'
+		, '\nClassic', '#808080', '#0000ff', '#00ff00', '#00ffff', '#ff0000', '#ff00ff', '#ffff00', '#ffffff', '\tCGA', '#5', '#55f', '#5f5', '#5ff', '#f55', '#f5f', '#ff5', '#f'
+		, '\nGrayScale', '#f', '#e', '#d', '#c', '#b', '#a', '#9', '#8', '#7', '#6', '#5', '#4', '#3', '#2', '#1', '#0'
+		, '\nPaint.NET'
+		,	'#000000', '#404040', '#ff0000', '#ff6a00', '#ffd800', '#b6ff00', '#4cff00', '#00ff21'
+		,	'#00ff90', '#00ffff', '#0094ff', '#0026ff', '#4800ff', '#b200ff', '#ff00dc', '#ff006e'
+		, '\n',	'#ffffff', '#808080', '#7f0000', '#7f3300', '#7f6a00', '#5b7f00', '#267f00', '#007f0e'
+		,	'#007f46', '#007f7f', '#004a7f', '#00137f', '#21007f', '#57007f', '#7f006e', '#7f0037'
+		, '\n',	'#a0a0a0', '#303030', '#ff7f7f', '#ffb27f', '#ffe97f', '#daff7f', '#a5ff7f', '#7fff8e'
+		,	'#7fffc5', '#7fffff', '#7fc9ff', '#3f647f', '#a17fff', '#d67fff', '#ff7fed', '#ff7fb6'
+		, '\n',	'#c0c0c0', '#606060', '#7f3f3f', '#7f593f', '#7f743f', '#6d7f3f', '#527f3f', '#3f7f47'
+		,	'#3f7f62', '#3f7f7f', '#3f647f', '#3f497f', '#503f7f', '#6b3f7f', '#7f3f76', '#7f3f5b'
+		, '\nApple II', '#000000', '#7e3952', '#524689', '#df4ef2', '#1e6952', '#919191', '#35a6f2', '#c9bff9', '\tMSX', '#0', '#0', '#3eb849', '#74d07d', '#5955e0', '#8076f1', '#b95e51', '#65dbef'
+		, '\nApple II', '#525d0d', '#df7a19', '#919191', '#efb5c9', '#35cc19', '#c9d297', '#a2dcc9', '#ffffff', '\tMSX', '#db6559', '#ff897d', '#ccc35e', '#ded087', '#3aa241', '#b766b5', '#c', '#f'
+		, '\nIBM PC/XT CGA', '#000000', '#0000b6', '#00b600', '#00b6b6', '#b60000', '#b600b6', '#b66700', '#b6b6b6', '\tC-64', '#000000', '#ffffff', '#984a43', '#79c1c7', '#9b51a5', '#67ae5b', '#52429d', '#c9d683'
+		, '\nIBM PC/XT CGA', '#676767', '#6767ff', '#67ff67', '#67ffff', '#ff6767', '#ff67ff', '#ffff67', '#ffffff', '\tC-64', '#9b6639', '#695400', '#c37b74', '#626262', '#898989', '#a3e599', '#897bcd', '#adadad'
+		, '\nZX Spectrum', '#0', '#0000ca', '#ca0000', '#ca00ca', '#00ca00', '#00caca', '#caca00', '#cacaca', '\tVIC-20', '#000000', '#ffffff', '#782922', '#87d6dd', '#aa5fb6', '#55a049', '#40318d', '#bfce72'
+		, '\nZX Spectrum', '#0', '#0000ff', '#ff0000', '#ff00ff', '#00ff00', '#00ffff', '#ffff00', '#ffffff', '\tVIC-20', '#aa7449', '#eab489', '#b86962', '#c7ffff', '#ea9ff6', '#94e089', '#8071cc', '#ffffb2'
+		]
+	,	[	'all'	, '#0', '#f', '#fcefe2'
+		, '\n', 'Reimu'	, '#fa5946', '#e5ff41', '', '', ''	//* <- mid-row pad to align columns
+		,	'Marisa', '#fff87d', '#a864a8'
+		, '\n', 'Cirno'	, '#1760f3', '#97ddfd', '#fd3727', '#00d4ae', ''
+		,	'Alice'	, '#8787f7', '#fafab0', '#fabad2', '#f2dcc6', '#8'
+		, '\n', 'Sakuya', '#59428b', '#bcbccc', '#fe3030', '#00c2c6', '#585456'
+		,	'Remilia','#cf052f', '#cbc9fd', '#f22c42', '#f2dcc6', '#464646'
+		, '\n', 'Chen'	, '#fa5946', '#6b473b', '#339886', '#464646', '#ffdb4f'
+		,	'Ran'	, '#393c90', '#ffff6e', '#c096c0'
+		, '\n', 'Yukari', '#c096c0', '#ffff6e', '#fa0000', '#464646', ''
+		,	'Reisen', '#dcc3ff', '#2e228c', '#e94b6d'
+		, '\n', 'etc'
+		]
+	,	'\rg'
+	]
 
-,	o12 = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)
+,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)
 ,	regHex = /^#?[0-9a-f]{6}$/i
 ,	regHex3 = /^#?([0-9a-f])([0-9a-f])([0-9a-f])$/i
 ,	reg255 = /^([0-9]{1,3}),\s*([0-9]{1,3}),\s*([0-9]{1,3})$/
@@ -92,9 +102,9 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 ,	regFunc = /\{[^.]+\.([^(]+)\(/
 ,	regLimit = /^(\d+)\D+(\d+)$/
 
-,	self = this, container, canvas, c2d, canvasShape, c2s, lang, outside = this.o = {}
+,	self = this, container, canvas, c2d, canvasShape, c2s, lang, DL, LS, outside = this.o = {}
 ,	fps = 0, ticks = 0, timer = 0
-,	interval = {fps: 0, timer: 0, save: 0}, text = {debug:0, timer:0}
+,	interval = {fps: 0, timer: 0, save: 0}, text = {debug:0, timer:0}, used = {}, cue = {upd:{}}
 
 ,	draw = {o:{}, cur:{}, prev:{}
 	,	refresh:0, time: [0, 0]
@@ -187,10 +197,12 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 			,	[  0,255,255]
 			,	[  0,  0,255]
 			,	[255,  0,255]
-		],	bw = [	[  0,  0,  0]
+			]
+		,	bw = [	[  0,  0,  0]
 			,	[127,127,127]
 			,	[255,255,255]
-		],	l = hues.length, f = 'return false;', r = RANGE[0];
+			]
+		,	l = hues.length, f = 'return false;', r = RANGE[0];
 
 			function linearBlend(from, to, frac, max) {
 				if (frac <= 0) return from;
@@ -316,8 +328,8 @@ var	i = select.shapeFlags[select.shape.value], o = (
 	&& ((i & 4) || ((draw.active?c2d.lineWidth:tool.width) % 2))
 	? DRAW_PIXEL_OFFSET : 0);	//* <- maybe not a 100% fix yet
 
-	draw.o.x = event.pageX - draw.field.offsetLeft;
-	draw.o.y = event.pageY - draw.field.offsetTop;
+	draw.o.x = event.pageX - CANVAS_BORDER - draw.field.offsetLeft;
+	draw.o.y = event.pageY - CANVAS_BORDER - draw.field.offsetTop;
 	if (draw.pan && !(draw.turn && draw.turn.pan)) for (i in draw.o) draw.o[i] -= draw.pan[i];
 	if (!draw.turn && (draw.angle || draw.zoom != 1)) {
 	var	r = getCursorRad(2, draw.o.x, draw.o.y);
@@ -336,7 +348,7 @@ function getCursorRad(r, x, y) {
 	y = (isNaN(y) ? draw.cur.y : y) - canvas.height/2;
 	return (r
 	? {	a:Math.atan2(y, x)
-	,	d:dist(y, x)	//* <- looks stupid, will do for now
+	,	d:dist(y, x)
 	}
 	: (draw.turn.zoom
 		? dist(y, x)
@@ -427,11 +439,19 @@ var	redraw = true, s = select.shape.value, sf = select.shapeFlags[s]
 			drawShape(c2d, s);
 		} else
 		if (draw.line.back = mode.step) {
-			if (o12) c2d.shadowColor = A0, c2d.shadowBlur = 0;		//* <- shadow, once used with CurveTo + stroke(), totally breaks for given canvas in Opera 12
-			if (draw.line.started) c2d.quadraticCurveTo(draw.prev.x, draw.prev.y, (draw.cur.x + draw.prev.x)/2, (draw.cur.y + draw.prev.y)/2);
-		} else c2d.lineTo(draw.cur.x, draw.cur.y);
+			if (noShadowBlurCurve) c2d.shadowColor = A0, c2d.shadowBlur = 0;
+			if (draw.line.started) c2d.quadraticCurveTo(
+				draw.prev.x
+			,	draw.prev.y
+			,	(draw.cur.x + draw.prev.x)/2
+			,	(draw.cur.y + draw.prev.y)/2
+			);
+		} else {
+			c2d.lineTo(draw.cur.x, draw.cur.y);
+		}
 		draw.line.preview =	!(draw.line.started = true);
-	} else if (draw.line.back) {
+	} else
+	if (draw.line.back) {
 		c2d.lineTo(draw.prev.x, draw.prev.y);
 		draw.line.back =	!(draw.line.started = true);
 	}
@@ -646,15 +666,29 @@ function fillScreen(i) {
 
 function pickColor(keep, c, event) {
 	if (c) {
-	var	d = c.ctx.getImageData(0, 0, c.width, c.height);
-		c = (event.pageX - c.offsetLeft
-		+   (event.pageY - c.offsetTop)*c.width)*4;
+//* from gradient palette:
+	var	x = event.pageX - CANVAS_BORDER - c.offsetLeft
+	,	y = event.pageY - CANVAS_BORDER - c.offsetTop, d;
+		if (y < 0 || y >= c.height) {
+			c = (y < 0?'0':'f');
+			d = 0;
+		} else {
+			d = c.ctx.getImageData(0,0, c.width, c.height);
+			if (x < 0) x = 0; else
+			if (x >= c.width) x = c.width;
+			c = (x + y*c.width)*4;
+		}
 	} else {
+//* from drawing container:
 		d = draw.history.cur();
 		c = (Math.floor(draw.o.x) + Math.floor(draw.o.y)*canvas.width)*4;
 	}
-	c = (d.data[c]*65536 + d.data[c+1]*256 + d.data[c+2]).toString(16);
-	while (c.length < 6) c = '0'+c; c = '#'+c;
+	if (d) {
+		d = d.data;
+		c = (d[c]*65536 + d[c+1]*256 + d[c+2]).toString(16);
+		while (c.length < 6) c = '0'+c;
+		c = '#'+c;
+	}
 	return keep ? c : updateColor(c, (!event || event.which != 3)?0:1);
 }
 
@@ -1213,39 +1247,38 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 	draw.field = id('load');
 	draw.history.data = new Array(o.undo);
 
-	a = 'historyAct(', b = 'button', d = 'toggleMode(', e = 'savePic(', f = 'fillScreen(', c = 'color', g = 'toolSwap(', k = 'check';
-	a = [
+	a = 'historyAct(', b = 'button', d = 'toggleMode(', e = 'savePic(', f = 'fillScreen(', c = 'color', g = 'toolSwap(', k = 'check'
+,	a = [
 //* subtitle, hotkey, pictogram, function, id
-	['undo'	,'Z'	,'&#x2190;'	,a+'-1)',b+'U'
-],	['redo'	,'X'	,'&#x2192;'	,a+'1)'	,b+'R'
-],
-0,	['fill'	,'F'	,s		,f+'0)'	,c+'F'
-],	['swap'	,'S'	,'&#X21C4;'	,'toolSwap()'
-],	['erase','D'	,s		,f+'1)'	,c+'B'
-],
-0,	['invert','I'	,'&#x25D0;'	,f+'-1)'
-],	['flip_h','H'	,'&#x2194;'	,f+'-2)'
-],	['flip_v','V'	,'&#x2195;'	,f+'-3)'
-],
-0,	['pencil','A'	,'i'		,g+'1)'
-],	['eraser','E'	,'&#x25CB;'	,g+'2)'
-],	['reset' ,'G'	,'&#x25CE;'	,g+'3)'
-],
-0,	['line|area|copy'	,'L'	,'&ndash;|&#x25A0;|&#x25A4;'	,d+'1)'	,k+'L'
-],	['curve|outline|rect'	,'U'	,'~|&#x25A1;|&#x25AD;'		,d+'2)'	,k+'U'
-],	['cursor'		,'F3'	,'&#x25CF;'			,d+'4)'	,k+'V'
-],
-0,	['png'	,'F9'	,'P'	,e+'0)'	,b+'P'
-],	['jpeg'	,'F7'	,'J'	,e+'1)'	,b+'J'
-],	['save'	,'F2'	,'!'	,e+'2)'	,b+'S'
-],	['load'	,'F4'	,'?'	,e+'3)'	,b+'L'
-],!o.read || 0 == o.read?1:
-	['read'	,'F6'	,'&#x21E7;'	,e+'4)'
-],!o.send || 0 == o.send?1:
-	['done'	,'F8'	,'&#x21B5;'	,e+')'
-],c?0:1
-,!c?1:	['info'	,'F1'	,'?'	,'showInfo()'	,b+'H'
-]], f = id('bottom'), d = '<div class="button-', c = '</div>';
+		['undo'	,'Z'	,'&#x2190;'	,a+'-1)',b+'U']
+	,	['redo'	,'X'	,'&#x2192;'	,a+'1)'	,b+'R']
+	, 0
+	,	['fill'	,'F'	,s		,f+'0)'	,c+'F']
+	,	['swap'	,'S'	,'&#X21C4;'	,'toolSwap()']
+	,	['erase','D'	,s		,f+'1)'	,c+'B']
+	, 0
+	,	['invert','I'	,'&#x25D0;'	,f+'-1)']
+	,	['flip_h','H'	,'&#x2194;'	,f+'-2)']
+	,	['flip_v','V'	,'&#x2195;'	,f+'-3)']
+	, 0
+	,	['pencil','A'	,'i'		,g+'1)']
+	,	['eraser','E'	,'&#x25CB;'	,g+'2)']
+	,	['reset' ,'G'	,'&#x25CE;'	,g+'3)']
+	, 0
+	,	['line|area|copy'	,'L'	,'&ndash;|&#x25A0;|&#x25A4;'	,d+'1)'	,k+'L']
+	,	['curve|outline|rect'	,'U'	,'~|&#x25A1;|&#x25AD;'		,d+'2)'	,k+'U']
+	,	['cursor'		,'F3'	,'&#x25CF;'			,d+'4)'	,k+'V']
+	, 0
+	,	['png'	,'F9'	,'P'	,e+'0)'	,b+'P']
+	,	['jpeg'	,'F7'	,'J'	,e+'1)'	,b+'J']
+	,	['save'	,'F2'	,'!'	,e+'2)'	,b+'S']
+	,	['load'	,'F4'	,'?'	,e+'3)'	,b+'L']
+	, !o.read || 0 == o.read?1:['read'	,'F6'	,'&#x21E7;'	,e+'4)']
+	, !o.send || 0 == o.send?1:['done'	,'F8'	,'&#x21B5;'	,e+')']
+	, c?0:1
+	, !c?1:	['info'	,'F1'	,'?'	,'showInfo()'	,b+'H']
+	]
+,	f = id('bottom'), d = '<div class="button-', c = '</div>';
 
 	function btnContent(e, subt, pict) {
 	var	t = lang.b[subt];
@@ -1325,6 +1358,10 @@ function isTest() {
 var	o = outside, v = id('vars'), e,i,j,k
 ,	f = o.send = id('send')
 ,	r = o.read = id('read'), a = [v,f,r];
+/* ext.config syntax:
+	a) varname; var2=;		// no sign => value 1; no value => ''
+	b) warname=two=3=last_val;	// all vars => same value (rightmost part)
+*/
 	for (i in a) if ((e = a[i]) && (e = (e.getAttribute('data-vars') || e.name))) {
 		for (i in (a = e
 			.replace(/\s*=\s*/g, '=')
@@ -1335,172 +1372,213 @@ var	o = outside, v = id('vars'), e,i,j,k
 				k = e.pop();
 				for (j in e) o[e[j]] = k;
 			} else o[e[0]] = 1;
-/*	a) varname; var2=;		//noequal=1, empty=0
-	b) warname=two=3=last_val;	//samevalue, rightmost
-*/		}
-		break;	//* <- no care about the rest
+		}
+		break;	//* <- read vars batch in the first found attribute only; no care about the rest
 	}
-	k = 'y2', i = k.length, j = (o.saveprfx?o.saveprfx:NS)+CR, CR = [];
+	k = 'y2'	//* <- save slot naming differences
+,	i = k.length
+,	j = (o.saveprfx?o.saveprfx:NS)+CR
+,	CR = [];
 	while (i) CR[i--] = {R:e = j+k[i], T:e+CT};
-	CT = CR[1].T, self.R = CR;
-	o.t0 = (o.t0 > 0 ? o.t0+'000' : +new Date), i = ' \r\n', j = shapeHotKey.split('').join(k = ', ');
+
+	CT = CR[1].T
+,	self.R = CR
+,	o.t0 = (o.t0 > 0 ? o.t0+'000' : +new Date)
+,	i = ' \r\n'
+,	j = shapeHotKey.split('').join(k = ', ');
+
 	if ((o.undo = orz(o.undo)) < 3) o.undo = 123;
 	if (!o.lang) o.lang = document.documentElement.lang || 'en';
-	if (o.lang == 'ru')
-select.lineCaps = {lineCap: 'край', lineJoin: 'сгиб'}
-, select.translated = {
-	shape	: ['линия', 'замкнутая линия', 'прямоугольник', 'круг', 'овал', 'овал для речи', 'сдвиг']
-,	lineCap	: ['круг', 'срез', 'квадрат']
-,	lineJoin: ['круг', 'срез', 'угол']
-,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент']
-}, lang = {
-	bad_id:		'Ошибка выбора.'
-,	confirm: {
-		send:	'Отправить рисунок в сеть?'
-	,	size:	'Превышен размер полотна. Отправить всё равно?'
-	,	save: [	'Сохранить рисунок в память браузера?', 'Заменить старую копию, изменённую:']
-	,	load: [	'Вернуть рисунок из памяти браузера?', 'Восстановить копию, изменённую:']
-},	found_swap:	'Рисунок был в запасе, поменялись местами.'
-,	no: {
-		LS:	'Локальное Хранилище (память браузера) недоступно.'
-	,	space:	'Ошибка сохранения, нет места.'
-	,	files:	'Среди файлов не найдено изображений.'
-	,	form:	'Назначение недоступно.'
-	,	change:	'Нет изменений.'
-	,	canvas:	'Ваша программа не поддерживает HTML5-полотно.'
-	,	drawn:	'Полотно пусто.'
-}, tool: {	B:	'Тень'
-	,	O:	'Непрозр.'
-	,	W:	'Толщина'
-},	shape:		'Форма'
-,	palette:	'Палитра'
-,	sat:		'Насыщ.'
-,	hex:		'Цвет'
-,	hex_hint:	'Формат ввода — #a, #f90, #ff9900, или 0,123,255'
-,	hide_hint:	'Кликните, чтобы спрятать или показать.'
-,	info_top:	'Управление (указатель над полотном):'
-,	info: [	'C'+k+'средний клик = подобрать цвет с рисунка.'
-	,	j+' = выбор формы.'
-//	,	'Shift + клик = цепочка форм, Esc = {drawEnd;отмена}.'
-	,	'Ctrl + тяга = поворот полотна, Home = {updateViewport;сброс}.'
-	,	'Alt + тяга = масштаб, Shift + т. = сдвиг рамки.'
-	,	'1-10'		+k+'колесо мыши'+k+'(Alt +) W = толщина кисти.'
-	,	'Ctrl + (1-10'	+k+'колесо)'	+k+'(Alt +) O = прозрачность.'
-	,	'Alt + (1-10'	+k+'колесо)'	+k+'(Alt +) B = размытие тени.'
-	,	'Автосохранение раз в минуту'
-],	info_no_save:	'ещё не было'
-,	info_no_time:	'ещё нет'
-,	info_time:	'Времени прошло'
-,	info_pad:	'доска для набросков'
-,	info_drop:	'Можно перетащить сюда файлы с диска.'
-,	size:		'Размер полотна'
-,	size_hint:	'Число от '
-,	range_hint:	' до '
-, b: {	undo:	{sub:'назад',	t:'Отменить последнее действие.'
-},	redo:	{sub:'вперёд',	t:'Отменить последнюю отмену.'
-},	fill:	{sub:'залить',	t:'Залить полотно основным цветом.'
-},	erase:	{sub:'стереть',	t:'Залить полотно запасным цветом.'
-},	invert:	{sub:'инверт.',	t:'Обратить цвета полотна.'
-},	flip_h:	{sub:'отразить',t:'Отразить полотно слева направо.'
-},	flip_v:	{sub:'перевер.',t:'Перевернуть полотно вверх дном.'
-},	pencil:	{sub:'каранд.',	t:'Инструмент — тонкий простой карандаш.'
-},	eraser:	{sub:'стёрка',	t:'Инструмент — толстый белый карандаш.'
-},	swap:	{sub:'смена',	t:'Поменять инструменты местами.'
-},	reset:	{sub:'сброс',	t:'Сбросить инструменты к начальным.'
-},	line:	{sub:'прямая',	t:'Прямая линия 1 зажатием.'
-},	curve:	{sub:'кривая',	t:'Сглаживать углы пути / кривая линия 2 зажатиями.'
-},	area:	{sub:'закрас.',	t:'Закрашивать площадь геометрических фигур.'
-},	outline:{sub:'контур',	t:'Рисовать контур геометрических фигур.'
-},	copy:	{sub:'копия',	t:'Оставить старую копию.'
-},	rect:	{sub:'прямоуг.',t:'Сдвиг прямоугольником.'
-},	cursor:	{sub:'указат.',	t:'Показывать кисть на указателе.'
-},	rough:	{sub:'п.штрих',	t:'Уменьшить нагрузку, пропуская перерисовку штриха.'
-},	fps:	{sub:'п.кадры',	t:'Уменьшить нагрузку, пропуская кадры.'
-},	png:	{sub:'сохр.png',t:'Сохранить рисунок в PNG файл.'
-},	jpeg:	{sub:'сохр.jpg',t:'Сохранить рисунок в JPEG файл.'
-},	save:	{sub:'сохран.',	t:'Сохранить рисунок в память браузера, 2 последние позиции по очереди.'
-},	load:	{sub:'загруз.',	t:'Вернуть рисунок из памяти браузера, 2 последние позиции по очереди.'
-			+	i+'Может не сработать в некоторых браузерах, если не настроить автоматическую загрузку и показ изображений.'
-},	read:	{sub:'зг.файл',	t:'Прочитать локальный файл.'
-			+	i+'Может не сработать вообще, особенно при запуске самой рисовалки не с диска.'
-			+	i+'Вместо этого рекомендуется перетаскивать файлы из других программ.'
-},	done:	{sub:'готово',	t:'Завершить и отправить рисунок в сеть.'
-},	info:	{sub:'помощь',	t:'Показать или скрыть информацию.'
-}}};
-else lang = {
-	bad_id:		'Invalid case.'
-,	confirm: {
-		send:	'Send image to server?'
-	,	size:	'Canvas size exceeds limit. Send anyway?'
-	,	save: [	'Save image to your browser memory?', 'Replace saved copy edited at:']
-	,	load: [	'Restore image from your browser memory?', 'Load copy edited at:']
-},	found_swap:	'Found image at slot 2, swapped slots.'
-,	no: {
-		LS:	'Local Storage (browser memory) not supported.'
-	,	space:	'Saving failed, not enough space.'
-	,	files:	'No image files found.'
-	,	form:	'Destination unavailable.'
-	,	change:	'Nothing changed.'
-	,	canvas:	'Your browser does not support HTML5 canvas.'
-	,	drawn:	'Canvas is empty.'
-}, tool: {	B:	'Shadow'
-	,	O:	'Opacity'
-	,	W:	'Width'
-},	shape:		'Shape'
-,	palette:	'Palette'
-,	sat:		'Saturat.'
-,	hex:		'Color'
-,	hex_hint:	'Valid formats — #a, #f90, #ff9900, or 0,123,255'
-,	hide_hint:	'Click to show/hide.'
-,	info_top:	'Hot keys (mouse over image only):'
-,	info: [	'C'+k+'Mouse Mid = pick color from image.'
-	,	j+' = select shape.'
-//	,	'Shift + click = chain shapes, Esc = {drawEnd;cancel}.'
-	,	'Ctrl + drag = rotate canvas, Home = {updateViewport;reset}.'
-	,	'Alt + d. = zoom, Shift + d. = move canvas frame.'
-	,	'1-10'		+k+'Mouse Wheel'+k+'(Alt +) W = brush width.'
-	,	'Ctrl + (1-10'	+k+'Wheel)'	+k+'(Alt +) O = brush opacity.'
-	,	'Alt + (1-10'	+k+'Wheel)'	+k+'(Alt +) B = brush shadow blur.'
-	,	'Autosave every minute, last saved'
-],	info_no_save:	'not yet'
-,	info_no_time:	'no yet'
-,	info_time:	'Time elapsed'
-,	info_pad:	'sketch pad'
-,	info_drop:	'You can drag files from disk and drop here.'
-,	size:		'Image size'
-,	size_hint:	'Number from '
-,	range_hint:	' to '
-, b: {	undo:	'Revert last change.'
-,	redo:	'Redo next reverted change.'
-,	fill:	'Fill image with main color.'
-,	erase:	'Fill image with back color.'
-,	invert:	'Invert image colors.'
-,	flip_h:	{sub:'flip hor.',t:'Flip image horizontally.'
-},	flip_v:	{sub:'flip ver.',t:'Flip image vertically.'
-},	pencil:	'Set tool to sharp black.'
-,	eraser:	'Set tool to large white.'
-,	swap:	'Swap your tools.'
-,	reset:	'Reset both tools.'
-,	line:	'Draw straight line with 1 drag.'
-,	curve:	'Smooth path corners / draw single curve with 2 drags.'
-,	area:	'Fill geometric shapes.'
-,	outline:'Draw outline of geometric shapes.'
-,	copy:	'Keep old copy.'
-,	rect:	'Move rectangle.'
-,	cursor:	'Brush preview on cursor.'
-,	rough:	'Skip draw cleanup while drawing to use less CPU.'
-,	fps:	'Limit FPS when drawing to use less CPU.'
-,	png:	'Save image as PNG file.'
-,	jpeg:	'Save image as JPEG file.'
-,	save:	'Save image copy to your browser memory, two slots in a queue.'
-,	load:		'Load image copy from your browser memory, two slots in a queue.'
-		+i+	'May not work in some browsers until set to load and show new images automatically.'
-,	read:		'Load image from your local file.'
-		+i+	'May not work at all, especially if sketcher itself is not started from disk.'
-		+i+	'Instead, it is recommended to drag and drop files from another program.'
-,	done:	'Finish and send image to server.'
-,	info:	'Show/hide information.'
-}};
+
+	if (o.lang == 'ru') {
+		lang = {
+			bad_id:		'Ошибка: действие не найдено.'
+		,	confirm: {
+				send:	'Отправить рисунок в сеть?'
+			,	size:	'Превышен размер полотна. Отправить всё равно?'
+			,	save: [
+					'Сохранить рисунок в память браузера?'
+				,	'Заменить старую копию, изменённую:'
+				]
+			,	load: [
+					'Вернуть рисунок из памяти браузера?'
+				,	'Восстановить копию, изменённую:'
+				]
+			}
+		,	found_swap:	'Рисунок был в запасе, поменялись местами.'
+		,	no: {
+				LS:	'Локальное Хранилище (память браузера) недоступно.'
+			,	space:	'Ошибка сохранения, нет места.'
+			,	files:	'Среди файлов не найдено изображений.'
+			,	form:	'Назначение недоступно.'
+			,	change:	'Нет изменений.'
+			,	canvas:	'Ваша программа не поддерживает HTML5-полотно.'
+			,	drawn:	'Полотно пусто.'
+			}
+		,	tool: {
+				B:	'Тень'
+			,	O:	'Непрозр.'
+			,	W:	'Толщина'
+			}
+		,	shape:		'Форма'
+		,	palette:	'Палитра'
+		,	sat:		'Насыщ.'
+		,	hex:		'Цвет'
+		,	hex_hint:	'Формат ввода — #a, #f90, #ff9900, или 0,123,255'
+		,	hide_hint:	'Кликните, чтобы спрятать или показать.'
+		,	info_top:	'Управление (указатель над полотном):'
+		,	info: [
+				'C'+k+'средний клик = подобрать цвет с рисунка.'
+			,	j+' = выбор формы.'
+		//	,	'Shift + клик = цепочка форм, Esc = {drawEnd;отмена}.'
+			,	'Ctrl + тяга = поворот полотна, Home = {updateViewport;сброс}.'
+			,	'Alt + тяга = масштаб, Shift + т. = сдвиг рамки.'
+			,	'1-10'		+k+'колесо мыши'+k+'(Alt +) W = толщина кисти.'
+			,	'Ctrl + (1-10'	+k+'колесо)'	+k+'(Alt +) O = прозрачность.'
+			,	'Alt + (1-10'	+k+'колесо)'	+k+'(Alt +) B = размытие тени.'
+			,	'Автосохранение раз в минуту'
+			]
+		,	info_no_save:	'ещё не было'
+		,	info_no_time:	'ещё нет'
+		,	info_time:	'Времени прошло'
+		,	info_pad:	'доска для набросков'
+		,	info_drop:	'Можно перетащить сюда файлы с диска.'
+		,	size:		'Размер полотна'
+		,	size_hint:	'Число от '
+		,	range_hint:	' до '
+		,	b: {
+				undo:	{sub:'назад',	t:'Отменить последнее действие.'}
+			,	redo:	{sub:'вперёд',	t:'Отменить последнюю отмену.'}
+			,	fill:	{sub:'залить',	t:'Залить полотно основным цветом.'}
+			,	erase:	{sub:'стереть',	t:'Залить полотно запасным цветом.'}
+			,	invert:	{sub:'инверт.',	t:'Обратить цвета полотна.'}
+			,	flip_h:	{sub:'отразить',t:'Отразить полотно слева направо.'}
+			,	flip_v:	{sub:'перевер.',t:'Перевернуть полотно вверх дном.'}
+			,	pencil:	{sub:'каранд.',	t:'Инструмент — тонкий простой карандаш.'}
+			,	eraser:	{sub:'стёрка',	t:'Инструмент — толстый белый карандаш.'}
+			,	swap:	{sub:'смена',	t:'Поменять инструменты местами.'}
+			,	reset:	{sub:'сброс',	t:'Сбросить инструменты к начальным.'}
+			,	line:	{sub:'прямая',	t:'Прямая линия 1 зажатием.'}
+			,	curve:	{sub:'кривая',	t:'Сглаживать углы пути / кривая линия 2 зажатиями.'}
+			,	area:	{sub:'закрас.',	t:'Закрашивать площадь геометрических фигур.'}
+			,	outline:{sub:'контур',	t:'Рисовать контур геометрических фигур.'}
+			,	copy:	{sub:'копия',	t:'Оставить старую копию.'}
+			,	rect:	{sub:'прямоуг.',t:'Сдвиг прямоугольником.'}
+			,	cursor:	{sub:'указат.',	t:'Показывать кисть на указателе.'}
+			,	rough:	{sub:'п.штрих',	t:'Уменьшить нагрузку, пропуская перерисовку штриха.'}
+			,	fps:	{sub:'п.кадры',	t:'Уменьшить нагрузку, пропуская кадры.'}
+			,	png:	{sub:'сохр.png',t:'Сохранить рисунок в PNG файл.'}
+			,	jpeg:	{sub:'сохр.jpg',t:'Сохранить рисунок в JPEG файл.'}
+			,	save:	{sub:'сохран.',	t:'Сохранить рисунок в память браузера, 2 последние позиции по очереди.'}
+			,	load:	{sub:'загруз.',	t:'Вернуть рисунок из памяти браузера, 2 последние позиции по очереди.'
+				+	i+'Может не сработать в некоторых браузерах, если не настроить автоматическую загрузку и показ изображений.'}
+			,	read:	{sub:'зг.файл',	t:'Прочитать локальный файл.'
+				+	i+'Может не сработать вообще, особенно при запуске самой рисовалки не с диска.'
+				+	i+'Вместо этого рекомендуется перетаскивать файлы из других программ.'}
+			,	done:	{sub:'готово',	t:'Завершить и отправить рисунок в сеть.'}
+			,	info:	{sub:'помощь',	t:'Показать или скрыть информацию.'}
+			}
+		}
+	,	select.lineCaps = {
+			lineCap:	'Концы линий'
+		,	lineJoin:	'Сгибы линий'
+		}
+	,	select.translated = {
+			shape	: ['линия', 'замкнутая линия', 'прямоугольник', 'круг', 'овал', 'овал для речи', 'сдвиг']
+		,	lineCap	: ['круг', 'срез', 'квадрат']
+		,	lineJoin: ['круг', 'срез', 'угол']
+		,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент']
+		};
+	} else {
+		lang = {
+			bad_id:		'Invalid action: case not found.'
+		,	found_swap:	'Found image at slot 2, swapped slots.'
+		,	confirm: {
+				send:	'Send image to server?'
+			,	size:	'Canvas size exceeds limit. Send anyway?'
+			,	save: [
+					'Save image to your browser memory?'
+				,	'Replace saved copy edited at:'
+				]
+			,	load: [
+					'Restore image from your browser memory?'
+				,	'Load copy edited at:'
+				]
+			}
+		,	no: {
+				LS:	'Local Storage (browser memory) not supported.'
+			,	space:	'Saving failed, not enough space.'
+			,	files:	'No image files found.'
+			,	form:	'Destination unavailable.'
+			,	change:	'Nothing changed.'
+			,	canvas:	'Your browser does not support HTML5 canvas.'
+			,	drawn:	'Canvas is empty.'
+			}
+		,	tool: {
+				B:	'Shadow'
+			,	O:	'Opacity'
+			,	W:	'Width'
+			}
+		,	shape:		'Shape'
+		,	palette:	'Palette'
+		,	sat:		'Saturat.'
+		,	hex:		'Color'
+		,	hex_hint:	'Valid formats — #a, #f90, #ff9900, or 0,123,255'
+		,	hide_hint:	'Click to show/hide.'
+		,	info_top:	'Hot keys (mouse over image only):'
+		,	info: [
+				'C'+k+'Mouse Mid = pick color from image.'
+			,	j+' = select shape.'
+		//	,	'Shift + click = chain shapes, Esc = {drawEnd;cancel}.'
+			,	'Ctrl + drag = rotate canvas, Home = {updateViewport;reset}.'
+			,	'Alt + d. = zoom, Shift + d. = move canvas frame.'
+			,	'1-10'		+k+'Mouse Wheel'+k+'(Alt +) W = brush width.'
+			,	'Ctrl + (1-10'	+k+'Wheel)'	+k+'(Alt +) O = brush opacity.'
+			,	'Alt + (1-10'	+k+'Wheel)'	+k+'(Alt +) B = brush shadow blur.'
+			,	'Autosave every minute, last saved'
+			]
+		,	info_no_save:	'not yet'
+		,	info_no_time:	'no yet'
+		,	info_time:	'Time elapsed'
+		,	info_pad:	'sketch pad'
+		,	info_drop:	'You can drag files from disk and drop here.'
+		,	size:		'Image size'
+		,	size_hint:	'Number from '
+		,	range_hint:	' to '
+		,	b: {
+				undo:	'Revert last change.'
+			,	redo:	'Redo next reverted change.'
+			,	fill:	'Fill image with main color.'
+			,	erase:	'Fill image with back color.'
+			,	invert:	'Invert image colors.'
+			,	flip_h:	{sub:'flip hor.',t:'Flip image horizontally.'}
+			,	flip_v:	{sub:'flip ver.',t:'Flip image vertically.'}
+			,	pencil:	'Set tool to sharp black.'
+			,	eraser:	'Set tool to large white.'
+			,	swap:	'Swap your tools.'
+			,	reset:	'Reset both tools.'
+			,	line:	'Draw straight line with 1 drag.'
+			,	curve:	'Smooth path corners / draw single curve with 2 drags.'
+			,	area:	'Fill geometric shapes.'
+			,	outline:'Draw outline of geometric shapes.'
+			,	copy:	'Keep old copy.'
+			,	rect:	'Move rectangle.'
+			,	cursor:	'Brush preview on cursor.'
+			,	rough:	'Skip draw cleanup while drawing to use less CPU.'
+			,	fps:	'Limit FPS when drawing to use less CPU.'
+			,	png:	'Save image as PNG file.'
+			,	jpeg:	'Save image as JPEG file.'
+			,	save:	'Save image copy to your browser memory, two slots in a queue.'
+			,	load:	'Load image copy from your browser memory, two slots in a queue.'
+				+	i+'May not work in some browsers until set to load and show new images automatically.'
+			,	read:	'Load image from your local file.'
+				+	i+'May not work at all, especially if sketcher itself is not started from disk.'
+				+	i+'Instead, it is recommended to drag and drop files from another program.'
+			,	done:	'Finish and send image to server.'
+			,	info:	'Show/hide information.'
+			}
+		};
+	}
 	return !o.send;
 } //* <- END isTest()
 
@@ -1526,7 +1604,7 @@ document.write(replaceAll(replaceAdd('\n<style>\
 #| a {color: #888;}\
 #| a:hover {color: #000;}\
 #| abbr {border-bottom: 1px dotted #111;}\
-#| canvas {border: 1px solid #ddd; margin: 0; vertical-align: bottom; cursor:\
+#| canvas {border: '+CANVAS_BORDER+'px solid #ddd; margin: 0; vertical-align: bottom; cursor:\
 	url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC\'),\
 	auto;}\
 #| canvas:hover {border-color: #aaa;}\
