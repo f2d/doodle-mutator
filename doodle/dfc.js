@@ -1,10 +1,10 @@
 ﻿var dfc = new function () {
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
-,	INFO_VERSION = 'v0.9.50'
-,	INFO_DATE = '2013-04-01 — 2015-06-24'
+,	INFO_VERSION = 'v0.9.51'
+,	INFO_DATE = '2013-04-01 — 2015-06-28'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
-,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640
+,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640, NUF = 100
 ,	CR = 'CanvasRecover', CT = 'Time', DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
 
 ,	TOOLS_REF = [
@@ -15,9 +15,9 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 ,	BOW = ['blur', 'opacity', 'width']
 ,	BOWL = 'BOW'
 ,	RANGE = [
-		{min: 0   , max: 100, step: 1}
+		{min: 0   , max: NUF, step: 1}
 	,	{min: 0.01, max: 1  , step: 0.01}
-	,	{min: 1   , max: 100, step: 1}
+	,	{min: 1   , max: NUF, step: 1}
 	]
 
 ,	flushCursor = false, neverFlushCursor = true
@@ -25,19 +25,27 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 		debug:	false
 	,	shape:	false	//* <- straight line	/ fill area	/ copy
 	,	step:	false	//* <- curve line	/ erase area	/ rect pan
+	,	resize:	false
 	,	lowQ:	false
 	,	brushView:	false
 	,	limitFPS:	false
 	,	autoSave:	true
 	}
 ,	modes = []
-,	modeL = 'DLUQVFA'
+,	modeL = 'DLURQVFA'
 ,	shapeHotKey = 'NPRTYQM'
 ,	select = {
-		imgRes: {width:640, height:360}
-	,	imgLimits: {width:[64,640], height:[64,800]}
+		imgSizes: {width:640, height:360}
+	,	imgLimits: {width:[32,640], height:[32,800]}
 	,	lineCaps: {lineCap:0, lineJoin:0}
 	,	shapeFlags: [1,10, 2,2,2,66, 4]
+/* shape flags (sum parts):
+	1 = path, mode L: step 1 line, L+U: step 2 curve
+	2 = fig., mode L: outline, U: fill
+	4 = move, mode L: copy, U: step 2 rect
+	8 = path, closed polygon
+	64 = step 2
+*/
 	,	options: {
 			shape	: ['line', 'freehand poly', 'rectangle', 'circle', 'ellipse', 'speech balloon', 'move']
 		,	lineCap	: ['round', 'butt', 'square']
@@ -47,8 +55,14 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	}
 ,	PALETTE_COL_COUNT = 16	//* <- used if no '\n' found
 ,	palette = [
-		(LS = window.localStorage || localStorage) && (h = LS.historyPalette) ? JSON.parse(h) : ['#f']
-//* '\t' = title, '\n' = line break + optional title, '\r' = special cases, '#f00' = hex color field, anything else = title + plaintext spacer
+		(LS = window.localStorage || localStorage) && (i = LS.historyPalette) ? JSON.parse(i) : ['#f']
+/* palette field format:
+	'\t' = title
+	'\n' = new row + optional title
+	'\r' = special cases
+	'#f00' = hex color field
+	anything else = title + label
+*/
 	,	[	'#f', '#d', '#a', '#8', '#5', '#2', '#0',				'#a00', '#740', '#470', '#0a0', '#074', '#047', '#00a', '#407', '#704'
 		, '\n',	'#7f0000', '#007f00', '#00007f', '#ff007f', '#7fff00', '#007fff', '#3', '#e11', '#b81', '#8b1', '#1e1', '#1b8', '#18b', '#11e', '#81b', '#b18'
 		, '\n',	'#ff0000', '#00ff00', '#0000ff', '#ff7f00', '#00ff7f', '#7f00ff', '#6', '#f77', '#db7', '#bd7', '#7f7', '#7db', '#7bd', '#77f', '#b7d', '#d7b'
@@ -102,39 +116,81 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 ,	regFunc = /\{[^.]+\.([^(]+)\(/
 ,	regLimit = /^(\d+)\D+(\d+)$/
 
-,	self = this, container, canvas, c2d, canvasShape, c2s, lang, DL, LS, outside = this.o = {}
+,	self = this, container, canvas, c2d, cnvHid, c2s, lang, DL, LS, i, outside = this.o = {}
 ,	fps = 0, ticks = 0, timer = 0
-,	interval = {fps: 0, timer: 0, save: 0}, text = {debug:0, timer:0}, used = {}, cue = {upd:{}}
+,	interval = {fps:0, timer:0, save:0}, text = {debug:0, timer:0, undo:0}, used = {}, cue = {upd:{}}
 
 ,	draw = {o:{}, cur:{}, prev:{}
-	,	refresh:0, time: [0, 0]
+	,	refresh:0, time: [0,0]
 	,	line: {started:0, back:0, preview:0}
 	,	history: {pos:0, last:0
 		,	cur: function() {return this.data[this.pos];}
 		,	act: function(i) {
-			var	t = this, d = t.data.length - 1;
-				if (i) {
+			var	t = this, z = t.data.length - 1, s = isNaN(i);
+				if (i && !s) {
 					if (i < 0 && t.pos > 0) --t.pos; else
-					if (i > 0 && t.pos < d && t.pos < t.last) ++t.pos; else return 0;
+					if (i > 0 && t.pos < z && t.pos < t.last) ++t.pos; else return 0;
+					t.reversable = '';
 					draw.screen();
 					cue.autoSave = 1;
 					used.history = 'Undo';
 				} else {
-					if (i !== false) t.reversable = 0;
-					else if (t.reversable) return 0;
-					else t.reversable = 1, draw.screen();
-					if (i !== 0) {if (t.pos < d) t.last = ++t.pos; else for (i = 0; i < d; i++) t.data[i] = t.data[i+1];}
-					t.data[t.pos] = c2d.getImageData(0, 0, canvas.width, canvas.height);
+					if (s) {
+						if (!i || !i.length) {
+							t.reversable = '';
+						} else
+						if (i.slice && i.slice(0,3) == 'res') {
+							if (t.reversable == i) --t.pos;
+							else t.reversable = i;
+							for (i in select.imgSizes) cnvHid[i] = canvas[i] = orz(id('img-'+i).value);
+							draw.screen(1);
+						} else
+						if (t.reversable == i) return 0;
+						else t.reversable = i, draw.screen();
+
+						if (i !== 0) {
+							if (t.pos < z) t.last = ++t.pos;
+							else for (i = 0; i < z; i++) t.data[i] = t.data[i+1];
+						}
+					}
+					t.data[t.pos] = c2d.getImageData(0,0, canvas.width, canvas.height);
 				}
-				return 1;
+				return text.undo.textContent = t.pos+' / '+t.last+' / '+z, 1;
 			}
 		}
-	,	screen: function() {
-			c2d.fillStyle = 'white';
-			c2d.fillRect(0, 0, canvas.width, canvas.height);
-			c2d.putImageData(this.history.cur(), 0, 0);
+	,	screen: function(res) {
+			clearFill(canvas);
+
+		var	d = this.history.cur();
+			if (!d) return;
+
+		var	s = select.imgSizes, i;
+			if (res && mode.resize) {
+				for (i in s) cnvHid[i] = d[i], canvas[i] = orz(id('img-'+i).value);
+				clearFill(canvas);
+				c2s.putImageData(d, 0,0);
+				c2d.drawImage(cnvHid, 0,0, d.width, d.height, 0,0, canvas.width, canvas.height);
+				for (i in s) cnvHid[i] = canvas[i];
+			} else {
+				if (!res) {
+				var	dif = 0, e = document.activeElement, unfocused = !(e.id && s[getLastWord(e.id)]);
+					for (i in s) {
+						if (canvas[i] != d[i]) cnvHid[i] = canvas[i] = d[i];
+						if (unfocused && (e = id('img-'+i)).value != d[i]) e.value = d[i], ++dif;
+					}
+					if (dif) updateDimension();
+				}
+				c2d.putImageData(d, 0,0);
+			}
 		}
 	};
+
+function clearFill(c) {
+var	d = c.c2d || (c.c2d = c.getContext('2d'));
+	d.fillStyle = 'white';
+	d.fillRect(0,0, c.width, c.height);
+	return d;
+}
 
 function historyAct(i) {if (draw.history.act(i)) updateDebugScreen(), updateHistoryButtons();}
 function fpsCount() {fps = ticks; ticks = 0;}
@@ -150,6 +206,7 @@ function orz(n) {return parseInt(n||0)||0;}
 function repeat(t,n) {return new Array(n+1).join(t);}
 function replaceAll(t,s,j) {return t.split(s).join(j);}
 function replaceAdd(t,s,a) {return replaceAll(t,s,s+a);}
+function getLastWord(s,i) {return s.substr(s.lastIndexOf(i||'-')+1);}
 
 function id(id) {return document.getElementById(NS+(id?'-'+id:''));}
 function setId(e,id) {return e.id = NS+'-'+id;}
@@ -211,11 +268,11 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 				while (i--) r[i] = Math.round(from[i]*k + to[i]*j);
 				return r;
 			}
-			c.width = 300, c.height = 133, c.sat = r.max, c.ctx = ctx;
+			c.width = 300, c.height = 133, c.sat = r.max, clearFill(c);
 
 			(c.updateSat = function (sat) {
 			var	x = c.width, y = c.height, y2 = Math.floor(y/2), h, i, j, k = c.width/l
-			,	d = ctx.createImageData(x, y);
+			,	d = c.c2d.createImageData(x, y);
 				while (x--) {
 					h = linearBlend(hues[y = Math.floor(x/k)], hues[(y+1)%l], x%k, k);
 					if (!isNaN(sat)) h = linearBlend(bw[1], h, sat, c.sat);
@@ -229,7 +286,7 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 						d.data[i+3] = 255;
 					}
 				}
-				ctx.putImageData(d, 0, 0);
+				c.c2d.putImageData(d, 0,0);
 			})();
 
 			c.setAttribute('onscroll', f);
@@ -285,16 +342,20 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 
 function updateDebugScreen() {
 	if (!mode.debug) return;
-	ticks ++;
-var	t = '</td><td>', r = '</td></tr>	<tr><td>', a, b = 'turn: ', c = draw.step, i;
-	if (a = draw.turn) for (i in a) b += i+'='+a[i]+'; ';
-	text.debug.innerHTML = '<table><tr><td>'
-+draw.refresh+t+'1st='+draw.time[0]+t+'last='+draw.time[1]+t+'fps='+fps
-+r+'Relative'+t+'x='+draw.o.x+t+'y='+draw.o.y+(isMouseIn()?t+'rgb='+pickColor(1):'')
-+r+'DrawOfst'+t+'x='+draw.cur.x+t+'y='+draw.cur.y+t+'btn='+draw.btn
-+r+'Previous'+t+'x='+draw.prev.x+t+'y='+draw.prev.y+t+'chain='+mode.click+(c?''
-+r+'StpStart'+t+'x='+c.prev.x+t+'y='+c.prev.y
-+r+'Step_End'+t+'x='+c.cur.x+t+'y='+c.cur.y:'')+'</td></tr></table>'+b;
+	++ticks;
+var	r = '</td></tr>\n<tr><td>', d = '</td><td>', a = draw.turn, s = draw.step, t = draw.time, i = isMouseIn();
+	text.debug.innerHTML =
+		'<table><tr><td>'
+	+	draw.refresh+d+'1st='+t[0]	+d+'last='+t[1]		+d+'fps='+fps
+	+	r+'Relative'+d+'x='+draw.o.x	+d+'y='+draw.o.y	+d+i+(i?',rgb='+pickColor(1):'')
+	+	r+'DrawOfst'+d+'x='+draw.cur.x	+d+'y='+draw.cur.y	+d+'btn='+draw.btn+',active='+draw.active
+	+	r+'Previous'+d+'x='+draw.prev.x	+d+'y='+draw.prev.y	+d+'chain='+mode.click
+	+	(s?''
+	+	r+'StpStart'+d+'x='+s.prev.x	+d+'y='+s.prev.y
+	+	r+'Step_End'+d+'x='+s.cur.x	+d+'y='+s.cur.y
+		:'')
+	+	'</td></tr></table>'
+	+	showProps(tool,3)+(a?'<br>turn: '+showProps(a,1):'');
 }
 
 function updateViewport(delta) {
@@ -325,11 +386,11 @@ var	i, t = '', p = ['-moz-','-webkit-','-o-',''];
 function updatePosition(event) {
 var	i = select.shapeFlags[select.shape.value], o = (
 	!  ((i & 2) && mode.shape && !mode.step)
-	&& ((i & 4) || ((draw.active?c2d.lineWidth:tool.width) % 2))
-	? DRAW_PIXEL_OFFSET : 0);	//* <- maybe not a 100% fix yet
+	&& ((i & 4) || ((draw.active ? c2d.lineWidth : tool.width) % 2))
+	? DRAW_PIXEL_OFFSET : 0) - CANVAS_BORDER;
 
-	draw.o.x = event.pageX - CANVAS_BORDER - draw.field.offsetLeft;
-	draw.o.y = event.pageY - CANVAS_BORDER - draw.field.offsetTop;
+	draw.o.x = event.pageX - draw.field.offsetLeft;
+	draw.o.y = event.pageY - draw.field.offsetTop;
 	if (draw.pan && !(draw.turn && draw.turn.pan)) for (i in draw.o) draw.o[i] -= draw.pan[i];
 	if (!draw.turn && (draw.angle || draw.zoom != 1)) {
 	var	r = getCursorRad(2, draw.o.x, draw.o.y);
@@ -464,11 +525,11 @@ var	redraw = true, s = select.shape.value, sf = select.shapeFlags[s]
 		if (draw.active) {
 			if ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8)) {
 				draw.line.preview = true;
-				c2s.clearRect(0, 0, canvas.width, canvas.height);
+				c2s.clearRect(0,0, canvas.width, canvas.height);
 				c2s.beginPath();
 				drawShape(c2s, (mode.step && (sf & 4) && (!draw.step || !draw.step.done))?2:s);
 				c2s.stroke();
-				c2d.drawImage(c2s.canvas, 0, 0);			//* <- draw 2nd canvas overlay with sole shape
+				c2d.drawImage(cnvHid, 0,0);				//* <- draw 2nd canvas overlay with sole shape
 			}
 			if (draw.line.started) c2d.stroke();
 		} else if (neverFlushCursor && !mode.lowQ && isMouseIn()) drawCursor();
@@ -497,10 +558,12 @@ function drawEnd(event) {
 		if ((sf & 64) || (m && draw.line.preview)) {
 			drawShape(c2d, s);
 			if (!(sf & 4)) used.shape = 'Shape';
-		} else if (m || draw.line.back || !draw.line.started) {//* <- draw 1 pixel on short click, regardless of mode or browser
+		} else
+		if (m || draw.line.back || !draw.line.started) {//* <- draw 1 pixel on short click, regardless of mode or browser
 			c2d.lineTo(draw.cur.x, draw.cur.y + (draw.cur.y == draw.prev.y ? 0.01 : 0));
 		}
-		if (sf & 4) used.move = 'Move'; else if (!(sf & 8) || mode.step) c2d.stroke();
+		if (sf & 4) used.move = 'Move'; else
+		if (!(sf & 8) || mode.step) c2d.stroke();
 		historyAct();
 		draw.active = draw.step = draw.btn = 0;
 		if (cue.autoSave < 0) autoSave(); else cue.autoSave = 1;
@@ -612,23 +675,24 @@ var	d = draw.history.cur(), p = draw.step, n = !mode.shape;
 		if (n) c2d.fillRect(p.min.x, p.min.y, p.max.x, p.max.y);
 		c2d.putImageData(d, x, y, p.min.x, p.min.y, p.max.x, p.max.y);
 	} else {
-		if (n) c2d.fillRect(0, 0, canvas.width, canvas.height);
+		if (n) c2d.fillRect(0,0, canvas.width, canvas.height);
 		c2d.putImageData(d, x, y);
 	}
 }
 
 function fillCheck() {
 var	d = draw.history.cur(), i = d.data.length;
-	while (--i) if (d.data[i] != d.data[i%4]) return 0; return 1;		//* <- fill flood confirmed
+	while (--i) if (d.data[i] != d.data[i%4]) return 0;	//* <- drawn content confirmed
+	return 1;			//* <- fill flood confirmed
 }
 
 function fillScreen(i) {
 	if (isNaN(i)) {
 		used.wipe = 'Wipe';
-		c2d.clearRect(0, 0, canvas.width, canvas.height);
+		c2d.clearRect(0,0, canvas.width, canvas.height);
 	} else
 	if (i < 0) {
-		historyAct(false);
+		historyAct('flip');	//* <- only push history 1 time for all consecutive attempts with same label
 	var	d = draw.history.cur();
 		if (i == -1) {
 			used.inv = 'Invert';
@@ -653,12 +717,12 @@ function fillScreen(i) {
 				}
 			}}
 		}
-		c2d.putImageData(d, 0, 0);
+		c2d.putImageData(d, 0,0);
 		return;
 	} else {
 		used.fill = 'Fill';
 		c2d.fillStyle = 'rgb(' + tools[i].color + ')';
-		c2d.fillRect(0, 0, canvas.width, canvas.height);
+		c2d.fillRect(0,0, canvas.width, canvas.height);
 	}
 	cue.autoSave = 0;
 	historyAct();
@@ -673,7 +737,7 @@ function pickColor(keep, c, event) {
 			c = (y < 0?'0':'f');
 			d = 0;
 		} else {
-			d = c.ctx.getImageData(0,0, c.width, c.height);
+			d = c.c2d.getImageData(0,0, c.width, c.height);
 			if (x < 0) x = 0; else
 			if (x >= c.width) x = c.width;
 			c = (x + y*c.width)*4;
@@ -784,7 +848,7 @@ function updateSliders(s) {
 	if (draw.o.length) {
 		drawEnd();
 		s = tool.width+4;
-		c2d.putImageData(draw.history.cur(), 0, 0, draw.o.x - s/2, draw.o.y - s/2, s, s);
+		c2d.putImageData(draw.history.cur(), 0,0, draw.o.x - s/2, draw.o.y - s/2, s, s);
 		drawCursor();
 	}
 	return false;
@@ -809,19 +873,20 @@ var	i = e.id.slice(-1);
 	e.title = e.title.replace(regTipBrackets, '')+' ('+(canvas.toDataURL({J:IJ,P:''}[i]).length / 1300).toFixed(0)+' KB)';
 }
 
-function updateDim(i) {
-	if (i) {
-	var	a = id('img-'+i), b, c = canvas[i], v = orz(a.value);
-		canvasShape[i] = canvas[i] = a.value = v = (
+function updateResize(e) {
+	mode.resize = !!e.checked;
+}
+
+function updateDimension(e) {
+	if (e) {
+		i = getLastWord(e.id), c = canvas[i], v = orz(e.value);
+		cnvHid[i] = canvas[i] = e.value = v = (
 			v < (b = select.imgLimits[i][0]) ? b : (
 			v > (b = select.imgLimits[i][1]) ? b : v)
 		);
-		if (v > c) {
-			draw.screen();
-			historyAct(0);
-		}
+		historyAct(mode.resize?'rescale':'resize');
 	}
-	if (!i || i[0] == 'h') {
+	if (!e || i == 'height') {
 	var	b = id('buttonH')
 	,	c = id('colors').style
 	,	i = id('info').style;
@@ -856,17 +921,18 @@ var	b = BOW[i];
 }
 
 function toolSwap(back) {
-	if (back == 3) {
+var	t,i = orz(back);
+	if (i > TOOLS_REF.length || i < 0) {
 		for (t in TOOLS_REF)
 		for (i in TOOLS_REF[t]) tools[t][i] = TOOLS_REF[t][i];
 		for (i in select.lineCaps) select[i].value = 0;
 		if (mode.shape) toggleMode(1);
 		if (mode.step) toggleMode(2);
 		updateShape(0);
-		tool.width = 3; //* <- arbitrary default
+		tool.width = Math.abs(back);
 	} else
-	if (back) {
-		back = TOOLS_REF[back-1];
+	if (i) {
+		back = TOOLS_REF[i-1];
 		for (i in back) tool[i] = back[i];
 	} else {
 		back = tools[0];
@@ -1001,7 +1067,6 @@ var	a = auto || false, c, d, e, i, t;
 		break;
 	case 4:	
 		if (a || ((outside.read || (outside.read = id('read'))) && (a = outside.read.value))) {
-	//		draw.time = [0, 0];
 			used.read = 'Read File: '+readPic(a);
 		}
 		break;
@@ -1029,7 +1094,7 @@ var	a = auto || false, c, d, e, i, t;
 			d = (((i = outside.jp || outside.jpg_pref)
 				&& (e > i)
 				&& (((c = canvas.width * canvas.height
-				) <= (d = select.imgRes.width * select.imgRes.height
+				) <= (d = select.imgSizes.width * select.imgSizes.height
 				))
 				|| (e > (i *= c/d)))
 				&& (e > (t = (jpgData = canvas.toDataURL(IJ)).length))
@@ -1051,9 +1116,15 @@ var	d = draw.time, e = new Image(), t = +new Date, i;
 	for (i in d) if (!d[i]) d[i] = t;
 	e.setAttribute('onclick', 'this.parentNode.removeChild(this); return false');
 	e.onload = function () {
-		for (i in select.imgRes) id('img-'+i).value = canvasShape[i] = canvas[i] = e[i];
-		updateDim();
-		c2d.drawImage(e,0,0);
+		if (mode.resize) {
+			clearFill(canvas);
+			c2d.drawImage(e, 0,0, e.width, e.height, 0,0, canvas.width, canvas.height);
+		} else {
+			for (i in select.imgSizes) id('img-'+i).value = cnvHid[i] = canvas[i] = e[i];
+			updateDimension();
+			clearFill(canvas);
+			c2d.drawImage(e, 0,0);
+		}
 		historyAct();
 		cue.autoSave = 0;
 		if (d = e.parentNode) d.removeChild(e);
@@ -1145,18 +1216,29 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 8=bksp, 45=Ins, 42=10
 			case 42:
 			case 106:
 			var	i = 1, j = '', k = !CR[0], n = CR.length;
-				if (k) for (k = ''; i < n; i++) k += '{.R['+i+'],2;r'+i+'}', j +=
-(j?'<br>':'<hr>')+'Save'+i+'.time: '+LS[CR[i].T]+(LS[CR[i].R]?', size: '+LS[CR[i].R].length:'');
-				text.debug.innerHTML = replaceAll(replaceAll(replaceAll(replaceAll(
-'{,2,1;props}'+
-'{.o,2;outside}'+
-'{.mode,2;mode}LStorage keys: '+(k?k+n:CT+', '+CR)
-, '{', '<a href="javascript:|.show(|')
-, ';', ')">self.')
-, '}', '</a>,\n')+(outside.read?'':
-'F6=read: <textarea id="|-read">/9.png</textarea>\n')
-, '|', NS)
-+j+'<hr>'+getSendMeta().replace(/[\r\n]+/g, '<br>');
+				if (k) for (k = ''; i < n; i++) {
+					k += '{.R['+i+'],2;r'+i+'}'
+				,	j +=
+					(j?'<br>':'<hr>')
+				+	'Save'+i+'.time: '+LS[CR[i].T]
+				+	(LS[CR[i].R]?', size: '+LS[CR[i].R].length:'');
+				}
+				text.debug.innerHTML =
+					replaceAll(
+					replaceAll(
+					replaceAll(
+					replaceAll(
+						'{,2,1;props}'
+				+		'{.o,2;outside}'
+				+		'{.mode,2;mode}'
+				+		'LStorage keys: '+(k?k+n:CT+', '+CR)
+					, '{', '<a href="javascript:|.show(|')
+					, ';', ')">self.')
+					, '}', '</a>,\n')
+				+		(outside.read?'':'F6=read: <textarea id="|-read">/9.png</textarea>')
+					, '|', NS)
+				+	j+'<hr>'
+				+	getSendMeta().replace(/[\r\n]+/g, '<br>');
 			break;
 
 			default: if (mode.debug) text.debug.innerHTML += '\n'+s+'='+event.keyCode;
@@ -1180,23 +1262,25 @@ function hotWheel(event) {
 
 function init() {
 	if (isTest()) document.title += ': '+NS+' '+INFO_VERSION;
-var	a,b,c = 'canvas', d = '<div id="', e = '"></div>', f,g,h,i,j,k,n = '\n	', o = outside, p,s = '&nbsp;';
-	setContent(container = id(),
-n+d+'load"><'+c+' id="'+c+'" tabindex="0">'+lang.no.canvas+'</'+c+'></div>'+
-//n+
-d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
+var	a,b,c = 'canvas', d = '<div id="', e = '"></div>', f,g,h,i,j,k,n = '\n'
+,	o = outside, r = '</td><td class="r">', s = '&nbsp;', t = '" title="';
 
+	setContent(container = id(),
+		d+'load"><'+c+' id="'+c+'" tabindex="0">'+lang.no.canvas+'</'+c+'></div>'
+	+	d+'right'+e
+	+	d+'bottom'+e
+	+	d+'debug'+e+n
+	);
 	if (!(canvas = id(c)).getContext) return;
-	canvasShape = document.createElement(c);
-	for (i in select.imgRes) {
-		canvasShape[i] = canvas[i] = (o[a = i[0]]?o[a]:o[a] = (o[i]?o[i]:select.imgRes[i]));
+
+	cnvHid = document.createElement(c);
+
+	for (i in select.imgSizes) {
+		cnvHid[i] = canvas[i] = (o[a = i[0]]?o[a]:o[a] = (o[i]?o[i]:select.imgSizes[i]));
 		if ((o[b = a+'l'] || o[b = i+'Limit']) && (f = o[b].match(regLimit))) select.imgLimits[i] = [orz(f[1]), orz(f[2])];
 	}
-
-	c2s = canvasShape.getContext('2d');
-	c2d = canvas.getContext('2d');
-	c2d.fillStyle = 'white';
-	c2d.fillRect(0, 0, o.w, o.h);
+	c2s = clearFill(cnvHid);
+	c2d = clearFill(canvas);
 
 	for (i in {onscroll:0, oncontextmenu:0}) canvas.setAttribute(i, 'return false;');
 	for (i in (a = {
@@ -1210,44 +1294,84 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 	,	mousewheel:	e = hotWheel
 	,	wheel:		e
 	,	scroll:		e
-	})) document.addEventListener(i, a[i], false);			//* <- using 'document' to prevent negative clipping
+	})) document.addEventListener(i, a[i], false);	//* <- using "document" to prevent negative clipping.
+		//* still fails to catch events outside of document block height less than of browser window.
 
-	c = '</td><td class="r">', a = ': '+c+'	', e = n+'	', f = e+'	', b = e+d+'colors">'+d+'sliders">', i = BOW.length;
-	while (i--) b += f+getSlider(BOWL[i], i);
+	b = d+'colors">'+d+'sliders">', i = BOW.length, r = '</td><td class="r">', a = ': '+r+'	';
 
-	b += e+'</div>'+e+'<table width="100%"><tr><td>'
-+f+lang.shape	+a+'<select id="shape" onChange="updateShape(this)"></select>';
-	for (i in select.lineCaps) b += c+'<select id="'+i+'" title="'+(select.lineCaps[i] || i)+'"></select>';
-	setContent(id('right'), b+'	</td></tr><tr><td>'
-+f+lang.hex	+a+'<input type="text" value="#000" id="color-text" onChange="updateColor()" title="'+lang.hex_hint+'">	'+c
-+f+lang.palette	+a+'<select id="palette" onChange="updatePalette()"></select>	</td></tr></table>'
-+f+d+'palette-table"></div>'+e+'</div>'+e+d+'info">'+e+'</div>'+n);
+	while (i--) b += getSlider(BOWL[i], i);
+
+	b +=	'</div><table width="100%"><tr><td>'
+	+	lang.shape	+a+'<select id="shape" onChange="updateShape(this)"></select>';
+
+	for (i in select.lineCaps) b += r+'<select id="'+i+t+(select.lineCaps[i] || i)+'"></select>';
+
+	setContent(id('right'),
+		b+'</td></tr><tr><td>'
+	+	lang.hex	+a+'<input type="text" value="#000" id="color-text" onChange="updateColor()'+t
+	+	lang.hex_hint+'">'+r
+	+	lang.palette	+a+'<select id="palette" onChange="updatePalette()"></select></td></tr></table>'
+	+	d+'palette-table"></div></div>'
+	+	d+'info"></div>'
+	);
 
 	a = '<a href="javascript:void(0);" onClick="', b = '">', c = '</abbr>', d = '';
-	for (i in select.imgRes) d += (d?' x ':'')
-+'<input type="text" value="'+o[i[0]]+'" id="img-'+i+'" onChange="updateDim(\''+i+'\')" title="'+lang.size_hint+select.imgLimits[i].join(lang.range_hint)+'">';
 
-	b = '<abbr title="', h = '<span class="rf">', g = h+s+b
-+NS.toUpperCase()+', '+INFO_ABBR+', '+lang.info_pad+', '+INFO_DATE+'">'+INFO_VERSION+'</abbr>.</span>';
+	for (i in select.imgSizes) d +=
+		lang.size[i]+': '
+	+	'<input type="text" value="'+o[i[0]]+'" id="img-'+i+'" onChange="updateDimension(this)'+t
+	+	lang.size_hint
+	+	select.imgLimits[i].join(lang.range_hint)+'"> ';
 
-	setContent(id('info'), f+replaceAll(
-'<p class="L-open">'+lang.info_top+'</p>\
-|<p>	'+lang.info.join('|<br>	').replace(/\{([^};]+);([^}]+)}/g, a+'$1()">$2</a>')
-+':	'+h+b+(new Date())+'" id="saveTime">'+lang.info_no_save+'</abbr>.</span>\
-|<br>	'+a+'toggleView(\'timer\')" title="'+lang.hide_hint+'">'+lang.info_time+'</a>'
-+':	'+h+'<span id="timer">'+lang.info_no_time+'</span>.</span>\
-|</p>	<p class="L-close"> ', '|', f)
-+lang.info_drop+g+'</p>'
-+f+'<div>'+lang.size+':	'+d
-+f+'</div>'+e);
+	b = '<abbr title="', f = '<span class="rf">';
 
-	if (c = (canvas.height < BOTH_PANELS_HEIGHT)) toggleView('info');
+	g = '<b class="L">'
+	+	'<b class="T"></b>'
+	+	'<i></i>'
+	+	'<b class="B"></b>'
+	+ '</b>';
+
+	setContent(id('info'),
+//* top of 2 angle brackets:
+		'<p class="L-open">'
+	+		lang.info_top
+	+	'</p>'
+	+	'<p>'
+	+		lang.info.join('<br>').replace(/\{([^};]+);([^}]+)}/g, a+'$1()">$2</a>')
+	+		': '+f+b+(new Date())+'" id="saveTime">'
+	+		lang.info_no_save+'</abbr>.</span>'
+	+		'<br>'+a+'toggleView(\'timer\')'+t
+	+		lang.hide_hint+'">'
+	+		lang.info_time+'</a>: '+f+'<span id="timer">'+lang.info_no_yet+'</span>.</span>\n'
+	+		lang.info_undo+': '	+f+'<span id="undo">'+lang.info_no_yet+'</span>.</span>'
+	+	'</p>'
+//* bottom of 2 angle brackets:
+	+	'<p class="L-close">'
+	+		lang.info_drop
+	+		f+s+b
+	+		NS.toUpperCase()
+	+		', '+INFO_ABBR
+	+		', '+lang.info_pad
+	+		', '+INFO_DATE
+	+		'">'+INFO_VERSION+'</abbr>.</span>'
+	+	'</p>'
+	+	'<div>'
+	+		d+'<label id="fit" title="'
+	+		lang.resize_hint+'">'
+//* 4 angle brackets:
+	+			g
+	+			'<input type="checkbox" onChange="updateResize(this)"'+(mode.resize?' checked':'')+'>'
+	+			g.replace('L', 'R')
+	+		'</label>'
+	+	'</div>'
+	);
+
 	for (i in BOW) setSlider(BOWL[i]);
 	for (i in text) text[i] = id(i);
 	draw.field = id('load');
-	draw.history.data = new Array(o.undo);
+	draw.history.data = new Array(o.undo+1);
 
-	a = 'historyAct(', b = 'button', d = 'toggleMode(', e = 'savePic(', f = 'fillScreen(', c = 'color', g = 'toolSwap(', k = 'check'
+	a = 'historyAct(', b = 'button', c = 'color', d = 'toggleMode(', e = 'savePic(', f = 'fillScreen(', g = 'toolSwap(', k = 'check'
 ,	a = [
 //* subtitle, hotkey, pictogram, function, id
 		['undo'	,'Z'	,'&#x2190;'	,a+'-1)',b+'U']
@@ -1275,8 +1399,8 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 	,	['load'	,'F4'	,'?'	,e+'3)'	,b+'L']
 	, !o.read || 0 == o.read?1:['read'	,'F6'	,'&#x21E7;'	,e+'4)']
 	, !o.send || 0 == o.send?1:['done'	,'F8'	,'&#x21B5;'	,e+')']
-	, c?0:1
-	, !c?1:	['info'	,'F1'	,'?'	,'showInfo()'	,b+'H']
+	, 0
+	,	['info'	,'F1'	,'?'	,'showInfo()'	,b+'H']
 	]
 ,	f = id('bottom'), d = '<div class="button-', c = '</div>';
 
@@ -1290,17 +1414,20 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 			e = document.createElement(b);
 
 			if (k[0].indexOf('|') > 0) {
-				s = k[0].split('|');
-				p = k[2].split('|');
-				for (j in s) setClass(e.appendChild(btnContent(document.createElement('div'), s[j], p[j])), 'abc'[j]);
+				g = k[0].split('|');
+				h = k[2].split('|');
+				for (j in g) setClass(e.appendChild(btnContent(document.createElement('div'), g[j], h[j])), 'abc'[j]);
 			} else btnContent(e, k[0], k[2]);
 
 			setClass(e, b);
 			setEvent(e, 'onclick', k[3]);
 			if (k.length > 4) setId(e, k[4]);
 			f.appendChild(e);
-		} else f.innerHTML += '&nbsp;';
+		} else f.innerHTML += s;
 	}
+	if (canvas.height < BOTH_PANELS_HEIGHT) toggleView('info');
+	else setClass(id(b+'H'), b+'-active');
+
 	for (i in mode) if (mode[modes[j = modes.length] = i]) toggleMode(j,1);
 	for (i in (a = {S:0, L:CT})) if (!LS || ((k = a[i]) && !LS[k])) setClass(id(b+i), b+'-disabled');
 	for (i in (a = 'JP')) if (e = id(b+a[i])) setEvent(e, 'onmouseover', 'updateSaveFileSize(this)');
@@ -1311,10 +1438,10 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 	for (e in d) if ((f = b[c][d[e]]) && !self[f = (''+f).match(regFunc)[1]]) self[f] = eval(f);
 
 	d = 'download', DL = (d in b[0]?d:'');
-	d = {	lineCap	: ['<->', '|-|', '[-]']
+	d = {	lineCap: ['<->', '|-|', '[-]']
 	,	lineJoin: ['-x-', '\\_/', 'V']
 	};
-	a = select.options, c = select.translated || a, f = (LS && LS.lastPalette && palette[LS.lastPalette]) ? LS.lastPalette : 1;
+	a = select.options, c = select.translated || a, f = (LS && (e = LS.lastPalette) && palette[e]?e:1);
 	for (b in a) {
 		e = select[b] = id(b);
 		for (i in a[b]) (
@@ -1323,24 +1450,26 @@ d+'right'+e+n+d+'bottom'+e+n+d+'debug'+e+'\n');
 	}
 
 //* safe palette constructor, step recomended to be: 1, 3, 5, 15, 17, 51, 85, 255
-  function generatePalette(p, step, slice) {
-	if (!(p = palette[p])) return;
-var	letters = [0, 0, 0], l = p.length;
-	if (l) {p[l] = '\t'; p[l+1] = '\n';}
-	while (letters[0] <= 255) {
-		p[l = p.length] = '#';
-		for (var i = 0; i < 3; i++) {
-		var	s = letters[i].toString(16);
-			if (s.length == 1) s = '0'+s;
-			p[l] += s;
+	function generatePalette(p, step, slice) {
+		p = palette[p];
+		if (!p) return;
+	var	letters = [0,0,0], l = p.length;
+		if (l) p[l] = '\t', p[l+1] = '\n';
+		while (letters[0] <= 255) {
+			p[l = p.length] = '#';
+			for (var i = 0; i < 3; i++) {
+			var	s = letters[i].toString(16);
+				if (s.length == 1) s = '0'+s;
+				p[l] += s;
+			}
+			letters[2] += step;
+			if (letters[2] > 255) letters[2] = 0, letters[1] += step;
+			if (letters[1] > 255) letters[1] = 0, letters[0] += step;
+			if ((letters[1] == 0 || (letters[1] == step * slice)) && letters[2] == 0) {
+				p[l+1] = '\n';
+			}
 		}
-		letters[2] += step;
-		if (letters[2] > 255) {letters[2] = 0; letters[1] += step;}
-		if (letters[1] > 255) {letters[1] = 0; letters[0] += step;}
-		if ((letters[1] == 0 || (letters[1] == step * slice)) && letters[2] == 0)
-			p[l+1] = '\n';
 	}
-  }
 
 	generatePalette(1, 85, 0);
 	toolSwap(3);
@@ -1354,7 +1483,7 @@ var	letters = [0, 0, 0], l = p.length;
 
 
 function isTest() {
-	if (CR[0] !== 'C') return !o.send;
+	if (!CR[0]) return !o.send;
 var	o = outside, v = id('vars'), e,i,j,k
 ,	f = o.send = id('send')
 ,	r = o.read = id('read'), a = [v,f,r];
@@ -1439,13 +1568,18 @@ var	o = outside, v = id('vars'), e,i,j,k
 			,	'Автосохранение раз в минуту'
 			]
 		,	info_no_save:	'ещё не было'
-		,	info_no_time:	'ещё нет'
+		,	info_no_yet:	'ещё нет'
 		,	info_time:	'Времени прошло'
+		,	info_undo:	'Шаги'
 		,	info_pad:	'доска для набросков'
 		,	info_drop:	'Можно перетащить сюда файлы с диска.'
-		,	size:		'Размер полотна'
+		,	size: {
+				width:	'Ширина'
+			,	height:	'Высота'
+			}
 		,	size_hint:	'Число от '
 		,	range_hint:	' до '
+		,	resize_hint:	'Отметить, чтобы содержимое полотна растягивалось с изменением размера или при загрузке файлов.'
 		,	b: {
 				undo:	{sub:'назад',	t:'Отменить последнее действие.'}
 			,	redo:	{sub:'вперёд',	t:'Отменить последнюю отмену.'}
@@ -1538,13 +1672,18 @@ var	o = outside, v = id('vars'), e,i,j,k
 			,	'Autosave every minute, last saved'
 			]
 		,	info_no_save:	'not yet'
-		,	info_no_time:	'no yet'
+		,	info_no_yet:	'no yet'
 		,	info_time:	'Time elapsed'
+		,	info_undo:	'Steps'
 		,	info_pad:	'sketch pad'
 		,	info_drop:	'You can drag files from disk and drop here.'
-		,	size:		'Image size'
+		,	size: {
+				width:	'Width'
+			,	height:	'Height'
+			}
 		,	size_hint:	'Number from '
 		,	range_hint:	' to '
+		,	resize_hint:	'Check to resize canvas content to fit on size changes or when loading files.'
 		,	b: {
 				undo:	'Revert last change.'
 			,	redo:	'Redo next reverted change.'
@@ -1587,8 +1726,11 @@ var	o = outside, v = id('vars'), e,i,j,k
 
 document.addEventListener('DOMContentLoaded', init, false);
 document.write(replaceAll(replaceAdd('\n<style>\
-#| .|-L-close {padding-bottom: 24px; border-bottom: 1px solid #000; border-right: 1px solid #000;}\
-#| .|-L-open {padding-top: 24px; border-top: 1px solid #000; border-left: 1px solid #000;}\
+#| .|-L-close {padding-bottom: 22px; border-bottom: 1px solid #000; border-right: 1px solid #000;}\
+#| .|-L-open {padding-top: 22px; border-top: 1px solid #000; border-left: 1px solid #000;}\
+#| .|-a .|-a,\
+#| .|-b .|-b,\
+#| .|-c .|-c {display: none;}\
 #| .|-button {background-color: #ddd;}\
 #| .|-button-active {background-color: #ace;}\
 #| .|-button-active:hover {background-color: #bef;}\
@@ -1612,11 +1754,18 @@ document.write(replaceAll(replaceAdd('\n<style>\
 #| input[type="text"] {width: 48px;}\
 #| select, #| #|-color-text {width: 78px;}\
 #| {text-align: center; padding: 12px; background-color: #f8f8f8;}\
-#|, #| input, #| select {font-family: "Arial"; font-size: 14pt; line-height: normal;}\
+#|, #| input, #| select {font-family: "Arial"; font-size: 19px; line-height: normal;}\
 #|-bottom > button {border: 1px solid #000; width: 38px; height: 38px; margin: 2px; padding: 2px; font-size: 15px; line-height: 7px; text-align: center; vertical-align: top; cursor: pointer;}\
 #|-bottom > button, #|-load canvas {box-shadow: 3px 3px rgba(0,0,0, 0.1);}\
 #|-bottom {margin: 10px 0 -2px;}\
 #|-debug td {width: 234px;}\
+#|-fit > b * {display: block; height: 12px; width: 6px;}\
+#|-fit > b b.|-B {height: 6px; border-bottom: 2px solid #aaa; vertical-align: bottom;}\
+#|-fit > b b.|-T {height: 6px; border-top: 2px solid #aaa; vertical-align: top;}\
+#|-fit > b.|-L b {border-left: 2px solid #aaa;}\
+#|-fit > b.|-R b {border-right: 2px solid #aaa;}\
+#|-fit input {margin: 0; padding: 0;}\
+#|-fit, #|-fit > b, #|-fit input {display: inline-block; height: 28px; vertical-align: top;}\
 #|-info p {padding-left: 22px; line-height: 22px; margin: 0;}\
 #|-info p, #|-palette-table table {color: #000; font-size: small;}\
 #|-load img {position: absolute; top: 1px; left: 1px; margin: 0;}\
@@ -1630,8 +1779,5 @@ document.write(replaceAll(replaceAdd('\n<style>\
 #|-right table, #|-info > div {margin-top: 7px;}\
 #|-right td {padding: 0 2px; height: 32px;}\
 #|-right {color: #888; width: 321px; margin: 0; margin-left: 12px; text-align: left; display: inline-block; vertical-align: top; overflow-x: hidden;}\
-#| .|-a .|-a,\
-#| .|-b .|-b,\
-#| .|-c .|-c {display: none;}\
 </style>', '}', '\n'), '|', NS)+'\n<div id="'+NS+'">Loading '+NS+'...</div>\n');
 };
