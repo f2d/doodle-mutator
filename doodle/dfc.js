@@ -2,7 +2,7 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 ,	INFO_VERSION = 'v0.9.51'
-,	INFO_DATE = '2013-04-01 — 2015-06-28'
+,	INFO_DATE = '2013-04-01 — 2015-06-29'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640, NUF = 100
 ,	CR = 'CanvasRecover', CT = 'Time', DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
@@ -107,6 +107,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	,	'\rg'
 	]
 
+,	noTransformByProp = /^Opera.* Version\D*11\.\d+$/i.test(navigator.userAgent)
 ,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)
 ,	regHex = /^#?[0-9a-f]{6}$/i
 ,	regHex3 = /^#?([0-9a-f])([0-9a-f])([0-9a-f])$/i
@@ -359,7 +360,7 @@ var	r = '</td></tr>\n<tr><td>', d = '</td><td>', a = draw.turn, s = draw.step, t
 }
 
 function updateViewport(delta) {
-var	i, t = '', p = ['-moz-','-webkit-','-o-',''];
+var	i,p = ['-moz-','-webkit-','-o-',''], s = '', t = '';
 	if (isNaN(delta)) draw.angle = 0, draw.pan = 0, draw.zoom = 1, t = 'none';
 	else
 	if (draw.turn.pan) {
@@ -376,10 +377,16 @@ var	i, t = '', p = ['-moz-','-webkit-','-o-',''];
 		if (draw.a360 = Math.floor(draw.angle*180/Math.PI)%360) draw.aRad = draw.a360/180*Math.PI;
 		else draw.angle = draw.a360 = draw.aRad = 0;
 	}
-	if (draw.pan) t += 'translate('+draw.pan.x+'px,'+draw.pan.y+'px)';
-	if (draw.angle) t += 'rotate('+draw.a360+'deg)';
-	if (draw.zoom != 1) t += 'scale('+(draw.zoom)+')';
-	for (i in p) canvas.style[p[i]+'transform'] = t;	//* <- not working in opera11.10, though should be possible
+	if (draw.pan) t += ' translate('+draw.pan.x+'px,'+draw.pan.y+'px)';
+	if (draw.angle) t += ' rotate('+draw.a360+'deg)';
+	if (draw.zoom != 1) t += ' scale('+(draw.zoom)+')';
+
+	if (noTransformByProp) {
+		if (t.indexOf('(') > 0) for (i in p) s += p[i]+'transform:'+t+';';
+		canvas.setAttribute('style', s);
+	} else {
+		for (i in p) canvas.style[p[i]+'transform'] = t;
+	}
 	updateDebugScreen();
 }
 
@@ -391,6 +398,7 @@ var	i = select.shapeFlags[select.shape.value], o = (
 
 	draw.o.x = event.pageX - draw.field.offsetLeft;
 	draw.o.y = event.pageY - draw.field.offsetTop;
+
 	if (draw.pan && !(draw.turn && draw.turn.pan)) for (i in draw.o) draw.o[i] -= draw.pan[i];
 	if (!draw.turn && (draw.angle || draw.zoom != 1)) {
 	var	r = getCursorRad(2, draw.o.x, draw.o.y);
@@ -1266,7 +1274,11 @@ var	a,b,c = 'canvas', d = '<div id="', e = '"></div>', f,g,h,i,j,k,n = '\n'
 ,	o = outside, r = '</td><td class="r">', s = '&nbsp;', t = '" title="';
 
 	setContent(container = id(),
-		d+'load"><'+c+' id="'+c+'" tabindex="0">'+lang.no.canvas+'</'+c+'></div>'
+		d+'load">'
+	+		'<div>'		//* <- fix for o11 offset
+	+			'<'+c+' id="'+c+'" tabindex="0">'+lang.no.canvas+'</'+c+'>'
+	+		'</div>'	//* <- fix for o11 offset
+	+	'</div>'
 	+	d+'right'+e
 	+	d+'bottom'+e
 	+	d+'debug'+e+n
@@ -1343,17 +1355,17 @@ var	a,b,c = 'canvas', d = '<div id="', e = '"></div>', f,g,h,i,j,k,n = '\n'
 	+		'<br>'+a+'toggleView(\'timer\')'+t
 	+		lang.hide_hint+'">'
 	+		lang.info_time+'</a>: '+f+'<span id="timer">'+lang.info_no_yet+'</span>.</span>\n'
-	+		lang.info_undo+': '	+f+'<span id="undo">'+lang.info_no_yet+'</span>.</span>'
+	+		lang.info_undo+': '	+f+'<span id="undo">'+lang.info_no_yet+'</span>.</span><br>'
+	+		lang.info_drop
 	+	'</p>'
 //* bottom of 2 angle brackets:
 	+	'<p class="L-close">'
-	+		lang.info_drop
-	+		f+s+b
+	+		b
 	+		NS.toUpperCase()
 	+		', '+INFO_ABBR
 	+		', '+lang.info_pad
 	+		', '+INFO_DATE
-	+		'">'+INFO_VERSION+'</abbr>.</span>'
+	+		'">'+INFO_VERSION+'</abbr>.'
 	+	'</p>'
 	+	'<div>'
 	+		d+'<label id="fit" title="'
@@ -1746,7 +1758,7 @@ document.write(replaceAll(replaceAdd('\n<style>\
 #| a {color: #888;}\
 #| a:hover {color: #000;}\
 #| abbr {border-bottom: 1px dotted #111;}\
-#| canvas {border: '+CANVAS_BORDER+'px solid #ddd; margin: 0; vertical-align: bottom; cursor:\
+#| canvas {border: '+CANVAS_BORDER+'px solid #ddd; margin: 0; cursor:\
 	url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC\'),\
 	auto;}\
 #| canvas:hover {border-color: #aaa;}\
@@ -1766,8 +1778,10 @@ document.write(replaceAll(replaceAdd('\n<style>\
 #|-fit > b.|-R b {border-right: 2px solid #aaa;}\
 #|-fit input {margin: 0; padding: 0;}\
 #|-fit, #|-fit > b, #|-fit input {display: inline-block; height: 28px; vertical-align: top;}\
+#|-fit:hover > b b {border-color: #000; border-width: 1px; padding: 1px 1px 0 0;}\
 #|-info p {padding-left: 22px; line-height: 22px; margin: 0;}\
 #|-info p, #|-palette-table table {color: #000; font-size: small;}\
+#|-load canvas {vertical-align: bottom;}\
 #|-load img {position: absolute; top: 1px; left: 1px; margin: 0;}\
 #|-load, #|-load canvas {position: relative; display: inline-block;}\
 #|-palette-table .|-t {padding: 0 4px;}\
@@ -1778,6 +1792,6 @@ document.write(replaceAll(replaceAdd('\n<style>\
 #|-right table {border-collapse: collapse;}\
 #|-right table, #|-info > div {margin-top: 7px;}\
 #|-right td {padding: 0 2px; height: 32px;}\
-#|-right {color: #888; width: 321px; margin: 0; margin-left: 12px; text-align: left; display: inline-block; vertical-align: top; overflow-x: hidden;}\
+#|-right {color: #888; width: 321px; margin: 0; margin-left: 12px; text-align: left; display: inline-block; vertical-align: top; overflow: hidden;}\
 </style>', '}', '\n'), '|', NS)+'\n<div id="'+NS+'">Loading '+NS+'...</div>\n');
 };
