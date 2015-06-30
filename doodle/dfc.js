@@ -2,7 +2,7 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 ,	INFO_VERSION = 'v0.9.51'
-,	INFO_DATE = '2013-04-01 — 2015-06-29'
+,	INFO_DATE = '2013-04-01 — 2015-06-30'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640, NUF = 100
 ,	CR = 'CanvasRecover', CT = 'Time', DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
@@ -41,7 +41,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	,	shapeFlags: [1,10, 2,2,2,66, 4]
 /* shape flags (sum parts):
 	1 = path, mode L: step 1 line, L+U: step 2 curve
-	2 = fig., mode L: outline, U: fill
+	2 = fig., mode L: fill, U: outline
 	4 = move, mode L: copy, U: step 2 rect
 	8 = path, closed polygon
 	64 = step 2
@@ -127,7 +127,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	,	history: {pos:0, last:0
 		,	cur: function() {return this.data[this.pos];}
 		,	act: function(i) {
-			var	t = this, z = t.data.length - 1, s = isNaN(i);
+			var	t = this, s = isNaN(i), z = t.data.length - 1;
 				if (i && !s) {
 					if (i < 0 && t.pos > 0) --t.pos; else
 					if (i > 0 && t.pos < z && t.pos < t.last) ++t.pos; else return 0;
@@ -145,9 +145,10 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 							else t.reversable = i;
 							for (i in select.imgSizes) cnvHid[i] = canvas[i] = orz(id('img-'+i).value);
 							draw.screen(1);
-						} else
-						if (t.reversable == i) return 0;
-						else t.reversable = i, draw.screen();
+						} else {
+							if (t.reversable == i) return 0;
+							else t.reversable = i, draw.screen();
+						}
 
 						if (i !== 0) {
 							if (t.pos < z) t.last = ++t.pos;
@@ -341,6 +342,12 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 	}
 }
 
+function getOffsetXY(e) {
+var	x = 0, y = 0;
+	while (e) x += e.offsetLeft, y += e.offsetTop, e = e.offsetParent;
+	return {x:x, y:y};
+}
+
 function updateDebugScreen() {
 	if (!mode.debug) return;
 	++ticks;
@@ -391,17 +398,19 @@ var	i,p = ['-moz-','-webkit-','-o-',''], s = '', t = '';
 }
 
 function updatePosition(event) {
-var	i = select.shapeFlags[select.shape.value], o = (
-	!  ((i & 2) && mode.shape && !mode.step)
-	&& ((i & 4) || ((draw.active ? c2d.lineWidth : tool.width) % 2))
-	? DRAW_PIXEL_OFFSET : 0) - CANVAS_BORDER;
+var	i = select.shapeFlags[select.shape.value], r = getOffsetXY(draw.field)
+,	o = (
+	!	((i & 2) && mode.shape && !mode.step)
+	&&	((i & 4) || ((draw.active ? c2d.lineWidth : tool.width) % 2))
+	? DRAW_PIXEL_OFFSET
+	: 0) - CANVAS_BORDER;
 
-	draw.o.x = event.pageX - draw.field.offsetLeft;
-	draw.o.y = event.pageY - draw.field.offsetTop;
+	draw.o.x = event.pageX - r.x;
+	draw.o.y = event.pageY - r.y;
 
 	if (draw.pan && !(draw.turn && draw.turn.pan)) for (i in draw.o) draw.o[i] -= draw.pan[i];
 	if (!draw.turn && (draw.angle || draw.zoom != 1)) {
-	var	r = getCursorRad(2, draw.o.x, draw.o.y);
+		r = getCursorRad(2, draw.o.x, draw.o.y);
 		if (draw.angle) r.a -= draw.aRad;
 		if (draw.zoom != 1) r.d /= draw.zoom;
 		draw.o.x = Math.cos(r.a)*r.d + canvas.width/2;
@@ -739,8 +748,9 @@ function fillScreen(i) {
 function pickColor(keep, c, event) {
 	if (c) {
 //* from gradient palette:
-	var	x = event.pageX - CANVAS_BORDER - c.offsetLeft
-	,	y = event.pageY - CANVAS_BORDER - c.offsetTop, d;
+	var	d = getOffsetXY(c)
+	,	x = event.pageX - CANVAS_BORDER - d.x
+	,	y = event.pageY - CANVAS_BORDER - d.y;
 		if (y < 0 || y >= c.height) {
 			c = (y < 0?'0':'f');
 			d = 0;
@@ -752,8 +762,8 @@ function pickColor(keep, c, event) {
 		}
 	} else {
 //* from drawing container:
-		d = draw.history.cur();
 		c = (Math.floor(draw.o.x) + Math.floor(draw.o.y)*canvas.width)*4;
+		d = draw.history.cur();
 	}
 	if (d) {
 		d = d.data;
@@ -1246,7 +1256,7 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 8=bksp, 45=Ins, 42=10
 				+		(outside.read?'':'F6=read: <textarea id="|-read">/9.png</textarea>')
 					, '|', NS)
 				+	j+'<hr>'
-				+	getSendMeta().replace(/[\r\n]+/g, '<br>');
+				+	getSendMeta(draw.screen()).replace(/[\r\n]+/g, '<br>');
 			break;
 
 			default: if (mode.debug) text.debug.innerHTML += '\n'+s+'='+event.keyCode;
@@ -1270,18 +1280,22 @@ function hotWheel(event) {
 
 function init() {
 	if (isTest()) document.title += ': '+NS+' '+INFO_VERSION;
-var	a,b,c = 'canvas', d = '<div id="', e = '"></div>', f,g,h,i,j,k,n = '\n'
-,	o = outside, r = '</td><td class="r">', s = '&nbsp;', t = '" title="';
+var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = '</td><td class="r">', s = '&nbsp;', t = '" title="';
 
-	setContent(container = id(),
-		d+'load">'
-	+		'<div>'		//* <- fix for o11 offset
+	if (e = id(c)) while (e = e.parentNode) if (e.id == NS) {
+		e.parentNode.removeChild(e);	//* <- remove self duplicate, for archived pages saved in "current state"
+		break;
+	}
+
+	setContent(container = id().firstElementChild
+	,	d+'load">'
+	+		'<div>'			//* <- transform offset fix for o11
 	+			'<'+c+' id="'+c+'" tabindex="0">'+lang.no.canvas+'</'+c+'>'
-	+		'</div>'	//* <- fix for o11 offset
+	+		'</div>'
 	+	'</div>'
-	+	d+'right'+e
-	+	d+'bottom'+e
-	+	d+'debug'+e+n
+	+	d+'right"></div>'
+	+	d+'bottom"></div>'
+	+	d+'debug"></div>'
 	);
 	if (!(canvas = id(c)).getContext) return;
 
@@ -1483,8 +1497,8 @@ var	a,b,c = 'canvas', d = '<div id="', e = '"></div>', f,g,h,i,j,k,n = '\n'
 		}
 	}
 
-	generatePalette(1, 85, 0);
 	toolSwap(3);
+	generatePalette(1, 85, 0);
 	updatePalette();
 	updateSliders();
 	updateViewport();
@@ -1736,8 +1750,11 @@ var	o = outside, v = id('vars'), e,i,j,k
 
 
 
-document.addEventListener('DOMContentLoaded', init, false);
-document.write(replaceAll(replaceAdd('\n<style>\
+document.write(
+	replaceAll(
+'<div id="|">'
++'<div>Loading |...</div>'
++	replaceAdd('<style>\
 #| .|-L-close {padding-bottom: 22px; border-bottom: 1px solid #000; border-right: 1px solid #000;}\
 #| .|-L-open {padding-top: 22px; border-top: 1px solid #000; border-left: 1px solid #000;}\
 #| .|-a .|-a,\
@@ -1793,5 +1810,11 @@ document.write(replaceAll(replaceAdd('\n<style>\
 #|-right table, #|-info > div {margin-top: 7px;}\
 #|-right td {padding: 0 2px; height: 32px;}\
 #|-right {color: #888; width: 321px; margin: 0; margin-left: 12px; text-align: left; display: inline-block; vertical-align: top; overflow: hidden;}\
-</style>', '}', '\n'), '|', NS)+'\n<div id="'+NS+'">Loading '+NS+'...</div>\n');
+</style>'
+	, '}', '\n')
+	, '|', NS)
++'</div>'
+);
+
+document.addEventListener('DOMContentLoaded', init, false);
 };
