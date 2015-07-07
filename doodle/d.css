@@ -308,6 +308,9 @@ a:hover	{		color: #000;}
 }
 .log {	padding: 8px 178px;
 }
+.log i {display: inline-block;
+	width: 40px;
+}
 .al {	text-align: left;}
 p.hint, li {
 	font-size: 13px;

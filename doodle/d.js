@@ -448,7 +448,7 @@ dd+e+(desc_num && img?desc_num++ +'. ':'')+tab[2];
 				}
 				if (u == 'u') post = '<span class="u">'+post+'</span>';
 				else if (flag.u) post = post.replace(' ', ' <span class="a">')+'</span>';
-				else if (flag.rep) post = '<div class="log al">'+post+'</div>';
+				else if (flag.rep) post = '<div class="log al">'+post.replace(/(<br>)(\s+)/g, '$1<i></i>')+'</div>';
 				q = (flag.u?tab[2].slice(0, tab[2].indexOf('.')).replace(WS, ''):0);
 				m = (thread_num?thread_num+'-'+post_num+'-':'');
 				k = 2;
@@ -634,11 +634,11 @@ if (k = id('tabs')) {
 	function a(r,t) {return '<a href="'+r+(r == l?'" class="at':'')+'">'+t+'</a>';}
 	h = '', l = l.split('/').slice(-1)[0], n = k.textContent.replace(WS, '').split('|'), r = /\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
 	for (i in n) h += (h?'\n|	':'')+a(+i+1, n[i]);
-	k.innerHTML = '[	'+h+'	]';
+	k.innerHTML = '[	'+h+'	]';	//* <- cat.tabs
 	while ((k = k.nextElementSibling) && r.test(j = k.textContent.replace(WS, ''))) {
 		j = j.split('-'), n = j.pop(), n = n.split(','), h = (j = j.join('-'))+':';
 		for (i in n) h += '\n'+a(j+'-'+n[i].replace(w, ''), n[i]);
-		k.innerHTML = h;
+		k.innerHTML = h;		//* <- row: month, column: day
 	}
 }
 

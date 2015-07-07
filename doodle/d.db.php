@@ -780,11 +780,11 @@ global	$u_num, $u_flag, $u_task, $u_t_f, $room, $target;
 function data_aim($unknown_1st = 0, $skip_list = 0) {
 global	$u_num, $u_flag, $u_task, $u_t_f, $room, $target, $file_cache;
 	$target = array();
-	if ($u_flag['nop'] || !is_dir($d = DIR_ROOM.$room.'/')) return;
+	if ($u_flag['nop'] || !is_dir($d = DIR_ROOM.$room.'/')) return $target;
 
 //* check personal target list
 	$tt = data_check_my_task(1);
-	if (POST || GET_Q) return;
+	if (POST || GET_Q) return $target;
 
 	if (!$tt
 	|| ($target['time'] + TARGET_CHANGE_TIME < T0 || (is_array($skip_list) && in_array(intval($target['thread']), $skip_list)))

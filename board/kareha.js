@@ -217,22 +217,22 @@ var	a = gn('p'), i = a.length, r = /\babbrev\b/i, t, d;
 	}
 	else
 	{
-		gn('hr')[1].previousElementSibling.innerHTML =
-'<table><tr><td><ul>'+
-'<li>EN: If post form is not found here, try to disable your extensions/userscripts for this site.</li>'+
-'<li>RU: Если нет формы отправки поста, отключите убравшие её расширения (например Куклоскрипт).</li>'+
-'</ul></td></tr></table>';
-		document.body.setAttribute('style', '');
+		gn('hr')[1].previousElementSibling.innerHTML = postform_fallback;
 	}
-
-	i = gn('select'), a = {postform: set_new_inputs, delform: set_delpass};
+	i = gn('select'), a = {postform: set_new_inputs, delform: set_delpass}, d = document.body;
+	if (d.getAttribute('style')) d.setAttribute('style', '');
 	if (i.length) i[0].value = get_active_stylesheet();
 	for (i in a) if (id(i)) a[i](i);
 }
 
-if (style_cookie)
-{
-	set_stylesheet(get_cookie(style_cookie)||get_preferred_stylesheet());
-}
+if (style_cookie) set_stylesheet(get_cookie(style_cookie)||get_preferred_stylesheet());
 
-var captcha_key = make_password();
+var	captcha_key = make_password()
+,	i = id('postform')
+,	postform_fallback = (i?i.innerHTML:'')
+	|| (
+		'<table><tr><td><ul>'+
+		'<li>EN: If post form is not found here, try to disable your extensions/userscripts for this site.</li>'+
+		'<li>RU: Если нет формы отправки поста, отключите убравшие её расширения (например Куклоскрипт).</li>'+
+		'</ul></td></tr></table>'
+	);

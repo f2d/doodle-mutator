@@ -2,7 +2,7 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 ,	INFO_VERSION = 'v0.9.51'
-,	INFO_DATE = '2013-04-01 — 2015-06-30'
+,	INFO_DATE = '2013-04-01 — 2015-07-07'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640, NUF = 100
 ,	CR = 'CanvasRecover', CT = 'Time', DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
@@ -1253,7 +1253,7 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 8=bksp, 45=Ins, 42=10
 					, '{', '<a href="javascript:|.show(|')
 					, ';', ')">self.')
 					, '}', '</a>,\n')
-				+		(outside.read?'':'F6=read: <textarea id="|-read">/9.png</textarea>')
+				+		(outside.read?'':', F6=read: <textarea id="|-read">/9.png</textarea>')
 					, '|', NS)
 				+	j+'<hr>'
 				+	getSendMeta(draw.screen()).replace(/[\r\n]+/g, '<br>');
@@ -1550,7 +1550,7 @@ var	o = outside, v = id('vars'), e,i,j,k
 			bad_id:		'Ошибка: действие не найдено.'
 		,	confirm: {
 				send:	'Отправить рисунок в сеть?'
-			,	size:	'Превышен размер полотна. Отправить всё равно?'
+			,	size:	'Размеры полотна вне допустимых пределов. Отправить всё равно?'
 			,	save: [
 					'Сохранить рисунок в память браузера?'
 				,	'Заменить старую копию, изменённую:'
@@ -1655,7 +1655,7 @@ var	o = outside, v = id('vars'), e,i,j,k
 		,	found_swap:	'Found image at slot 2, swapped slots.'
 		,	confirm: {
 				send:	'Send image to server?'
-			,	size:	'Canvas size exceeds limit. Send anyway?'
+			,	size:	'Canvas size is outside of limits. Send anyway?'
 			,	save: [
 					'Save image to your browser memory?'
 				,	'Replace saved copy edited at:'
@@ -1782,6 +1782,7 @@ document.write(
 #| input[type="range"] {width: 156px; height: 16px; margin: 0; padding: 0;}\
 #| input[type="text"] {width: 48px;}\
 #| select, #| #|-color-text {width: 78px;}\
+#| textarea {min-width: 80px; min-height: 16px; height: 16px; vertical-align: top;}\
 #| {text-align: center; padding: 12px; background-color: #f8f8f8;}\
 #|, #| input, #| select {font-family: "Arial"; font-size: 19px; line-height: normal;}\
 #|-bottom > button {border: 1px solid #000; width: 38px; height: 38px; margin: 2px; padding: 2px; font-size: 15px; line-height: 7px; text-align: center; vertical-align: top; cursor: pointer;}\

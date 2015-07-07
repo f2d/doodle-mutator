@@ -183,15 +183,13 @@ if ($u_key) {
 //* process new text post -----------------------------------------------------
 	if (isset($_POST['describe'])) {
 		$post_status = 'text_short';
-		if (mb_strlen($t = trim_post($_POST['describe'], DESCRIBE_MAX_LENGTH), ENC) >= DESCRIBE_MIN_LENGTH) {
+		if (mb_strlen($t = $ptx = trim_post($_POST['describe'], DESCRIBE_MAX_LENGTH), ENC) >= DESCRIBE_MIN_LENGTH) {
 			data_lock($room);
 			data_aim();
 			$t = data_log_post($t);
 			$post_status = ($t > 0?OQ.$tmp_post_ok_text:($t?'trd_max':1));
 			if ($t < 0) $log = -$t;
 		}
-		if ($log) data_log_adm("Denied $post_status: $log");
-		else if (!$u_room_home) $u_room_home = $room;
 	} else
 
 //* process new pic post ------------------------------------------------------
@@ -314,11 +312,6 @@ if ($u_key) {
 				$log = ($post_status != 1?0:$x);
 			} else if (is_file($f)) unlink($f);
 		}
-		if ($log) data_log_adm("Denied $post_status: $log".($ptx?"
-{
-$ptx
-}":''));
-		else if (!$u_room_home) $u_room_home = $room;
 	} else
 
 //* admin/mod actions ---------------------------------------------------------
@@ -340,6 +333,22 @@ $ptx
 				if ($post_status != 1) $post_status = ($m?OK:1);
 			}
 		}
+	}
+
+//* after user posting --------------------------------------------------------
+	if ($ptx) {
+		if ($log) {
+			$op = ' = {';
+			$ed = NL.'}';
+			$i = NL.'	';
+			$t = '';
+			if ($target || data_aim()) foreach ($target as $key => $val) $t .= "$i$key: $val";
+			$ptx = preg_replace('~\v+~u', $i, trim($ptx));
+			data_log_adm("Denied $post_status: $log
+Post$op$i$ptx$ed
+Target$op$t$ed"
+			);
+		} else if (!$u_room_home) $u_room_home = $room;
 	}
 } else if (isset($_POST[ME]) && strlen($me = trim_post($_POST[ME], USER_NAME_MAX_LENGTH)) >= USER_NAME_MIN_LENGTH) {
 

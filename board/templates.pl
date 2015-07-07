@@ -97,7 +97,6 @@ use constant NORMAL_HEAD_INCLUDE => q{
 </loop>
 
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-<script type="text/javascript" src="<const expand_filename(JS_FILE)>"></script>
 </head>
 <if $thread><body class="replypage"></if>
 <if !$thread><body class="mainpage"></if>
@@ -126,6 +125,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 
 use constant NORMAL_FOOT_INCLUDE => include(INCLUDE_DIR."footer.html").q{
 
+<script type="text/javascript" src="<const expand_filename(JS_FILE)>"></script>
 </body></html>
 };
 

@@ -112,9 +112,9 @@ use constant COOKIE_PATH => 'current';		# Path argument for cookies ('root': coo
 #use constant HTML_SELF => 'index.html';	# Name of main html file
 #use constant HTML_BACKLOG => '';		# Name of backlog html file
 #use constant RSS_FILE => '';			# RSS file. Set to '' to disable RSS support.
-use constant JS_FILE => 'k.js';			# Location of the js file
-use constant CSS_FILE => 'd.css';		# Location of the css file
-use constant FAVICON => 'd.png';		# Path to the favicon for the board
+#use constant JS_FILE => 'd.js';		# Location of the js file
+#use constant CSS_FILE => 'd.css';		# Location of the css file
+use constant FAVICON => 'icon.png';		# Path to the favicon for the board
 #use constant SPAM_FILES => ('spam.txt');	# Spam definition files, as a Perl list.
 				# Hints:
 				# * Set all boards to use the same file for easy updating.

@@ -22,7 +22,7 @@ RedirectMatch 403 /(_bak|extras|include)/
 
 <IfModule rewrite_module>
 	RewriteEngine On
-	RewriteRule (^|/)(res|thumb|src)[/.]*$ d.htm
+	RewriteRule (^|/)(res|thumb|src)[/.]*$ redirect_up.htm [L]
 	RewriteCond %{HTTP_ACCEPT} application/xhtml\+xml
 	RewriteRule \.html$ - [T=application/xhtml+xml;charset=utf-8]
 </IfModule>
