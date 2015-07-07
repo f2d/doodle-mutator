@@ -744,6 +744,7 @@ if (TIME_PARTS) time_check_point("done trd $fn, last = $last");
 function data_check_my_task($aim = 0) {
 global	$u_num, $u_flag, $u_task, $u_t_f, $room, $target;
 	if ($u_flag['nop']) return '';
+
 	$u_task = (is_file($u_t_f = DIR_META_U."/$u_num.task") ? fln($u_t_f) : array());
 	foreach ($u_task as $k => $line) if (strpos($line, '	')) {
 		$a = explode('	', $line, 4);
@@ -757,15 +758,16 @@ global	$u_num, $u_flag, $u_task, $u_t_f, $room, $target;
 			break;
 		}
 	} else unset($u_task[$k]);
+
 	if ($aim) return $tt;
 
-	if (!is_dir($d = DIR_ROOM.$room.'/')) return -1;	//* <- room deleted or renamed
-	if (!$tt || !preg_match(TRD_PLAY, $tt, $m)) return 0;	//* <- empty target
+	if (!is_dir($d = DIR_ROOM.$room.'/')) return 'no_room';
+	if (!$tt || !preg_match(TRD_PLAY, $tt, $m)) return 'no_task';
 	$a = array(
-		1 => $tt					//* <- own target still owned
-	,	2 => $m[1].$m[6]				//* <- taken and dropped by others
+		'task_owned' => $tt		//* <- retake for new interval
+	,	'task_reclaim' => $m[1].$m[6]	//* <- after dropped by others
 	);
-	foreach ($a as $k => $v) if (is_file($v = $d.$v)) {	//* <- retake for new interval
+	foreach ($a as $k => $v) if (is_file($v = $d.$v)) {
 		$td = ($target['pic'] ? TARGET_DESC_TIME : TARGET_DRAW_TIME);
 		if ($m[4] && $target['time'] && ($td < $m[4] - $target['time'])) $td =  TARGET_LONG_TIME;
 		$t = T0+$td;
@@ -774,7 +776,7 @@ global	$u_num, $u_flag, $u_task, $u_t_f, $room, $target;
 		data_put($u_t_f, BOM."$target[time]	$room	$t	$target[post]".NL.implode(NL, $u_task));
 		return array($k, $td);
 	}
-	return -2;						//* <- still taken or fulfilled
+	return 'task_let_go';
 }
 
 function data_aim($unknown_1st = 0, $skip_list = 0) {

@@ -142,7 +142,7 @@ if (POST) {//*	--------	post/setting/reg	--------
 ob_start();
 
 if ($u_key) {
-	$post_status = (($_POST[ME] || $_POST[$qredir])?OK:-1);
+	$post_status = (($_POST[ME] || $_POST[$qredir])?OK:'unkn_req');
 
 	if (isset($_POST[$qredir])) goto post_refresh;
 
@@ -168,13 +168,16 @@ if ($u_key) {
 
 //* report problem in active room ---------------------------------------------
 	if (isset($_POST['report']) && $etc && !(R1 || $u_flag['nor'])) {
-		$post_status = 'dest';
+		$post_status = 'no_path';
 		if (preg_match(PAT_DATE, $etc, $r) && ($etc == $r[0])) {	//* <- r = array(t-r-c, t-r, thread, row, column)
 			$post_status = 'text_short';
 			if (mb_strlen($r[1] = trim_post($_POST['report'], REPORT_MAX_LENGTH), ENC) >= REPORT_MIN_LENGTH) {
-				data_lock($room);
-				$r = data_log_report($r);
-				$post_status = ($r > 0?OQ.$tmp_post_ok_text:1);
+				if (!data_lock($room)) {
+					$post_status = 'no_lock';
+				} else {
+					$r = data_log_report($r);
+					$post_status = ($r > 0?OQ.$tmp_post_ok_text:'unkn_res');
+				}
 			}
 		}
 	} else
@@ -184,11 +187,14 @@ if ($u_key) {
 	if (isset($_POST['describe'])) {
 		$post_status = 'text_short';
 		if (mb_strlen($t = $ptx = trim_post($_POST['describe'], DESCRIBE_MAX_LENGTH), ENC) >= DESCRIBE_MIN_LENGTH) {
-			data_lock($room);
-			data_aim();
-			$t = data_log_post($t);
-			$post_status = ($t > 0?OQ.$tmp_post_ok_text:($t?'trd_max':1));
-			if ($t < 0) $log = -$t;
+			if (!data_lock($room)) {
+				$post_status = 'no_lock';
+			} else {
+				data_aim();
+				$t = data_log_post($t);
+				$post_status = ($t > 0?OQ.$tmp_post_ok_text:($t?'trd_max':'unkn_res'));
+				if ($t < 0) $log = -$t;
+			}
 		}
 	} else
 
@@ -252,8 +258,10 @@ if ($u_key) {
 			$post_status = 'file_dup';
 			$log = $fn;
 		} else
+		if (!data_lock($room)) {
+			$post_status = 'no_lock';
+		} else {
 	//* save pic file:
-		if (data_lock($room)) {
 			if (($log = file_put_contents($f, $data)) != $x) {
 				$x = 0;
 				$post_status = 'file_put';
@@ -308,8 +316,8 @@ if ($u_key) {
 				if (LOG_UA) $x[] = trim_post($_SERVER['HTTP_USER_AGENT']);
 	//* write data:
 				$x = data_log_post($x);
-				$post_status = ($x > 0?OQ.$tmp_post_ok_file:($x?'trd_miss':1));
-				$log = ($post_status != 1?0:$x);
+				$post_status = ($x > 0?OQ.$tmp_post_ok_file:($x?'trd_miss':'unkn_res'));
+				$log = ($post_status != 'unkn_res'?0:$x);
 			} else if (is_file($f)) unlink($f);
 		}
 	} else
@@ -327,10 +335,12 @@ if ($u_key) {
 			$uf = array();	$u = array();		//* <- cached ids, etc, for batch processing; name collisions, urgh
 		//	ksort($act, SORT_NATURAL);		//* <- since php v5.4.0 only; bummer
 			natsort($k);
-			data_lock($room);
+			if (!data_lock($room)) {
+				$post_status = 'no_lock';
+			} else
 			foreach (array_reverse($k) as $i) {
 				$m = data_log_mod($act[$i]);	//* <- act = array(option name, thread, row, column)
-				if ($post_status != 1) $post_status = ($m?OK:1);
+				if ($post_status != 'unkn_res') $post_status = ($m?OK:'unkn_res');
 			}
 		}
 	}
@@ -353,7 +363,7 @@ Target$op$t$ed"
 } else if (isset($_POST[ME]) && strlen($me = trim_post($_POST[ME], USER_NAME_MAX_LENGTH)) >= USER_NAME_MIN_LENGTH) {
 
 //* register new user ---------------------------------------------------------
-	$post_status = (data_log_user($u_key = md5($me.T0.substr(M0,2,3)), $me)?OQ.$tmp_post_ok_user_reg:1);
+	$post_status = (data_log_user($u_key = md5($me.T0.substr(M0,2,3)), $me)?OQ.$tmp_post_ok_user_reg:'unkn_res');
 }
 
 
@@ -530,7 +540,7 @@ data_lock($room)
 	).'</title><!--'.date(TIMESTAMP, T0).'-->'
 	.NL.$target['pic']
 	.NL.$target['task']
-: $tmp_post_err);
+: $tmp_post_err['no_lock']);
 				$t = substr($etc, 1);
 				list($a, $r) = get_room_skip_name($room);
 				if ($q = get_room_skip_list($a)) {

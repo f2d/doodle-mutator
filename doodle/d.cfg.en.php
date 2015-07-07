@@ -81,19 +81,20 @@ $tmp_options_turn_off = 'no';
 $tmp_options_turn_on = 'yes';
 $tmp_options_unskip = 'Reset skipped threads';
 $tmp_post_err = array(
-	-1	=> 'What.'
-,	1	=> 'No result.'
-,	'dest'	=> 'Invalid path.'
-,	'file_dup'	=> 'File denied: copy already exists.'
+	'file_dup'	=> 'File denied: copy already exists.'
 ,	'file_part'	=> 'File denied: upload not completed, please try to load in draw app and send again.'
 ,	'file_pic'	=> 'File denied: not image.'
 ,	'file_put'	=> 'File denied: saving failed.'
 ,	'file_size'	=> 'File denied: size out of limits.'
+,	'no_lock'	=> 'Could not lock data.'
+,	'no_path'	=> 'Path not found.'
 ,	'pic_fill'	=> 'Image denied: same color flood.'
 ,	'pic_size'	=> 'Image denied: size out of limits.'
 ,	'text_short'	=> 'Text denied: too short.'
 ,	'trd_max'	=> 'Too much threads.'
 ,	'trd_miss'	=> 'Thread misfire fork.'
+,	'unkn_req'	=> 'Unexpected error: invalid request.'
+,	'unkn_res'	=> 'Unexpected error: invalid result.'
 );
 $tmp_post_ok_file = 'Image sent.';
 $tmp_post_ok_goto = '%s Go to <a href="%s">next</a>.';
@@ -142,12 +143,11 @@ Single-letter rooms keep only 1 page in archive (no more than '.TRD_PER_PAGE.' t
 $tmp_stop_all = 'Game frozen.';
 $tmp_submit = 'Submit';
 $tmp_target_status = array(
--3 =>	'Thread changed'
-, -2 =>	'This task is taken by others'
-, -1 =>	'This room is renamed or deleted'
-,	'Your task is empty'
-,	'This is your task, prolonged'
-,	'This task was dropped, now it\'s yours'
+	'no_room'	=> 'This room is renamed or deleted'
+,	'no_task'	=> 'Your task is empty'
+,	'task_let_go'	=> 'This task is taken by others'
+,	'task_owned'	=> 'This is your task, prolonged'
+,	'task_reclaim'	=> 'This task was dropped, now it\'s yours'
 );
 $tmp_time_limit = 'Time limit';
 $tmp_time_units = array(
