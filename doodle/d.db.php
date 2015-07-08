@@ -30,8 +30,23 @@ global	$room;
 	return file_put_contents(data_dir($file_path), $text);
 }
 
-function data_log($file_path, $line, $n = BOM) {
-	return file_put_contents(data_dir($file_path), (is_file($file_path)?NL:$n).$line, FILE_APPEND);
+function data_log($file_path, $line, $n = BOM, $report = 1) {
+	$old = is_file($file_path);
+	$line = ($old?NL:$n).$line;
+	$written = file_put_contents(data_dir($file_path), $line, FILE_APPEND);
+
+	if (!$written && $old) {	//* <- wrong user rights, maybe
+		$log = 'Cannot write to '.$file_path;
+
+		if (rename($file_path, $old = $file_path.'.old'.T0.'.bak')
+		&& ($written = file_put_contents($file_path, file_get_contents($old).$line))
+		) {
+			$del = (unlink($old)?'deleted':'cannot delete');
+			$log .= NL."Copied $written to new file, $del $old";
+		}
+	}
+	if ($log && $report) data_log_adm($log);
+	return $written;
 }
 
 function data_post_refresh($r = '') {
@@ -166,7 +181,7 @@ global	$u_num, $room;
 	$d = date('Y-m-d', T0);
 	$u = (GOD?'g':(MOD?'m':'r'));
 	$r = ($room?DIR_META_R.$room.'/':'');
-	return data_log("$r$d.log", T0.'+'.M0."	$u$u_num	$a");
+	return data_log("$r$d.log", T0.'+'.M0."	$u$u_num	$a", BOM, 0);
 }
 
 function data_log_report($r) {			//* <- r = array(t-r-c, reason, thread, row, column)
