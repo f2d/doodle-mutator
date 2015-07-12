@@ -1,11 +1,11 @@
 ﻿var dfc = new function () {
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
-,	INFO_VERSION = 'v0.9.51'
-,	INFO_DATE = '2013-04-01 — 2015-07-07'
+,	INFO_VERSION = 'v0.9.52'
+,	INFO_DATE = '2013-04-01 — 2015-07-12'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640, NUF = 100
-,	CR = 'CanvasRecover', CT = 'Time', DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
+,	CR = 'CanvasRecovery', CT = 'Time', DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
 
 ,	TOOLS_REF = [
 		{blur: 0, opacity: 1.00, width:  1, color: '0, 0, 0'}		//* <- draw
@@ -118,7 +118,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 ,	regLimit = /^(\d+)\D+(\d+)$/
 
 ,	self = this, container, canvas, c2d, cnvHid, c2s, lang, DL, LS, i, outside = this.o = {}
-,	fps = 0, ticks = 0, timer = 0
+,	fps = 0, ticks = 0, timer = 0, lastUsedSaveSlot = 0
 ,	interval = {fps:0, timer:0, save:0}, text = {debug:0, timer:0, undo:0}, used = {}, cue = {upd:{}}
 
 ,	draw = {o:{}, cur:{}, prev:{}
@@ -127,6 +127,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	,	history: {pos:0, last:0
 		,	cur: function() {return this.data[this.pos];}
 		,	act: function(i) {
+				lastUsedSaveSlot = 0;
 			var	t = this, s = isNaN(i), z = t.data.length - 1;
 				if (i && !s) {
 					if (i < 0 && t.pos > 0) --t.pos; else
@@ -1012,87 +1013,110 @@ function saveDL(content, suffix) {
 }
 
 function savePic(dest, auto) {
-var	a = auto || false, c, d, e, i, t;
+var	a = auto || false, c,d,e,i,j,t;
 	draw.screen();
 
+	function saveRem(i) {
+		if (i > 0 && (r = CR[i])) {
+		var	r = r.R, n = r.length, i = LS.length, j = [], k;
+			while(i--) if ((k = LS.key(i)) && (k == r || (!orz(k[n]) && k.substr(0,n) == r))) j.push(k);
+			for (i in j) LS.removeItem(j[i]);
+		}
+	}
+	function saveShiftUpTo(i) {
+	var	n,m = 0;
+		while ((n = i) && --i) {
+		var	r = LS[CR[i].R]
+		,	t = LS[CR[i].T];
+			saveRem(i), saveRem(n);	//* <- have to care about LS size limit
+			if (t) {
+				LS[CR[n].R] = r, m += r.length;
+				LS[CR[n].T] = t, m += t.length;
+			}
+		}
+		return m;			//* <- max size proven to be allowed
+	}
 	function confirmShowTime(la, s) {
 		if (s) {
 		var	a = s.split('-'), i,t,n = ' \r\n', r = la.join(n);
 			for (i = 0; i < 2; i++) t = +a[i], r += n+(t ? unixDateToHMS(t,0,1) : '-');
-		} else r = la[0]
+		} else r = la[0];
 		return confirm(r);
 	}
 
 	switch (dest) {
+//* save to file
 	case 0:
 	case 1: saveDL(c = canvas.toDataURL(dest?IJ:''), dest?'.jpg':'.png');
 		break;
-//* save
+//* save to memory
 	case 2:
-		if (fillCheck()) return a?c:alert(lang.no.drawn);
 		c = canvas.toDataURL();
-		if (!LS) return a?c:alert(lang.no.LS);
-		d = LS[CR[1].R];
-		if (d == c) return a?c:alert(lang.no.change);
-		t = LS[CR[1].T], e = LS[CR[2].R] || 0;
-		if (!a && e == c) {
-			LS[CR[1].R] = e;
-			LS[CR[1].T] = LS[CR[2].T];
-			LS[CR[2].R] = d;
-			LS[CR[2].T] = t;
-			alert(lang.found_swap);
-		} else
-		if (a || confirmShowTime(lang.confirm.save, t)) {
-			function rem(a) {var r = 'RT', i = r.length; while (i--) LS.removeItem(CR[a][r[i]]);}
-			try {
-				if (e) rem(2);
-				if (t) {
-					rem(1);
-					LS[CR[2].R] = d;
-					LS[CR[2].T] = t;
-				}
+		if (!c || fillCheck())	return a || alert(lang.no.drawn	), c;
+		if (!LS)		return a || alert(lang.no.LS	), c;
+		if (LS[CR[1].R] === c)	return a || alert(lang.no.change), c;
+
+		i = 1, j = CR.length;
+		while (++i < j) {
+			if (LS[CR[i].R] === c) {
+				t = LS[CR[i].T];
+				saveShiftUpTo(i);
 				LS[CR[1].R] = c;
-				LS[CR[1].T] = draw.time.join('-')+(used.read?'-'+used.read:'');
+				LS[CR[1].T] = t;
+				return a || alert(lang.found_swap), c;
+			}
+		}
+
+		if (a || confirmShowTime(lang.confirm.save, LS[CR[1].T])) {
+			t = draw.time.join('-')+(used.read?'-'+used.read:'');
+			d = saveShiftUpTo(j-1);
+			while (--j) try {
+				LS[CR[1].R] = c;
+				LS[CR[1].T] = t;
+				break;
 			} catch(e) {
-				rem(1), rem(2);
-				try {
-					LS[CR[1].R] = d;
-					LS[CR[1].T] = t;
-				} catch(i) {rem(1); e.message += '\n'+i.message;}
-				return alert(lang.no.space+'\nError code: '+e.code+', '+e.message), c;
+				if (c.length + t.length > d) return alert(lang.no.space+'\nError code: '+e.code+', '+e.message), c;
+				saveRem(1), saveRem(j);	//* <- probably maxed out allowed LS capacity, try to clean up from oldest slots first
 			}
 			id('saveTime').textContent = unixDateToHMS();
 			setClass(id('buttonL'), 'button');
-			cue.autoSave = 0;
+			cue.autoSave = lastUsedSaveSlot = 0;
 		}
 		break;
-//* load
+//* load from memory
 	case 3:
 		if (!LS) return alert(lang.no.LS);
-		t = LS[CR[1].T];
+
+		i = lastUsedSaveSlot+1, j = CR.length, c = canvas.toDataURL();
+		if (!(i > 0 && i < j)) i = 1;
+		do if (
+			(t = LS[CR[i].T])
+		&&	(d = LS[CR[i].R])
+		&&	(d != c || (d = ''))
+		) break; while (++i < j);
+
 		if (!t) return;
-		d = LS[CR[1].R];
-		if (d == (c = canvas.toDataURL())) {
-			if ((!(t = LS[CR[2].T]) || ((d = LS[CR[2].R]) == c))) return alert(lang.no.change);
-		}
+		if (!d) return alert(lang.no.change);
+
 		if (confirmShowTime(lang.confirm.load, t)) {
 			t = t.split('-');
 			if (t.length > 2) used.read = 'Read File: '+t.slice(2).join('-').replace(/^[^:]+:\s+/, '');
 			draw.time = t.slice(0,2), a = id('saveTime'), a.textContent = unixDateToHMS(+t[1]), a.title = new Date(+t[1]);
-			readPic(d);
+			readPic(d,i);
 			used.LS = 'Local Storage';
 		}
 		break;
+//* load file
 	case 4:	
 		if (a || ((outside.read || (outside.read = id('read'))) && (a = outside.read.value))) {
 			used.read = 'Read File: '+readPic(a);
 		}
 		break;
-//* send
+//* send to server
 	default:
-		if (dest) alert(lang.bad_id+'\n\nid='+dest+'\na='+auto); else
-		if (!outside.send) alert(lang.no.form); else
-		if (fillCheck()) alert(lang.no.drawn); else {
+		if (dest)		alert(lang.bad_id+'\n\nid='+dest+'\na='+auto); else
+		if (!outside.send)	alert(lang.no.form); else
+		if (fillCheck())	alert(lang.no.drawn); else {
 			a = select.imgLimits, c = 'send';
 			for (i in a) if (canvas[i] < a[i][0] || canvas[i] > a[i][1]) c = 'size';
 		}
@@ -1127,7 +1151,7 @@ var	a = auto || false, c, d, e, i, t;
 	return c;
 }
 
-function readPic(s) {
+function readPic(s,ls) {
 	if (!s || s == 0 || (!s.data && !s.length)) return;
 	if (!s.data) s = {data: s, name: (0 === s.indexOf('data:') ? s.split(',', 1) : s)};
 var	d = draw.time, e = new Image(), t = +new Date, i;
@@ -1145,6 +1169,7 @@ var	d = draw.time, e = new Image(), t = +new Date, i;
 		}
 		historyAct();
 		cue.autoSave = 0;
+		lastUsedSaveSlot = ls;
 		if (d = e.parentNode) d.removeChild(e);
 	}
 	draw.field.appendChild(e);
@@ -1239,7 +1264,9 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 8=bksp, 45=Ins, 42=10
 				,	j +=
 					(j?'<br>':'<hr>')
 				+	'Save'+i+'.time: '+LS[CR[i].T]
-				+	(LS[CR[i].R]?', size: '+LS[CR[i].R].length:'');
+				+	(LS[CR[i].T]?' = '+unixDateToHMS(+LS[CR[i].T].split('-')[1],0,1):'')
+				+	(LS[CR[i].R]?', size: '+LS[CR[i].R].length:'')
+				+	(i == lastUsedSaveSlot?' ← last used':'');
 				}
 				text.debug.innerHTML =
 					replaceAll(
@@ -1251,7 +1278,7 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 8=bksp, 45=Ins, 42=10
 				+		'{.mode,2;mode}'
 				+		'LStorage keys: '+(k?k+n:CT+', '+CR)
 					, '{', '<a href="javascript:|.show(|')
-					, ';', ')">self.')
+					, ';', ')">.')
 					, '}', '</a>,\n')
 				+		(outside.read?'':', F6=read: <textarea id="|-read">/9.png</textarea>')
 					, '|', NS)
@@ -1510,9 +1537,12 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 
 function isTest() {
 	if (!CR[0]) return !o.send;
-var	o = outside, v = id('vars'), e,i,j,k
+var	o = outside
 ,	f = o.send = id('send')
-,	r = o.read = id('read'), a = [v,f,r];
+,	r = o.read = id('read')
+,	v = id('vars')
+,	a = [v,f,r], e,i,j,k;
+
 /* ext.config syntax:
 	a) varname; var2=;		// no sign => value 1; no value => ''
 	b) warname=two=3=last_val;	// all vars => same value (rightmost part)
@@ -1528,16 +1558,19 @@ var	o = outside, v = id('vars'), e,i,j,k
 				for (j in e) o[e[j]] = k;
 			} else o[e[0]] = 1;
 		}
-		break;	//* <- read vars batch in the first found attribute only; no care about the rest
+		break;			//* <- read vars batch in the first found attribute only; no care about the rest
 	}
-	k = 'y2'	//* <- save slot naming differences
-,	i = k.length
-,	j = (o.saveprfx?o.saveprfx:NS)+CR
-,	CR = [];
-	while (i) CR[i--] = {R:e = j+k[i], T:e+CT};
+
+	i = o.save = Math.max(orz(o.save), 3)
+,	j = (o.saveprfx || NS)+CR
+,	self.R = CR = [];
+	do CR[i] = (
+		(LS[k = (i == 1?j:j.slice(0,-1)+i)])
+		? {R:k, T:k+CT, keepSavedInOldFormat:true}
+		: {R:(k = j+i), T:k+CT}
+	); while (--i);
 
 	CT = CR[1].T
-,	self.R = CR
 ,	o.t0 = (o.t0 > 0 ? o.t0+'000' : +new Date)
 ,	i = ' \r\n'
 ,	j = shapeHotKey.split('').join(k = ', ');
@@ -1546,7 +1579,8 @@ var	o = outside, v = id('vars'), e,i,j,k
 	if (!o.lang) o.lang = document.documentElement.lang || 'en';
 
 	if (o.lang == 'ru') {
-		lang = {
+		r = ' браузера (содержит очередь из '+o.save+' позиций максимум).'
+	,	lang = {
 			bad_id:		'Ошибка: действие не найдено.'
 		,	confirm: {
 				send:	'Отправить рисунок в сеть?'
@@ -1629,8 +1663,8 @@ var	o = outside, v = id('vars'), e,i,j,k
 			,	fps:	{sub:'п.кадры',	t:'Уменьшить нагрузку, пропуская кадры.'}
 			,	png:	{sub:'сохр.png',t:'Сохранить рисунок в PNG файл.'}
 			,	jpeg:	{sub:'сохр.jpg',t:'Сохранить рисунок в JPEG файл.'}
-			,	save:	{sub:'сохран.',	t:'Сохранить рисунок в память браузера, 2 последние позиции по очереди.'}
-			,	load:	{sub:'загруз.',	t:'Вернуть рисунок из памяти браузера, 2 последние позиции по очереди.'
+			,	save:	{sub:'сохран.',	t:'Сохранить рисунок в память'+r}
+			,	load:	{sub:'загруз.',	t:'Вернуть рисунок из памяти'+r
 				+	i+'Может не сработать в некоторых браузерах, если не настроить автоматическую загрузку и показ изображений.'}
 			,	read:	{sub:'зг.файл',	t:'Прочитать локальный файл.'
 				+	i+'Может не сработать вообще, особенно при запуске самой рисовалки не с диска.'
@@ -1650,7 +1684,8 @@ var	o = outside, v = id('vars'), e,i,j,k
 		,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент']
 		};
 	} else {
-		lang = {
+		r = ' your browser memory (keeps a maximum of '+o.save+' slots in a queue).'
+	,	lang = {
 			bad_id:		'Invalid action: case not found.'
 		,	found_swap:	'Found image at slot 2, swapped slots.'
 		,	confirm: {
@@ -1733,8 +1768,8 @@ var	o = outside, v = id('vars'), e,i,j,k
 			,	fps:	'Limit FPS when drawing to use less CPU.'
 			,	png:	'Save image as PNG file.'
 			,	jpeg:	'Save image as JPEG file.'
-			,	save:	'Save image copy to your browser memory, two slots in a queue.'
-			,	load:	'Load image copy from your browser memory, two slots in a queue.'
+			,	save:	'Save image copy to'+r
+			,	load:	'Load image copy from'+r
 				+	i+'May not work in some browsers until set to load and show new images automatically.'
 			,	read:	'Load image from your local file.'
 				+	i+'May not work at all, especially if sketcher itself is not started from disk.'
