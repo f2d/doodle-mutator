@@ -2,7 +2,7 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 ,	INFO_VERSION = 'v0.9.52'
-,	INFO_DATE = '2013-04-01 — 2015-07-12'
+,	INFO_DATE = '2013-04-01 — 2015-07-13'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640, NUF = 100
 ,	CR = 'CanvasRecovery', CT = 'Time', DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
@@ -234,13 +234,15 @@ function showProps(o, flags, spaces) {
 	8 = only values
 */
 var	i,j = ' ', t = '', p;
-	for (i in o) if ((p = o[i]) || (flags & 2)) t += '\n'
-		+((flags & 8)?'':i)
-		+((flags &12)?'':' = ')
-		+((flags & 4)?'':(spaces && p?(p+j).split(j, spaces).join(j):p));
+	for (i in o) if ((p = o[i]) || (flags & 2)) t +=
+		(t?'\n':'')
+	+	((flags & 8)?'':i)
+	+	((flags &12)?'':' = ')
+	+	((flags & 4)?'':(spaces && p?(p+j).split(j, spaces).join(j):p));
 	return (flags & 1)?t:alert(t);
 }
 this.show = showProps;
+this.unsave = function(i) {saveClear(i), updateDebugScreen(i);}
 
 function updatePalette() {
 var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
@@ -349,22 +351,53 @@ var	x = 0, y = 0;
 	return {x:x, y:y};
 }
 
-function updateDebugScreen() {
-	if (!mode.debug) return;
-	++ticks;
-var	r = '</td></tr>\n<tr><td>', d = '</td><td>', a = draw.turn, s = draw.step, t = draw.time, i = isMouseIn();
-	text.debug.innerHTML =
-		'<table><tr><td>'
-	+	draw.refresh+d+'1st='+t[0]	+d+'last='+t[1]		+d+'fps='+fps
-	+	r+'Relative'+d+'x='+draw.o.x	+d+'y='+draw.o.y	+d+i+(i?',rgb='+pickColor(1):'')
-	+	r+'DrawOfst'+d+'x='+draw.cur.x	+d+'y='+draw.cur.y	+d+'btn='+draw.btn+',active='+draw.active
-	+	r+'Previous'+d+'x='+draw.prev.x	+d+'y='+draw.prev.y	+d+'chain='+mode.click
-	+	(s?''
-	+	r+'StpStart'+d+'x='+s.prev.x	+d+'y='+s.prev.y
-	+	r+'Step_End'+d+'x='+s.cur.x	+d+'y='+s.cur.y
-		:'')
-	+	'</td></tr></table>'
-	+	showProps(tool,3)+(a?'<br>turn: '+showProps(a,1):'');
+function updateDebugScreen(ls) {
+	if (ls) {
+	var	i = 1, j = '', k = !CR[0], n = CR.length;
+		if (k) for (k = ''; i < n; i++) {
+			t = LS[CR[i].T]
+		,	r = LS[CR[i].R]
+		,	k += '{.R['+i+'],2;r'+i+'}'
+		,	j +=
+			(j?'<br>':'<hr>')
+		+	'Save'+i+'<a href="javascript:'+NS+'.unsave('+i+')">.del</a>, time: '+(i == ls?'<span class="'+NS+'-red">'+t+'</span>':t)
+		+	(t?' = '+unixDateToHMS(+t.split('-')[1],0,1):'')
+		+	(r?', size: '+r.length:'')
+		+	(i == lastUsedSaveSlot?' ← last used':'');
+		}
+		text.debug.innerHTML =
+			replaceAll(
+			replaceAll(
+			replaceAll(
+			replaceAll(
+		'{,2,1;props}'
+		+		'{.o,2;outside}'
+		+		'{.mode,2;mode}'
+		+		'LStorage keys: '+(k?k+n:CT+', '+CR)
+			, '{', '<a href="javascript:|.show(|')
+			, ';', ')">.')
+			, '}', '</a>,\n')
+		+		(outside.read?'':', F6=read: <textarea id="|-read">/9.png</textarea>')
+			, '|', NS)
+		+	j+'<hr>'
+		+	getSendMeta(draw.screen()).replace(/[\r\n]+/g, '<br>');
+	} else
+	if (mode.debug) {
+	var	r = '</td></tr>\n<tr><td>', d = '</td><td>', a = draw.turn, s = draw.step, t = draw.time, i = isMouseIn();
+		text.debug.innerHTML =
+			'<table><tr><td>'
+		+	draw.refresh+d+'1st='+t[0]	+d+'last='+t[1]		+d+'fps='+fps
+		+	r+'Relative'+d+'x='+draw.o.x	+d+'y='+draw.o.y	+d+i+(i?',rgb='+pickColor(1):'')
+		+	r+'DrawOfst'+d+'x='+draw.cur.x	+d+'y='+draw.cur.y	+d+'btn='+draw.btn+',active='+draw.active
+		+	r+'Previous'+d+'x='+draw.prev.x	+d+'y='+draw.prev.y	+d+'chain='+mode.click
+		+	(s?''
+		+	r+'StpStart'+d+'x='+s.prev.x	+d+'y='+s.prev.y
+		+	r+'Step_End'+d+'x='+s.cur.x	+d+'y='+s.cur.y
+			:'')
+		+	'</td></tr></table>'
+		+	showProps(tool,3)+(a?'<br>turn: '+showProps(a,1):'');
+		++ticks;
+	}
 }
 
 function updateViewport(delta) {
@@ -1012,29 +1045,33 @@ function saveDL(content, suffix) {
 	} else window.open(content, '_blank');
 }
 
-function savePic(dest, auto) {
-var	a = auto || false, c,d,e,i,j,t;
-	draw.screen();
-
-	function saveRem(i) {
-		if (i > 0 && (r = CR[i])) {
-		var	r = r.R, n = r.length, i = LS.length, j = [], k;
-			while(i--) if ((k = LS.key(i)) && (k == r || (!orz(k[n]) && k.substr(0,n) == r))) j.push(k);
+function saveClear(i, warn) {
+	if (i > 0 && (r = CR[i])) {
+	var	r = r.R, n = r.length, i = LS.length, j = [], k;
+		while(i--) if ((k = LS.key(i)) && (k == r || (!orz(k[n]) && k.substr(0,n) == r))) j.push(k);
+		if (j.length) {
+			if (warn) alert('LS keys to clear:\n'+j.join('\n'));
 			for (i in j) LS.removeItem(j[i]);
 		}
 	}
+}
+
+function savePic(dest, auto) {
+var	a = auto || false, b = 'button', c,d,e,i,j,t;
+	draw.screen();
+
 	function saveShiftUpTo(i) {
 	var	n,m = 0;
 		while ((n = i) && --i) {
 		var	r = LS[CR[i].R]
 		,	t = LS[CR[i].T];
-			saveRem(i), saveRem(n);	//* <- have to care about LS size limit
+			saveClear(i), saveClear(n);	//* <- have to care about LS size limit
 			if (t) {
 				LS[CR[n].R] = r, m += r.length;
 				LS[CR[n].T] = t, m += t.length;
 			}
 		}
-		return m;			//* <- max size proven to be allowed
+		return m;				//* <- max size proven to be allowed
 	}
 	function confirmShowTime(la, s) {
 		if (s) {
@@ -1076,10 +1113,10 @@ var	a = auto || false, c,d,e,i,j,t;
 				break;
 			} catch(e) {
 				if (c.length + t.length > d) return alert(lang.no.space+'\nError code: '+e.code+', '+e.message), c;
-				saveRem(1), saveRem(j);	//* <- probably maxed out allowed LS capacity, try to clean up from oldest slots first
+				saveClear(1), saveClear(j);	//* <- probably maxed out allowed LS capacity, try to clean up from oldest slots first
 			}
 			id('saveTime').textContent = unixDateToHMS();
-			setClass(id('buttonL'), 'button');
+			setClass(id(b+'L'), b);
 			cue.autoSave = lastUsedSaveSlot = 0;
 		}
 		break;
@@ -1087,16 +1124,20 @@ var	a = auto || false, c,d,e,i,j,t;
 	case 3:
 		if (!LS) return alert(lang.no.LS);
 
-		i = lastUsedSaveSlot+1, j = CR.length, c = canvas.toDataURL();
-		if (!(i > 0 && i < j)) i = 1;
-		do if (
-			(t = LS[CR[i].T])
-		&&	(d = LS[CR[i].R])
-		&&	(d != c || (d = ''))
-		) break; while (++i < j);
+		function seekSavePos(i) {
+			if (!(i > 0 && i < j)) i = 1;
+			do if (e = LS[CR[i].T]) {
+				d = LS[CR[i].R], t = e;
+				if (t && d && d != c) return i;
+			} while (++i < j);
+			return 0;
+		}
 
-		if (!t) return lastUsedSaveSlot = 0;
-		if (!d) return alert(lang.no.change);
+		c = canvas.toDataURL(), j = CR.length, i = seekSavePos(lastUsedSaveSlot+1) || seekSavePos(), lastUsedSaveSlot = 0;
+		setClass(id(b+'L'), b+(t?'':'-disabled'));
+
+		if (!t) return;
+		if (!i) return alert(lang.no.change);
 
 		if (confirmShowTime(lang.confirm.load, t)) {
 			t = t.split('-');
@@ -1212,6 +1253,7 @@ function browserHotKeyPrevent(event) {
 	? ((event.returnValue = false) || event.preventDefault() || true)
 	: false;
 }
+
 function hotKeys(event) {
 	if (browserHotKeyPrevent(event)) {
 	var	s = String.fromCharCode(event.keyCode), i = shapeHotKey.indexOf(s);
@@ -1257,34 +1299,7 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 8=bksp, 45=Ins, 42=10
 			case 119:	savePic();	break;
 
 			case 42:
-			case 106:
-			var	i = 1, j = '', k = !CR[0], n = CR.length;
-				if (k) for (k = ''; i < n; i++) {
-					k += '{.R['+i+'],2;r'+i+'}'
-				,	j +=
-					(j?'<br>':'<hr>')
-				+	'Save'+i+'.time: '+LS[CR[i].T]
-				+	(LS[CR[i].T]?' = '+unixDateToHMS(+LS[CR[i].T].split('-')[1],0,1):'')
-				+	(LS[CR[i].R]?', size: '+LS[CR[i].R].length:'')
-				+	(i == lastUsedSaveSlot?' ← last used':'');
-				}
-				text.debug.innerHTML =
-					replaceAll(
-					replaceAll(
-					replaceAll(
-					replaceAll(
-						'{,2,1;props}'
-				+		'{.o,2;outside}'
-				+		'{.mode,2;mode}'
-				+		'LStorage keys: '+(k?k+n:CT+', '+CR)
-					, '{', '<a href="javascript:|.show(|')
-					, ';', ')">.')
-					, '}', '</a>,\n')
-				+		(outside.read?'':', F6=read: <textarea id="|-read">/9.png</textarea>')
-					, '|', NS)
-				+	j+'<hr>'
-				+	getSendMeta(draw.screen()).replace(/[\r\n]+/g, '<br>');
-			break;
+			case 106:updateDebugScreen(-1);	break;
 
 			default: if (mode.debug) text.debug.innerHTML += '\n'+s+'='+event.keyCode;
 		}
@@ -1807,6 +1822,7 @@ document.write(
 #| .|-paletdark:hover {border-color: #fff;}\
 #| .|-palettine:hover {border-color: #000;}\
 #| .|-r {text-align: right;}\
+#| .|-red {background-color: #f77;}\
 #| a {color: #888;}\
 #| a:hover {color: #000;}\
 #| abbr {border-bottom: 1px dotted #111;}\
