@@ -3,10 +3,14 @@
 $lang = 'en';
 $cfg_langs = array('en', 'ru');
 $cfg_draw_app = array('dfc', 'milf');
+$cfg_draw_vars = array(
+	'save' => 'draw_max_recovery'
+,	'undo' => 'draw_max_undo'
+);
 $cfg_opts_order = array(
 	'admin' => array('time_check_points')
 ,	'check' => array('head', 'count', 'times', 'names', 'own', 'unknown', 'active', 'save2common', 'kbox', 'focus', 'modtime304')
-,	'input' => array('draw_app', 'draw_max_undo', 'per_page', 'room_home')
+,	'input' => array('draw_app', 'draw_max_recovery', 'draw_max_undo', 'per_page', 'room_home')
 );
 $cfg_dir = array(
 	'arch' => 'archive'
@@ -44,8 +48,9 @@ define(DRAW_DEFAULT_HEIGHT, 360);
 define(DRAW_LIMIT_WIDTH, '100,1920');
 define(DRAW_LIMIT_HEIGHT, '100,1280');
 define(DRAW_MAX_FILESIZE, 10020030);
-define(DRAW_MAX_UNDO, 123);
-define(DRAW_JPG_PREF, 300200);
+define(DRAW_MAX_RECOVERY, 3);
+define(DRAW_MAX_UNDO, 99);
+define(DRAW_JPG_PREF, 1002003);	//* <- bytes
 define(DRAW_REST, ';restyle=body,#task;restmin=document.body.firstElementChild');	//* <- on canvas resize
 
 define(TARGET_CHANGE_TIME, 600);//* 10min

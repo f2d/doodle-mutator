@@ -1,7 +1,7 @@
 <?php
 
 function data_get_visible_archives() {
-global	$u_flag;
+	global $u_flag;
 	$a = array(0);
 	if (is_dir($da = DIR_ARCH))
 	foreach (scandir($da) as $r) if (($u_flag['god'] || !ROOM_HIDE || ROOM_HIDE != $r[0]) && trim($r, '.')
@@ -65,17 +65,20 @@ function data_get_template_page($room, $num, $tsv) {
 	$n = $num+1;
 	$lines = explode(NL, trim($tsv));
 	return get_template_page(
-array(	'title' => $room
-,	'head' => ($p ? '<link rel="prev" href="'.$p.PAGE_EXT.'">'.NL : '').
-			'<link rel="next" href="'.$n.PAGE_EXT.'">'
-,	'body' => get_date_class(data_line2time(reset($lines)), data_line2time(end($lines)))
-,	'task' => ($p ? '<a href="'.$p.PAGE_EXT.'" title="previous">'.$num.'</a>' : $num)
-,	'content' => $tsv
-,	'js' => 'arch'));
+		array(
+			'title' => $room
+		,	'head' => ($p ? '<link rel="prev" href="'.$p.PAGE_EXT.'">'.NL : '').
+					'<link rel="next" href="'.$n.PAGE_EXT.'">'
+		,	'body' => get_date_class(data_line2time(reset($lines)), data_line2time(end($lines)))
+		,	'task' => ($p ? '<a href="'.$p.PAGE_EXT.'" title="previous">'.$num.'</a>' : $num)
+		,	'content' => $tsv
+		,	'js' => 'arch'
+		)
+	);
 }
 
 function data_archive_full_threads($threads) {
-global	$room;
+	global $room;
 	if (!is_dir($b = ($a = DIR_ARCH.$room.'/').DIR_THUMB)) mkdir($b, 0755, true);
 	$done = $gone = 0;
 	$c = data_get_archive_count();

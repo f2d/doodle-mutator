@@ -43,8 +43,8 @@ data_log_ref();
 ob_end_clean();
 time_check_point('after cfg');
 
-$opt_sufx = 'aopu';
-$opt_name = array('opta', 'opti', 'per_page', 'draw_max_undo');
+$opt_sufx = 'aopru';
+$opt_name = array('opta', 'opti', 'per_page', 'draw_max_recovery', 'draw_max_undo');
 $opt_lvls = array('a' => 'admin', 'i' => 'check');
 
 if ($me = $_REQUEST[ME]) {
@@ -477,7 +477,7 @@ if ($u_key) {
 .':'.implode('|', $cfg_draw_app).':'.implode('|', $tmp_draw_app).':?*:'
 //':'.ROOTPRFX.'*.htm:'
 .$tmp_draw_test;
-		if (!$u_draw_max_undo) $u_draw_max_undo = DRAW_MAX_UNDO;
+		foreach ($cfg_draw_vars as $v) if (!${$i = 'u_'.$v} && defined($k = strtoupper($v))) $$i = constant($k);
 		if (!$u_room_home) {
 			$u_room_home = ROOM_DEFAULT;
 			if (!$qdir) $o1 = "$nst<br>$nst<b class=\"anno\">$tmp_options_first</b>$nst<br>";
@@ -485,9 +485,9 @@ if ($u_key) {
 		$s = ':	';
 		$a = $b = $c = '';
 		if (GOD)
-		foreach ($cfg_opts_order['admin'] as $k => $v) $a .= NL."$tmp_options_admin[$v]$s".abbr($v).'='.($u_opta[$k]?1:'');
-		foreach ($cfg_opts_order['input'] as $k => $v) $b .= NL."$tmp_options_field[$v]$s".abbr($v).'='.($$v?$$v:'='.${'u_'.$v});
-		foreach ($cfg_opts_order['check'] as $k => $v) $c .= NL."$tmp_options_show[$v]$s".abbr($v).'='.($u_opti[$k]?1:'');
+		foreach ($cfg_opts_order[$i = 'admin'] as $k => $v) $a .= NL.$tmp_options_input[$i][$v].$s.abbr($v).'='.($u_opta[$k]?1:'');
+		foreach ($cfg_opts_order[$i = 'input'] as $k => $v) $b .= NL.$tmp_options_input[$i][$v].$s.abbr($v).'='.($$v?$$v:'='.${'u_'.$v});
+		foreach ($cfg_opts_order[$i = 'check'] as $k => $v) $c .= NL.$tmp_options_input[$i][$v].$s.abbr($v).'='.($u_opti[$k]?1:'');
 		$i = '
 |<input type="submit" value="';
 
@@ -845,7 +845,7 @@ die(get_template_page(array(
 		($qd_room ? ($room ? (
 			$etc ? (GOD?$tmp_mod_panel.' - '.$mod_page:$tmp_report).S : ''
 		).$room_title.S : $tmp_rooms.S) : ''))).$tmp_title.
-		($qd_opts == 2 ? S.$tmp_options_field['draw_app'] : '')
+		($qd_opts == 2 ? S.$tmp_options_input['input']['draw_app'] : '')
 ,	'header' => $rt?'':
 		($u_key?('
 		<div>'.

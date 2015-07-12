@@ -46,36 +46,39 @@ $tmp_name_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters.';
 $tmp_name_yourself = 'Name yourself:';
 $tmp_no_play_hint = 'Game playing turned off for you (no taking targets).';
 $tmp_options = 'Options. About';
-$tmp_options_admin = array(
-	'time_check_points'	=> 'Work time check points in footer'
-);
 $tmp_options_apply = 'Apply';
-$tmp_options_field = array(
-	'draw_app'	=> 'Sketcher variant'
-,	'draw_max_undo'	=> 'Undo history length in drawing'
-,	'per_page'	=> 'Threads per page'
-,	'room_home'	=> 'Home room (single dot = room list)'
-);
 $tmp_options_first = 'Press '.$tmp_options_apply.' to continue.';
 $tmp_options_flags = 'Status';
+$tmp_options_input = array(
+	'admin' => array(
+		'time_check_points'	=> 'Work time check points in footer'
+	)
+,	'check' => array(
+		'active'	=> 'Autohide visible threads, if more than 1'
+	,	'count'		=> 'Show contents count'
+	,	'head'		=> 'Show full header'
+	,	'names'		=> 'Show poster names'
+	,	'times'		=> 'Show post dates'
+	,	'own'		=> 'Mark own posts'
+	,	'focus'		=> 'Autofocus on text input fields'
+	,	'kbox'		=> 'Skip description confirmation'
+	,	'modtime304'	=> 'Use browser cache, when the page will have nothing new'
+	,	'save2common'	=> 'All draw apps share common save slots'
+	,	'unknown'	=> 'Prefer tasks from unknown threads'
+	)
+,	'input' => array(
+		'draw_app'		=> 'Sketcher variant'
+	,	'draw_max_recovery'	=> 'Drawing autosaved recovery slots'
+	,	'draw_max_undo'		=> 'Drawing undo history length'
+	,	'per_page'		=> 'Threads per page'
+	,	'room_home'		=> 'Home room (single dot = room list)'
+	)
+);
 $tmp_options_logout = 'Log out';
 $tmp_options_name = 'Your signature';
 $tmp_options_qk = 'Your key to login (displayed partly, hover it for hint)';
 $tmp_options_qk_hint = 'Double click to select it all for copying. Use in place of name at login form.';
 $tmp_options_reset = 'Reset options';
-$tmp_options_show = array(
-	'active'	=> 'Autohide visible threads, if more than 1'
-,	'count'		=> 'Show contents count'
-,	'head'		=> 'Show full header'
-,	'names'		=> 'Show poster names'
-,	'times'		=> 'Show post dates'
-,	'own'		=> 'Mark own posts'
-,	'focus'		=> 'Autofocus on text input fields'
-,	'kbox'		=> 'Skip description confirmation'
-,	'modtime304'	=> 'Use browser cache, when the page will have nothing new'
-,	'save2common'	=> 'All draw apps share common save slots'
-,	'unknown'	=> 'Prefer tasks from unknown threads'
-);
 $tmp_options_time = 'Time zone';
 $tmp_options_turn_off = 'no';
 $tmp_options_turn_on = 'yes';

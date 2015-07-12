@@ -40,9 +40,9 @@ function get_date_class($first = 0, $last = 0) {
 	if (/*$first > 1230 || $first < 110 || */$last > 1230 || $last < 110) return 'new-year';
 }
 function get_draw_app_list($n) {
-	global $cfg_draw_app, $tmp_draw_app, $tmp_options_field;
+	global $cfg_draw_app, $tmp_draw_app, $tmp_options_input;
 	if (!in_array($n, $cfg_draw_app)) $n = $cfg_draw_app[0];
-	$a = $tmp_options_field['draw_app'];
+	$a = $tmp_options_input['input']['draw_app'];
 	foreach ($cfg_draw_app as $k => $v) $a .= ($k?', ':': ').($n == $v
 		? $tmp_draw_app[$k]
 		: '<a href="?'.$v.'">'.$tmp_draw_app[$k].'</a>'
@@ -53,21 +53,20 @@ function get_draw_app_list($n) {
 	return array('name' => $n, 'src' => ROOTPRFX.$f.(LINK_TIME?'?'.filemtime($f):''), 'list' => $a);
 }
 function get_draw_vars() {
-	global $tmp_wh, $tmp_whu, $u_draw_app, $u_draw_max_undo, $u_opts;
+	global $cfg_draw_vars, $tmp_wh, $tmp_whu, $u_draw_app, $u_draw_max_undo, $u_opts;
 	$vars = DRAW_REST;
 	if (!$u_opts['save2common']) $vars .= ';saveprfx='.NAMEPRFX;
-	if ($u_draw_max_undo) $vars .= ';undo='.$u_draw_max_undo;
-	$r = get_req();
-	if ($r[0] && $r[0] != '!') {
+	if (($r = get_req()) && $r[0] && $r[0] != '!') {
 		$u_draw_app = $r[0];
 		if (strpos($r[1], 'x')) $wh = explode('x', $r[1]);
+	}
+	foreach ($cfg_draw_vars as $k => $v) {
+		if (($i = ${'u_'.$v}) || (defined($i = strtoupper($v)) && ($i = constant($i)))) $vars .= ";$k=$i";
 	}
 	foreach (array('DEFAULT_', 'LIMIT_') as $i => $j)
 	foreach ($tmp_whu as $k => $l) {
 		$p = $tmp_wh[$k].($i?'l':'');
-		if ((!$i && $wh && ($v = $wh[$k]))
-		|| (defined($v = "DRAW_$j$l") && ($v = constant($v)))
-		) $vars .= ";$p=$v";
+		if ((!$i && $wh && ($v = $wh[$k])) || (defined($v = "DRAW_$j$l") && ($v = constant($v)))) $vars .= ";$p=$v";
 	}
 	return $vars;
 }
