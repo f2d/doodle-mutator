@@ -1095,7 +1095,7 @@ var	a = auto || false, c,d,e,i,j,t;
 		&&	(d != c || (d = ''))
 		) break; while (++i < j);
 
-		if (!t) return;
+		if (!t) return lastUsedSaveSlot = 0;
 		if (!d) return alert(lang.no.change);
 
 		if (confirmShowTime(lang.confirm.load, t)) {
