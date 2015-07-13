@@ -1,7 +1,7 @@
 ﻿var dfc = new function () {
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
-,	INFO_VERSION = 'v0.9.52'
+,	INFO_VERSION = 'v0.9.53'
 ,	INFO_DATE = '2013-04-01 — 2015-07-13'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640, NUF = 100
@@ -226,23 +226,25 @@ function showInfo() {
 	toggleView('colors');
 	setClass(id('buttonH'), toggleView('info') ? 'button' : 'button-active');
 }
-function showProps(o, flags, spaces) {
+function showProps(target, flags, spaces) {
 /* flags:
 	1 = return, don't alert
-	2 = include parts that evaluate to false
+	2 = skip if value evaluates to false
 	4 = only keys
 	8 = only values
 */
-var	i,j = ' ', t = '', p;
-	for (i in o) if ((p = o[i]) || (flags & 2)) t +=
-		(t?'\n':'')
-	+	((flags & 8)?'':i)
+var	k,v,j = ' ', output = '';
+	for (k in target) if (
+		(v = target[k]) || !(flags & 2)
+	) output +=
+		(output?'\n':'')
+	+	((flags & 8)?'':k)
 	+	((flags &12)?'':' = ')
-	+	((flags & 4)?'':(spaces && p?(p+j).split(j, spaces).join(j):p));
-	return (flags & 1)?t:alert(t);
+	+	((flags & 4)?'':(spaces && v?(v+j).split(j, spaces).join(j):v));
+	return (flags & 1) ? output : alert(output);
 }
 this.show = showProps;
-this.unsave = function(i) {saveClear(i), updateDebugScreen(i);}
+this.unsave = function(i) {if (saveClear(i,1)) updateDebugScreen(i);}
 
 function updatePalette() {
 var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
@@ -351,16 +353,23 @@ var	x = 0, y = 0;
 	return {x:x, y:y};
 }
 
-function updateDebugScreen(ls) {
+function updateDebugScreen(ls, refresh) {
 	if (ls) {
+		if (refresh && !((i = text.debug.innerHTML) && i.length > 0)) return;
 	var	i = 1, j = '', k = !CR[0], n = CR.length;
 		if (k) for (k = ''; i < n; i++) {
-			t = LS[CR[i].T]
+			d = (i == 1 && refresh == 1)
 		,	r = LS[CR[i].R]
-		,	k += '{.R['+i+'],2;r'+i+'}'
+		,	t = LS[CR[i].T]
+		,	k += '{.R['+i+'];r'+i+'}'
 		,	j +=
 			(j?'<br>':'<hr>')
-		+	'Save'+i+'<a href="javascript:'+NS+'.unsave('+i+')">.del</a>, time: '+(i == ls?'<span class="'+NS+'-red">'+t+'</span>':t)
+		+	'Save'+i+'<a href="javascript:'+NS+'.unsave('+i+')">.del</a>, time: '
+		+	(i == ls || d
+				?'<span style="background-color:#'
+		+			(['f44','5ae','5ea','feb'][d?2:orz(refresh)]||'aaa')
+		+		'">'+t+'</span>'
+				:t)
 		+	(t?' = '+unixDateToHMS(+t.split('-')[1],0,1):'')
 		+	(r?', size: '+r.length:'')
 		+	(i == lastUsedSaveSlot?' ← last used':'');
@@ -370,9 +379,9 @@ function updateDebugScreen(ls) {
 			replaceAll(
 			replaceAll(
 			replaceAll(
-		'{,2,1;props}'
-		+		'{.o,2;outside}'
-		+		'{.mode,2;mode}'
+		'{,0,1;props}'
+		+		'{.o;outside}'
+		+		'{.mode;mode}'
 		+		'LStorage keys: '+(k?k+n:CT+', '+CR)
 			, '{', '<a href="javascript:|.show(|')
 			, ';', ')">.')
@@ -395,7 +404,7 @@ function updateDebugScreen(ls) {
 		+	r+'Step_End'+d+'x='+s.cur.x	+d+'y='+s.cur.y
 			:'')
 		+	'</td></tr></table>'
-		+	showProps(tool,3)+(a?'<br>turn: '+showProps(a,1):'');
+		+	showProps(tool,1)+(a?'<br>turn: '+showProps(a,3):'');
 		++ticks;
 	}
 }
@@ -1036,6 +1045,46 @@ var	d = draw.time, i, j = [], u = [], t = outside.t0;
 	:'');
 }
 
+function getSaveLSKeys(i) {
+	if (i > 0 && (r = CR[i])) {
+	var	r = r.R, n = r.length, i = LS.length, j = [], k;
+		while(i--) if ((k = LS.key(i)) && (k == r || (!orz(k[n]) && k.substr(0,n) == r))) j.push(k);
+		return j.sort();
+	}
+	return [];
+}
+
+function getSaveLSDict(i, swap) {
+var	j = getSaveLSKeys(i), k,m = 0, n = CR[i].R.length, d = {};
+	if (j.length > 0) for (i in j) k = j[i], m += (d[swap ? CR[swap].R+k.substr(n) : k] = LS[k]).length;
+	return {dict: d, sum: m};
+}
+
+function saveClear(i, warn) {
+var	j = getSaveLSKeys(i);
+	if (j.length > 0 && (!warn || confirm('Confirm deleting LS keys:\n\n'+j.join('\n')))) {
+		for (i in j) LS.removeItem(j[i]);
+		return j.length;
+	}
+	return 0;
+}
+
+function saveShiftUp(i) {
+	if (i > 0 && i < CR.length-1) {
+	var	n = i+1, d = getSaveLSDict(i, n), m = d.sum, d = d.dict;
+		saveClear(i), saveClear(n);	//* <- have to care about LS size limit
+		for (i in d) LS[i] = d[i];
+	}
+	return m || 0;
+}
+
+function saveShiftUpTo(i, swap) {
+var	d = getSaveLSDict(i, swap = orz(swap)), m = d.sum, d = d.dict;
+	while (i-- > swap) m += saveShiftUp(i);	//* <- destroys top slot old content
+	if (swap) for (i in d) LS[i] = d[i];	//* <- carefully copy all fields, even if unaware what other app versions have saved there
+	return m || 0;				//* <- max size proven to be allowed
+}
+
 function saveDL(content, suffix) {
 	if (DL) {
 		container.appendChild(a = document.createElement('a'));
@@ -1045,34 +1094,10 @@ function saveDL(content, suffix) {
 	} else window.open(content, '_blank');
 }
 
-function saveClear(i, warn) {
-	if (i > 0 && (r = CR[i])) {
-	var	r = r.R, n = r.length, i = LS.length, j = [], k;
-		while(i--) if ((k = LS.key(i)) && (k == r || (!orz(k[n]) && k.substr(0,n) == r))) j.push(k);
-		if (j.length) {
-			if (warn) alert('LS keys to clear:\n'+j.join('\n'));
-			for (i in j) LS.removeItem(j[i]);
-		}
-	}
-}
-
 function savePic(dest, auto) {
 var	a = auto || false, b = 'button', c,d,e,i,j,t;
 	draw.screen();
 
-	function saveShiftUpTo(i) {
-	var	n,m = 0;
-		while ((n = i) && --i) {
-		var	r = LS[CR[i].R]
-		,	t = LS[CR[i].T];
-			saveClear(i), saveClear(n);	//* <- have to care about LS size limit
-			if (t) {
-				LS[CR[n].R] = r, m += r.length;
-				LS[CR[n].T] = t, m += t.length;
-			}
-		}
-		return m;				//* <- max size proven to be allowed
-	}
 	function confirmShowTime(la, s) {
 		if (s) {
 		var	a = s.split('-'), i,t,n = ' \r\n', r = la.join(n);
@@ -1096,17 +1121,14 @@ var	a = auto || false, b = 'button', c,d,e,i,j,t;
 		i = 1, j = CR.length;
 		while (++i < j) {
 			if (LS[CR[i].R] === c) {
-				t = LS[CR[i].T];
-				saveShiftUpTo(i);
-				LS[CR[1].R] = c;
-				LS[CR[1].T] = t;
+				saveShiftUpTo(i,1), updateDebugScreen(i,1);
 				return a || alert(lang.found_swap), c;
 			}
 		}
 
 		if (a || confirmShowTime(lang.confirm.save, LS[CR[1].T])) {
 			t = draw.time.join('-')+(used.read?'-'+used.read:'');
-			d = saveShiftUpTo(j-1);
+			d = saveShiftUpTo(i = j-1);
 			while (--j) try {
 				LS[CR[1].R] = c;
 				LS[CR[1].T] = t;
@@ -1115,9 +1137,9 @@ var	a = auto || false, b = 'button', c,d,e,i,j,t;
 				if (c.length + t.length > d) return alert(lang.no.space+'\nError code: '+e.code+', '+e.message), c;
 				saveClear(1), saveClear(j);	//* <- probably maxed out allowed LS capacity, try to clean up from oldest slots first
 			}
-			id('saveTime').textContent = unixDateToHMS();
 			setClass(id(b+'L'), b);
-			cue.autoSave = lastUsedSaveSlot = 0;
+			id('saveTime').textContent = unixDateToHMS();
+			cue.autoSave = lastUsedSaveSlot = 0, updateDebugScreen(i,1);
 		}
 		break;
 //* load from memory
@@ -1210,7 +1232,7 @@ var	d = draw.time, e = new Image(), t = +new Date, i;
 		}
 		historyAct();
 		cue.autoSave = 0;
-		lastUsedSaveSlot = ls;
+		if (lastUsedSaveSlot = ls) updateDebugScreen(ls,3);
 		if (d = e.parentNode) d.removeChild(e);
 	}
 	draw.field.appendChild(e);
