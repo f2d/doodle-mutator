@@ -2,7 +2,7 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 ,	INFO_VERSION = 'v0.9.53'
-,	INFO_DATE = '2013-04-01 — 2015-07-13'
+,	INFO_DATE = '2013-04-01 — 2015-07-14'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640, NUF = 100
 ,	CR = 'CanvasRecovery', CT = 'Time', DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
@@ -206,10 +206,15 @@ function cut_period(x,y,z) {
 	return (x < y ? x-y+z : (x > z ? x+y-z : x));
 }
 function orz(n) {return parseInt(n||0)||0;}
+function nl2br(s) {return s.replace(/[\r\n]+/g, '<br>');}
 function repeat(t,n) {return new Array(n+1).join(t);}
 function replaceAll(t,s,j) {return t.split(s).join(j);}
 function replaceAdd(t,s,a) {return replaceAll(t,s,s+a);}
 function getLastWord(s,i) {return s.substr(s.lastIndexOf(i||'-')+1);}
+function getFormattedNum(i) {
+var	r,s = ''+i ,f = 'toLocaleString'
+	return (i = orz(i))[f] && s != (r = i[f]()) ? r : s.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
+}
 
 function id(id) {return document.getElementById(NS+(id?'-'+id:''));}
 function setId(e,id) {return e.id = NS+'-'+id;}
@@ -245,6 +250,14 @@ var	k,v,j = ' ', output = '';
 }
 this.show = showProps;
 this.unsave = function(i) {if (saveClear(i,1)) updateDebugScreen(i);}
+this.whatSaved = function(i) {
+var	d = getSaveLSDict(i);
+	return {
+		'supported'	: '[\n'+showProps(CR[i],1)+'\n]'
+	,	'found'		: '[\n'+showProps(d.dict,5)+'\n]'
+	,	'total bytes'	: getFormattedNum(d.sum)
+	};
+}
 
 function updatePalette() {
 var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
@@ -353,43 +366,52 @@ var	x = 0, y = 0;
 	return {x:x, y:y};
 }
 
-function updateDebugScreen(ls, refresh) {
-	if (ls) {
+function updateDebugScreen(lsid, refresh) {
+	if (lsid) {
 		if (refresh && !((i = text.debug.innerHTML) && i.length > 0)) return;
-	var	i = 1, j = '', k = !CR[0], n = CR.length;
-		if (k) for (k = ''; i < n; i++) {
+	var	i = s = 0, j = '', k = !CR[0], n = CR.length;
+		if (k) for (k = ''; ++i < n;) {
 			d = (i == 1 && refresh == 1)
+		,	a = 'r'+i
+		,	k += '{.whatSaved('+i+');'+(CR[i].keepSavedInOldFormat
+				?'<span style="background-color:#ace">'+a+'</span>'
+				:a)+'}'
 		,	r = LS[CR[i].R]
 		,	t = LS[CR[i].T]
-		,	k += '{.R['+i+'];r'+i+'}'
+		,	s += getSaveLSDict(i,0,1)
 		,	j +=
 			(j?'<br>':'<hr>')
 		+	'Save'+i+'<a href="javascript:'+NS+'.unsave('+i+')">.del</a>, time: '
-		+	(i == ls || d
+		+	(i == lsid || d
 				?'<span style="background-color:#'
 		+			(['f44','5ae','5ea','feb'][d?2:orz(refresh)]||'aaa')
 		+		'">'+t+'</span>'
 				:t)
 		+	(t?' = '+unixDateToHMS(+t.split('-')[1],0,1):'')
-		+	(r?', size: '+r.length:'')
-		+	(i == lastUsedSaveSlot?' ← last used':'');
+		+	(r?', pic size: '+getFormattedNum(r.length)
+		+		' [<a href="javascript:'+NS+'.savePic(0,'+i+')">save</a>'
+		+		', <a href="javascript:'+NS+'.savePic(3,'+i+')">load</a>]':'')
+		+	(d			?' ← saved':
+			(i == lastUsedSaveSlot	?' ← last used':
+			(i == lsid		?' ← shifted up to':'')));
 		}
-		text.debug.innerHTML =
+		text.debug.innerHTML = '<hr>'
+		+	replaceAll(
 			replaceAll(
 			replaceAll(
 			replaceAll(
-			replaceAll(
-		'{,0,1;props}'
+				'{,0,1;props}'
 		+		'{.o;outside}'
 		+		'{.mode;mode}'
-		+		'LStorage keys: '+(k?k+n:CT+', '+CR)
+		+		'LStorage: '+(k?k+n+', total bytes = '+getFormattedNum(s):CT+', '+CR)
+		+		', Save file as: '+(DL || 'new tab')
 			, '{', '<a href="javascript:|.show(|')
 			, ';', ')">.')
 			, '}', '</a>,\n')
 		+		(outside.read?'':', F6=read: <textarea id="|-read">/9.png</textarea>')
 			, '|', NS)
 		+	j+'<hr>'
-		+	getSendMeta(draw.screen()).replace(/[\r\n]+/g, '<br>');
+		+	nl2br(getSendMeta(draw.screen()))+'<hr>';
 	} else
 	if (mode.debug) {
 	var	r = '</td></tr>\n<tr><td>', d = '</td><td>', a = draw.turn, s = draw.step, t = draw.time, i = isMouseIn();
@@ -964,7 +986,7 @@ function updateDimension(e) {
 	if (a = outside.restyle) {
 		v += 24;
 		if (!(c = id(i = 'restyle'))) setId(container.parentNode.insertBefore(c = document.createElement('style'), container), i);
-		if ((b = outside.restmin) && ((b = eval(b).offsetWidth) > v)) v = b;
+		if ((b = outside.restmin) && (b = eval(b).offsetWidth) > v) v = b;
 		c.innerHTML = a+'{max-width:'+v+'px;}';
 	}
 }
@@ -1026,7 +1048,7 @@ var	d = t ? new Date(t+(t >0?0:new Date())) : new Date(), t = ['Hours','Minutes'
 }
 
 function timeElapsed() {text.timer.textContent = unixDateToHMS(timer += 1000, 1);}
-function autoSave() {if (mode.autoSave && cue.autoSave && !(cue.autoSave = (draw.active?-1:0))) savePic(2,true);}
+function autoSave() {if (mode.autoSave && cue.autoSave && !(cue.autoSave = (draw.active?-1:0))) savePic(2,-1);}
 
 function getSendMeta(sz) {
 var	d = draw.time, i, j = [], u = [], t = outside.t0;
@@ -1054,10 +1076,10 @@ function getSaveLSKeys(i) {
 	return [];
 }
 
-function getSaveLSDict(i, swap) {
+function getSaveLSDict(i, swap, sum) {
 var	j = getSaveLSKeys(i), k,m = 0, n = CR[i].R.length, d = {};
-	if (j.length > 0) for (i in j) k = j[i], m += (d[swap ? CR[swap].R+k.substr(n) : k] = LS[k]).length;
-	return {dict: d, sum: m};
+	if (j.length > 0) for (i in j) k = j[i], m += (sum?LS[k]:d[swap ? CR[swap].R+k.substr(n) : k] = LS[k]).length;
+	return sum?m:{dict: d, sum: m};
 }
 
 function saveClear(i, warn) {
@@ -1094,8 +1116,8 @@ function saveDL(content, suffix) {
 	} else window.open(content, '_blank');
 }
 
-function savePic(dest, auto) {
-var	a = auto || false, b = 'button', c,d,e,i,j,t;
+function savePic(dest, lsid) {
+var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 	draw.screen();
 
 	function confirmShowTime(la, s) {
@@ -1109,7 +1131,16 @@ var	a = auto || false, b = 'button', c,d,e,i,j,t;
 	switch (dest) {
 //* save to file
 	case 0:
-	case 1: saveDL(c = canvas.toDataURL(dest?IJ:''), dest?'.jpg':'.png');
+	case 1: saveDL(
+			c = (t
+				? LS[CR[lsid].R]
+				: canvas.toDataURL(dest?IJ:'')
+			)
+		,	(t
+				? LS[CR[lsid].T]+'_'
+				: ''
+			)+(dest?'.jpg':'.png')
+		);
 		break;
 //* save to memory
 	case 2:
@@ -1119,11 +1150,9 @@ var	a = auto || false, b = 'button', c,d,e,i,j,t;
 		if (LS[CR[1].R] === c)	return a || alert(lang.no.change), c;
 
 		i = 1, j = CR.length;
-		while (++i < j) {
-			if (LS[CR[i].R] === c) {
-				saveShiftUpTo(i,1), updateDebugScreen(i,1);
-				return a || alert(lang.found_swap), c;
-			}
+		while (++i < j) if (LS[CR[i].R] === c) {
+			saveShiftUpTo(i,1), updateDebugScreen(i,1);
+			return a || alert(lang.found_swap), c;
 		}
 
 		if (a || confirmShowTime(lang.confirm.save, LS[CR[1].T])) {
@@ -1134,7 +1163,7 @@ var	a = auto || false, b = 'button', c,d,e,i,j,t;
 				LS[CR[1].T] = t;
 				break;
 			} catch(e) {
-				if (c.length + t.length > d) return alert(lang.no.space+'\nError code: '+e.code+', '+e.message), c;
+				if (c.length + t.length > d) return alert(lang.no.space+'\n'+lang.err_code+': '+e.code+', '+e.message), c;
 				saveClear(1), saveClear(j);	//* <- probably maxed out allowed LS capacity, try to clean up from oldest slots first
 			}
 			setClass(id(b+'L'), b);
@@ -1155,7 +1184,7 @@ var	a = auto || false, b = 'button', c,d,e,i,j,t;
 			return 0;
 		}
 
-		c = canvas.toDataURL(), j = CR.length, i = seekSavePos(lastUsedSaveSlot+1) || seekSavePos(), lastUsedSaveSlot = 0;
+		c = canvas.toDataURL(), j = CR.length, i = seekSavePos(lsid || lastUsedSaveSlot+1) || seekSavePos(), lastUsedSaveSlot = 0;
 		setClass(id(b+'L'), b+(t?'':'-disabled'));
 
 		if (!t) return;
@@ -1171,13 +1200,13 @@ var	a = auto || false, b = 'button', c,d,e,i,j,t;
 		break;
 //* load file
 	case 4:	
-		if (a || ((outside.read || (outside.read = id('read'))) && (a = outside.read.value))) {
+		if ((a = lsid) || ((outside.read || (outside.read = id('read'))) && (a = outside.read.value))) {
 			used.read = 'Read File: '+readPic(a);
 		}
 		break;
 //* send to server
 	default:
-		if (dest)		alert(lang.bad_id+'\n\nid='+dest+'\na='+auto); else
+		if (dest)		alert(lang.bad_id+'\n\nid='+dest+'\nautosave='+a); else
 		if (!outside.send)	alert(lang.no.form); else
 		if (fillCheck())	alert(lang.no.drawn); else {
 			a = select.imgLimits, c = 'send';
@@ -1211,7 +1240,7 @@ var	a = auto || false, b = 'button', c,d,e,i,j,t;
 			f.submit();
 		}
 	}
-	return c;
+	if (!lsid) return c;
 }
 
 function readPic(s,ls) {
@@ -1221,19 +1250,29 @@ var	d = draw.time, e = new Image(), t = +new Date, i;
 	for (i in d) if (!d[i]) d[i] = t;
 	e.setAttribute('onclick', 'this.parentNode.removeChild(this); return false');
 	e.onload = function () {
-		if (mode.resize) {
-			clearFill(canvas);
-			c2d.drawImage(e, 0,0, e.width, e.height, 0,0, canvas.width, canvas.height);
-		} else {
-			for (i in select.imgSizes) id('img-'+i).value = cnvHid[i] = canvas[i] = e[i];
-			updateDimension();
-			clearFill(canvas);
-			c2d.drawImage(e, 0,0);
+		try {
+			c2s.drawImage(e, 0,0);
+			c2s.getImageData(0,0, 1,1);	//* <- disposable test of data source safety
+
+			if (mode.resize) {
+				clearFill(canvas);
+				c2d.drawImage(e, 0,0, e.width, e.height, 0,0, canvas.width, canvas.height);
+			} else {
+				for (i in select.imgSizes) id('img-'+i).value = cnvHid[i] = canvas[i] = e[i];
+				updateDimension();
+				clearFill(canvas);
+				c2d.drawImage(e, 0,0);
+			}
+			historyAct();
+			cue.autoSave = 0;
+			if (lastUsedSaveSlot = ls) updateDebugScreen(ls,3);
+		} catch(i) {
+			alert(lang.err_code+': '+i.code+', '+i.message);
+			c2s = clearFill(cnvHid = document.createElement('canvas'));
+			for (i in select.imgSizes) cnvHid[i] = canvas[i];
+		} finally {
+			if (d = e.parentNode) d.removeChild(e);
 		}
-		historyAct();
-		cue.autoSave = 0;
-		if (lastUsedSaveSlot = ls) updateDebugScreen(ls,3);
-		if (d = e.parentNode) d.removeChild(e);
 	}
 	draw.field.appendChild(e);
 	return e.src = s.data, s.name;
@@ -1600,7 +1639,7 @@ var	o = outside
 
 	i = o.save = Math.max(orz(o.save), 3)
 ,	j = (o.saveprfx || NS)+CR
-,	self.R = CR = [];
+,	CR = [];
 	do CR[i] = (
 		(LS[k = (i == 1?j:j.slice(0,-1)+i)])
 		? {R:k, T:k+CT, keepSavedInOldFormat:true}
@@ -1619,6 +1658,8 @@ var	o = outside
 		r = ' браузера (содержит очередь из '+o.save+' позиций максимум).'
 	,	lang = {
 			bad_id:		'Ошибка: действие не найдено.'
+		,	err_code:	'Код ошибки'
+		,	found_swap:	'Рисунок был в запасе, теперь сдвинут на первое место.'
 		,	confirm: {
 				send:	'Отправить рисунок в сеть?'
 			,	size:	'Размеры полотна вне допустимых пределов. Отправить всё равно?'
@@ -1631,7 +1672,6 @@ var	o = outside
 				,	'Восстановить копию, изменённую:'
 				]
 			}
-		,	found_swap:	'Рисунок был в запасе, поменялись местами.'
 		,	no: {
 				LS:	'Локальное Хранилище (память браузера) недоступно.'
 			,	space:	'Ошибка сохранения, нет места.'
@@ -1724,7 +1764,8 @@ var	o = outside
 		r = ' your browser memory (keeps a maximum of '+o.save+' slots in a queue).'
 	,	lang = {
 			bad_id:		'Invalid action: case not found.'
-		,	found_swap:	'Found image at slot 2, swapped slots.'
+		,	err_code:	'Error code'
+		,	found_swap:	'Found same image still saved, swapped it to first slot.'
 		,	confirm: {
 				send:	'Send image to server?'
 			,	size:	'Canvas size is outside of limits. Send anyway?'
@@ -1852,6 +1893,7 @@ document.write(
 	url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC\'),\
 	auto;}\
 #| canvas:hover {border-color: #aaa;}\
+#| hr {border: none; border-top: 1px solid #aaa; margin: 8px 0;}\
 #| input[type="range"] {width: 156px; height: 16px; margin: 0; padding: 0;}\
 #| input[type="text"] {width: 48px;}\
 #| select, #| #|-color-text {width: 78px;}\
