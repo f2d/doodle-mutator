@@ -1110,23 +1110,23 @@ var	d = getSaveLSDict(i, swap = orz(swap)), m = d.sum, d = d.dict;
 function saveDL(content, suffix) {
 	if (DL) {
 		container.appendChild(a = document.createElement('a'));
-		a.href = content, a[DL] = unixDateToHMS(0,0,2)+'_'+draw.time.join('-')+suffix;
+		a.href = content, a[DL] = unixDateToHMS(0,0,2)+suffix;
 		a.click();
 		setTimeout(function() {container.removeChild(a);}, 5678);
 	} else window.open(content, '_blank');
 }
 
+function confirmShowTime(la, s) {
+	if (s) {
+	var	a = s.split('-'), i,t,n = ' \r\n', r = la.join(n);
+		for (i = 0; i < 2; i++) t = +a[i], r += n+(t ? unixDateToHMS(t,0,1) : '-');
+	} else r = la[0];
+	return confirm(r);
+}
+
 function savePic(dest, lsid) {
 var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 	draw.screen();
-
-	function confirmShowTime(la, s) {
-		if (s) {
-		var	a = s.split('-'), i,t,n = ' \r\n', r = la.join(n);
-			for (i = 0; i < 2; i++) t = +a[i], r += n+(t ? unixDateToHMS(t,0,1) : '-');
-		} else r = la[0];
-		return confirm(r);
-	}
 
 	switch (dest) {
 //* save to file
@@ -1136,10 +1136,10 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 				? LS[CR[lsid].R]
 				: canvas.toDataURL(dest?IJ:'')
 			)
-		,	(t
-				? LS[CR[lsid].T]+'_'
-				: ''
-			)+(dest?'.jpg':'.png')
+		,	'_'+(t
+				? LS[CR[lsid].T].split('-', 2)
+				: draw.time
+			).join('-')+(dest?'.jpg':'.png')
 		);
 		break;
 //* save to memory
@@ -1155,7 +1155,7 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 			return a || alert(lang.found_swap), c;
 		}
 
-		if (a || confirmShowTime(lang.confirm.save, LS[CR[1].T])) {
+		if (lsid || confirmShowTime(lang.confirm.save, LS[CR[1].T])) {
 			t = draw.time.join('-')+(used.read?'-'+used.read:'');
 			d = saveShiftUpTo(i = j-1);
 			while (--j) try {
@@ -1190,7 +1190,7 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 		if (!t) return;
 		if (!i) return alert(lang.no.change);
 
-		if (confirmShowTime(lang.confirm.load, t)) {
+		if (lsid || confirmShowTime(lang.confirm.load, t)) {
 			t = t.split('-');
 			if (t.length > 2) used.read = 'Read File: '+t.slice(2).join('-').replace(/^[^:]+:\s+/, '');
 			draw.time = t.slice(0,2), a = id('saveTime'), a.textContent = unixDateToHMS(+t[1]), a.title = new Date(+t[1]);
@@ -1637,17 +1637,21 @@ var	o = outside
 		break;			//* <- read vars batch in the first found attribute only; no care about the rest
 	}
 
-	i = o.save = Math.max(orz(o.save), 3)
-,	j = (o.saveprfx || NS)+CR
-,	CR = [];
-	do CR[i] = (
-		(LS[k = (i == 1?j:j.slice(0,-1)+i)])
-		? {R:k, T:k+CT, keepSavedInOldFormat:true}
-		: {R:(k = j+i), T:k+CT}
-	); while (--i);
+	if (LS) {
+		i = o.save = Math.max(orz(o.save), 3)
+	,	j = (o.saveprfx || NS)+CR
+	,	CR = [];
 
-	CT = CR[1].T
-,	o.t0 = (o.t0 > 0 ? o.t0+'000' : +new Date)
+		do CR[i] = (
+			LS[k = (i == 1?j:j.slice(0,-1)+i)]
+			? {R:k, T:k+CT, keepSavedInOldFormat:true}
+			: {R:(k = j+i), T:k+CT}
+		); while (--i);
+
+		CT = CR[1].T;
+	} else o.save = 0;
+
+	o.t0 = (o.t0 > 0 ? o.t0+'000' : +new Date)
 ,	i = ' \r\n'
 ,	j = shapeHotKey.split('').join(k = ', ');
 
