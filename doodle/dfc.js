@@ -1,11 +1,12 @@
 ﻿var dfc = new function () {
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
-,	INFO_VERSION = 'v0.9.53'
-,	INFO_DATE = '2013-04-01 — 2015-07-14'
+,	INFO_VERSION = 'v0.9.55'
+,	INFO_DATE = '2013-04-01 — 2015-08-06'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
-,	A0 = 'transparent', IJ = 'image/jpeg', BOTH_PANELS_HEIGHT = 640, NUF = 100
-,	CR = 'CanvasRecovery', CT = 'Time', DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
+,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
+,	CR = 'CanvasRecovery', CT = 'Time', DEFAULT_FONT = '24px sans-serif'
+,	DRAW_PIXEL_OFFSET = 0.5, TAIL_WIDTH = 18, CANVAS_BORDER = 1, BOTH_PANELS_HEIGHT = 640, NUF = 100
 
 ,	TOOLS_REF = [
 		{blur: 0, opacity: 1.00, width:  1, color: '0, 0, 0'}		//* <- draw
@@ -33,21 +34,24 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	}
 ,	modes = []
 ,	modeL = 'DLURQVFA'
-,	shapeHotKey = 'NPRTYQM'
+,	shapeHotKey = 'NPRTYQ.M'
 ,	select = {
 		imgSizes: {width:640, height:360}
 	,	imgLimits: {width:[32,640], height:[32,800]}
 	,	lineCaps: {lineCap:0, lineJoin:0}
-	,	shapeFlags: [1,10, 2,2,2,66, 4]
 /* shape flags (sum parts):
 	1 = path, mode L: step 1 line, L+U: step 2 curve
 	2 = fig., mode L: fill, U: outline
 	4 = move, mode L: copy, U: step 2 rect
 	8 = path, closed polygon
+	32 = print text
 	64 = step 2
 */
+	,	shapeFlags: [1,10, 34,34,34,98,98, 4]
+	,	shapeClass: '01111112'
+	,	shapeModel: '//[oOO{<'
 	,	options: {
-			shape	: ['line', 'freehand poly', 'rectangle', 'circle', 'ellipse', 'speech balloon', 'move']
+			shape	: ['line', 'freehand poly', 'rectangle', 'circle', 'ellipse', 'speech balloon', 'speech box', 'move']
 		,	lineCap	: ['round', 'butt', 'square']
 		,	lineJoin: ['round', 'bevel', 'miter']
 		,	palette	: ['history', 'auto', 'legacy', 'Touhou', 'gradient']
@@ -109,6 +113,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 
 ,	noTransformByProp = /^Opera.* Version\D*11\.\d+$/i.test(navigator.userAgent)
 ,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)
+,	regA0 = /^[rgba(]+[\d,\s]+[.0)]+$/i
 ,	regHex = /^#?[0-9a-f]{6}$/i
 ,	regHex3 = /^#?([0-9a-f])([0-9a-f])([0-9a-f])$/i
 ,	reg255 = /^([0-9]{1,3}),\s*([0-9]{1,3}),\s*([0-9]{1,3})$/
@@ -116,6 +121,9 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 ,	regTipBrackets = /[ ]*\([^)]+\)$/
 ,	regFunc = /\{[^.]+\.([^(]+)\(/
 ,	regLimit = /^(\d+)\D+(\d+)$/
+,	regTrim = /^\s+|\s+$/g
+
+,	MODE_LABELS = 'abc'.split('')
 
 ,	self = this, container, canvas, c2d, cnvHid, c2s, lang, DL, LS, i, outside = this.o = {}
 ,	fps = 0, ticks = 0, timer = 0, lastUsedSaveSlot = 0
@@ -199,8 +207,8 @@ function historyAct(i) {if (draw.history.act(i)) updateDebugScreen(), updateHist
 function fpsCount() {fps = ticks; ticks = 0;}
 
 function dist(x,y) {return Math.sqrt(x*x + y*y)};
-function ang_btw(x,y) {return cut_period(y-x);}
-function cut_period(x,y,z) {
+function angleTo(x,y) {return cutPeriod(y-x);}
+function cutPeriod(x,y,z) {
 	if (isNaN(y)) y = -Math.PI;
 	if (isNaN(z)) z = Math.PI;
 	return (x < y ? x-y+z : (x > z ? x+y-z : x));
@@ -403,7 +411,7 @@ function updateDebugScreen(lsid, refresh) {
 				'{,0,1;props}'
 		+		'{.o;outside}'
 		+		'{.mode;mode}'
-		+		'LStorage: '+(k?k+n+', total bytes = '+getFormattedNum(s):CT+', '+CR)
+		+		'LStorage: '+(k?k+'total bytes = '+getFormattedNum(s):CT+', '+CR)
 		+		', Save file as: '+(DL || 'new tab')
 			, '{', '<a href="javascript:|.show(|')
 			, ';', ')">.')
@@ -432,7 +440,7 @@ function updateDebugScreen(lsid, refresh) {
 }
 
 function updateViewport(delta) {
-var	i,p = ['-moz-','-webkit-','-o-',''], s = '', t = '';
+var	i,p = ['-moz-','-webkit-','-o-',''], s = '', t = '', target = draw.container;
 	if (isNaN(delta)) draw.angle = 0, draw.pan = 0, draw.zoom = 1, t = 'none';
 	else
 	if (draw.turn.pan) {
@@ -455,15 +463,15 @@ var	i,p = ['-moz-','-webkit-','-o-',''], s = '', t = '';
 
 	if (noTransformByProp) {
 		if (t.indexOf('(') > 0) for (i in p) s += p[i]+'transform:'+t+';';
-		canvas.setAttribute('style', s);
+		target.setAttribute('style', s);
 	} else {
-		for (i in p) canvas.style[p[i]+'transform'] = t;
+		for (i in p) target.style[p[i]+'transform'] = t;
 	}
 	updateDebugScreen();
 }
 
 function updatePosition(event) {
-var	i = select.shapeFlags[select.shape.value], r = getOffsetXY(draw.field)
+var	i = select.shapeFlags[select.shape.value], r = getOffsetXY(draw.container)
 ,	o = (
 	!	((i & 2) && mode.shape && !mode.step)
 	&&	((i & 4) || ((draw.active ? c2d.lineWidth : tool.width) % 2))
@@ -548,9 +556,10 @@ var	sf = select.shapeFlags[select.shape.value];
 			interval.timer = setInterval(timeElapsed, 1000);
 			interval.save = setInterval(autoSave, 60000);
 		}
-	var	i = (event.which == 1 ? 1 : 0), t = tools[1-i]
+	var	i = (event.which == 1?1:0), t = tools[1-i]
 	,	pf = ((sf & 8) && (mode.shape || !mode.step))
 	,	fig = ((sf & 2) && (mode.shape || pf));
+
 		for (i in (t = {
 			lineWidth: (((sf & 4) || (pf && !mode.step))?1:t.width)
 		,	fillStyle: (fig ? 'rgba('+(mode.step?tools[i]:t).color+', '+t.opacity+')' : A0)
@@ -558,10 +567,34 @@ var	sf = select.shapeFlags[select.shape.value];
 		,	shadowColor: (t.blur ? 'rgb('+t.color+')' : A0)
 		,	shadowBlur: t.blur
 		})) c2s[i] = c2d[i] = t[i];
+
 		updatePosition(event);
+
 		for (i in draw.o) draw.prev[i] = draw.cur[i];
 		for (i in draw.line) draw.line[i] = false;
 		for (i in select.lineCaps) c2s[i] = c2d[i] = select.options[i][select[i].value];
+
+		if ((sf & 32) && (t = id('text-content').value).replace(regTrim, '').length) {
+			c2d.font = id('text-font').value || DEFAULT_FONT;
+		var	s = c2d.strokeStyle, x = 0, w = 0, t = t.split('\n'), a = draw.textAlign;
+			if (a != 'center') {
+				for (i in t) if (w < (x = c2d.measureText(t[i]).width)) w = x;
+				x = (a == 'left'?-w:w)/2;
+			}
+			if (s == A0 || regA0.test(s)) {
+				i = (draw.btn == 1?1:0);
+				s = 'rgba('+tools[i].color+', '+tools[1-i].opacity+')';
+			}
+			draw.text = {
+				x: x
+			,	y: c2d.measureText('M').width
+			,	font: c2d.font
+			,	style: s
+			,	align: a
+			,	lines: t
+			};
+		} else draw.text = 0;
+
 		c2d.beginPath();
 		c2d.moveTo(draw.cur.x, draw.cur.y);
 	}
@@ -609,7 +642,7 @@ var	redraw = true, s = select.shape.value, sf = select.shapeFlags[s]
 				draw.line.preview = true;
 				c2s.clearRect(0,0, canvas.width, canvas.height);
 				c2s.beginPath();
-				drawShape(c2s, (mode.step && (sf & 4) && (!draw.step || !draw.step.done))?2:s);
+				drawShape(c2s, s, (mode.step && (sf & 4) && (!draw.step || !draw.step.done)));
 				c2s.stroke();
 				c2d.drawImage(cnvHid, 0,0);				//* <- draw 2nd canvas overlay with sole shape
 			}
@@ -621,66 +654,88 @@ var	redraw = true, s = select.shape.value, sf = select.shapeFlags[s]
 }
 
 function drawEnd(event) {
-	if (!event || draw.turn) return draw.active = draw.step = draw.btn = draw.turn = 0;
+	if (!event || draw.turn) return draw.active = draw.btn = draw.step = draw.turn = 0, draw.screen();
 	if (mode.click == 1 && event.shiftKey) return drawMove(event);
 	if (draw.active) {
-	var	s = select.shape.value, sf = select.shapeFlags[s], m = ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8));
+	var	c = c2d, s = select.shape.value, sf = select.shapeFlags[s], m = ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8));
 		if (!draw.step && ((mode.step && ((mode.shape && (sf & 1)) || (sf & 4))) || (sf & 64))) {
 			draw.step = {prev:{x:draw.prev.x, y:draw.prev.y}, cur:{x:draw.cur.x, y:draw.cur.y}};	//* <- normal straight line as base
 			return;
 		}
 		draw.time[1] = +new Date;
 		draw.screen();
-		c2d.fillStyle = c2s.fillStyle;
+		if (draw.text) {
+			c = c2s, used.shape = 'Shape', used.text = 'Text';
+			c.clearRect(0,0, canvas.width, canvas.height);
+			drawShape(c, s);
+		} else
 		if (sf & 8) {
-			c2d.closePath();
-			if (mode.shape || !mode.step) c2d.fill();
+			c.closePath();
+			if (mode.shape || !mode.step) c.fill(FILL_RULE);
 			used.poly = 'Poly';
 		} else
 		if ((sf & 64) || (m && draw.line.preview)) {
-			drawShape(c2d, s);
+			drawShape(c, s);
 			if (!(sf & 4)) used.shape = 'Shape';
 		} else
 		if (m || draw.line.back || !draw.line.started) {//* <- draw 1 pixel on short click, regardless of mode or browser
-			c2d.lineTo(draw.cur.x, draw.cur.y + (draw.cur.y == draw.prev.y ? 0.01 : 0));
+			c.lineTo(draw.cur.x, draw.cur.y + (draw.cur.y == draw.prev.y ? 0.01 : 0));
 		}
 		if (sf & 4) used.move = 'Move'; else
-		if (!(sf & 8) || mode.step) c2d.stroke();
+		if (!(sf & 8) || mode.step) c.stroke();
+		if (draw.text) c2d.drawImage(cnvHid, 0,0);
 		historyAct();
-		draw.active = draw.step = draw.btn = 0;
+		draw.active = draw.btn = draw.step = draw.text = 0;
 		if (cue.autoSave < 0) autoSave(); else cue.autoSave = 1;
 		if (mode.click && event.shiftKey) return mode.click = 0, drawStart(event);
 	}
 	updateDebugScreen();
 }
 
-function drawShape(ctx, i) {
-var	s = draw.step, v = draw.prev, r = draw.cur;
-	switch (parseInt(i)) {
+function drawShape(ctx, i, area) {
+var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeModel[i = orz(i)]);
+
+	switch (fig) {
+	//* pan
+		case '<':
+		case '>':
+			if (v.x != r.x
+			|| (v.y != r.y)) moveScreen(r.x-v.x, r.y-v.y);
+		break;
 	//* rect
-		case 2:	if (s) {
+		case '[':
+			if (s) {
 		//* show pan source area
 				ctx.strokeRect(s.prev.x, s.prev.y, s.cur.x-s.prev.x, s.cur.y-s.prev.y);
 			} else {
-				if (ctx.fillStyle != A0)
-				ctx.fillRect(v.x, v.y, r.x-v.x, r.y-v.y);
-				ctx.strokeRect(v.x, v.y, r.x-v.x, r.y-v.y);
+				if (ctx.fillStyle != A0) ctx.fillRect(v.x, v.y, r.x-v.x, r.y-v.y);
+				if (draw.text) {
+				var	x = (v.x+r.x)/2
+				,	y = (v.y+r.y)/2;
+					ctx.moveTo(v.x, v.y);
+					ctx.lineTo(r.x, v.y);
+					ctx.lineTo(r.x, r.y);
+					ctx.lineTo(v.x, r.y);
+					ctx.lineTo(v.x, v.y);
+				} else {
+					ctx.strokeRect(v.x, v.y, r.x-v.x, r.y-v.y);
+				}
 			}
 		break;
 	//* circle
-		case 3:
-		var	xCenter = (v.x+r.x)/2
-		,	yCenter = (v.y+r.y)/2
+		case 'o':
+		var	x = xCenter = (v.x+r.x)/2
+		,	y = yCenter = (v.y+r.y)/2
 		,	radius = Math.max(1, dist(r.x-xCenter, r.y-yCenter));
 
 			ctx.moveTo(xCenter + radius, yCenter);
-			ctx.arc(xCenter, yCenter, radius, 0, 7, false);	//* <- won't work without last "false" in Opera 11, okay
+			ctx.arc(xCenter, yCenter, radius, 0, 7, false);
 
-			if (ctx.fillStyle != A0) ctx.fill();
+			if (ctx.fillStyle != A0) ctx.fill(FILL_RULE);
 		break;
 	//* ellipse
-		case 4:
-		case 5:	if (s) p = v, q = r, v = s.prev, r = s.cur;
+		case 'O':
+			if (s) p = v, q = r, v = s.prev, r = s.cur;
 		var	xCenter = (v.x+r.x)/2
 		,	yCenter = (v.y+r.y)/2
 		,	xRadius = Math.max(1, Math.abs(r.x-xCenter))
@@ -691,20 +746,23 @@ var	s = draw.step, v = draw.prev, r = draw.cur;
 				xCenter += q.x-p.x;
 				yCenter += q.y-p.y;
 			}
+			x = xCenter;
+			y = yCenter;
+
 			ctx.save();
+
 			if (xRadius < yRadius) xCenter /= a = xRadius/yRadius, ctx.scale(a, b); else
 			if (xRadius > yRadius) yCenter /= b = yRadius/xRadius, ctx.scale(a, b);
 
 			if (s) {
 		//* speech balloon
-			var	x = q.x/a - xCenter
-			,	y = q.y/b - yCenter
-			,	a1 = Math.min(p2*(tool.width+1)/radius, Math.PI/18)
-			,	a2 = Math.atan2(y, x)
-			,	r2 = dist(x, y);
+			var	a = q.x/a
+			,	b = q.y/b
+			,	a1 = (Math.min(radius/8, TAIL_WIDTH) + tool.width)/8/radius*p2
+			,	a2 = Math.atan2(b-yCenter, a-xCenter);
 
-				ctx.moveTo(xCenter + Math.cos(a2)*r2, yCenter + Math.sin(a2)*r2);
-				ctx.arc(xCenter, yCenter, radius, a2+a1, a2-a1+p2, false);
+				ctx.moveTo(a, b);
+				ctx.arc(xCenter, yCenter, radius, a1+a2, p2-a1+a2, false);
 				ctx.closePath();
 			} else {
 				ctx.moveTo(xCenter + xRadius/a, yCenter);
@@ -712,14 +770,121 @@ var	s = draw.step, v = draw.prev, r = draw.cur;
 			}
 			ctx.restore();
 
-			if (ctx.fillStyle != A0) ctx.fill();
+			if (ctx.fillStyle != A0) ctx.fill(FILL_RULE);
 		break;
-	//* pan
-		case 6:	if (v.x != r.x
-			|| (v.y != r.y)) moveScreen(r.x-v.x, r.y-v.y);
+	//* speech box
+		case '{':
+			if (s) p = v, q = r, v = s.prev, r = s.cur;
+		var	dx = Math.max(1, Math.abs(r.x-v.x))	//* <- box width
+		,	dy = Math.max(1, Math.abs(r.y-v.y))	//* <- box height
+		,	d = Math.floor(Math.min(dx, dy)/8)
+		,	r1 = Math.max(1, Math.min(64, d))	//* <- border radius
+		,	x0 = Math.min(r.x, v.x)
+		,	y0 = Math.min(r.y, v.y)
+		,	x1 = Math.max(r.x, v.x)
+		,	y1 = Math.max(r.y, v.y);
+
+			function drawSpeechFig(xCenter, yCenter, roundRadius, xRadius, yRadius, sideCount, xTail, yTail) {
+				if (!(sideCount > 0)) sideCount = 4;
+				if (!(xRadius > 0)) xRadius = 1;
+				if (!(yRadius > 0) || (sideCount % 2)) yRadius = xRadius;
+				if (!(roundRadius > 0)) roundRadius = 0;
+				else roundRadius = Math.min(roundRadius, xRadius/2, yRadius/2);
+
+			var	i = sideCount
+			,	a = Math.PI
+			,	b = a/i
+			,	q = b*2
+			,	f = b-Math.atan2(yRadius, xRadius)	//* <- fluctuating pendulum angle shift
+			,	d = dist(yRadius, xRadius)
+			,	r = dist(roundRadius, roundRadius)
+			,	aFirst = 0
+			,	aLast = 0;
+
+				if (isNaN(xTail) || isNaN(yTail)) {
+					ctx.moveTo(xCenter - xRadius, yCenter);
+				} else {
+				var	w = Math.min(r1, TAIL_WIDTH/2) + tool.width
+				,	x = xTail-xCenter
+				,	y = yTail-yCenter
+				,	t = Math.atan2(y, x);
+					while (i-- && a-b+f > t) a -= q, f = -f;
+
+				var	TAIL = (t > a?1:-1)
+				,	j = !(i % 2)
+				,	rc = (j ? yRadius : xRadius)
+				,	rd = (j ? xRadius : yRadius)
+				,	rs = rd - roundRadius
+
+				,	at = angleTo(a, t)
+				,	ta = Math.tan(at)
+				,	tc = ta*rc
+				,	te = tc+w
+
+				,	ac = Math.cos(a)
+				,	as = Math.sin(a)
+				,	ar = b/roundRadius
+				,	i = sideCount;
+
+					if (TAIL > 0 && Math.abs(te) > rs) --i;
+
+					ctx.moveTo(xTail, yTail);
+					drawTailPart(tc-w);
+				}
+
+				function drawTailPart(td, end) {
+				var	ab = Math.abs(td);
+					if (ab > rs) {
+						ab = (ab-rs)*ar;
+						if (TAIL > 0) {
+							if (end) aLast = ab; else aFirst = q-ab, a += q, f = -f, ++i;
+						} else {
+							if (end) aLast = q-ab; else aFirst = ab;
+						}
+						if (end) drawNextArc();
+					} else {
+						if (j) td = -td;
+						ctx.lineTo(xCenter + ac*rc + as*td, yCenter + as*rc + ac*td);
+					}
+				}
+
+				function drawNextArc() {
+				var	a0 = a
+				,	a1 = a -= b
+				,	a2 = a -= b
+				,	a3 = a1-(f = -f);
+
+					ctx.arc(
+						xCenter + Math.cos(a3)*d - Math.cos(a1)*r
+					,	yCenter + Math.sin(a3)*d - Math.sin(a1)*r
+					,	roundRadius, a0-aFirst, a2+aLast, true
+					);
+					aFirst = aLast = 0;
+					return --i;
+				}
+
+				while (drawNextArc());
+				if (TAIL) drawTailPart(te, 1);
+				ctx.closePath();
+			}
+
+			if (s && s.done) {
+				d = q.x-p.x, x0 += d, x1 += d;
+				d = q.y-p.y, y0 += d, y1 += d;
+			}
+		var	x = (x0+x1)/2
+		,	y = (y0+y1)/2;
+
+			(s
+				? drawSpeechFig(x, y, r1, dx/2, dy/2, 4, q.x, q.y)
+				: drawSpeechFig(x, y, r1, dx/2, dy/2)
+			);
+
+			if (ctx.fillStyle != A0) ctx.fill(FILL_RULE);
 		break;
 	//* line
-		default:if (s) {
+		default:
+			if (s) {
 			var	d = r, old = {}, t = {lineWidth: 1, shadowBlur: 0, shadowColor: A0, strokeStyle: 'rgba(123,123,123,0.5)'};
 				for (i in t) old[i] = c2s[i], c2s[i] = t[i];
 				c2s.beginPath();
@@ -740,6 +905,18 @@ var	s = draw.step, v = draw.prev, r = draw.cur;
 				ctx.moveTo(v.x, v.y);
 				ctx.lineTo(r.x, r.y);
 			}
+	}
+	if (draw.text) {
+	var	f = ctx.fillStyle, t = draw.text.lines, h = draw.text.y*2;
+		ctx.font = draw.text.font;
+		ctx.textAlign = draw.text.align;
+		ctx.textBaseline = 'middle';
+		ctx.fillStyle = draw.text.style, x += draw.text.x, y -= (t.length-1)/2*h;
+		ctx.save();
+		ctx.clip();
+		for (i in t) ctx.fillText(t[i], x, y), y += h;
+		ctx.restore();
+		ctx.fillStyle = f;
 	}
 	ctx.moveTo(r.x, r.y);
 }
@@ -939,9 +1116,15 @@ function updateSliders(s) {
 
 function updateShape(s) {
 	if (!isNaN(s)) select.shape.value = s, s = 0;
-	s = select.shapeFlags[(s?s:s=select.shape).value];
-	setClass(id('bottom'), (s & 1?'b c':(s & 4?'a b':'a c')));
+var	c = select.shapeClass[s = orz((s||select.shape).value)], i,j = [];
+	for (i in MODE_LABELS) if (c != i) j.push(MODE_LABELS[i]);
+	setClass(id('bottom'), j.join(' '));
+	setClass(id('texts'), (select.shapeFlags[s] & 32)?'text':'sliders');
 	return false;
+}
+
+function updateTextAlign(e) {
+	draw.textAlign = getLastWord(e.id);
 }
 
 function updateHistoryButtons() {
@@ -1028,14 +1211,21 @@ var	t,i = orz(back);
 }
 
 function toggleMode(i, keep) {
-	if (i < 0 || i >= modes.length) return alert(lang.bad_id+'\nNo '+i+' in '+modes.length), false;
-var	n = modes[i], v = mode[n], e = id('check'+modeL[i]);
-	if (!keep) v = mode[n] = !v;
-	if (e) setClass(e, v ? 'button-active' : 'button');
+	if (i < 0 || i >= modes.length) return alert(
+		lang.bad_id
+	+	'\nNo '+i
+	+	' in '+modes.length
+	), false;
+
+var	n = modes[i];
 	if (n == 'debug') {
+		if (!text.debug.textContent.length) return false;
 		text.debug.textContent = '';
 		interval.fps ? clearInterval(interval.fps) : (interval.fps = setInterval(fpsCount, 1000));
 	}
+var	v = mode[n], e = id('check'+modeL[i]);
+	if (!keep) v = mode[n] = !v;
+	if (e) setClass(e, v ? 'button-active' : 'button');
 	return false;
 }
 
@@ -1274,7 +1464,7 @@ var	d = draw.time, e = new Image(), t = +new Date, i;
 			if (d = e.parentNode) d.removeChild(e);
 		}
 	}
-	draw.field.appendChild(e);
+	draw.container.appendChild(e);
 	return e.src = s.data, s.name;
 }
 
@@ -1345,8 +1535,7 @@ function hotKeys(event) {
 			case c('E'):	toolSwap(2);	break;
 			case c('G'):	toolSwap(3);	break;
 
-			case 8:
-if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 8=bksp, 45=Ins, 42=106=[Num *]
+			case 8:		toggleMode(0);	break;	//* 8=bksp, 45=Ins, 42=106=[Num *]
 			case c('L'):	toggleMode(1);	break;
 			case c('U'):	toggleMode(2);	break;
 			case 114:	toggleMode(4);	break;
@@ -1391,8 +1580,8 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	}
 
 	setContent(container = id().firstElementChild
-	,	d+'load">'
-	+		'<div>'			//* <- transform offset fix for o11
+	,	d+'draw">'			//* <- transform offset fix for o11
+	+		d+'load">'
 	+			'<'+c+' id="'+c+'" tabindex="0">'+lang.no.canvas+'</'+c+'>'
 	+		'</div>'
 	+	'</div>'
@@ -1426,11 +1615,24 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	})) document.addEventListener(i, a[i], false);	//* <- using "document" to prevent negative clipping.
 		//* still fails to catch events outside of document block height less than of browser window.
 
-	b = d+'colors">'+d+'sliders">', i = BOW.length, r = '</td><td class="r">', a = ': '+r+'	';
+	a = {left:'←</label>', center:'<label>→', right:'</label><br>'}, b = '<label>', k = 'text-align';
+
+	for (i in a) b += '<input type="radio" name="'+k+'" id="'+k+'-'+i+'" onChange="updateTextAlign(this)">'+a[i];
+
+	b = d+'colors">'
+	+	d+'texts">'
+	+		d+'text">'
+	+			'<textarea id="text-font'+t+lang.font_hint+'">'+DEFAULT_FONT+'</textarea><br>'+b
+	+			'<textarea id="text-content'+t+lang.text_hint+'"></textarea>'
+	+		'</div>'
+	+		d+'sliders">'
+,	i = BOW.length, r = '</td><td class="r">', a = ': '+r+'	';
 
 	while (i--) b += getSlider(BOWL[i], i);
 
-	b +=	'</div><table width="100%"><tr><td>'
+	b +=		'</div>'
+	+	'</div><br>'
+	+	'<table width="100%"><tr><td>'
 	+	lang.shape	+a+'<select id="shape" onChange="updateShape(this)"></select>';
 
 	for (i in select.lineCaps) b += r+'<select id="'+i+t+(select.lineCaps[i] || i)+'"></select>';
@@ -1440,8 +1642,9 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	+	lang.hex	+a+'<input type="text" value="#000" id="color-text" onChange="updateColor()'+t
 	+	lang.hex_hint+'">'+r
 	+	lang.palette	+a+'<select id="palette" onChange="updatePalette()"></select></td></tr></table>'
-	+	d+'palette-table"></div></div>'
-	+	d+'info"></div>'
+	+	d+'palette-table"></div>'
+	+ '</div>'
+	+ d+'info"></div>'
 	);
 
 	a = '<a href="javascript:void(0);" onClick="', b = '">', c = '</abbr>', d = '';
@@ -1497,10 +1700,10 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 
 	for (i in BOW) setSlider(BOWL[i]);
 	for (i in text) text[i] = id(i);
-	draw.field = id('load');
+	draw.container = id('load');
 	draw.history.data = new Array(o.undo+1);
 
-	a = 'historyAct(', b = 'button', c = 'color', d = 'toggleMode(', e = 'savePic(', f = 'fillScreen(', g = 'toolSwap(', k = 'check'
+	a = 'historyAct(', b = 'button', c = 'color', d = 'toggleMode(', e = 'savePic(', f = 'fillScreen(', i = 'toolSwap(', k = 'check'
 ,	a = [
 //* subtitle, hotkey, pictogram, function, id
 		['undo'	,'Z'	,'&#x2190;'	,a+'-1)',b+'U']
@@ -1514,9 +1717,9 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	,	['flip_h','H'	,'&#x2194;'	,f+'-2)']
 	,	['flip_v','V'	,'&#x2195;'	,f+'-3)']
 	, 0
-	,	['pencil','A'	,'i'		,g+'1)']
-	,	['eraser','E'	,'&#x25CB;'	,g+'2)']
-	,	['reset' ,'G'	,'&#x25CE;'	,g+'3)']
+	,	['pencil','A'	,'i'		,i+'1)']
+	,	['eraser','E'	,'&#x25CB;'	,i+'2)']
+	,	['reset' ,'G'	,'&#x25CE;'	,i+'3)']
 	, 0
 	,	['line|area|copy'	,'L'	,'&ndash;|&#x25A0;|&#x25A4;'	,d+'1)'	,k+'L']
 	,	['curve|outline|rect'	,'U'	,'~|&#x25A1;|&#x25AD;'		,d+'2)'	,k+'U']
@@ -1531,11 +1734,13 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	, 0
 	,	['info'	,'F1'	,'?'	,'showInfo()'	,b+'H']
 	]
-,	f = id('bottom'), d = '<div class="button-', c = '</div>';
+,	d = '<div class="button-', c = '</div>';
 
-	function btnContent(e, subt, pict) {
-	var	t = lang.b[subt];
-		return setContent(e, d+'key">'+k[1]+c+pict+d+'subtitle"><br>'+(t.t?t.sub:subt)+c), e.title = t.t||t, e;
+	setClass(f = id('bottom'), MODE_LABELS.join(' '));
+
+	function btnContent(e, a) {
+	var	t = lang.b[a[0]];
+		return setContent(e, d+'key">'+a[1]+c+a[2]+d+'subtitle"><br>'+(t.t?t.sub:a[0])+c), e.title = t.t||t, e;
 	}
 
 	for (i in a) if (1 !== (k = a[i])) {
@@ -1543,10 +1748,12 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 			e = document.createElement(b);
 
 			if (k[0].indexOf('|') > 0) {
-				g = k[0].split('|');
-				h = k[2].split('|');
-				for (j in g) setClass(e.appendChild(btnContent(document.createElement('div'), g[j], h[j])), 'abc'[j]);
-			} else btnContent(e, k[0], k[2]);
+			var	subt = k[0].split('|')
+			,	pict = k[2].split('|');
+				for (j in subt) setClass(e.appendChild(btnContent(
+					document.createElement('div'), [subt[j], k[1], pict[j]]
+				)), MODE_LABELS[j]);
+			} else btnContent(e, k);
 
 			setClass(e, b);
 			setEvent(e, 'onclick', k[3]);
@@ -1577,6 +1784,7 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 			e.options[e.options.length] = new Option(c[b][i]+(b == 'shape'?' ['+shapeHotKey[i]+']':(b in d?' '+d[b][i]:'')), i)
 		).selected = (b == 'palette'?(i == f):!i);
 	}
+	id('text-align-center').click();
 
 //* safe palette constructor, step recomended to be: 1, 3, 5, 15, 17, 51, 85, 255
 	function generatePalette(p, step, slice) {
@@ -1696,6 +1904,8 @@ var	o = outside
 		,	hex:		'Цвет'
 		,	hex_hint:	'Формат ввода — #a, #f90, #ff9900, или 0,123,255'
 		,	hide_hint:	'Кликните, чтобы спрятать или показать.'
+		,	font_hint:	'Шрифт печатного текста. Пример: '+DEFAULT_FONT
+		,	text_hint:	'Содержимое печатного текста.'
 		,	info_top:	'Управление (указатель над полотном):'
 		,	info: [
 				'C'+k+'средний клик = подобрать цвет с рисунка.'
@@ -1759,7 +1969,7 @@ var	o = outside
 		,	lineJoin:	'Сгибы линий'
 		}
 	,	select.translated = {
-			shape	: ['линия', 'замкнутая линия', 'прямоугольник', 'круг', 'овал', 'овал для речи', 'сдвиг']
+			shape	: ['линия', 'замкнутая линия', 'прямоугольник', 'круг', 'овал', 'овал для речи', 'коробка для речи', 'сдвиг']
 		,	lineCap	: ['круг', 'срез', 'квадрат']
 		,	lineJoin: ['круг', 'срез', 'угол']
 		,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент']
@@ -1802,6 +2012,8 @@ var	o = outside
 		,	hex:		'Color'
 		,	hex_hint:	'Valid formats — #a, #f90, #ff9900, or 0,123,255'
 		,	hide_hint:	'Click to show/hide.'
+		,	font_hint:	'Printable text font style. Example: '+DEFAULT_FONT
+		,	text_hint:	'Printable text content.'
 		,	info_top:	'Hot keys (mouse over image only):'
 		,	info: [
 				'C'+k+'Mouse Mid = pick color from image.'
@@ -1874,9 +2086,6 @@ document.write(
 +	replaceAdd('<style>\
 #| .|-L-close {padding-bottom: 22px; border-bottom: 1px solid #000; border-right: 1px solid #000;}\
 #| .|-L-open {padding-top: 22px; border-top: 1px solid #000; border-left: 1px solid #000;}\
-#| .|-a .|-a,\
-#| .|-b .|-b,\
-#| .|-c .|-c {display: none;}\
 #| .|-button {background-color: #ddd;}\
 #| .|-button-active {background-color: #ace;}\
 #| .|-button-active:hover {background-color: #bef;}\
@@ -1890,6 +2099,7 @@ document.write(
 #| .|-palettine:hover {border-color: #000;}\
 #| .|-r {text-align: right;}\
 #| .|-red {background-color: #f77;}\
+#| .|-text input[type="range"], #| .|-sliders #|-text, '+MODE_LABELS.map(function(i) {return '.|-'+i+' .|-'+i;}).join(', ')+'{display: none;}\
 #| a {color: #888;}\
 #| a:hover {color: #000;}\
 #| abbr {border-bottom: 1px dotted #111;}\
@@ -1905,9 +2115,11 @@ document.write(
 #| {text-align: center; padding: 12px; background-color: #f8f8f8;}\
 #|, #| input, #| select {font-family: "Arial"; font-size: 19px; line-height: normal;}\
 #|-bottom > button {border: 1px solid #000; width: 38px; height: 38px; margin: 2px; padding: 2px; font-size: 15px; line-height: 7px; text-align: center; vertical-align: top; cursor: pointer;}\
-#|-bottom > button, #|-load canvas {box-shadow: 3px 3px rgba(0,0,0, 0.1);}\
 #|-bottom {margin: 10px 0 -2px;}\
 #|-debug td {width: 234px;}\
+#|-draw canvas {vertical-align: bottom;}\
+#|-draw canvas, #|-bottom > button {box-shadow: 3px 3px rgba(0,0,0, 0.1);}\
+#|-draw canvas, #|-draw {position: relative; display: inline-block;}\
 #|-fit > b * {display: block; height: 12px; width: 6px;}\
 #|-fit > b b.|-B {height: 6px; border-bottom: 2px solid #aaa; vertical-align: bottom;}\
 #|-fit > b b.|-T {height: 6px; border-top: 2px solid #aaa; vertical-align: top;}\
@@ -1918,9 +2130,7 @@ document.write(
 #|-fit:hover > b b {border-color: #000; border-width: 1px; padding: 1px 1px 0 0;}\
 #|-info p {padding-left: 22px; line-height: 22px; margin: 0;}\
 #|-info p, #|-palette-table table {color: #000; font-size: small;}\
-#|-load canvas {vertical-align: bottom;}\
 #|-load img {position: absolute; top: 1px; left: 1px; margin: 0;}\
-#|-load, #|-load canvas {position: relative; display: inline-block;}\
 #|-palette-table .|-t {padding: 0 4px;}\
 #|-palette-table table {margin: 0;}\
 #|-palette-table tr td {margin: 0; padding: 0; height: 16px;}\
@@ -1930,6 +2140,10 @@ document.write(
 #|-right table, #|-info > div {margin-top: 7px;}\
 #|-right td {padding: 0 2px; height: 32px;}\
 #|-right {color: #888; width: 321px; margin: 0; margin-left: 12px; text-align: left; display: inline-block; vertical-align: top; overflow: hidden;}\
+#|-text textarea {margin: 2px; width: 150px; min-width: 150px; max-width: 311px; max-height: 356px; min-height: 38px; height: 38px;}\
+#|-text #|-text-font {max-height: 16px; min-height: 16px; height: 16px;}\
+#|-texts {margin-top: -2px;}\
+#|-texts > * {float: left;}\
 </style>'
 	, '}', '\n')
 	, '|', NS)
