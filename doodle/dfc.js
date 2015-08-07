@@ -1,11 +1,11 @@
 ﻿var dfc = new function () {
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
-,	INFO_VERSION = 'v0.9.55'
-,	INFO_DATE = '2013-04-01 — 2015-08-06'
+,	INFO_VERSION = 'v0.9.56'
+,	INFO_DATE = '2013-04-01 — 2015-08-07'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
-,	CR = 'CanvasRecovery', CT = 'Time', DEFAULT_FONT = '24px sans-serif'
+,	CR = 'CanvasRecovery', CT = 'Time', DEFAULT_FONT = '18px sans-serif'
 ,	DRAW_PIXEL_OFFSET = 0.5, TAIL_WIDTH = 18, CANVAS_BORDER = 1, BOTH_PANELS_HEIGHT = 640, NUF = 100
 
 ,	TOOLS_REF = [
@@ -50,10 +50,12 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	,	shapeFlags: [1,10, 34,34,34,98,98, 4]
 	,	shapeClass: '01111112'
 	,	shapeModel: '//[oOO{<'
+	,	textStylePreset:['', DEFAULT_FONT, 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'Modern', 'Impact, "Arial Narrow"', 'Anime Ace, Comic Sans', '"Century Gothic"', 'Script']
 	,	options: {
 			shape	: ['line', 'freehand poly', 'rectangle', 'circle', 'ellipse', 'speech balloon', 'speech box', 'move']
 		,	lineCap	: ['round', 'butt', 'square']
 		,	lineJoin: ['round', 'bevel', 'miter']
+		,	textStyle:['...', 'default', 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'modern', 'narrow', 'comic', 'gothic', 'script']
 		,	palette	: ['history', 'auto', 'legacy', 'Touhou', 'gradient']
 		}
 	}
@@ -121,7 +123,10 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 ,	regTipBrackets = /[ ]*\([^)]+\)$/
 ,	regFunc = /\{[^.]+\.([^(]+)\(/
 ,	regLimit = /^(\d+)\D+(\d+)$/
+,	regTextSize = /^(\d+)([a-z]+)?$/i
 ,	regTrim = /^\s+|\s+$/g
+,	regAllSpace = /\s+/g
+,	regCommaSpace = /\s*(,)[\s,]*/g
 
 ,	MODE_LABELS = 'abc'.split('')
 
@@ -218,10 +223,26 @@ function nl2br(s) {return s.replace(/[\r\n]+/g, '<br>');}
 function repeat(t,n) {return new Array(n+1).join(t);}
 function replaceAll(t,s,j) {return t.split(s).join(j);}
 function replaceAdd(t,s,a) {return replaceAll(t,s,s+a);}
-function getLastWord(s,i) {return s.substr(s.lastIndexOf(i||'-')+1);}
+function getSpaceReduced(t) {return t.replace(regTrim, '').replace(regAllSpace, ' ');}
+function getLastWord(t,i) {return t.substr(t.lastIndexOf(i||'-')+1);}
 function getFormattedNum(i) {
 var	r,s = ''+i ,f = 'toLocaleString'
 	return (i = orz(i))[f] && s != (r = i[f]()) ? r : s.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
+}
+
+function getTextOffsetX(ctx, align, lines) {
+	if (align == 'center') return 0;
+var	i,w,x = 0;
+	for (i in lines) if (x < (w = ctx.measureText(lines[i]).width)) x = w;
+	return (align == 'left'?-x:x)/2;
+}
+
+function getTextOffsetXY(f,c,a,t) {
+	c.font = f;
+	return {
+		x: getTextOffsetX(c,a,t)
+	,	y: c.measureText('M').width
+	};
 }
 
 function id(id) {return document.getElementById(NS+(id?'-'+id:''));}
@@ -575,24 +596,23 @@ var	sf = select.shapeFlags[select.shape.value];
 		for (i in select.lineCaps) c2s[i] = c2d[i] = select.options[i][select[i].value];
 
 		if ((sf & 32) && (t = id('text-content').value).replace(regTrim, '').length) {
-			c2d.font = id('text-font').value || DEFAULT_FONT;
-		var	s = c2d.strokeStyle, x = 0, w = 0, t = t.split('\n'), a = draw.textAlign;
-			if (a != 'center') {
-				for (i in t) if (w < (x = c2d.measureText(t[i]).width)) w = x;
-				x = (a == 'left'?-w:w)/2;
+		var	i = id('text-font'), f = DEFAULT_FONT, s = c2d.strokeStyle, a = draw.textAlign, o = {x:0, y:0}, t = t.split('\n');
+			if (checkTextStyle(i, 1)) {
+				o = getTextOffsetXY(f = i.value, c2d,a,t);
+			} else {
+			var	j = i.value.replace(regCommaSpace, '$1 ').split(' '), k = [], l = '', m;
+				for (i in j) {
+					if (m = j[i].match(regTextSize)) l = m[0] + (m[1] || 'px')+' ';
+					else k.push(j[i]);
+				}
+				f = l+k.join(' ');
+				if (l) o = getTextOffsetXY(f,c2d,a,t);
 			}
 			if (s == A0 || regA0.test(s)) {
 				i = (draw.btn == 1?1:0);
 				s = 'rgba('+tools[i].color+', '+tools[1-i].opacity+')';
 			}
-			draw.text = {
-				x: x
-			,	y: c2d.measureText('M').width
-			,	font: c2d.font
-			,	style: s
-			,	align: a
-			,	lines: t
-			};
+			draw.text = {font:f, style:s, align:a, offset:o, lines:t};
 		} else draw.text = 0;
 
 		c2d.beginPath();
@@ -664,8 +684,10 @@ function drawEnd(event) {
 		}
 		draw.time[1] = +new Date;
 		draw.screen();
+		c2d.fillStyle = c2s.fillStyle;
 		if (draw.text) {
 			c = c2s, used.shape = 'Shape', used.text = 'Text';
+			c.beginPath();
 			c.clearRect(0,0, canvas.width, canvas.height);
 			drawShape(c, s);
 		} else
@@ -675,6 +697,7 @@ function drawEnd(event) {
 			used.poly = 'Poly';
 		} else
 		if ((sf & 64) || (m && draw.line.preview)) {
+			c.beginPath();
 			drawShape(c, s);
 			if (!(sf & 4)) used.shape = 'Shape';
 		} else
@@ -711,7 +734,8 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 				if (ctx.fillStyle != A0) ctx.fillRect(v.x, v.y, r.x-v.x, r.y-v.y);
 				if (draw.text) {
 				var	x = (v.x+r.x)/2
-				,	y = (v.y+r.y)/2;
+				,	y = (v.y+r.y)/2
+				,	h = Math.abs(v.y-r.y);
 					ctx.moveTo(v.x, v.y);
 					ctx.lineTo(r.x, v.y);
 					ctx.lineTo(r.x, r.y);
@@ -726,7 +750,8 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 		case 'o':
 		var	x = xCenter = (v.x+r.x)/2
 		,	y = yCenter = (v.y+r.y)/2
-		,	radius = Math.max(1, dist(r.x-xCenter, r.y-yCenter));
+		,	radius = Math.max(1, dist(r.x-xCenter, r.y-yCenter))
+		,	h = radius*2;
 
 			ctx.moveTo(xCenter + radius, yCenter);
 			ctx.arc(xCenter, yCenter, radius, 0, 7, false);
@@ -740,7 +765,8 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 		,	yCenter = (v.y+r.y)/2
 		,	xRadius = Math.max(1, Math.abs(r.x-xCenter))
 		,	yRadius = Math.max(1, Math.abs(r.y-yCenter))
-		,	radius = Math.max(xRadius, yRadius), a = 1, b = 1, q,p,p2 = Math.PI*2;
+		,	radius = Math.max(xRadius, yRadius), a = 1, b = 1, q,p,p2 = Math.PI*2
+		,	h = yRadius*2;
 
 			if (s && s.done) {
 				xCenter += q.x-p.x;
@@ -873,7 +899,8 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 				d = q.y-p.y, y0 += d, y1 += d;
 			}
 		var	x = (x0+x1)/2
-		,	y = (y0+y1)/2;
+		,	y = (y0+y1)/2
+		,	h = dy;
 
 			(s
 				? drawSpeechFig(x, y, r1, dx/2, dy/2, 4, q.x, q.y)
@@ -907,11 +934,15 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 			}
 	}
 	if (draw.text) {
-	var	f = ctx.fillStyle, t = draw.text.lines, h = draw.text.y*2;
-		ctx.font = draw.text.font;
-		ctx.textAlign = draw.text.align;
+	var	d = draw.text, f = ctx.fillStyle, t = d.lines, o = d.offset;
+		if (!o.y) o = getTextOffsetXY(h/(t.length*2-1)+'px '+d.font, ctx, d.align, t);
+		h = o.y*2;
+		x += o.x;
+		y -= h/2*(t.length-1);
+		ctx.font = d.font;
+		ctx.textAlign = d.align;
 		ctx.textBaseline = 'middle';
-		ctx.fillStyle = draw.text.style, x += draw.text.x, y -= (t.length-1)/2*h;
+		ctx.fillStyle = d.style;
 		ctx.save();
 		ctx.clip();
 		for (i in t) ctx.fillText(t[i], x, y), y += h;
@@ -1125,6 +1156,20 @@ var	c = select.shapeClass[s = orz((s||select.shape).value)], i,j = [];
 
 function updateTextAlign(e) {
 	draw.textAlign = getLastWord(e.id);
+}
+
+function updateTextStyle(e) {
+var	i = orz(e.value);
+	if (i) id('text-font').value = select.textStylePreset[i], e.value = 0;
+}
+
+function checkTextStyle(e, test) {
+	e.value = getSpaceReduced(e.value);
+	if (test) {
+		c2d.font = e = e.value;
+		return (c2d.font === e);
+	}
+	return false;
 }
 
 function updateHistoryButtons() {
@@ -1615,14 +1660,18 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	})) document.addEventListener(i, a[i], false);	//* <- using "document" to prevent negative clipping.
 		//* still fails to catch events outside of document block height less than of browser window.
 
-	a = {left:'←</label>', center:'<label>→', right:'</label><br>'}, b = '<label>', k = 'text-align';
+	a = {left:'←</label>', center:'<label>→', right:'</label>'}, b = '<label>', k = 'text-align';
 
 	for (i in a) b += '<input type="radio" name="'+k+'" id="'+k+'-'+i+'" onChange="updateTextAlign(this)">'+a[i];
 
 	b = d+'colors">'
 	+	d+'texts">'
 	+		d+'text">'
-	+			'<textarea id="text-font'+t+lang.font_hint+'">'+DEFAULT_FONT+'</textarea><br>'+b
+	+			'<textarea id="text-font'+t+lang.text_font_hint+'" onChange="checkTextStyle(this)">'+DEFAULT_FONT+'</textarea>'
+	+			'<br>'
+	+			'<span'+t+lang.text_align_hint+'">'+b+'</span>'
+	+			'<select id="textStyle'+t+lang.text_font_set_hint+'" onChange="updateTextStyle(this)"></select>'
+	+			'<br>'
 	+			'<textarea id="text-content'+t+lang.text_hint+'"></textarea>'
 	+		'</div>'
 	+		d+'sliders">'
@@ -1769,7 +1818,7 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	for (i in (a = 'JP')) if (e = id(b+a[i])) setEvent(e, 'onmouseover', 'updateSaveFileSize(this)');
 
 	d = ['onchange', 'onclick', 'onmouseover'];
-	for (i in (a = [b, 'input', 'select', 'span', 'a']))
+	for (i in (a = [b, 'input', 'textarea', 'select', 'span', 'a']))
 	for (c in (b = container.getElementsByTagName(a[i])))
 	for (e in d) if ((f = b[c][d[e]]) && !self[f = (''+f).match(regFunc)[1]]) self[f] = eval(f);
 
@@ -1904,8 +1953,10 @@ var	o = outside
 		,	hex:		'Цвет'
 		,	hex_hint:	'Формат ввода — #a, #f90, #ff9900, или 0,123,255'
 		,	hide_hint:	'Кликните, чтобы спрятать или показать.'
-		,	font_hint:	'Шрифт печатного текста. Пример: '+DEFAULT_FONT
-		,	text_hint:	'Содержимое печатного текста.'
+		,	text_hint:		'Рисовать в фигурах текст, заданный здесь. Поле можно растягивать за уголок, если ваш браузер позволяет.'
+		,	text_font_hint:		'Шрифт, стиль и высота строки печатаемого текста. Если размер не указан, он подбирается автоматически.'
+		,	text_align_hint:	'Выравнивать текст по краю или середине.'
+		,	text_font_set_hint:	'Некоторые заданные варианты стилей. Какие-то могут не сработать, если в вашей системе не найдётся такого щрифта.'
 		,	info_top:	'Управление (указатель над полотном):'
 		,	info: [
 				'C'+k+'средний клик = подобрать цвет с рисунка.'
@@ -1972,6 +2023,7 @@ var	o = outside
 			shape	: ['линия', 'замкнутая линия', 'прямоугольник', 'круг', 'овал', 'овал для речи', 'коробка для речи', 'сдвиг']
 		,	lineCap	: ['круг', 'срез', 'квадрат']
 		,	lineJoin: ['круг', 'срез', 'угол']
+		,	textStyle:['...', 'средний', 'без засечек', 'с заческами', 'моноширинный', 'курсив', 'фантастика', 'модерн', 'узкий', 'комикс', 'готика', 'рукопись']
 		,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент']
 		};
 	} else {
@@ -2012,8 +2064,10 @@ var	o = outside
 		,	hex:		'Color'
 		,	hex_hint:	'Valid formats — #a, #f90, #ff9900, or 0,123,255'
 		,	hide_hint:	'Click to show/hide.'
-		,	font_hint:	'Printable text font style. Example: '+DEFAULT_FONT
-		,	text_hint:	'Printable text content.'
+		,	text_hint:		'Enter text here to print inside figures. Field is resizable by dragging its corner, if your browser supports.'
+		,	text_font_hint:		'Printed text font style.'
+		,	text_align_hint:	'Align printed text to either side or centered.'
+		,	text_font_set_hint:	'Various style presets, some of which may not work if your system has no matching fonts installed.'
 		,	info_top:	'Hot keys (mouse over image only):'
 		,	info: [
 				'C'+k+'Mouse Mid = pick color from image.'
@@ -2140,8 +2194,9 @@ document.write(
 #|-right table, #|-info > div {margin-top: 7px;}\
 #|-right td {padding: 0 2px; height: 32px;}\
 #|-right {color: #888; width: 321px; margin: 0; margin-left: 12px; text-align: left; display: inline-block; vertical-align: top; overflow: hidden;}\
-#|-text textarea {margin: 2px; width: 150px; min-width: 150px; max-width: 311px; max-height: 356px; min-height: 38px; height: 38px;}\
-#|-text #|-text-font {max-height: 16px; min-height: 16px; height: 16px;}\
+#|-text select {margin: 2px; width: 55px;}\
+#|-text textarea {margin: 2px 2px 2px 2px; width: 150px; min-width: 150px; max-width: 311px; max-height: 356px; min-height: 22px; height: 22px;}\
+#|-text #|-text-font {max-height: 22px; min-height: 22px; height: 22px;}\
 #|-texts {margin-top: -2px;}\
 #|-texts > * {float: left;}\
 </style>'
