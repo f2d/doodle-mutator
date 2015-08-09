@@ -2,7 +2,7 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 ,	INFO_VERSION = 'v0.9.56'
-,	INFO_DATE = '2013-04-01 — 2015-08-07'
+,	INFO_DATE = '2013-04-01 — 2015-08-10'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
 ,	CR = 'CanvasRecovery', CT = 'Time', DEFAULT_FONT = '18px sans-serif'
@@ -596,23 +596,23 @@ var	sf = select.shapeFlags[select.shape.value];
 		for (i in select.lineCaps) c2s[i] = c2d[i] = select.options[i][select[i].value];
 
 		if ((sf & 32) && (t = id('text-content').value).replace(regTrim, '').length) {
-		var	i = id('text-font'), f = DEFAULT_FONT, s = c2d.strokeStyle, a = draw.textAlign, o = {x:0, y:0}, t = t.split('\n');
-			if (checkTextStyle(i, 1)) {
-				o = getTextOffsetXY(f = i.value, c2d,a,t);
+		var	i = id('text-font'), f = DEFAULT_FONT, s = c2d.strokeStyle, a = draw.textAlign, t = t.split('\n');
+			if (k = checkTextStyle(i, 1)) {
+				f = i.value;
 			} else {
 			var	j = i.value.replace(regCommaSpace, '$1 ').split(' '), k = [], l = '', m;
 				for (i in j) {
-					if (m = j[i].match(regTextSize)) l = m[0] + (m[1] || 'px')+' ';
+					if (m = j[i].match(regTextSize)) l = m[1] + (m[2] || 'px')+' ';
 					else k.push(j[i]);
 				}
 				f = l+k.join(' ');
-				if (l) o = getTextOffsetXY(f,c2d,a,t);
+				k = (l && checkTextStyle(f, 1));
 			}
 			if (s == A0 || regA0.test(s)) {
 				i = (draw.btn == 1?1:0);
 				s = 'rgba('+tools[i].color+', '+tools[1-i].opacity+')';
 			}
-			draw.text = {font:f, style:s, align:a, offset:o, lines:t};
+			draw.text = {font:f, style:s, align:a, lines:t, offset:(k?getTextOffsetXY(f,c2d,a,t):{x:0, y:0})};
 		} else draw.text = 0;
 
 		c2d.beginPath();
@@ -1164,10 +1164,10 @@ var	i = orz(e.value);
 }
 
 function checkTextStyle(e, test) {
-	e.value = getSpaceReduced(e.value);
+var	v = (e.value ? (e.value = getSpaceReduced(e.value)) : e);
 	if (test) {
-		c2d.font = e = e.value;
-		return (c2d.font === e);
+		c2d.font = v;
+		return (c2d.font === v);
 	}
 	return false;
 }
