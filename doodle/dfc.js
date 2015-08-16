@@ -704,7 +704,6 @@ function drawEnd(event) {
 			draw.step = {prev:{x:draw.prev.x, y:draw.prev.y}, cur:{x:draw.cur.x, y:draw.cur.y}};	//* <- normal straight line as base
 			return;
 		}
-		for (i in DRAW_HELPER) c2s[i] = DRAW_HELPER[i];
 		draw.time[1] = +new Date;
 		draw.screen();
 		c2d.fillStyle = c2s.fillStyle;
@@ -1173,7 +1172,7 @@ function updateShape(s) {
 var	c = select.shapeClass[s = orz((s||select.shape).value)], i,j = [];
 	for (i in MODE_LABELS) if (c != i) j.push(MODE_LABELS[i]);
 	setClass(id('bottom'), j.join(' '));
-	setClass(id('texts'), (select.shapeFlags[s] & 32)?'text':'sliders');
+	setClass(id('texts'), (select.shapeFlags[s] & 32)?'texts':'sliders');
 	return false;
 }
 
@@ -1848,12 +1847,10 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	,	lineJoin: ['-x-', '\\_/', 'V']
 	};
 	a = select.options, c = select.translated || a, f = (LS && (e = LS.lastPalette) && palette[e]?e:1);
-	for (b in a) {
-		e = select[b] = id(b);
-		for (i in a[b]) (
-			e.options[e.options.length] = new Option(c[b][i]+(b == 'shape'?' ['+shapeHotKey[i]+']':(b in d?' '+d[b][i]:'')), i)
-		).selected = (b == 'palette'?(i == f):!i);
-	}
+	for (b in a) if (e = select[b] = id(b))
+	for (i in a[b]) (
+		e.options[e.options.length] = new Option(c[b][i]+(b == 'shape'?' ['+shapeHotKey[i]+']':(b in d?' '+d[b][i]:'')), i)
+	).selected = (b == 'palette'?(i == f):!i);
 	id('text-align-center').click();
 
 //* safe palette constructor, step recomended to be: 1, 3, 5, 15, 17, 51, 85, 255
@@ -1975,8 +1972,8 @@ var	o = outside
 		,	hex_hint:	'Формат ввода — #a, #f90, #ff9900, или 0,123,255'
 		,	hide_hint:	'Кликните, чтобы спрятать или показать.'
 		,	text_hint:		'Рисовать в фигурах текст, заданный здесь. Поле можно растягивать за уголок, если ваш браузер позволяет.'
-		,	text_font_hint:		'Шрифт, стиль и высота строки печатаемого текста. Если размер не указан, он подбирается автоматически.'
 		,	text_align_hint:	'Выравнивать текст по краю или середине.'
+		,	text_font_hint:		'Шрифт, стиль и высота строки печатаемого текста. Если размер не указан, он подбирается автоматически.'
 		,	text_font_set_hint:	'Некоторые заданные варианты стилей. Какие-то могут не сработать, если в вашей системе не найдётся такого щрифта.'
 		,	info_top:	'Управление (указатель над полотном):'
 		,	info: [
@@ -2086,8 +2083,8 @@ var	o = outside
 		,	hex_hint:	'Valid formats — #a, #f90, #ff9900, or 0,123,255'
 		,	hide_hint:	'Click to show/hide.'
 		,	text_hint:		'Enter text here to print inside figures. Field is resizable by dragging its corner, if your browser supports.'
-		,	text_font_hint:		'Printed text font style.'
 		,	text_align_hint:	'Align printed text to either side or centered.'
+		,	text_font_hint:		'Printed text font style.'
 		,	text_font_set_hint:	'Various style presets, some of which may not work if your system has no matching fonts installed.'
 		,	info_top:	'Hot keys (mouse over image only):'
 		,	info: [
@@ -2174,7 +2171,7 @@ document.write(
 #| .|-palettine:hover {border-color: #000;}\
 #| .|-r {text-align: right;}\
 #| .|-red {background-color: #f77;}\
-#| .|-text input[type="range"], #| .|-sliders #|-text, '+MODE_LABELS.map(function(i) {return '.|-'+i+' .|-'+i;}).join(', ')+'{display: none;}\
+#| .|-sliders #|-text, #| .|-texts input[type="range"], '+MODE_LABELS.map(function(i) {return '.|-'+i+' .|-'+i;}).join(', ')+'{display: none;}\
 #| a {color: #888;}\
 #| a:hover {color: #000;}\
 #| abbr {border-bottom: 1px dotted #111;}\
