@@ -617,7 +617,7 @@ var	sf = select.shapeFlags[select.shape.value];
 		for (i in select.lineCaps) c2s[i] = c2d[i] = select.options[i][select[i].value];
 
 		if ((sf & 32) && (t = id('text-content').value).replace(regTrim, '').length) {
-		var	i = id('text-font'), f = DEFAULT_FONT, s = c2d.strokeStyle, a = draw.textAlign, t = t.split('\n');
+		var	i = id('text-font'), f = DEFAULT_FONT, s = c2d.strokeStyle, a = draw.textAlign || 'center', t = t.split('\n');
 			if (k = checkTextStyle(i, 1)) {
 				f = i.value;
 			} else {
@@ -967,7 +967,7 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 		ctx.fillStyle = d.style;
 		ctx.save();
 		ctx.clip();
-		for (i in t) ctx.fillText(t[i], x, y), y += h;
+		for (i in t) ctx.fillText(t[i], Math.round(x), Math.round(y)), y += h;
 		ctx.restore();
 		ctx.fillStyle = f;
 	}
@@ -1974,7 +1974,7 @@ var	o = outside
 		,	text_hint:		'Рисовать в фигурах текст, заданный здесь. Поле можно растягивать за уголок, если ваш браузер позволяет.'
 		,	text_align_hint:	'Выравнивать текст по краю или середине.'
 		,	text_font_hint:		'Шрифт, стиль и высота строки печатаемого текста. Если размер не указан, он подбирается автоматически.'
-		,	text_font_set_hint:	'Некоторые заданные варианты стилей. Какие-то могут не сработать, если в вашей системе не найдётся такого щрифта.'
+		,	text_font_set_hint:	'Некоторые заданные варианты стилей. Какие-то могут не сработать, если в вашей системе не найдётся такого шрифта.'
 		,	info_top:	'Управление (указатель над полотном):'
 		,	info: [
 				'C'+k+'средний клик = подобрать цвет с рисунка.'
