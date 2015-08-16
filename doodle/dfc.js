@@ -1,12 +1,21 @@
 ﻿var dfc = new function () {
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
-,	INFO_VERSION = 'v0.9.56'
-,	INFO_DATE = '2013-04-01 — 2015-08-10'
+
+,	INFO_VERSION = 'v0.9.57'
+,	INFO_DATE = '2013-04-01 — 2015-08-16'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
+
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
 ,	CR = 'CanvasRecovery', CT = 'Time', DEFAULT_FONT = '18px sans-serif'
-,	DRAW_PIXEL_OFFSET = 0.5, TAIL_WIDTH = 18, CANVAS_BORDER = 1, BOTH_PANELS_HEIGHT = 640, NUF = 100
+
+,	DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1, TAIL_WIDTH = 18, RANGE_MAX = 100, BOTH_PANELS_HEIGHT = 640
+,	DRAW_HELPER = {
+		lineWidth: 1
+	,	shadowBlur: 0
+	,	shadowColor: A0
+	,	strokeStyle: 'rgba(123,123,123,0.5)'
+	}
 
 ,	TOOLS_REF = [
 		{blur: 0, opacity: 1.00, width:  1, color: '0, 0, 0'}		//* <- draw
@@ -16,9 +25,9 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 ,	BOW = ['blur', 'opacity', 'width']
 ,	BOWL = 'BOW'
 ,	RANGE = [
-		{min: 0   , max: NUF, step: 1}
-	,	{min: 0.01, max: 1  , step: 0.01}
-	,	{min: 1   , max: NUF, step: 1}
+		{min: 0, max: RANGE_MAX, step: 1}
+	,	{min: 0.01, max: 1, step: 0.01}
+	,	{min: 1, max: RANGE_MAX, step: 1}
 	]
 
 ,	flushCursor = false, neverFlushCursor = true
@@ -44,10 +53,12 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	2 = fig., mode L: fill, U: outline
 	4 = move, mode L: copy, U: step 2 rect
 	8 = path, closed polygon
+	16 = cursor crosshair
 	32 = print text
 	64 = step 2
+	128 = tool width not used
 */
-	,	shapeFlags: [1,10, 34,34,34,98,98, 4]
+	,	shapeFlags: [1,10, 50,34,50, 114,114, 148]
 	,	shapeClass: '01111112'
 	,	shapeModel: '//[oOO{<'
 	,	textStylePreset:['', DEFAULT_FONT, 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'Modern', 'Impact, "Arial Narrow"', 'Anime Ace, Comic Sans', '"Century Gothic"', 'Script']
@@ -115,18 +126,18 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 
 ,	noTransformByProp = /^Opera.* Version\D*11\.\d+$/i.test(navigator.userAgent)
 ,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)
-,	regA0 = /^[rgba(]+[\d,\s]+[.0)]+$/i
-,	regHex = /^#?[0-9a-f]{6}$/i
-,	regHex3 = /^#?([0-9a-f])([0-9a-f])([0-9a-f])$/i
-,	reg255 = /^([0-9]{1,3}),\s*([0-9]{1,3}),\s*([0-9]{1,3})$/
-,	reg255split = /,\s*/
-,	regTipBrackets = /[ ]*\([^)]+\)$/
-,	regFunc = /\{[^.]+\.([^(]+)\(/
-,	regLimit = /^(\d+)\D+(\d+)$/
-,	regTextSize = /^(\d+)([a-z]+)?$/i
-,	regTrim = /^\s+|\s+$/g
-,	regAllSpace = /\s+/g
-,	regCommaSpace = /\s*(,)[\s,]*/g
+,	regA0		= /^[rgba(]+[\d,\s]+[.0)]+$/i
+,	regCommaSpace	= /\s*(,)[\s,]*/g
+,	regCommaSplit	= /,\s*/
+,	regHex		= /^#?[0-9a-f]{6}$/i
+,	regHex3		= /^#?([0-9a-f])([0-9a-f])([0-9a-f])$/i
+,	regInt3		= /^([0-9]{1,3}),\s*([0-9]{1,3}),\s*([0-9]{1,3})$/
+,	regInsideFunc	= /\{[^.]+\.([^(]+)\(/
+,	regLimit	= /^(\d+)\D+(\d+)$/
+,	regSpace	= /\s+/g
+,	regTailBrackets	= /[ ]*\([^)]+\)$/
+,	regTextSize	= /^(\d+)([a-z]+)?$/i
+,	regTrim		= /^\s+|\s+$/g
 
 ,	MODE_LABELS = 'abc'.split('')
 
@@ -183,9 +194,8 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 		var	s = select.imgSizes, i;
 			if (res && mode.resize) {
 				for (i in s) cnvHid[i] = d[i], canvas[i] = orz(id('img-'+i).value);
-				clearFill(canvas);
 				c2s.putImageData(d, 0,0);
-				c2d.drawImage(cnvHid, 0,0, d.width, d.height, 0,0, canvas.width, canvas.height);
+				clearFill(canvas).drawImage(cnvHid, 0,0, d.width, d.height, 0,0, canvas.width, canvas.height);
 				for (i in s) cnvHid[i] = canvas[i];
 			} else {
 				if (!res) {
@@ -218,12 +228,13 @@ function cutPeriod(x,y,z) {
 	if (isNaN(z)) z = Math.PI;
 	return (x < y ? x-y+z : (x > z ? x+y-z : x));
 }
+
 function orz(n) {return parseInt(n||0)||0;}
 function nl2br(s) {return s.replace(/[\r\n]+/g, '<br>');}
 function repeat(t,n) {return new Array(n+1).join(t);}
 function replaceAll(t,s,j) {return t.split(s).join(j);}
 function replaceAdd(t,s,a) {return replaceAll(t,s,s+a);}
-function getSpaceReduced(t) {return t.replace(regTrim, '').replace(regAllSpace, ' ');}
+function getSpaceReduced(t) {return t.replace(regTrim, '').replace(regSpace, ' ');}
 function getLastWord(t,i) {return t.substr(t.lastIndexOf(i||'-')+1);}
 function getFormattedNum(i) {
 var	r,s = ''+i ,f = 'toLocaleString'
@@ -245,6 +256,7 @@ function getTextOffsetXY(f,c,a,t) {
 	};
 }
 
+function isA0(s) {return (s == A0 || regA0.test(s));}
 function id(id) {return document.getElementById(NS+(id?'-'+id:''));}
 function setId(e,id) {return e.id = NS+'-'+id;}
 function setClass(e,c) {return e.className = NS+'-'+replaceAll(c,' ',' '+NS+'-');}
@@ -254,12 +266,14 @@ var	a = ['class','id','onChange','onClick'];
 	for (i in a) c = replaceAdd(c, ' '+a[i]+'="', NS+(a[i][0]=='o'?'.':'-'));
 	return e.innerHTML = c;
 }
+
 function toggleView(e) {e = id(e); return e.style.display = (e.style.display?'':'none');}
 function showInfo() {
 	if (id('colors').style.display == id('info').style.display) return;
 	toggleView('colors');
 	setClass(id('buttonH'), toggleView('info') ? 'button' : 'button-active');
 }
+
 function showProps(target, flags, spaces) {
 /* flags:
 	1 = return, don't alert
@@ -277,6 +291,7 @@ var	k,v,j = ' ', output = '';
 	+	((flags & 4)?'':(spaces && v?(v+j).split(j, spaces).join(j):v));
 	return (flags & 1) ? output : alert(output);
 }
+
 this.show = showProps;
 this.unsave = function(i) {if (saveClear(i,1)) updateDebugScreen(i);}
 this.whatSaved = function(i) {
@@ -529,19 +544,25 @@ function getCursorRad(r, x, y) {
 }
 
 function drawCursor() {
-	c2d.beginPath();
-	c2d.lineWidth = 1;
-	if (mode.brushView) {
-		c2d.fillStyle = 'rgba('+tool.color+', '+tool.opacity+')';
-		c2d.shadowColor = ((c2d.shadowBlur = tool.blur) ? 'rgb('+tool.color+')' : A0);
-	} else {
-		c2d.strokeStyle = 'rgb(123,123,123)';
-		c2d.shadowColor = A0;
-		c2d.shadowBlur = 0;
+var	sf = select.shapeFlags[select.shape.value];
+	if (sf & 16) {
+		for (i in DRAW_HELPER) c2d[i] = DRAW_HELPER[i];
+	var	i,o = draw.o, p = -DRAW_PIXEL_OFFSET;
+		c2d.beginPath();
+		c2d.moveTo(o.x+p, p), c2d.lineTo(o.x+p, canvas.height+p);
+		c2d.moveTo(p, o.y+p), c2d.lineTo(canvas.width+p, o.y+p);
+		c2d.stroke();
 	}
-	c2d.arc(draw.cur.x, draw.cur.y, tool.width/2, 0, 7/*Math.PI*2*/, false);
-	c2d.closePath();
-	mode.brushView ? c2d.fill() : c2d.stroke();
+	if (!(sf & 128)) {
+		if (mode.brushView) {
+			c2d.fillStyle = 'rgba('+tool.color+', '+tool.opacity+')';
+			c2d.shadowColor = ((c2d.shadowBlur = tool.blur) ? 'rgb('+tool.color+')' : A0);
+		} else for (i in DRAW_HELPER) c2d[i] = DRAW_HELPER[i];
+		c2d.beginPath();
+		c2d.arc(draw.cur.x, draw.cur.y, tool.width/2, 0, 7, false);
+		c2d.closePath();
+		mode.brushView ? c2d.fill() : c2d.stroke();
+	}
 	if (!neverFlushCursor) flushCursor = true;
 }
 
@@ -608,13 +629,14 @@ var	sf = select.shapeFlags[select.shape.value];
 				f = l+k.join(' ');
 				k = (l && checkTextStyle(f, 1));
 			}
-			if (s == A0 || regA0.test(s)) {
+			if (isA0(s)) {
 				i = (draw.btn == 1?1:0);
 				s = 'rgba('+tools[i].color+', '+tools[1-i].opacity+')';
 			}
 			draw.text = {font:f, style:s, align:a, lines:t, offset:(k?getTextOffsetXY(f,c2d,a,t):{x:0, y:0})};
 		} else draw.text = 0;
 
+		if ((sf & 32) && !(sf & 2)) return drawEnd(event);
 		c2d.beginPath();
 		c2d.moveTo(draw.cur.x, draw.cur.y);
 	}
@@ -682,6 +704,7 @@ function drawEnd(event) {
 			draw.step = {prev:{x:draw.prev.x, y:draw.prev.y}, cur:{x:draw.cur.x, y:draw.cur.y}};	//* <- normal straight line as base
 			return;
 		}
+		for (i in DRAW_HELPER) c2s[i] = DRAW_HELPER[i];
 		draw.time[1] = +new Date;
 		draw.screen();
 		c2d.fillStyle = c2s.fillStyle;
@@ -731,7 +754,7 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 		//* show pan source area
 				ctx.strokeRect(s.prev.x, s.prev.y, s.cur.x-s.prev.x, s.cur.y-s.prev.y);
 			} else {
-				if (ctx.fillStyle != A0) ctx.fillRect(v.x, v.y, r.x-v.x, r.y-v.y);
+				if (!isA0(ctx.fillStyle)) ctx.fillRect(v.x, v.y, r.x-v.x, r.y-v.y);
 				if (draw.text) {
 				var	x = (v.x+r.x)/2
 				,	y = (v.y+r.y)/2
@@ -756,7 +779,7 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 			ctx.moveTo(xCenter + radius, yCenter);
 			ctx.arc(xCenter, yCenter, radius, 0, 7, false);
 
-			if (ctx.fillStyle != A0) ctx.fill(FILL_RULE);
+			if (!isA0(ctx.fillStyle)) ctx.fill(FILL_RULE);
 		break;
 	//* ellipse
 		case 'O':
@@ -796,7 +819,7 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 			}
 			ctx.restore();
 
-			if (ctx.fillStyle != A0) ctx.fill(FILL_RULE);
+			if (!isA0(ctx.fillStyle)) ctx.fill(FILL_RULE);
 		break;
 	//* speech box
 		case '{':
@@ -907,13 +930,13 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 				: drawSpeechFig(x, y, r1, dx/2, dy/2)
 			);
 
-			if (ctx.fillStyle != A0) ctx.fill(FILL_RULE);
+			if (!isA0(ctx.fillStyle)) ctx.fill(FILL_RULE);
 		break;
 	//* line
 		default:
 			if (s) {
-			var	d = r, old = {}, t = {lineWidth: 1, shadowBlur: 0, shadowColor: A0, strokeStyle: 'rgba(123,123,123,0.5)'};
-				for (i in t) old[i] = c2s[i], c2s[i] = t[i];
+			var	d = r, old = {};
+				for (i in t) old[i] = c2s[i], c2s[i] = DRAW_HELPER[i];
 				c2s.beginPath();
 				if (s.prev.x != v.x || s.prev.y != v.y) {
 					c2s.moveTo(d.x, d.y), d = v;
@@ -1051,8 +1074,8 @@ function updateColor(value, toolIndex) {
 var	t = tools[toolIndex || 0]
 ,	c = id('color-text')
 ,	v = value || c.value;
-	if (reg255.test(v)) {
-	var	a = (t.color = v).split(reg255split);
+	if (regInt3.test(v)) {
+	var	a = (t.color = v).split(regCommaSplit);
 		v = '#';
 		for (i in a) v += ((a[i] = parseInt(a[i]).toString(16)).length == 1) ? '0'+a[i] : a[i];
 	} else {
@@ -1080,7 +1103,7 @@ var	p = palette[0], found = p.length, i;
 
 //* update buttons:
 	c = 0;
-var	a = t.color.split(reg255split), e = id((t == tool) ? 'colorF' : 'colorB');
+var	a = t.color.split(regCommaSplit), e = id((t == tool) ? 'colorF' : 'colorB');
 	for (i in a) c += parseInt(a[i]);
 	e.style.color = (c > 380 ? '#000' : '#fff');			//* <- inverted font color
 	e.style.background = 'rgb(' + t.color + ')';
@@ -1181,7 +1204,7 @@ var	a = {R:draw.history.last,U:0}, b = 'button', d = b+'-disabled', e;
 function updateSaveFileSize(e) {
 var	i = e.id.slice(-1);
 	if (cue.upd[i]) cue.upd[i] = 0,
-	e.title = e.title.replace(regTipBrackets, '')+' ('+(canvas.toDataURL({J:IJ,P:''}[i]).length / 1300).toFixed(0)+' KB)';
+	e.title = e.title.replace(regTailBrackets, '')+' ('+(canvas.toDataURL({J:IJ,P:''}[i]).length / 1300).toFixed(0)+' KB)';
 }
 
 function updateResize(e) {
@@ -1490,13 +1513,11 @@ var	d = draw.time, e = new Image(), t = +new Date, i;
 			c2s.getImageData(0,0, 1,1);	//* <- disposable test of data source safety
 
 			if (mode.resize) {
-				clearFill(canvas);
-				c2d.drawImage(e, 0,0, e.width, e.height, 0,0, canvas.width, canvas.height);
+				clearFill(canvas).drawImage(e, 0,0, e.width, e.height, 0,0, canvas.width, canvas.height);
 			} else {
 				for (i in select.imgSizes) id('img-'+i).value = cnvHid[i] = canvas[i] = e[i];
 				updateDimension();
-				clearFill(canvas);
-				c2d.drawImage(e, 0,0);
+				clearFill(canvas).drawImage(e, 0,0);
 			}
 			historyAct();
 			cue.autoSave = 0;
@@ -1820,7 +1841,7 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	d = ['onchange', 'onclick', 'onmouseover'];
 	for (i in (a = [b, 'input', 'textarea', 'select', 'span', 'a']))
 	for (c in (b = container.getElementsByTagName(a[i])))
-	for (e in d) if ((f = b[c][d[e]]) && !self[f = (''+f).match(regFunc)[1]]) self[f] = eval(f);
+	for (e in d) if ((f = b[c][d[e]]) && !self[f = (''+f).match(regInsideFunc)[1]]) self[f] = eval(f);
 
 	d = 'download', DL = (d in b[0]?d:'');
 	d = {	lineCap: ['<->', '|-|', '[-]']
