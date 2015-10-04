@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.57'
-,	INFO_DATE = '2013-04-01 — 2015-08-16'
+,	INFO_VERSION = 'v0.9.58'
+,	INFO_DATE = '2013-04-01 — 2015-10-05'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -1402,14 +1402,14 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 //* save to memory
 	case 2:
 		c = canvas.toDataURL();
-		if (!c || fillCheck())	return a || alert(lang.no.drawn	), c;
-		if (!LS)		return a || alert(lang.no.LS	), c;
-		if (LS[CR[1].R] === c)	return a || alert(lang.no.change), c;
+		if (!c || fillCheck())	return a?c:alert(lang.no.drawn);
+		if (!LS)		return a?c:alert(lang.no.LS);
+		if (LS[CR[1].R] === c)	return a?c:alert(lang.no.change);
 
 		i = 1, j = CR.length;
 		while (++i < j) if (LS[CR[i].R] === c) {
 			saveShiftUpTo(i,1), updateDebugScreen(i,1);
-			return a || alert(lang.found_swap), c;
+			return a?c:alert(lang.found_swap);
 		}
 
 		if (lsid || confirmShowTime(lang.confirm.save, LS[CR[1].T])) {
@@ -1420,7 +1420,7 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 				LS[CR[1].T] = t;
 				break;
 			} catch(e) {
-				if (c.length + t.length > d) return alert(lang.no.space+'\n'+lang.err_code+': '+e.code+', '+e.message), c;
+				if (c.length + t.length > d) return a?c:alert(lang.no.space+'\n'+lang.err_code+': '+e.code+', '+e.message);
 				saveClear(1), saveClear(j);	//* <- probably maxed out allowed LS capacity, try to clean up from oldest slots first
 			}
 			setClass(id(b+'L'), b);
@@ -1475,7 +1475,7 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 				e.setAttribute('method', (outside.send.length && outside.send.toLowerCase() == 'get')?'get':'post');
 				container.appendChild(outside.send = e);
 			}
-		var	pngData = savePic(2, 1), jpgData, a = {txt:0,pic:0}, f = outside.send;
+		var	pngData = savePic(2,-1), jpgData, a = {txt:0,pic:0}, f = outside.send;
 			for (i in a) if (!(a[i] = id(i))) {
 				setId(e = a[i] = document.createElement('input'), e.name = i);
 				e.type = 'hidden';
@@ -1497,7 +1497,7 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 			f.submit();
 		}
 	}
-	if (!lsid) return c;
+	return c;
 }
 
 function readPic(s,ls) {
