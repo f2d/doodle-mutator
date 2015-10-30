@@ -393,13 +393,14 @@ e+'</select>';
 					if (tab.length > 2) {
 					var	da = {}, dd = '', an = '/';						//* room list:
 						if (g == '*') {
+							m = (tab[2][0] == '.'?'gloom':'');				//* <- room hidden
 							if (l = tab[2].indexOf('/')+1) {
 								k = tab[2].slice(l).replace(/"/g, '&quot;');
-								m = 'room-marked';
-								if (k[0] == '/') k = k.slice(1), m += ' frozen-hell';	//* <- room frozen/announce
-								an += '" class="'+m+'" title="'+k;
+								if (k[0] == '/') k = k.slice(1), m = 'frozen-hell';	//* <- room frozen/announce
+								m += '" title="'+k+'" data-title="'+k.substr(k.indexOf(': '));
 								tab[2] = tab[2].slice(0,l-1);
 							}
+							if (m) an += '" class="room-title'+(m[0] != '"'?' '+m:m);
 							if ((m = tab[1].split(f[1])).length > 2) {
 								da[inout?'l':'r'] = m[2];				//* <- last post date
 								if (count.oLast < m[2]) count.oLast = m[2];

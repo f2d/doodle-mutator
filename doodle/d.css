@@ -12,7 +12,7 @@ body, .task input:not([type="checkbox"]) {
 	line-height: 28px;
 	font-size: 21px;
 }
-header, .post.p p, .post p.e {
+header, .post.p p, .post p.e, .room-title::after {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;	/* <- requires max-width */
@@ -30,9 +30,16 @@ footer p {
 	line-height: normal;
 	border: 5px solid transparent;
 }
-.room-marked {
+.room-title {
 	padding: 0 8px;
-	background-color: #fdc;
+}
+.room-title::after {
+	content:attr(data-title);
+	display: inline-block;
+	vertical-align: middle;
+	line-height: normal;
+	font-size: small;
+	max-width: 320px;
 }
 .post {	background-color: #f5f5f5;} body,
 .alt {	background-color: #eee;} .burnt-hell,
@@ -43,7 +50,7 @@ footer p {
 .frozen .post {	background-color: #def;} .post .frozen, .cold,
 .frozen .alt {	background-color: #cde;} .mod,
 .post.born p:hover {	border-color:	#f00; background-color: #fdc;}
-.post.burn p:hover {	border-color:	#900; background-color: #f55;}
+.post.burn p:hover {	border-color:	#900; background-color: #f55;} .gloom,
 .post.goo p:hover {	border-color:	#b0f; background-color: #dcf;}
 .post.ice p:hover {	border-color:	#ace; background-color: #cdf;}
 .post.me p:hover {	border-color:	#4e7; background-color: #cfd;}
