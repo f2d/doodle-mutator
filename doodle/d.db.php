@@ -373,11 +373,13 @@ function data_del_pic($f) {
 	return unlink($f);
 }
 
-function data_del_thread($t, $n, $pics = 0) {
+function data_del_thread($t, $n = -1, $pics = 0) {
+	global $room;
 	if ($pics && preg_match_all('~(<img src="[^>]*/|'.IMG.')([^/">	]+)[	"]~is', file_get_contents($t), $m)) {
 		foreach ($m[2] as $p) if (($f = pic_subpath($p)) && is_file($f) && data_del_pic($f)) ++$c;
 	}
-	$t = (unlink($t) && (!is_file($r = DIR_META_R."$room/$n.report.txt") || unlink($r)));
+	if ($n < 0) $n = preg_replace('~^(.*?[\//]+)?(\d+)(\D[^\//]+)?$~', '$2', $t);
+	$t = (unlink($t) && ($n === false || !is_file($r = DIR_META_R."$room/$n.report.txt") || unlink($r)));
 	return ($t && $c?$c:$t);
 }
 
@@ -418,7 +420,7 @@ function data_log_mod($a) {			//* <- array(option name, thread, row, column, opt
 	if ($o == 'delete thread') {
 		if ((list($d,$f,$m) = data_get_thread_by_num($a[0]))
 		&& (GOD ? (
-				($bak = NL.'['.trim(file_get_contents($d.$f), BOM."\r\n").NL.']')
+				($bak = NL.'['.NL.trim(file_get_contents($d.$f), BOM."\r\n").NL.']')
 				&& data_del_thread($d.$f, $m[2], $un)
 			)
 			: ($bak = rename($d.$f, $d.$m[1].'.del'))
@@ -539,6 +541,7 @@ function data_log_mod($a) {			//* <- array(option name, thread, row, column, opt
 				&& ($n = data_get_thread_count($msg)+1)
 				&& copy($d.$f, DIR_ROOM."$msg/$n$m[3]$m[4]$m[5]")
 				) {
+					if (is_file($r = DIR_META_R."$room/$a[0].report.txt")) copy($r, DIR_META_R."$msg/$n.report.txt");
 					$ok = $msg;
 					data_put(0, $n, $msg);
 					data_post_refresh($msg);

@@ -88,7 +88,9 @@ function data_archive_full_threads($threads) {
 			optimize_pic($th);
 		} else copy(NAMEPRFX.THUMB_EXT, $th);
 		if (file_put_contents($a.$c.PAGE_EXT, data_get_template_page($room, $c, $f[1]))
-		&& unlink($f[0])) ++$done;
+	//	&& unlink($f[0])
+		&& data_del_thread($f[0])	//* <- clean up comments, etc
+		) ++$done;
 	}
 	data_put(1, $c);
 	if (R1 && R1_DEL
@@ -96,7 +98,7 @@ function data_archive_full_threads($threads) {
 	&& (($k -= TRD_PER_PAGE) > 0)) {
 		$c -= TRD_PER_PAGE;
 		while ($k--) {
-			if (is_file($f = $a.$c.PAGE_EXT) && data_del_thread($f,0,1)) ++$gone;
+			if (is_file($f = $a.$c.PAGE_EXT) && data_del_thread($f, false, 1)) ++$gone;
 			if (is_file($f = $b.($c--).THUMB_EXT)) unlink($f);
 		}
 	}
