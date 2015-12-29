@@ -39,24 +39,23 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 	if (!$t_first) $t_first = T0;
 	if (!$t_last) $t_last = $t_first;
 	$classes = array();
-	foreach ($cfg_date_class as $class => $d) if (is_array($d) && $d[0]) {
+	foreach ($cfg_date_class as $a) if (is_array($a) && $a[0] && $a[1]) {
 		$now = array(
-			date($d[0], $t_first)
-		,	date($d[0], $t_last)
+			date($a[1], $t_first)
+		,	date($a[1], $t_last)
 		);
-		$due1 = (count($d) > 1 && $d[1]?$d[1]:false);
-		$due2 = (count($d) > 2 && $d[2]?$d[2]:false);
-		$cond = (count($d) > 3 && $d[3]?$d[3]:2);
-		$wrap = (strcmp($due1, $due2) > 0);	//* <- wrap around new year, etc
-		if (!$cond) $cond = 7;
-		for ($i = 0; $i < 1; $i++) if ($cond & $i) {
-			if (
-				($check1 = ($due1 === false || strcmp($now[$i], $due1) >= 0))
-			+	($check2 = ($due2 === false || strcmp($now[$i], $due2) <= 0))
-				? ($wrap ? ($check1 || $check2) : ($check1 && $check2))
-				: false
-			) {
-				$classes[] = $class;
+		$due1 = (count($a) > 2 && $a[2]?$a[2]:false);
+		$due2 = (count($a) > 3 && $a[3]?$a[3]:false);
+		$flag = (count($a) > 4 && $a[4]?$a[4]:2);
+		$wrap = ($due1 !== false && $due2 !== false && strcmp($due1, $due2) > 0);	//* <- wrap around new year, etc
+		if (!$flag) $flag = 7;
+		for ($i = 0; $i < 2; $i++) if ($flag & (1<<$i)) {
+			$check = array(
+				($due1 === false || strcmp($now[$i], $due1) >= 0)
+			,	($due2 === false || strcmp($now[$i], $due2) <= 0)
+			);
+			if ($wrap ? ($check[0] || $check[1]) : ($check[0] && $check[1])) {
+				$classes[] = $a[0];
 				break;
 			}
 		}
