@@ -566,7 +566,7 @@ data_lock($room)
 					if ($l = data_get_mod_log()) {
 						if ($ymd) {
 							exit_if_not_mod(data_get_mod_log($etc, 1));
-							if ($a = data_get_mod_log($mod_page = $etc)) $content = 'rep'.
+							if ($a = data_get_mod_log($mod_page = $etc)) $content = 'rep'.NL.ROOTPRFX.DIR_PICS.	//* <- meh
 preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',			//* <- transform data fields
 preg_replace('~\h+~u', ' ',
 preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1	',			//* <- keep multiline entries atomic

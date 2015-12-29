@@ -1,4 +1,4 @@
-﻿var	h = gn('header')[0], i = gi(), j, k = id('task'), l = location.href, m, n
+﻿var	h = gn('header')[0], i = gi(), j,k = id('task'), l = location.href
 ,	filtered, filter = null
 ,	rootPath = (h?gn('a',h)[0].href.replace(/^\w+:\/+[^\/]+\/+/, '/'):'/')
 ,	AN = /\banno\b/i, PT = /\bpost\b/i, DP = /^(div|p)$/i
@@ -7,7 +7,7 @@
 ,	NL = /^(\r\n|\r|\n)/g
 ,	count = {u:0, uLast:'', o:0, oLast:'', img:0}
 ,	u_bar = {0:'born', b:'burn', g:'goo', m:'ice', n:'null', u:'me'}
-,	mm, mt = {frozen:[], burnt:[], full:[]}
+,	m,n,mm,mt = {frozen:[], burnt:[], full:[]}
 ,	checking, cs = 'checkStatus', data = {}, flag = {}
 ,	inout = (('ontouchstart' in document.documentElement)?'':'date-out')
 ,	la, lang = document.documentElement.lang || 'en';
@@ -108,7 +108,7 @@ var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
 }
 
 function getSkipList() {
-var	a = document.cookie.split(/;\s*/), i = a.length, j = [], k = [], m, r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+)\//i;
+var	a = document.cookie.split(/;\s*/), i = a.length, j = [], k = [], m,r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+)\//i;
 	while (i--) if (m = a[i].match(r)) j.push(decodeURIComponent(m[2])), k.push(m[1]);
 	return {rooms:j, qk:k};
 }
@@ -128,7 +128,7 @@ var	a = getSkipList(), k = a.qk;
 function checkMyTask() {
 	if (checking) return;
 	checking = 1;
-var	s = id(cs), r = new XMLHttpRequest(), i, j, k, e, t;
+var	s = id(cs), r = new XMLHttpRequest(), i,j,k,e,t;
 	s.textContent = la.load+0;
 	r.onreadystatechange = function() {
 		if (r.readyState == 4) {
@@ -208,7 +208,7 @@ function submitLimit(l,m) {
 		|| !((c = id('tower')) ? (c.innerHTML.length || (v.replace(WS, '').length && (showContent(), 1)
 		)) : (c = id('filter')))) return;
 		filtered = v;
-	var	c, d = gn('div',c), e, i, j, k, l = d.length, o = [], p, alt;
+	var	c,d = gn('div',c), e,i,j,k,l = d.length, o = [], p,alt;
 		for (i = 0; i < l; i++) if (PT.test((e = d[i]).className)) {
 			if (o.indexOf(p = e.parentNode) < 0) o.push(p);
 			if (e == p.firstElementChild) alt = 1;
@@ -237,7 +237,7 @@ function submitLimit(l,m) {
 		), filterList();
 		for (t in i) if (i[t].type == 'submit') return i[t].disabled = k;
 	}
-var	i = gi(), k = id('ok'), t = id('task'), v;
+var	v,i = gi(), k = id('ok'), t = id('task');
 	if (m&&(t = gn('textarea',t)).length) return r(t[0]);
 	for (t in i) if (i[t].type == 'text') return r(i[t]);
 }
@@ -277,13 +277,13 @@ function showContent(pre) {
 		if (i && pre == s) return;
 	}
 
-var	i, j, k, l, m, n = '\n', o, p = data.ph, opt = 'opt_', q, s = ' ', t = '	'
+var	i,j,k,l,m,n = '\n', o,p = data.ph, opt = 'opt_', q,s = ' ', t = '	'
 ,	a = p.split(n+n), b = n+t, c = b+t, d = c+t, e = d+t
-,	f = p.split(n,1)[0], g = ':|*', h, hell, recl = ['report'];
+,	f = p.split(n,1)[0], g = ':|*', h,hell, recl = ['report'];
 
 	for (i in mt) recl.push(i);
 
-	if (f == 'rep') flag[f] = 1; else
+	if (f == 'rep') flag[f] = 1, f = p.split(n,2)[1]; else	//* <- image src root, temporary crutch inb4 overhaul
 	if (f == 'ref') {
 		flag[f] = flag.c = 1;
 		if (isNaN(pre)) {
@@ -317,7 +317,7 @@ var	i, j, k, l, m, n = '\n', o, p = data.ph, opt = 'opt_', q, s = ' ', t = '	'
 	function getThread(txt, preCount) {
 	var	line = txt.split(n), output = '', placeholder = '<!--?-->'
 	,	img = (flag.u?0:1), alt = 1, tr = []
-	,	desc_num = (g == ':'?1:0), post_num = 0, thread_num = 0, i, j, k, l, m, mark;
+	,	desc_num = (g == ':'?1:0), post_num = 0, thread_num = 0, i,j,k,l,m,mark;
 		hell = 0;
 		for (i in line) if (line[i].indexOf(t) > 0) {
 		var	tab = line[i].split(t), u = (tab.length > 3?tab.shift():''), post = '<br>', res = 0;
@@ -449,7 +449,12 @@ dd+e+(desc_num && img?desc_num++ +'. ':'')+tab[2];
 				}
 				if (u == 'u') post = '<span class="u">'+post+'</span>';
 				else if (flag.u) post = post.replace(' ', ' <span class="a">')+'</span>';
-				else if (flag.rep) post = '<div class="log al">'+post.replace(/(<br>)(\s+)/g, '$1<i></i>')+'</div>';
+				else if (flag.rep) post =
+					'<div class="log al">'
+				+		post
+						.replace(/(task:\s*)(\S+)(\s*<br>\s*pic:\s*1)/gi, '$1<img src="'+f+'$2">$3')
+						.replace(/(<br>)(\s+)/gi, '$1<i></i>')
+				+	'</div>';
 				q = (flag.u?tab[2].slice(0, tab[2].indexOf('.')).replace(WS, ''):0);
 				m = (thread_num?thread_num+'-'+post_num+'-':'');
 				k = 2;
@@ -578,7 +583,7 @@ d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.gro
 		d = gn('div'), i = d.length;
 		while (i--) if (PT.test((c = d[i]).className) && (p = gn('p',c)).length > 1) {
 			function w(e) {
-			var	sum = e.offsetWidth, i, a = ['border-left-width', 'padding-left', 'padding-right', 'border-right-width'];
+			var	sum = e.offsetWidth, i,a = ['border-left-width', 'padding-left', 'padding-right', 'border-right-width'];
 				for (i in a) if (getStyleValue(e, a[i].replace('width', 'style')) != 'none') sum -= parseInt(j = getStyleValue(e, a[i]));
 				return sum;
 			}

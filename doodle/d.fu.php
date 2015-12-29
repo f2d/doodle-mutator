@@ -34,10 +34,34 @@ function pic_subpath($f, $mk = 0) {
 	if ($mk && !is_dir($n)) mkdir($n, 0755, true);
 	return $n.($mk === ''?'':$f);
 }
-function get_date_class($first = 0, $last = 0) {
-	$first = intval(date('nd', $first?$first:T0));
-	$last = ($last ? intval(date('nd', $last)) : $first);
-	if (/*$first > 1230 || $first < 110 || */$last > 1230 || $last < 110) return 'new-year';
+function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for archive pages; default = current date
+	global $cfg_date_class;
+	if (!$t_first) $t_first = T0;
+	if (!$t_last) $t_last = $t_first;
+	$classes = array();
+	foreach ($cfg_date_class as $class => $d) if (is_array($d) && $d[0]) {
+		$now = array(
+			date($d[0], $t_first)
+		,	date($d[0], $t_last)
+		);
+		$due1 = (count($d) > 1 && $d[1]?$d[1]:false);
+		$due2 = (count($d) > 2 && $d[2]?$d[2]:false);
+		$cond = (count($d) > 3 && $d[3]?$d[3]:2);
+		$wrap = (strcmp($due1, $due2) > 0);	//* <- wrap around new year, etc
+		if (!$cond) $cond = 7;
+		for ($i = 0; $i < 1; $i++) if ($cond & $i) {
+			if (
+				($check1 = ($due1 === false || strcmp($now[$i], $due1) >= 0))
+			+	($check2 = ($due2 === false || strcmp($now[$i], $due2) <= 0))
+				? ($wrap ? ($check1 || $check2) : ($check1 && $check2))
+				: false
+			) {
+				$classes[] = $class;
+				break;
+			}
+		}
+	}
+	return $classes;
 }
 function get_draw_app_list($n) {
 	global $cfg_draw_app, $tmp_draw_app, $tmp_options_input;
@@ -198,11 +222,10 @@ function get_template_page($t) {
 	foreach (data_global_announce() as $k => $v) $ano .= ($ano?'
 		<br>':'')."
 			$tmp_announce[$k]: $v";
-	$class = array();
-	if ($t['body']) $class[] = $t['body'];
+	$class = (($v = $t['body']) ? is_array($v?$v:array($v)) : array());
 	if (!$R) {
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
-		if ($d = get_date_class()) $class[] = $d;
+		if ($d = get_date_class()) $class = array_merge($class, $d);
 	}
 	if (is_array($a = $t['data'])) foreach ($a as $k => $v) $data .= ' data-'.$k.'="'.$v.'"';
 	if (is_array($a = $t['content'])) foreach ($a as $v) $pre .= get_template_pre($v, $R); else $pre = get_template_pre($a, $R);

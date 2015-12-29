@@ -2,6 +2,23 @@
 
 $lang = 'en';
 $cfg_langs = array('en', 'ru');
+$cfg_date_class = array(
+/*
+format:
+	CSS class => (date() format string, start date, end date, flag)
+omit dates:
+	start: from the beginning of time
+	end: to the end of time
+flag:
+	1: first source date falls in start-end
+	2: last source date falls in start-end
+	3: 1 or 2
+	omit: 2, so archived content is like it was/would be last seen
+example:
+	'cirno-day' => array('Y-m-d', '2009-09-09', '2009-09-09', 2)
+*/
+	'new-year' => array('nd', 1230, 110)
+);
 $cfg_draw_app = array('dfc', 'milf');
 $cfg_draw_vars = array(
 	'save' => 'draw_max_recovery'
