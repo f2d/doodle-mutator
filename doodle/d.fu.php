@@ -130,13 +130,15 @@ function optimize_pic($filepath) {
 		data_lock('/pic');
 		exec(DIRECTORY_SEPARATOR == '/' ? $e : str_replace('/', DIRECTORY_SEPARATOR, $e), $output, $return);
 		data_unlock('/pic');
-		if (is_file($f .= '.bak') && filesize($f) && !filesize($filepath)) {
+		if (is_file($f .= '.bak') && filesize($f)) {
 			data_log_adm("Optimizing $filepath failed, restoring from $f");
-			unlink($filepath);
-			rename($f, $filepath);
+			if (filesize($filepath) ? rename($filepath, $filepath.'.bad') : unlink($filepath)) rename($f, $filepath);
 			if (!$return) $return = 'fallback';
 		}
-		if ($return) data_log_adm("Command line: $e\nReturn code: $return\nOutput: ".implode(NL, $output));
+		if ($return) {
+			if (!strlen($o = trim(is_array($output) ? implode(NL, $output) : $output))) $o = 'empty';
+			data_log_adm("Command line: $e\nReturn code: $return\nShell output: $o");
+		}
 	}
 }
 

@@ -17,7 +17,7 @@ flag:
 example:
 	array('cirno-day', 'Y-m-d', '2009-09-09', '2009-09-09', 2)
 */
-	array('new-year', 'nd', 1230, 110)
+	array('new-year', 'nd', 1231, 109)
 );
 $cfg_draw_app = array('dfc', 'milf');
 $cfg_draw_vars = array(
