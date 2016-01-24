@@ -47,14 +47,17 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 		$due1 = (count($a) > 2 && $a[2]?$a[2]:false);
 		$due2 = (count($a) > 3 && $a[3]?$a[3]:false);
 		$flag = (count($a) > 4 && $a[4]?$a[4]:2);
-		$wrap = ($due1 !== false && $due2 !== false && strcmp($due1, $due2) > 0);	//* <- wrap around new year, etc
+		$wrap = ($due1 !== false && $due2 !== false && $due1 > $due2);	//* <- wrap around new year, etc
 		if (!$flag) $flag = 7;
 		for ($i = 0; $i < 2; $i++) if ($flag & (1<<$i)) {
 			$check = array(
-				($due1 === false || strcmp($now[$i], $due1) >= 0)
-			,	($due2 === false || strcmp($now[$i], $due2) <= 0)
+				($due1 === false || $now[$i] >= $due1)
+			,	($due2 === false || $now[$i] <= $due2)
 			);
-			if ($wrap ? ($check[0] || $check[1]) : ($check[0] && $check[1])) {
+			if ($wrap
+			?	($check[0] || $check[1])
+			:	($check[0] && $check[1])
+			) {
 				$classes[] = $a[0];
 				break;
 			}
