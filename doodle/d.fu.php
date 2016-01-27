@@ -117,7 +117,6 @@ function format_time_units($t) {
 	return $r;
 }
 function exit_if_not_mod($t) {
-	header('Cache-Control: max-age=0; must-revalidate; no-cache');
 	if (!$GLOBALS['u_opts']['modtime304'] && isset($_SERVER[$h = 'HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER[$h]) == $t) {
 		header('HTTP/1.0 304 Not Modified');
 		exit;

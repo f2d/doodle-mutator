@@ -104,32 +104,41 @@ if ($qdir) {
 	if ($l = mb_strlen($room = trim_room($room_url = urldecode($_REQUEST['room'])))) define(R1, $l = (mb_strlen(ltrim($room, '.')) <= 1));
 } else if ($u_key) {
 	if (!$u_room_home) $qd_opts = 1;
-	$rd = ($rr = '
-	RewriteRule ^').($d = '('.implode('|', $cfg_dir).')').($sub = '(/([^/]+))?');
-	$rc = '
-	RewriteCond %{REQUEST_FILENAME} -';
 
-//* rewrite htaccess, if there is none, and logged in, and viewing root folder:
-	if (!($e = is_file($f = '.htaccess')) || !strpos($e = file_get_contents($f), $rd)) file_put_contents($f, ($e?NL:'')
-.'<IfModule rewrite_module>
+//* rewrite htaccess when there is none, if logged in and viewing root folder:
+	$b = 'RewriteBase '.ROOTPRFX;
+	if (!($e = is_file($f = '.htaccess')) || !strpos($e = file_get_contents($f), $b)) {
+		$n = 'NO_CACHE';
+		$e_cond = " env=$n";
+		$e_set = "E=$n:1";
+		$d = '('.implode('|', $cfg_dir).')(/([^/]+))?';
+		$d = '
+<IfModule rewrite_module>
 	RewriteEngine On
-	RewriteBase '.ROOTPRFX.'
-'
-.(defined('DIR_DATA')?$rr.DIR_DATA.'.*$ .':'')
-.$rr.'('.DIR_PICS.')(([^/])[^/]+\.([^/])[^/]+)$ $1$4/$3/$2'
-.$rd.'$ $0/ [NC,R=301,L]'
-.$rd.'(/[-\d]*)$ index.php?dir=$1&room=$3&etc=$4 [E=nocache:1]
-'
-.$rc.'f [OR]'.$rc.'d'
-.$rr.'.? - [S=2]'
-.$rr.'('.DIR_PICS.'|'.DIR_ARCH.'[^/]+/'.DIR_THUMB.').*$ err.png [L]'
-.$rr.'('.$d.'/([^/]+/)?).+$ $1. [R,L,E=nocache:1]'.'
-
-	<IfModule headers_module>
-		Header always set Cache-Control "no-store, no-cache, must-revalidate" env=nocache
-		Header always set Expires "Thu, 01 Jan 1970 00:00:00 GMT" env=nocache
-	</IfModule>
-</IfModule>', FILE_APPEND);
+	'.$b.'
+# variable fix:
+	RewriteCond %{ENV:REDIRECT_'.$n.'} !^$
+	RewriteRule .* - [E='.$n.':%{ENV:REDIRECT_'.$n.'}]
+# virtual folders:'.(defined('DIR_DATA')?'
+	RewriteRule ^'.DIR_DATA.'.*$ . [L,R=301]':'').'
+	RewriteRule ^('.DIR_PICS.')(([^/])[^/]+\.([^/])[^/]+)$ $1$4/$3/$2'.'
+	RewriteRule ^'.$d.'$ $0/ [L,R=301]'.'
+	RewriteRule ^'.$d.'(/[-\d]*)$ index.php?dir=$1&room=$3&etc=$4 [L,'.$e_set.']
+# files not found:
+	RewriteCond %{REQUEST_FILENAME} -f [OR]
+	RewriteCond %{REQUEST_FILENAME} -d
+	RewriteRule ^.? - [S=2]
+	RewriteRule ^('.DIR_PICS.'|'.DIR_ARCH.'[^/]+/'.DIR_THUMB.').*$ err.png [L,'.$e_set.']
+	RewriteRule ^('.$d.'/).+$ $1. [L,R,'.$e_set.']
+</IfModule>
+<IfModule headers_module>
+	Header set Cache-Control "max-age=0; must-revalidate; no-cache"'.$e_cond.'
+	Header set Expires "Wed, 27 Jan 2016 00:00:00 GMT"'.$e_cond.'
+	Header set Pragma "no-cache"'.$e_cond.'
+	Header unset Vary'.$e_cond.'
+</IfModule>';
+		file_put_contents($f, ($e?NL:'').trim($d), FILE_APPEND);
+	}
 }
 
 define(MOD, (GOD || $u_flag['mod'] || $u_flag['mod_'.$room])?1:0);
