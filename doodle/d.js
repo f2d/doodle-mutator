@@ -613,7 +613,10 @@ if (k) {
 	if (j = k.getAttribute('data-t')) {
 		if ((i = gn('p',k)).length) i[0].innerHTML +=
 			(((j = j.split('-')).length > 1 && j[1])
-				? '<a class="r" href="-'+j[1]+'" title="'+la.skip_hint+'">「X」</a>'
+				? '<form method="post" class="skip r" title="'+la.skip_hint+'">'
+				+	'<input type="hidden" name="skip" value="'+j[1]+'">'
+				+	'<input type="submit" value="「X」">'
+				+ '</form>'
 				:''
 			)+'<a class="r" href="'+
 			((j[0] && (j = parseInt(j[0])))

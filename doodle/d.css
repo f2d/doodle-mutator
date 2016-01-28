@@ -55,10 +55,10 @@ footer p {
 .post.ice p:hover {	border-color:	#ace; background-color: #cdf;}
 .post.me p:hover {	border-color:	#4e7; background-color: #cfd;}
 .post.null p:hover {	border-color:	#888; background-color: #bbb;}
-a, .a	{		color: #888;}
-a:hover	{		color: #000;}
-.task a, .task .a {	color: #bbb;}
-.task a:hover {		color: #fff;}
+a, .a	{				color: #888;}
+a:hover	{				color: #000;}
+.task a, .task .a, .task .skip>input {	color: #bbb;}
+.task a:hover, .task .skip>input:hover {color: #fff;}
 .anno {	white-space: normal;
 	text-align: center;
 	padding: 8px 22px;
@@ -129,35 +129,42 @@ a:hover	{		color: #000;}
 	max-width: 950px;
 	max-height: 950px;
 }
-.task form:not(:empty), .task p, .task ul, .task ol, header>div {
+.task form:not(.skip):not(:empty), .task p, .task ul, .task ol, header>div {
 	text-align: left;
 	padding: 0 22px 8px 22px;
 }
-.task form, .task p, .task ul, .task ol {
+.task form:not(.skip), .task p, .task ul, .task ol {
 	line-height: 26px;
 	margin: 0;
 	color: #fff;
 	background-color: #555;
 }
-.task li {
-	margin: 0 0 12px 22px;
-}
-.task form>*, .a>* {
+.task form:not(.skip)>*, .a>* {
 	display: table;
 	width: 100%;
 }
-.task form>*>*, .a>*>* {
+.task form:not(.skip)>*>*, .a>*>* {
 	display: table-cell;
 }
-.task form>*>*:nth-child(2) {
+.task form:not(.skip)>*>*:nth-child(2) {
 	width: 150px;
 	text-align: right;
 }
-.task input:not([type="checkbox"]) {
+.task form:not(.skip) input[type="submit"] {
 	width: 142px;
 }
 .task input[type="text"] {
 	width: 100%;
+}
+.task .skip>input {
+	background: none;
+	border: none;
+	cursor: pointer;
+	margin: 0;
+	padding: 0;
+}
+.task li {
+	margin: 0 0 12px 22px;
 }
 .task p>b {
 	display: block;

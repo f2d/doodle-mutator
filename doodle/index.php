@@ -192,6 +192,19 @@ if ($u_key) {
 	} else
 	if ($etc && !(MOD && $etc == 3)); else	//* <- no "etc" posting without report
 
+//* skip current task ---------------------------------------------------------
+	if (isset($_POST['skip'])) {
+		if (preg_match('~^\d~', $i = $_POST['skip'])) {
+			list($a, $r) = get_room_skip_name($room);
+			if ($q = get_room_skip_list($a)) {
+				array_unshift($q, $i);
+				$i = implode('/', $q);
+			}
+			$add_qk = "$a=$r/$i";
+			$post_status = OQ.$tmp_post_ok_skip;
+		}
+	} else
+
 //* process new text post -----------------------------------------------------
 	if (isset($_POST['describe'])) {
 		$post_status = 'text_short';
@@ -540,16 +553,19 @@ if ($u_key) {
 //* task manipulation ---------------------------------------------------------
 		if ($etc) {
 			if ($etc[0] == '-') {
+		//* show current task:
 				if (strlen($etc) == 1) die(
-data_lock($room)
-? '<meta charset="'.ENC.'"><title>'.(
-	is_array($t = data_check_my_task())
-		? $tmp_target_status[$t[0]].'. '.$tmp_time_limit.': '.format_time_units($t[1])
-		: $tmp_target_status[$t]
-	).'</title><!--'.date(TIMESTAMP, T0).'-->'
-	.NL.$target['pic']
-	.NL.$target['task']
-: $tmp_post_err['no_lock']);
+					data_lock($room)
+					? '<meta charset="'.ENC.'"><title>'.(
+						is_array($t = data_check_my_task())
+						? $tmp_target_status[$t[0]].'. '.$tmp_time_limit.': '.format_time_units($t[1])
+						: $tmp_target_status[$t]
+					).'</title><!--'.date(TIMESTAMP, T0).'-->'
+					.NL.$target['pic']
+					.NL.$target['task']
+					: $tmp_post_err['no_lock']
+				);
+		//* skip current task:
 				$t = substr($etc, 1);
 				list($a, $r) = get_room_skip_name($room);
 				if ($q = get_room_skip_list($a)) {
@@ -668,7 +684,7 @@ if (TIME_PARTS) time_check_point('inb4 aim, locked');
 if (TIME_PARTS) time_check_point('got visible data, unlocked');
 
 			$t = $target['time'];
-			exit_if_not_mod($t > $last?$t:$last);
+			exit_if_not_mod($t > $last || T0 < $last?$t:$last);
 			$task_time = ($t?$t:0);
 
 			list($err_sign, $err_name) = get_req();
