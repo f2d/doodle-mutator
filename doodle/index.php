@@ -137,7 +137,7 @@ if ($qdir) {
 	Header set Pragma "no-cache"'.$e_cond.'
 	Header unset Vary'.$e_cond.'
 </IfModule>';
-		file_put_contents($f, ($e?NL:'').trim($d), FILE_APPEND);
+		file_put_contents($f, $e?$d:trim($d), FILE_APPEND);
 	}
 }
 
@@ -194,7 +194,8 @@ if ($u_key) {
 
 //* skip current task ---------------------------------------------------------
 	if (isset($_POST['skip'])) {
-		if (preg_match('~^\d~', $i = $_POST['skip'])) {
+		if (preg_match('~^\d+~', $_POST['skip'], $digits)) {
+			$i = $digits[0];
 			list($a, $r) = get_room_skip_name($room);
 			if ($q = get_room_skip_list($a)) {
 				array_unshift($q, $i);
@@ -565,7 +566,7 @@ if ($u_key) {
 					.NL.$target['task']
 					: $tmp_post_err['no_lock']
 				);
-		//* skip current task:
+		//* skip current task (obsolete way):
 				$t = substr($etc, 1);
 				list($a, $r) = get_room_skip_name($room);
 				if ($q = get_room_skip_list($a)) {

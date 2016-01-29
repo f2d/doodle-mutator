@@ -175,7 +175,7 @@ function get_template_form($a, $min = 0, $max = 0, $area = 0) {
 		) as $k => $v) $$k = $GLOBALS["tmp_$name$v"];
 		if ($name) $name = ' name="'.$name.'"';
 	}
-	if ($min||$max) $name .= ' onKeyUp="submitLimit('.($min?$min:0).($max?','.$max:'').')"';
+	if ($min||$max) $name .= ' pattern="\s*(\S\s*){'.($min?$min:0).','.($max?$max:'').'}"';
 	if ($name && $plhd) $name .= ' placeholder="'.$plhd.'"';
 	$name .= ($GLOBALS['u_opts']['focus']?'':' autofocus').' required';
 	return ($head?'

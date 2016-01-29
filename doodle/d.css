@@ -55,11 +55,21 @@ footer p {
 .post.ice p:hover {	border-color:	#ace; background-color: #cdf;}
 .post.me p:hover {	border-color:	#4e7; background-color: #cfd;}
 .post.null p:hover {	border-color:	#888; background-color: #bbb;}
-a, .a	{				color: #888;}
-a:hover	{				color: #000;}
-.task a, .task .a, .task .skip>input {	color: #bbb;}
-.task a:hover, .task .skip>input:hover {color: #fff;}
-.anno {	white-space: normal;
+a, .a {
+	color: #888;
+}
+a:hover	{
+	color: #000;
+}
+.task a, .task .a, .task .skip>input, .task label {
+	color: #bbb;
+}
+.task a:hover, .task .skip>input:hover, .task label:hover {
+	color: #fff;
+	cursor: pointer;
+}
+.anno {
+	white-space: normal;
 	text-align: center;
 	padding: 8px 22px;
 	background-color: #ace;
@@ -76,7 +86,8 @@ a:hover	{				color: #000;}
 .arr a, a.a, a.r {
 	text-decoration: none;
 }
-.arr a {display: inline-block;
+.arr a {
+	display: inline-block;
 	border: 5px solid transparent;
 }
 .arr>a:hover {border-left-color:	#eee;}
@@ -92,7 +103,7 @@ a:hover	{				color: #000;}
 	margin: 0;
 	padding-top: 0;
 }
-#tower .thread:first-child, .task p:first-child {
+#tower .thread:first-child, .task p:first-child, .task label {
 	padding-top: 8px;
 }
 #tower .thread:first-child, .thread {
@@ -139,14 +150,14 @@ a:hover	{				color: #000;}
 	color: #fff;
 	background-color: #555;
 }
-.task form:not(.skip)>*, .a>* {
+.task form:not(.skip)>*:not(label), .a>* {
 	display: table;
 	width: 100%;
 }
-.task form:not(.skip)>*>*, .a>*>* {
+.task form:not(.skip)>*:not(label)>*, .a>*>* {
 	display: table-cell;
 }
-.task form:not(.skip)>*>*:nth-child(2) {
+.task form:not(.skip)>*:not(label)>*:nth-child(2) {
 	width: 150px;
 	text-align: right;
 }
@@ -156,12 +167,15 @@ a:hover	{				color: #000;}
 .task input[type="text"] {
 	width: 100%;
 }
-.task .skip>input {
+.task .skip, .task .skip input {
 	background: none;
 	border: none;
-	cursor: pointer;
 	margin: 0;
 	padding: 0;
+}
+.task .skip, .task .skip *, .task a.r {
+	height: 29px;
+	line-height: 29px;
 }
 .task li {
 	margin: 0 0 12px 22px;
@@ -232,6 +246,7 @@ a:hover	{				color: #000;}
 }
 .post input[type="submit"], .post select {
 	height: 20px;
+	line-height: 10px;
 }
 .post.p input[type="text"] {
 	width: 159px;
@@ -300,12 +315,17 @@ a:hover	{				color: #000;}
 .post .u {
 	color: #09f;
 }
+#tabs~p {
+	font-size: small;
+	line-height: 1em;
+}
 #thumbs {
 	margin: 8px auto 0 auto;
 	max-width: 864px;
 	text-align: left;
 }
-.op {	display: inline-block;
+.op {
+	display: inline-block;
 	background-color: #ddd;
 	border: 6px solid #a0a0a0;
 	width: 160px;
@@ -315,18 +335,19 @@ a:hover	{				color: #000;}
 .op:hover {
 	border-color: #09f;
 }
-.op>* {height: 100%;}
-.op * {	border: none;
+.op>* {	height: 100%;}
+.op * {
+	border: none;
 	text-align: center;
 	vertical-align: middle;
 }
-.log {	padding: 8px 178px;
-}
-.log i {display: inline-block;
+.log {	padding: 8px 178px;}
+.log i {
+	display: inline-block;
 	width: 40px;
 }
-.al {	text-align: left;}
-p.hint, li {
+p.hint, li, .task label {
 	font-size: 13px;
 }
+.al {	text-align: left;}
 pre {	display: none;}

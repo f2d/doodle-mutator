@@ -1,14 +1,13 @@
-﻿var	h = gn('header')[0], i = gi(), j,k = id('task'), l = location.href
-,	filtered, filter = null
+﻿var	h = gn('header')[0], i,j,k = id('task'), l = location.href
 ,	rootPath = (h?gn('a',h)[0].href.replace(/^\w+:\/+[^\/]+\/+/, '/'):'/')
-,	AN = /\banno\b/i, PT = /\bpost\b/i, DP = /^(div|p)$/i
+,	AN = /\banno\b/i, PT = /\bpost\b/i, DP = /^(div|p)$/i, FM = /^form$/i
 ,	TU = /^\d+(<|>|$)/
 ,	WS = /^\s+|\s+$/g
 ,	NL = /^(\r\n|\r|\n)/g
 ,	count = {u:0, uLast:'', o:0, oLast:'', img:0}
 ,	u_bar = {0:'born', b:'burn', g:'goo', m:'ice', n:'null', u:'me'}
 ,	m,n,mm,mt = {frozen:[], burnt:[], full:[]}
-,	checking, cs = 'checkStatus', data = {}, flag = {}
+,	filter, checking, cs = 'checkStatus', data = {}, flag = {}
 ,	inout = (('ontouchstart' in document.documentElement)?'':'date-out')
 ,	la, lang = document.documentElement.lang || 'en';
 
@@ -91,10 +90,16 @@ var	o;
 	return null;
 }
 
-function showProps(o, z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; alert(t); return o;}
+function showProps(o,z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; alert(t); return o;}
 function gn(n,p) {return (p||document).getElementsByTagName(n);}
 function gi(d) {return gn('input',d);}
 function id(i) {return document.getElementById(i);}
+function cre(e,p,b) {
+	e = document.createElement(e);
+	if (b) p.insertBefore(e, b); else
+	if (p) p.appendChild(e);
+	return e;
+}
 function deleteCookie(c) {document.cookie = c+'=; expires=Thu, 01 Jan 1970 00:00:01 GMT; Path='+rootPath;}
 function toggleHide(e,d) {e.style.display = (e.style.display != (d?d:d='')?d:'none');}
 function getPicSubDir(p) {var s = p.split('.'); return s[1][0]+'/'+s[0][0]+'/';}
@@ -172,7 +177,7 @@ function setPicResize(e,i) {
 var	a = e.parentNode, nested = /^a$/i.test(a.tagName);
 	if (i) {
 		if (!nested) {
-			a = a.insertBefore(document.createElement('a'), e);
+			a = cre('a',a,e);
 			a.appendChild(e);
 			a.className = 'res';
 			a.href = 'javascript:;';
@@ -201,45 +206,35 @@ var	r = '_res';
 	);
 }
 
-function submitLimit(l,m) {
-	function filterList() {
-		if (!filter
-		|| filtered == (v = v.toLowerCase())
-		|| !((c = id('tower')) ? (c.innerHTML.length || (v.replace(WS, '').length && (showContent(), 1)
-		)) : (c = id('filter')))) return;
-		filtered = v;
-	var	c,d = gn('div',c), e,i,j,k,l = d.length, o = [], p,alt;
-		for (i = 0; i < l; i++) if (PT.test((e = d[i]).className)) {
-			if (o.indexOf(p = e.parentNode) < 0) o.push(p);
-			if (e == p.firstElementChild) alt = 1;
-			if (!(k = gn('p',e)).length) k = e.textContent;
-			else if (filter == 1 && k.length > 1) k = k[1].textContent;
-			else {
-				j = k.length-1, j = k[j > 1?1:j], k = '';
-				while (j = j.nextSibling) if (!DP.test(j.tagName)) k += j.textContent;
-			}
-			if (j = (!v || !(k = k.replace(WS, '').toLowerCase()) || k.indexOf(v) >= 0)) {
-				alt = (alt?'':' alt');
-				e.className = e.className.replace(/\s(alt|ok)\b/i, '')+(k == v?' ok':alt);
-			}
-			e.style.display = (j?'':'none');
+function filterList(event) {
+var	e = event.target, v = (e.value||'').replace(WS, '').toLowerCase(), k = 'lastFilterValue';
+	if (!filter || (e[k] && e[k] == v)) return;
+	if (c = id('tower')) {
+		if (v.length && !c.innerHTML.length) showContent();
+	} else c = id('filter');
+	if (!c) return;
+	e[k] = v;
+var	c,d = gn('div',c), i,j,l = d.length, o = [], p,alt;
+	for (i = 0; i < l; i++) if (PT.test((e = d[i]).className)) {
+		if (o.indexOf(p = e.parentNode) < 0) o.push(p);
+		if (e == p.firstElementChild) alt = 1;
+		if (!(k = gn('p',e)).length) k = e.textContent;
+		else if (filter == 1 && k.length > 1) k = k[1].textContent;
+		else {
+			j = k.length-1, j = k[j > 1?1:j], k = '';
+			while (j = j.nextSibling) if (!DP.test(j.tagName)) k += j.textContent;
 		}
-		for (i in o) {
-			d = 'none', e = (p = o[i]).firstElementChild;
-			do {if (e.style.display != d) {d = ''; break;}} while (e = e.nextElementSibling);
-			p.style.display = d;
+		if (j = (!v || !(k = k.replace(WS, '').toLowerCase()) || k.indexOf(v) >= 0)) {
+			alt = (alt?'':' alt');
+			e.className = e.className.replace(/\s(alt|ok)\b/i, '')+(k == v?' ok':alt);
 		}
+		e.style.display = (j?'':'none');
 	}
-	function r(e) {
-		k = ((k && !k.checked)
-			? true
-			: (!(v = e.value) || (v = v.replace(WS, '')).length < l || (m && m < v.length))
-		), filterList();
-		for (t in i) if (i[t].type == 'submit') return i[t].disabled = k;
+	for (i in o) {
+		d = 'none', e = (p = o[i]).firstElementChild;
+		do {if (e.style.display != d) {d = ''; break;}} while (e = e.nextElementSibling);
+		p.style.display = d;
 	}
-var	v,i = gi(), k = id('ok'), t = id('task');
-	if (m&&(t = gn('textarea',t)).length) return r(t[0]);
-	for (t in i) if (i[t].type == 'text') return r(i[t]);
 }
 
 function allowApply(n) {
@@ -258,9 +253,12 @@ var	p = e.parentNode, i = gi(p)[0], v = 0, s = gn('span',p);
 function selectLink(e,r,t) {
 var	i = e.name+'_link', a = id(i), r = r.replace('*', r.indexOf('.') < 0 ? e.value : e.value.replace(/\.[^.\/]+$/, ''));
 	if (a) a.href = r;
-	else	e = e.parentNode.nextSibling
-	, (	e = e.parentNode.insertBefore(document.createElement('div'), e)).className = inout
-	,	e.innerHTML = '<p class="l"><a href="'+r+'" id="'+i+'">'+t+'</a></p>';
+	else {
+		e = e.parentNode.nextSibling;
+		e = cre('div', e.parentNode, e);
+		e.className = inout;
+		e.innerHTML = '<p class="l"><a href="'+r+'" id="'+i+'">'+t+'</a></p>';
+	}
 }
 
 function showOpen(i) {
@@ -565,8 +563,7 @@ c+'</div>'+b:p);
 			p.className += ' task';
 			p.innerHTML =
 d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.groups:la.active)+': '+a.length+'</a>'+k+'</p>'+b;
-			p.parentNode.insertBefore(h = document.createElement('div'), p.nextSibling);
-			h.id = o;
+			cre('div', p.parentNode, p.nextSibling).id = o;
 			if (flag.a) showContent();
 		} else {
 			p.innerHTML = getThread(a[0]);
@@ -582,11 +579,13 @@ d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.gro
 	if (g == '*') {
 		d = gn('div'), i = d.length;
 		while (i--) if (PT.test((c = d[i]).className) && (p = gn('p',c)).length > 1) {
+
 			function w(e) {
 			var	sum = e.offsetWidth, i,a = ['border-left-width', 'padding-left', 'padding-right', 'border-right-width'];
 				for (i in a) if (getStyleValue(e, a[i].replace('width', 'style')) != 'none') sum -= parseInt(j = getStyleValue(e, a[i]));
 				return sum;
 			}
+
 			a = (c = c.firstElementChild).lastElementChild.offsetWidth, e = w(p[0]), f = w(p[1]);
 			if (a+e+f < c.offsetWidth) {
 				if (e < f) p[0].style.width = f+'px'; else
@@ -596,19 +595,22 @@ d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.gro
 	}
 	if (inout && g != ':') {
 	var	s = 'style', h = gn('header')[0], e = gn(s, h);
-		(e.length ? e[0] : h.appendChild(document.createElement(s))).innerHTML = '.post .center {max-width: 500px;}';
+		(e.length ? e[0] : cre(s,h)).innerHTML = '.post .center {max-width: 500px;}';
 	}
 }
-
-if (((i.length && i[0].type == 'text') || (i = gn('textarea')).length) && (i = i0 = i[0]) && i.onkeyup) (i.onchange = i.onkeyup)();
 
 if ((i = gn('pre')).length) showContent(i[0]);
 
 if (k) {
-	if ((filter = k.getAttribute('data-filter')) !== null) {
+	if ((filter = k.getAttribute('data-filter')) !== null && (i = gi()).length) {
 		j = k.nextSibling;
 		while (!j.tagName) j = j.nextSibling;
-		j.id = 'filter';
+		j.id = 'filter', i = i[0], i.onchange = i.onkeyup = filterList;
+	}
+	if (flag.k && (i = gn('form',k))) {
+		i = cre('label', i[0]);
+		i.className = 'r';
+		i.innerHTML = la.checked+': <input type="checkbox" name="check" required>';
 	}
 	if (j = k.getAttribute('data-t')) {
 		if ((i = gn('p',k)).length) i[0].innerHTML +=
@@ -621,14 +623,12 @@ if (k) {
 			)+'<a class="r" href="'+
 			((j[0] && (j = parseInt(j[0])))
 				? 'javascript:checkMyTask()" title="'+new Date(j*1000)+'\r\n'+la.check+'">「<span id="'+cs+'">?</span>'
-				: '?">「'+la.draw
+				: '?draw">「'+la.draw
 			)+'」</a>';
 		if ((i = gn('img',k)).length && (i = i[0]) && (j = i.alt.indexOf(';')+1)) i.alt = i.alt
 			.replace(';',', ')
 			.replace('*','x'), setPicResize(i,j);
 	}
-	if (flag.k) k.lastElementChild.innerHTML +=
-		'<span class="r">'+la.checked+': <input type="checkbox" id="ok" onChange="'+i0.getAttribute('onkeyup')+'"></span>';
 	if (i = (j = gn('ul',k)).length) {
 		n = (m = gn('b')).length, k = 1;
 		while (n--) if (AN.test(m[n].className)) {k = 0; break;}
@@ -640,7 +640,9 @@ if (k) {
 }
 
 if (k = id('tabs')) {
+
 	function a(r,t) {return '<a href="'+r+(r == l?'" class="at':'')+'">'+t+'</a>';}
+
 	h = '', l = l.split('/').slice(-1)[0], n = k.textContent.replace(WS, '').split('|'), r = /\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
 	for (i in n) h += (h?'\n|	':'')+a(+i+1, n[i]);
 	k.innerHTML = '[	'+h+'	]';	//* <- cat.tabs
