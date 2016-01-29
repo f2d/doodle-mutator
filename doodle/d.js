@@ -1,6 +1,6 @@
 ﻿var	h = gn('header')[0], i,j,k = id('task'), l = location.href
 ,	rootPath = (h?gn('a',h)[0].href.replace(/^\w+:\/+[^\/]+\/+/, '/'):'/')
-,	AN = /\banno\b/i, PT = /\bpost\b/i, DP = /^(div|p)$/i, FM = /^form$/i
+,	AN = /\banno\b/i, PT = /\bpost\b/i, DP = /^(div|p)$/i
 ,	TU = /^\d+(<|>|$)/
 ,	WS = /^\s+|\s+$/g
 ,	NL = /^(\r\n|\r|\n)/g
@@ -171,6 +171,12 @@ var	s = id(cs), r = new XMLHttpRequest(), i,j,k,e,t;
 	};
 	r.open('GET', '-', true);
 	r.send();
+}
+
+function skipMyTask(v) {
+var	f = cre('form', document.body), i = cre('input',f);
+	f.setAttribute('method', 'post'), i.type = 'hidden', i.name = 'skip', i.value = v;
+	f.submit();
 }
 
 function setPicResize(e,i) {
@@ -614,14 +620,12 @@ if (k) {
 	}
 	if (j = k.getAttribute('data-t')) {
 		if ((i = gn('p',k)).length) i[0].innerHTML +=
-			(((j = j.split('-')).length > 1 && j[1])
-				? '<form method="post" class="skip r" title="'+la.skip_hint+'">'
-				+	'<input type="hidden" name="skip" value="'+j[1]+'">'
-				+	'<input type="submit" value="「X」">'
-				+ '</form>'
+			(
+				((j = j.split('-')).length > 1 && j[1])
+				? '<a class="r" href="javascript:skipMyTask('+j[1]+')" title="'+la.skip_hint+'">「X」</a>'
 				:''
-			)+'<a class="r" href="'+
-			((j[0] && (j = parseInt(j[0])))
+			)+'<a class="r" href="'+(
+				(j[0] && (j = parseInt(j[0])))
 				? 'javascript:checkMyTask()" title="'+new Date(j*1000)+'\r\n'+la.check+'">「<span id="'+cs+'">?</span>'
 				: '?draw">「'+la.draw
 			)+'」</a>';

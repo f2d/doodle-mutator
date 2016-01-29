@@ -61,10 +61,10 @@ a, .a {
 a:hover	{
 	color: #000;
 }
-.task a, .task .a, .task .skip>input, .task label {
+.task a, .task .a, .task label {
 	color: #bbb;
 }
-.task a:hover, .task .skip>input:hover, .task label:hover {
+.task a:hover, .task label:hover {
 	color: #fff;
 	cursor: pointer;
 }
@@ -140,42 +140,32 @@ a:hover	{
 	max-width: 950px;
 	max-height: 950px;
 }
-.task form:not(.skip):not(:empty), .task p, .task ul, .task ol, header>div {
+.task form:not(:empty), .task p, .task ul, .task ol, header>div {
 	text-align: left;
 	padding: 0 22px 8px 22px;
 }
-.task form:not(.skip), .task p, .task ul, .task ol {
+.task form, .task p, .task ul, .task ol {
 	line-height: 26px;
 	margin: 0;
 	color: #fff;
 	background-color: #555;
 }
-.task form:not(.skip)>*:not(label), .a>* {
+.task form>*:not(label), .a>* {
 	display: table;
 	width: 100%;
 }
-.task form:not(.skip)>*:not(label)>*, .a>*>* {
+.task form>*:not(label)>*, .a>*>* {
 	display: table-cell;
 }
-.task form:not(.skip)>*:not(label)>*:nth-child(2) {
+.task form>*:not(label)>*:nth-child(2) {
 	width: 150px;
 	text-align: right;
 }
-.task form:not(.skip) input[type="submit"] {
+.task form input[type="submit"] {
 	width: 142px;
 }
 .task input[type="text"] {
 	width: 100%;
-}
-.task .skip, .task .skip input {
-	background: none;
-	border: none;
-	margin: 0;
-	padding: 0;
-}
-.task .skip, .task .skip *, .task a.r {
-	height: 29px;
-	line-height: 29px;
 }
 .task li {
 	margin: 0 0 12px 22px;
