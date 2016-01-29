@@ -305,10 +305,6 @@ a:hover	{
 .post .u {
 	color: #09f;
 }
-#tabs~p {
-	font-size: small;
-	line-height: 1em;
-}
 #thumbs {
 	margin: 8px auto 0 auto;
 	max-width: 864px;

@@ -1,4 +1,4 @@
-﻿var	h = gn('header')[0], i,j,k = id('task'), l = location.href
+﻿var	h = gn('header')[0], i,j,k,l = location.href
 ,	rootPath = (h?gn('a',h)[0].href.replace(/^\w+:\/+[^\/]+\/+/, '/'):'/')
 ,	AN = /\banno\b/i, PT = /\bpost\b/i, DP = /^(div|p)$/i
 ,	TU = /^\d+(<|>|$)/
@@ -113,8 +113,8 @@ var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
 }
 
 function getSkipList() {
-var	a = document.cookie.split(/;\s*/), i = a.length, j = [], k = [], m,r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+)\//i;
-	while (i--) if (m = a[i].match(r)) j.push(decodeURIComponent(m[2])), k.push(m[1]);
+var	a = document.cookie.split(/;\s*/), i = a.length, j = [], k = [], m,r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+)\/(.*)$/i;
+	while (i--) if (m = a[i].match(r)) j.push(decodeURIComponent(m[2]+' ('+m[3].split('/').length+')')), k.push(m[1]);
 	return {rooms:j, qk:k};
 }
 
@@ -606,8 +606,8 @@ d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.gro
 }
 
 if ((i = gn('pre')).length) showContent(i[0]);
-
-if (k) {
+if (i = id('unskip')) i.onmouseover();
+if (k = id('task')) {
 	if ((filter = k.getAttribute('data-filter')) !== null && (i = gi()).length) {
 		j = k.nextSibling;
 		while (!j.tagName) j = j.nextSibling;
@@ -642,19 +642,22 @@ if (k) {
 		}
 	}
 }
-
 if (k = id('tabs')) {
 
 	function a(r,t) {return '<a href="'+r+(r == l?'" class="at':'')+'">'+t+'</a>';}
 
-	h = '', l = l.split('/').slice(-1)[0], n = k.textContent.replace(WS, '').split('|'), r = /\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
+	h = '', l = l.split('/').slice(-1)[0], n = k.textContent.replace(WS, '').split('|');
 	for (i in n) h += (h?'\n|	':'')+a(+i+1, n[i]);
-	k.innerHTML = '[	'+h+'	]';	//* <- cat.tabs
-	while ((k = k.nextElementSibling) && r.test(j = k.textContent.replace(WS, ''))) {
-		j = j.split('-'), n = j.pop(), n = n.split(','), h = (j = j.join('-'))+':';
+	k.innerHTML = '[	'+h+'	]';	//* <- category tabs
+var	p = k.parentNode, c,d,y,r = /^\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
+	while ((m = p.lastElementChild) && !m.lastElementChild && r.test(j = m.textContent.replace(WS, ''))) {
+		j = j.split('-'), y = j[0], n = j.pop(), n = n.split(','), h = (m.id = j = j.join('-'))+':';
 		for (i in n) h += '\n'+a(j+'-'+n[i].replace(w, ''), n[i]);
-		k.innerHTML = h;		//* <- row: month, column: day
+		m.innerHTML = h;		//* <- row: month, column: day
+		if (!d || d.id != y) {
+			(d = cre('div',c?c:c = cre('div',p,k.nextElementSibling))).id = y;
+			if (d.previousElementSibling) toggleHide(d), cre('div',c,d).innerHTML = '<p><a href="javascript:toggleHide(id(\''+y+'\'))">'+y+'</a></p>';
+		}
+		d.appendChild(m);
 	}
 }
-
-if (i = id('unskip')) i.onmouseover();
