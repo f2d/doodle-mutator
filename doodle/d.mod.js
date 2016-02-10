@@ -56,10 +56,11 @@ var	n = p.id+'_menu', m = id(n);
 +(g?'доб.пост+допис.+заменить|':'')+'|слить сюда+отсюда|разделить нить отсюда')
 +(g?'|снос комн.+файлов+архива|переназв.комн.'+(flag.v?'':'+копир.нить в'):'')
 
-:(flag.v?'':'закрыть доступ+открыть|может жаловаться+нет|')
-+(g?(flag.v?'':'получает цели+нет|видит неизв.+нет|дать модератора+снять|дать супермод.+снять|переименовать||')
-+'общее объявление'+(flag.u?'':'|комнатное объявление|замороз. комнату+отм.')+'|заморозить всё+отм.'
-:'|харакири (отказ)||комнатное объявление'))
+:(flag.v?'':'закрыть доступ+открыть|может жаловаться+нет|'
++(g?'получает цели+нет|видит неизв.+нет|':'')+'дать модератора+снять|'
++(g?'дать супермод.+снять|переименовать||':''))
++(g?'общее объявление'+(flag.u?'':'|комнатное объявление|замороз. комнату+отм.')+'|заморозить всё+отм.'
+:'||комнатное объявление'))
 		}; else la = {
 			tip: (c
 ?'Apply changes on entire room.|\
@@ -88,10 +89,11 @@ Green: you.')
 +(g?'insert post+add+replace|':'')+'|merge thread target+source|split thread from here')
 +(g?'|nuke room+pics+arch|rename room'+(flag.v?'':'+copy trd to'):'')
 
-:(flag.v?'':'ban+lift|can report+not|')
-+(g?(flag.v?'':'gets targets+not|sees unknown+not|give mod+take|give god+take|rename||')
-+'global announce'+(flag.u?'':'|room announce|room freeze+warm up')+'|global freeze+warm up'
-:'|harakiri (retire)||room announce')).split('|'), a = (la.o?la.o.split('|'):o), b, b0, iv, v, v0, v1;
+:(flag.v?'':'ban+lift|can report+not|'
++(g?'gets targets+not|sees unknown+not|':'')+'give mod+take|'
++(g?'give god+take|rename||':''))
++(g?'global announce'+(flag.u?'':'|room announce|room freeze+warm up')+'|global freeze+warm up'
+:'||room announce')).split('|'), a = (la.o?la.o.split('|'):o), b, b0, iv, v, v0, v1;
 		n = '';
 		for (i in a) if (a[i]) {
 			b0 = (b = a[i].split('+')).shift(), v1 =

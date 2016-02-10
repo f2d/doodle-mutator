@@ -502,6 +502,7 @@ function data_log_mod($a) {			//* <- array(option name, thread, row, column, opt
 	if (substr($o, 0, 8) == 'harakiri') $ok = data_set_u_flag($u_num, 'mod_'.$room, 0, 1); else
 	if ($o == 'ban'		) $ok = data_set_u_flag($a, 'ban', !$un); else
 	if ($o == 'can report'	) $ok = data_set_u_flag($a, 'nor', $un); else
+	if ($o == 'give mod'	) $ok = data_set_u_flag($a, 'mod_'.$room, !$un); else
 	if (!GOD
 	&& $o != 'room announce') return 0;
 	else
@@ -509,7 +510,6 @@ function data_log_mod($a) {			//* <- array(option name, thread, row, column, opt
 //* ----	god right	----
 	if ($o == 'gets targets') $ok = data_set_u_flag($a, 'nop', $un); else
 	if ($o == 'sees unknown') $ok = data_set_u_flag($a, 'see', !$un); else
-	if ($o == 'give mod'	) $ok = data_set_u_flag($a, 'mod_'.$room, !$un); else
 	if ($o == 'give god'	) $ok = data_set_u_flag($a, 'god', !$un); else
 	if ($o == 'rename') {
 		if (!($new = trim_post($msg, USER_NAME_MAX_LENGTH))) return 0;

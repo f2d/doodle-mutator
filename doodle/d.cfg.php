@@ -1,7 +1,6 @@
 <?php
 
-$lang = 'en';
-$cfg_langs = array('en', 'ru');
+$cfg_langs = array($lang = 'en', 'ru');
 $cfg_date_class = array(
 /*
 format:
@@ -56,7 +55,7 @@ define(FIND_MAX_LENGTH, 123);
 define(REPORT_MIN_LENGTH, 5);
 define(REPORT_MAX_LENGTH, 500);
 define(DESCRIBE_MIN_LENGTH, 9);
-define(DESCRIBE_MAX_LENGTH, 789);
+define(DESCRIBE_MAX_LENGTH, 900);
 
 define(DRAW_DEFAULT_APP_EXT, '.js');
 define(DRAW_PREVIEW_WIDTH, 640);
@@ -97,7 +96,7 @@ define(PAT_DATE, '~((\d+)-(\d+))-(\d+)~');
 define(PAT_CONTENT, '~<pre>(.+\S)\s+</pre>~uis');
 define(FOOT_NOTE, '
 <a href="https://github.com/f2d/doodle-mutator">%s</a> &mdash;
-<a href="/">%s</a>, 2013-2015,
+<a href="/">%s</a>, 2013-2016,
 <a href="/board/">%s</a>%s');	//* <- lang specific %s: site engine link, author link, contact board link, plaintext suffix
 
 ?>

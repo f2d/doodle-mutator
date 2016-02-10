@@ -328,8 +328,10 @@ var	i,j,k,l,m,n = '\n', o,p = data.ph, opt = 'opt_', q,s = ' ', t = '	'
 			if (u.indexOf(',') > -1) {
 				u = u.split(','), thread_num = u.shift(), u = u[0], j = thread_num[0];
 				if (isNaN(j)) {
-					j = recl[k = 'asdf'.indexOf(j)];
-					hell = j+'" id="'+(thread_num = thread_num.slice(1));
+					hell = {
+						class: (j = recl[k = 'asdf'.indexOf(j)])
+					,	id: (thread_num = thread_num.slice(1))
+					};
 					mt[j].push(mark = {i:thread_num});
 				}
 			}
@@ -522,7 +524,7 @@ j+'r">'+count.uLast+k+'<br>'+
 i+'l">'+count.u.join(f[1])+l+
 i+'r">'+count.o.join(f[1])+l+'<br>');
 		}
-		if (hell && flag.hell[j = hell.split('"')[0]]) output =
+		if (hell && flag.hell[j = hell.class]) output =
 d+'<div class="post alt anno"><a href="javascript:;" onclick="toggleHide(this.parentNode.nextElementSibling)">'+la.hint[j]+la.hint.show+'</a>'+
 d+'</div>'+
 d+'<div style="display:none">'+output+
@@ -533,7 +535,7 @@ d+'</div>';
 	if (h) {
 		p = '';
 		for (i in a) o = getThread(a[i]), p +=
-c+'<div class="thread'+(flag.u?' al':'')+(hell?' '+hell:'')+'">'+o+
+c+'<div class="thread'+(flag.u?' al':'')+(hell?' '+hell.class+'" id="'+hell.id:'')+'">'+o+
 c+'</div>';
 		h.innerHTML = (p?p+
 c+'<div class="thread task">'+
@@ -573,7 +575,7 @@ d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.gro
 			if (flag.a) showContent();
 		} else {
 			p.innerHTML = getThread(a[0]);
-			if (hell) p.className += ' '+hell;
+			if (hell) p.className += ' '+hell.class;
 			if (mm) mm();
 		}
 	}
@@ -649,14 +651,14 @@ if (k = id('tabs')) {
 	h = '', l = l.split('/').slice(-1)[0], n = k.textContent.replace(WS, '').split('|');
 	for (i in n) h += (h?'\n|	':'')+a(+i+1, n[i]);
 	k.innerHTML = '[	'+h+'	]';	//* <- category tabs
-var	p = k.parentNode, c,d,y,r = /^\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
-	while ((m = p.lastElementChild) && !m.lastElementChild && r.test(j = m.textContent.replace(WS, ''))) {
-		j = j.split('-'), y = j[0], n = j.pop(), n = n.split(','), h = (m.id = j = j.join('-'))+':';
+var	p = k.parentNode, c,d,r = /^\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
+	while ((m = p.lastElementChild) && !((j = m.lastElementChild) && j.id) && r.test(j = m.innerHTML.replace(WS, ''))) {
+		j = j.split('-'), y = 'year'+(f = j[0]), n = j.pop().split(','), j = j.join('-'), h = j+':';
 		for (i in n) h += '\n'+a(j+'-'+n[i].replace(w, ''), n[i]);
 		m.innerHTML = h;		//* <- row: month, column: day
 		if (!d || d.id != y) {
 			(d = cre('div',c?c:c = cre('div',p,k.nextElementSibling))).id = y;
-			if (d.previousElementSibling) toggleHide(d), cre('div',c,d).innerHTML = '<p><a href="javascript:toggleHide(id(\''+y+'\'))">'+y+'</a></p>';
+			if (d.previousElementSibling) toggleHide(d), cre('div',c,d).innerHTML = '<p><a href="javascript:toggleHide('+y+')">'+f+'</a></p>';
 		}
 		d.appendChild(m);
 	}

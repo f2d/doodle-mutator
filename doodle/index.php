@@ -176,7 +176,7 @@ if ($u_key) {
 	else
 
 //* report problem in active room ---------------------------------------------
-	if (isset($_POST['report']) && $etc && !(R1 || $u_flag['nor'])) {
+	if (isset($_POST['report']) && $etc && (MOD || !(R1 || $u_flag['nor']))) {
 		$post_status = 'no_path';
 		if (preg_match(PAT_DATE, $etc, $r) && ($etc == $r[0])) {	//* <- r = array(t-r-c, t-r, thread, row, column)
 			$post_status = 'text_short';
@@ -605,7 +605,7 @@ preg_replace('~\v+~u', '<br>', NL.htmlspecialchars($a)))));
 
 						foreach ($l as $ym => $d) $lnk .= ($lnk?'</p>':'').'
 		<p>'.$ym.'-'.implode(',', $d);
-						$lnk .= date(' (H:i:s)', $last).'</p>';
+						$lnk .= ' <small>'.date('H:i:s', $last).'</small></p>';
 					} else $done = $tmp_empty;
 				} else
 				if ($etc == 2) {

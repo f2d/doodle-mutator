@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.58'
-,	INFO_DATE = '2013-04-01 — 2015-10-05'
+,	INFO_VERSION = 'v0.9.59'
+,	INFO_DATE = '2013-04-01 — 2016-02-11'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -413,7 +413,8 @@ var	x = 0, y = 0;
 function updateDebugScreen(lsid, refresh) {
 	if (lsid) {
 		if (refresh && !((i = text.debug.innerHTML) && i.length > 0)) return;
-	var	i = s = 0, j = '', k = !CR[0], n = CR.length;
+	var	i = s = 0, j = '', k = !CR[0], n = CR.length
+	,	f = '<a href="javascript:void(|.', g = '))">', p = f+'savePic(';
 		if (k) for (k = ''; ++i < n;) {
 			d = (i == 1 && refresh == 1)
 		,	a = 'r'+i
@@ -424,8 +425,8 @@ function updateDebugScreen(lsid, refresh) {
 		,	t = LS[CR[i].T]
 		,	s += getSaveLSDict(i,0,1)
 		,	j +=
-			(j?'<br>':'<hr>')
-		+	'Save'+i+'<a href="javascript:'+NS+'.unsave('+i+')">.del</a>, time: '
+			(j?'<br>':'')
+		+	'Save '+i+' ['+f+'unsave('+i+g+'delete</a>] time: '
 		+	(i == lsid || d
 				?'<span style="background-color:#'
 		+			(['f44','5ae','5ea','feb'][d?2:orz(refresh)]||'aaa')
@@ -433,13 +434,13 @@ function updateDebugScreen(lsid, refresh) {
 				:t)
 		+	(t?' = '+unixDateToHMS(+t.split('-')[1],0,1):'')
 		+	(r?', pic size: '+getFormattedNum(r.length)
-		+		' [<a href="javascript:'+NS+'.savePic(0,'+i+')">save</a>'
-		+		', <a href="javascript:'+NS+'.savePic(3,'+i+')">load</a>]':'')
+		+		' ['+p+'0,'+i+g+'save</a>'
+		+		', '+p+'3,'+i+g+'load</a>]':'')
 		+	(d			?' ← saved':
 			(i == lastUsedSaveSlot	?' ← last used':
 			(i == lsid		?' ← shifted up to':'')));
 		}
-		text.debug.innerHTML = '<hr>'
+		text.debug.innerHTML = '<hr>[<a href="javascript:;" onClick="this.parentNode.innerHTML=\'\'; return false;"> x </a>], '
 		+	replaceAll(
 			replaceAll(
 			replaceAll(
@@ -449,13 +450,14 @@ function updateDebugScreen(lsid, refresh) {
 		+		'{.mode;mode}'
 		+		'LStorage: '+(k?k+'total bytes = '+getFormattedNum(s):CT+', '+CR)
 		+		', Save file as: '+(DL || 'new tab')
-			, '{', '<a href="javascript:|.show(|')
-			, ';', ')">.')
+			, '{', f+'show(|')
+			, ';', g)
 			, '}', '</a>,\n')
 		+		(outside.read?'':', F6=read: <textarea id="|-read">/9.png</textarea>')
-			, '|', NS)
-		+	j+'<hr>'
-		+	nl2br(getSendMeta(draw.screen()))+'<hr>';
+		+		'<hr>'+nl2br(getSendMeta(draw.screen()))
+		+		'<hr>'+j
+		+		'<hr>'
+			, '|', NS);
 	} else
 	if (mode.debug) {
 	var	r = '</td></tr>\n<tr><td>', d = '</td><td>', a = draw.turn, s = draw.step, t = draw.time, i = isMouseIn();
@@ -1351,7 +1353,8 @@ var	j = getSaveLSKeys(i);
 function saveShiftUp(i) {
 	if (i > 0 && i < CR.length-1) {
 	var	n = i+1, d = getSaveLSDict(i, n), m = d.sum, d = d.dict;
-		saveClear(i), saveClear(n);	//* <- have to care about LS size limit
+		if (!saveClear(i)) return 0;	//* <- condense free slots
+		saveClear(n);			//* <- have to care about LS size limit
 		for (i in d) LS[i] = d[i];
 	}
 	return m || 0;
