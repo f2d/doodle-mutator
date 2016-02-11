@@ -86,11 +86,11 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 		, '\n',	'#ff7f7f', '#7fff7f', '#7f7fff', '#ffff00', '#00ffff', '#ff00ff', '#9', '#faa', '#eca', '#cea', '#afa', '#aec', '#ace', '#aaf', '#cae', '#eac'
 		, '\n',	'#ffbebe', '#beffbe', '#bebeff', '#ffff7f', '#7fffff', '#ff7fff', '#c', '#fcc', '#fdc', '#dfc', '#cfc', '#cfd', '#cdf', '#ccf', '#dcf', '#fcd'
 		]
-	,	[ '\tWin7'
-		,	'#0', '#7f7f7f', '#880015', '#ed1c24', '#ff7f27', '#fff200', '#22b14c', '#00a2e8', '#3f48cc', '#a349a4'
-		, '\n',	'#f', '#c3c3c3', '#b97a57', '#ffaec9', '#ffc90e', '#efe4b0', '#b5e61d', '#99d9ea', '#7092be', '#c8bfe7'
-		, '\nClassic', '#000000', '#000080', '#008000', '#008080', '#800000', '#800080', '#808000', '#c0c0c0', '\tCGA', '#0', '#00a', '#0a0', '#0aa', '#a00', '#a0a', '#aa0', '#a'
-		, '\nClassic', '#808080', '#0000ff', '#00ff00', '#00ffff', '#ff0000', '#ff00ff', '#ffff00', '#ffffff', '\tCGA', '#5', '#55f', '#5f5', '#5ff', '#f55', '#f5f', '#ff5', '#f'
+	,	[ '\tPixiv/illust.49093780'
+		, '\n',	'#000000', '#271b8f', '#0000ab', '#47009f', '#8f0077', '#ab0013', '#a70000', '#7f0b00', '#432f00', '#004700', '#005100', '#003f17', '#1b3f5f'
+		, '\n',	'#757575', '#0073ef', '#233bef', '#8300f3', '#bf00bf', '#e7005b', '#db2b00', '#cb4f0f', '#8b7300', '#009700', '#00ab00', '#00933b', '#00838b'
+		, '\n',	'#bcbcbc', '#3fbfff', '#5f97ff', '#a78bfd', '#f77bff', '#ff77b7', '#ff7763', '#ff9b3b', '#f3bf3f', '#83d313', '#4fdf4b', '#58f898', '#00ebdb'
+		, '\n',	'#ffffff', '#abe7ff', '#c7d7ff', '#d7cbff', '#ffc7ff', '#ffc7db', '#ffbfb3', '#ffdbab', '#ffe7a3', '#e3ffa3', '#abf3bf', '#b3ffcf', '#9ffff3'
 		, '\nGrayScale', '#f', '#e', '#d', '#c', '#b', '#a', '#9', '#8', '#7', '#6', '#5', '#4', '#3', '#2', '#1', '#0'
 		, '\nPaint.NET'
 		,	'#000000', '#404040', '#ff0000', '#ff6a00', '#ffd800', '#b6ff00', '#4cff00', '#00ff21'
@@ -101,12 +101,17 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 		,	'#7fffc5', '#7fffff', '#7fc9ff', '#3f647f', '#a17fff', '#d67fff', '#ff7fed', '#ff7fb6'
 		, '\n',	'#c0c0c0', '#606060', '#7f3f3f', '#7f593f', '#7f743f', '#6d7f3f', '#527f3f', '#3f7f47'
 		,	'#3f7f62', '#3f7f7f', '#3f647f', '#3f497f', '#503f7f', '#6b3f7f', '#7f3f76', '#7f3f5b'
-		, '\nApple II', '#000000', '#7e3952', '#524689', '#df4ef2', '#1e6952', '#919191', '#35a6f2', '#c9bff9', '\tMSX', '#0', '#0', '#3eb849', '#74d07d', '#5955e0', '#8076f1', '#b95e51', '#65dbef'
-		, '\nApple II', '#525d0d', '#df7a19', '#919191', '#efb5c9', '#35cc19', '#c9d297', '#a2dcc9', '#ffffff', '\tMSX', '#db6559', '#ff897d', '#ccc35e', '#ded087', '#3aa241', '#b766b5', '#c', '#f'
+		, '\nMS Paint, Win7 version'
+		,	'#0', '#7f7f7f', '#880015', '#ed1c24', '#ff7f27', '#fff200', '#22b14c', '#00a2e8', '#3f48cc', '#a349a4'
+		, '\n', '#f', '#c3c3c3', '#b97a57', '#ffaec9', '#ffc90e', '#efe4b0', '#b5e61d', '#99d9ea', '#7092be', '#c8bfe7'
+		, '\nClassic', '#000000', '#000080', '#008000', '#008080', '#800000', '#800080', '#808000', '#c0c0c0', '\tApple II', '#000000', '#7e3952', '#524689', '#df4ef2', '#1e6952', '#919191', '#35a6f2', '#c9bff9'
+		, '\nClassic', '#808080', '#0000ff', '#00ff00', '#00ffff', '#ff0000', '#ff00ff', '#ffff00', '#ffffff', '\tApple II', '#525d0d', '#df7a19', '#919191', '#efb5c9', '#35cc19', '#c9d297', '#a2dcc9', '#ffffff'
+		, '\nCGA', '#0', '#00a', '#0a0', '#0aa', '#a00', '#a0a', '#aa0', '#a', '\tMSX', '#0', '#0', '#3eb849', '#74d07d', '#5955e0', '#8076f1', '#b95e51', '#65dbef'
+		, '\nCGA', '#5', '#55f', '#5f5', '#5ff', '#f55', '#f5f', '#ff5', '#f', '\tMSX', '#db6559', '#ff897d', '#ccc35e', '#ded087', '#3aa241', '#b766b5', '#c', '#f'
 		, '\nIBM PC/XT CGA', '#000000', '#0000b6', '#00b600', '#00b6b6', '#b60000', '#b600b6', '#b66700', '#b6b6b6', '\tC-64', '#000000', '#ffffff', '#984a43', '#79c1c7', '#9b51a5', '#67ae5b', '#52429d', '#c9d683'
 		, '\nIBM PC/XT CGA', '#676767', '#6767ff', '#67ff67', '#67ffff', '#ff6767', '#ff67ff', '#ffff67', '#ffffff', '\tC-64', '#9b6639', '#695400', '#c37b74', '#626262', '#898989', '#a3e599', '#897bcd', '#adadad'
-		, '\nZX Spectrum', '#0', '#0000ca', '#ca0000', '#ca00ca', '#00ca00', '#00caca', '#caca00', '#cacaca', '\tVIC-20', '#000000', '#ffffff', '#782922', '#87d6dd', '#aa5fb6', '#55a049', '#40318d', '#bfce72'
-		, '\nZX Spectrum', '#0', '#0000ff', '#ff0000', '#ff00ff', '#00ff00', '#00ffff', '#ffff00', '#ffffff', '\tVIC-20', '#aa7449', '#eab489', '#b86962', '#c7ffff', '#ea9ff6', '#94e089', '#8071cc', '#ffffb2'
+		, '\nZX Spectrum', '#0', '#0000ca', '#00ca00', '#00caca', '#ca0000', '#ca00ca', '#caca00', '#cacaca', '\tVIC-20', '#000000', '#ffffff', '#782922', '#87d6dd', '#aa5fb6', '#55a049', '#40318d', '#bfce72'
+		, '\nZX Spectrum', '#0', '#0000ff', '#00ff00', '#00ffff', '#ff0000', '#ff00ff', '#ffff00', '#ffffff', '\tVIC-20', '#aa7449', '#eab489', '#b86962', '#c7ffff', '#ea9ff6', '#94e089', '#8071cc', '#ffffb2'
 		]
 	,	[	'all'	, '#0', '#f', '#fcefe2'
 		, '\n', 'Reimu'	, '#fa5946', '#e5ff41', '', '', ''	//* <- mid-row pad to align columns
@@ -229,6 +234,7 @@ function cutPeriod(x,y,z) {
 	return (x < y ? x-y+z : (x > z ? x+y-z : x));
 }
 
+function isA0(s) {return (s == A0 || regA0.test(s));}
 function orz(n) {return parseInt(n||0)||0;}
 function nl2br(s) {return s.replace(/[\r\n]+/g, '<br>');}
 function repeat(t,n) {return new Array(n+1).join(t);}
@@ -256,9 +262,14 @@ function getTextOffsetXY(f,c,a,t) {
 	};
 }
 
-function isA0(s) {return (s == A0 || regA0.test(s));}
-function id(id) {return document.getElementById(NS+(id?'-'+id:''));}
-function setId(e,id) {return e.id = NS+'-'+id;}
+function cre(e,p,b) {
+	e = document.createElement(e);
+	if (b) p.insertBefore(e, b); else
+	if (p) p.appendChild(e);
+	return e;
+}
+function id(i) {return document.getElementById(NS+(i?'-'+i:''));}
+function setId(e,i) {return e.id = NS+'-'+i;}
 function setClass(e,c) {return e.className = NS+'-'+replaceAll(c,' ',' '+NS+'-');}
 function setEvent(e,onWhat,func) {return e.setAttribute(onWhat, NS+'.'+func);}
 function setContent(e,c) {
@@ -306,13 +317,13 @@ var	d = getSaveLSDict(i);
 function updatePalette() {
 var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 	if (LS) LS.lastPalette = c;
-	while (pt.childNodes.length) pt.removeChild(pt.lastChild);
-
 	if (p[0] == '\r') {
 		c = p[1];
 		if (c == 'g') {
-		var	ctx = (c = document.createElement('canvas')).getContext('2d')
-		,	hues = [[255,  0,  0]
+			setContent(pt, getSlider('S', -1));
+			setSlider('S'), updateSliders(id('rangeS'));
+			setId(c = cre('canvas', pt), 'gradient'), c.c2d = c.getContext('2d'), c.width = 300, c.height = 133;
+		var	hues = [[255,  0,  0]
 			,	[255,255,  0]
 			,	[  0,255,  0]
 			,	[  0,255,255]
@@ -323,7 +334,7 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 			,	[127,127,127]
 			,	[255,255,255]
 			]
-		,	l = hues.length, f = 'return false;', r = RANGE[0];
+		,	l = hues.length, f = 'return false;';
 
 			function linearBlend(from, to, frac, max) {
 				if (frac <= 0) return from;
@@ -332,14 +343,13 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 				while (i--) r[i] = Math.round(from[i]*k + to[i]*j);
 				return r;
 			}
-			c.width = 300, c.height = 133, c.sat = r.max, clearFill(c);
 
 			(c.updateSat = function (sat) {
-			var	x = c.width, y = c.height, y2 = Math.floor(y/2), h, i, j, k = c.width/l
+			var	x = c.width, y = c.height, y2 = Math.floor(y/2), h,i,j,k = Math.ceil(c.width/l)
 			,	d = c.c2d.createImageData(x, y);
 				while (x--) {
 					h = linearBlend(hues[y = Math.floor(x/k)], hues[(y+1)%l], x%k, k);
-					if (!isNaN(sat)) h = linearBlend(bw[1], h, sat, c.sat);
+					if (!isNaN(sat)) h = linearBlend(bw[1], h, sat, RANGE[0].max);
 					y = c.height;
 					while (y--) {
 						j = linearBlend(h, bw[y < y2?0:2], Math.abs(y-y2), y2);
@@ -356,26 +366,23 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 			c.setAttribute('onscroll', f);
 			c.setAttribute('oncontextmenu', f);
 			c.addEventListener('mousedown', function (event) {pickColor(0, c, event || window.event);}, false);
-			setId(c, 'gradient');
-			setContent(pt, getSlider('S', -1));
-			setSlider('S'), updateSliders(id('rangeS'));
 		} else c = 'TODO';
-		pt.appendChild(c.tagName ? c : document.createTextNode(c));
+		if (!c.tagName) setContent(pt, c);
 	} else {
-	var	tbl = document.createElement('table'), tr, td, fill, t = '', colCount = 0, autoRows = true;
+		while (pt.childNodes.length) pt.removeChild(pt.lastChild);
+	var	tbl = cre('table', pt), tr, td, fill, t = '', colCount = 0, autoRows = true;
 		for (i in p) if (p[i][0] == '\n') {autoRows = false; break;}
 		for (i in p) {
 			c = p[i];
 			if (c[0] == '\n' || !colCount) {
 				colCount = PALETTE_COL_COUNT;
-				if (tr) tbl.appendChild(tr);
-				(tr = document.createElement('tr')).textContent = '\n';
+				(tr = cre('tr', tbl)).textContent = '\n';
 			}
 			if (c[0] == '\t') t = c.slice(1); else		//* <- title, no text field
 			if (c[0] == '\n') {
 				if (c.length > 1) t = c.slice(1);	//* <- new line, title optional
 			} else {
-				(td = document.createElement('td')).textContent = '\n';
+				(td = cre('td', tr)).textContent = '\n';
 				if (c.length > 1 && c[0] == '#') {
 				var	v = (c.length < 7 ? (c.length < 4 ?
 						parseInt((c += repeat(c[1], 5))[1], 16)*3 : (
@@ -385,22 +392,18 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 						parseInt(c.substr(1,2), 16)+
 						parseInt(c.substr(3,2), 16)+
 						parseInt(c.substr(5,2), 16)));
-					setClass(fill = document.createElement('div'), v > 380 ? 'palettine' : 'paletdark');
+					setClass(fill = cre('div', td), v > 380 ? 'palettine' : 'paletdark');
 					setEvent(fill, 'onclick', 'updateColor("'+c+'",0);');
 					setEvent(fill, 'oncontextmenu', 'updateColor("'+c+'",1); return false;');
 					fill.title = c+(t?(' ('+t+')'):'');
-					td.style.backgroundColor = c;
-					td.appendChild(fill);		//* <- color field
+					td.style.backgroundColor = c;	//* <- color field
 				} else if (c) {
 					td.textContent = t = c;		//* <- title + text field
 					setClass(td, 't');
-				}
-				tr.appendChild(td);			//* <- otherwise - empty spacer
+				}			//* <- otherwise - empty spacer
 				if (autoRows) --colCount;
 			}
 		}
-		tbl.appendChild(tr);
-		pt.appendChild(tbl);
 	}
 }
 
@@ -1124,10 +1127,8 @@ var	r = 'range', s = 'slider', t = 'text', y = 'type', e = id(r+b);
 	if (e[y] != r) {
 		e.setAttribute(y, t);
 	} else {
-		e = document.createElement('input');
-		setId(e, (e[y] = t)+b);
+		setId(e = cre('input', id(s+b)), (e[y] = t)+b);
 		setEvent(e, 'onchange', 'updateSliders(this)');
-		id(s+b).appendChild(e);
 	}
 	r = RANGE[Math.max(BOWL.indexOf(b), 0)], e.title = r.min+' - '+r.max;
 }
@@ -1237,7 +1238,7 @@ function updateDimension(e) {
 	container.style.minWidth = (v = canvas.width+id('right').offsetWidth+14)+'px';
 	if (a = outside.restyle) {
 		v += 24;
-		if (!(c = id(i = 'restyle'))) setId(container.parentNode.insertBefore(c = document.createElement('style'), container), i);
+		if (!(c = id(i = 'restyle'))) setId(c = cre('style', id()), i);
 		if ((b = outside.restmin) && (b = eval(b).offsetWidth) > v) v = b;
 		c.innerHTML = a+'{max-width:'+v+'px;}';
 	}
@@ -1336,8 +1337,8 @@ function getSaveLSKeys(i) {
 }
 
 function getSaveLSDict(i, swap, sum) {
-var	j = getSaveLSKeys(i), k,m = 0, n = CR[i].R.length, d = {};
-	if (j.length > 0) for (i in j) k = j[i], m += (sum?LS[k]:d[swap ? CR[swap].R+k.substr(n) : k] = LS[k]).length;
+var	j = getSaveLSKeys(i), k,l,m = 0, n = (sum?0:CR[i].R.length), d = {};
+	if (j.length > 0) for (i in j) l = LS[k = j[i]], m += (sum?l:d[swap ? CR[swap].R+k.substr(n) : k] = l).length;
 	return sum?m:{dict: d, sum: m};
 }
 
@@ -1353,8 +1354,8 @@ var	j = getSaveLSKeys(i);
 function saveShiftUp(i) {
 	if (i > 0 && i < CR.length-1) {
 	var	n = i+1, d = getSaveLSDict(i, n), m = d.sum, d = d.dict;
-		if (!saveClear(i)) return 0;	//* <- condense free slots
-		saveClear(n);			//* <- have to care about LS size limit
+		if (!m) return 0;
+		saveClear(i), saveClear(n);	//* <- have to care about LS size limit
 		for (i in d) LS[i] = d[i];
 	}
 	return m || 0;
@@ -1362,6 +1363,11 @@ function saveShiftUp(i) {
 
 function saveShiftUpTo(i, swap) {
 var	d = getSaveLSDict(i, swap = orz(swap)), m = d.sum, d = d.dict;
+	if (!swap) {
+	var	j = 1;
+		while (getSaveLSDict(j,0,1) > 0) j++;	//* <- condense free slots
+		if (i > j) i = j;
+	}
 	while (i-- > swap) m += saveShiftUp(i);	//* <- destroys top slot old content
 	if (swap) for (i in d) LS[i] = d[i];	//* <- carefully copy all fields, even if unaware what other app versions have saved there
 	return m || 0;				//* <- max size proven to be allowed
@@ -1369,7 +1375,7 @@ var	d = getSaveLSDict(i, swap = orz(swap)), m = d.sum, d = d.dict;
 
 function saveDL(content, suffix) {
 	if (DL) {
-		id().appendChild(a = document.createElement('a'));
+		a = cre('a', id());
 		a.href = content, a[DL] = unixDateToHMS(0,0,2)+suffix;
 		a.click();
 		setTimeout(function() {a.parentNode.removeChild(a);}, 5678);
@@ -1474,15 +1480,14 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 		}
 		if (c && confirm(lang.confirm[c])) {
 			if (!outside.send.tagName) {
-				setId(e = document.createElement('form'), 'send');
-				e.setAttribute('method', (outside.send.length && outside.send.toLowerCase() == 'get')?'get':'post');
-				container.appendChild(outside.send = e);
+				setId(e = cre('form', container), 'send');
+				if (!outside.send.length || outside.send.toLowerCase() != 'get') e.setAttribute('method', 'post');
+				outside.send = e;
 			}
 		var	pngData = savePic(2,-1), jpgData, a = {txt:0,pic:0}, f = outside.send;
 			for (i in a) if (!(a[i] = id(i))) {
-				setId(e = a[i] = document.createElement('input'), e.name = i);
+				setId(e = a[i] = cre('input', f), e.name = i);
 				e.type = 'hidden';
-				f.appendChild(e);
 			}
 			e = pngData.length;
 			d = (((i = outside.jp || outside.jpg_pref)
@@ -1526,7 +1531,7 @@ var	d = draw.time, e = new Image(), t = +new Date, i;
 			if (lastUsedSaveSlot = ls) updateDebugScreen(ls,3);
 		} catch(i) {
 			alert(lang.err_code+': '+i.code+', '+i.message);
-			c2s = clearFill(cnvHid = document.createElement('canvas'));
+			c2s = clearFill(cnvHid = cre('canvas'));
 			for (i in select.imgSizes) cnvHid[i] = canvas[i];
 		} finally {
 			if (d = e.parentNode) d.removeChild(e);
@@ -1659,7 +1664,7 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	);
 	if (!(canvas = id(c)).getContext) return;
 
-	cnvHid = document.createElement(c);
+	cnvHid = cre(c);
 
 	for (i in select.imgSizes) {
 		cnvHid[i] = canvas[i] = (o[a = i[0]]?o[a]:o[a] = (o[i]?o[i]:select.imgSizes[i]));
@@ -1817,20 +1822,17 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 
 	for (i in a) if (1 !== (k = a[i])) {
 		if (k) {
-			e = document.createElement(b);
-
+			e = cre(b, f);
 			if (k[0].indexOf('|') > 0) {
 			var	subt = k[0].split('|')
 			,	pict = k[2].split('|');
-				for (j in subt) setClass(e.appendChild(btnContent(
-					document.createElement('div'), [subt[j], k[1], pict[j]]
-				)), MODE_LABELS[j]);
+				for (j in subt) setClass(btnContent(
+					cre('div', e), [subt[j], k[1], pict[j]]
+				), MODE_LABELS[j]);
 			} else btnContent(e, k);
-
-			setClass(e, b);
-			setEvent(e, 'onclick', k[3]);
+			if (k.length > 3) setEvent(e, 'onclick', k[3]);
 			if (k.length > 4) setId(e, k[4]);
-			f.appendChild(e);
+			setClass(e, b);
 		} else f.innerHTML += s;
 	}
 	if (canvas.height < BOTH_PANELS_HEIGHT) toggleView('info');
