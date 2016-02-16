@@ -12,20 +12,20 @@ body, .task input:not([type="checkbox"]) {
 	line-height: 28px;
 	font-size: 21px;
 }
-header, .post.p p, .post p.e, .room-title::after {
+body>header, .post.p p, .post p.e, .room-title::after {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;	/* <- requires max-width */
 }
-header.a>* {
+body>header.a>* {
 	margin-bottom: 8px;
 }
-header.a>*>* {
+body>header.a>*>* {
 	width: 25%;
 	text-align: center;
 }
-header .anno {	margin-bottom: 0;}
-header .report {margin: 0 0 8px 0;}
+body>header .anno {	margin-bottom: 0;}
+body>header .report {margin: 0 0 8px 0;}
 footer p {
 	line-height: normal;
 	border: 5px solid transparent;
@@ -125,7 +125,7 @@ a:hover	{
 #task>.res:hover>img {
 	border-color: #eee;
 }
-#task>.res>img, #task>img, header>* {
+#task>.res>img, #task>img, body>header>* {
 	margin-top: 8px;
 	vertical-align: bottom;		/* <- removes extra bottom space (sub-baseline) */
 }
@@ -140,7 +140,7 @@ a:hover	{
 	max-width: 950px;
 	max-height: 950px;
 }
-.task form:not(:empty), .task p, .task ul, .task ol, header>div {
+.task form:not(:empty), .task p, .task ul, .task ol, body>header>div {
 	text-align: left;
 	padding: 0 22px 8px 22px;
 }
@@ -210,7 +210,7 @@ a:hover	{
 	border-left: none;
 	border-right: 5px solid #eee;
 }
-.post p, header div, .l {
+.post p, body>header div, .l {
 	text-align: left;
 	float: left;
 }

@@ -3,7 +3,7 @@
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
 ,	INFO_VERSION = 'v0.9.59'
-,	INFO_DATE = '2013-04-01 — 2016-02-11'
+,	INFO_DATE = '2013-04-01 — 2016-02-16'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -1700,7 +1700,7 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	+			'<span'+t+lang.text_align_hint+'">'+b+'</span>'
 	+			'<select id="textStyle'+t+lang.text_font_set_hint+'" onChange="updateTextStyle(this)"></select>'
 	+			'<br>'
-	+			'<textarea id="text-content'+t+lang.text_hint+'"></textarea>'
+	+			'<textarea id="text-content'+t+lang.text_hint+'" placeholder="'+lang.text_placeholder+'"></textarea>'
 	+		'</div>'
 	+		d+'sliders">'
 ,	i = BOW.length, r = '</td><td class="r">', a = ': '+r+'	';
@@ -1802,12 +1802,12 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	,	['curve|outline|rect'	,'U'	,'~|&#x25A1;|&#x25AD;'		,d+'2)'	,k+'U']
 	,	['cursor'		,'F3'	,'&#x25CF;'			,d+'4)'	,k+'V']
 	, 0
-	,	['png'	,'F9'	,'P'	,e+'0)'	,b+'P']
-	,	['jpeg'	,'F7'	,'J'	,e+'1)'	,b+'J']
-	,	['save'	,'F2'	,'!'	,e+'2)'	,b+'S']
-	,	['load'	,'F4'	,'?'	,e+'3)'	,b+'L']
+	,	['png'	,'F9'	,'&#x25EA;'	,e+'0)'	,b+'P']
+	,	['jpeg'	,'F7'	,'&#x25A9;'	,e+'1)'	,b+'J']
+	,	['save'	,'F2'	,'!'		,e+'2)'	,b+'S']
+	,	['load'	,'F4'	,'?'		,e+'3)'	,b+'L']
 	, !o.read || 0 == o.read?1:['read'	,'F6'	,'&#x21E7;'	,e+'4)']
-	, !o.send || 0 == o.send?1:['done'	,'F8'	,'&#x21B5;'	,e+')']
+	, !o.send || 0 == o.send?1:['done'	,'F8'	,'&check;'	,e+')']
 	, 0
 	,	['info'	,'F1'	,'?'	,'showInfo()'	,b+'H']
 	]
@@ -1980,6 +1980,7 @@ var	o = outside
 		,	text_align_hint:	'Выравнивать текст по краю или середине.'
 		,	text_font_hint:		'Шрифт, стиль и высота строки печатаемого текста. Если размер не указан, он подбирается автоматически.'
 		,	text_font_set_hint:	'Некоторые заданные варианты стилей. Какие-то могут не сработать, если в вашей системе не найдётся такого шрифта.'
+		,	text_placeholder:	'Ваш текст тут.'
 		,	info_top:	'Управление (указатель над полотном):'
 		,	info: [
 				'C'+k+'средний клик = подобрать цвет с рисунка.'
@@ -2018,7 +2019,7 @@ var	o = outside
 			,	swap:	{sub:'смена',	t:'Поменять инструменты местами.'}
 			,	reset:	{sub:'сброс',	t:'Сбросить инструменты к начальным.'}
 			,	line:	{sub:'прямая',	t:'Прямая линия 1 зажатием.'}
-			,	curve:	{sub:'кривая',	t:'Сглаживать углы пути / кривая линия 2 зажатиями.'}
+			,	curve:	{sub:'сгиб',	t:'Сглаживать углы пути / кривая линия 2 зажатиями.'}
 			,	area:	{sub:'закрас.',	t:'Закрашивать площадь геометрических фигур.'}
 			,	outline:{sub:'контур',	t:'Рисовать контур геометрических фигур.'}
 			,	copy:	{sub:'копия',	t:'Оставить старую копию.'}
@@ -2026,8 +2027,8 @@ var	o = outside
 			,	cursor:	{sub:'указат.',	t:'Показывать кисть на указателе.'}
 			,	rough:	{sub:'п.штрих',	t:'Уменьшить нагрузку, пропуская перерисовку штриха.'}
 			,	fps:	{sub:'п.кадры',	t:'Уменьшить нагрузку, пропуская кадры.'}
-			,	png:	{sub:'сохр.png',t:'Сохранить рисунок в PNG файл.'}
-			,	jpeg:	{sub:'сохр.jpg',t:'Сохранить рисунок в JPEG файл.'}
+			,	png:	{sub:'сохр.png',t:'Сохранить рисунок в PNG файл — плоская картинка, полная чёткость.'}
+			,	jpeg:	{sub:'сохр.jpg',t:'Сохранить рисунок в JPEG файл — плоская картинка, может меньше весить, но хуже качество.'}
 			,	save:	{sub:'сохран.',	t:'Сохранить рисунок в память'+r}
 			,	load:	{sub:'загруз.',	t:'Вернуть рисунок из памяти'+r
 				+	i+'Может не сработать в некоторых браузерах, если не настроить автоматическую загрузку и показ изображений.'}
@@ -2091,6 +2092,7 @@ var	o = outside
 		,	text_align_hint:	'Align printed text to either side or centered.'
 		,	text_font_hint:		'Printed text font style.'
 		,	text_font_set_hint:	'Various style presets, some of which may not work if your system has no matching fonts installed.'
+		,	text_placeholder:	'Your text here.'
 		,	info_top:	'Hot keys (mouse over image only):'
 		,	info: [
 				'C'+k+'Mouse Mid = pick color from image.'
@@ -2137,8 +2139,8 @@ var	o = outside
 			,	cursor:	'Brush preview on cursor.'
 			,	rough:	'Skip draw cleanup while drawing to use less CPU.'
 			,	fps:	'Limit FPS when drawing to use less CPU.'
-			,	png:	'Save image as PNG file.'
-			,	jpeg:	'Save image as JPEG file.'
+			,	png:	'Save image as PNG file — flat picture, top quality.'
+			,	jpeg:	'Save image as JPEG file — flat picture, maybe less filesize, but poor quality.'
 			,	save:	'Save image copy to'+r
 			,	load:	'Load image copy from'+r
 				+	i+'May not work in some browsers until set to load and show new images automatically.'
