@@ -1292,6 +1292,7 @@ var	t,i = orz(back);
 }
 
 function toggleMode(i, keep) {
+	if (isNaN(i)) i = modeL.indexOf(i);
 	if (i < 0 || i >= modes.length) alert(
 		lang.bad_id
 	+	'\nNo '+i
@@ -1618,10 +1619,10 @@ function hotKeys(event) {
 			case c('E'):	toolSwap(2);	break;
 			case c('G'):	toolSwap(3);	break;
 
-			case 8:		toggleMode(0);	break;	//* 8=bksp, 45=Ins, 42=106=[Num *]
-			case c('L'):	toggleMode(1);	break;
-			case c('U'):	toggleMode(2);	break;
-			case 114:	toggleMode(4);	break;
+			case 8:		toggleMode('D');break;	//* 8=bksp, 45=Ins, 42=106=[Num *]
+			case c('L'):	toggleMode('L');break;
+			case c('U'):	toggleMode('U');break;
+			case 114:	toggleMode('V');break;
 
 			case 112:	showInfo();	break;
 			case 120:	savePic(0);	break;
@@ -1808,9 +1809,9 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	,	['eraser','E'	,'&#x25CB;'	,i+'2)']
 	,	['reset' ,'G'	,'&#x25CE;'	,i+'3)']
 	, 0
-	,	['line|area|copy'	,'L'	,'&ndash;|&#x25A0;|&#x25EB;'	,d+'1)'	,k+'L']
-	,	['curve|outline|rect'	,'U'	,'~|&#x25A1;|&#x25AF;'		,d+'2)'	,k+'U']
-	,	['cursor'		,'F3'	,'&#x25CF;'			,d+'4)'	,k+'V']
+	,	['line|area|copy'	,'L'	,'&ndash;|&#x25A0;|&#x25EB;'	,d+'"L")'	,k+'L']
+	,	['curve|outline|rect'	,'U'	,'~|&#x25A1;|&#x25AF;'		,d+'"U")'	,k+'U']
+	,	['cursor'		,'F3'	,'&#x25CF;'			,d+'"V")'	,k+'V']
 	, 0
 	,	['png'	,'F9'	,'&#x25EA;'	,e+'0)'	,b+'P']
 	,	['jpeg'	,'F7'	,'&#x25A9;'	,e+'1)'	,b+'J']
