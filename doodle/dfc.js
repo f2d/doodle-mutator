@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.59'
-,	INFO_DATE = '2013-04-01 — 2016-02-16'
+,	INFO_VERSION = 'v0.9.60'
+,	INFO_DATE = '2013-04-01 — 2016-02-28'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -268,10 +268,20 @@ function cre(e,p,b) {
 	if (p) p.appendChild(e);
 	return e;
 }
-function id(i) {return document.getElementById(NS+(i?'-'+i:''));}
-function setId(e,i) {return e.id = NS+'-'+i;}
-function setClass(e,c) {return e.className = NS+'-'+replaceAll(c,' ',' '+NS+'-');}
-function setEvent(e,onWhat,func) {return e.setAttribute(onWhat, NS+'.'+func);}
+
+function id(i) {return document.getElementById(i?NS+'-'+i:NS);}
+function setId(e,i) {if (e) e.id = NS+'-'+i; return e;}
+function setEvent(e,onWhat,func) {if (e) e.setAttribute(onWhat, NS+'.'+func); return e;}
+function setClickRemove(e,o) {if (e) e.setAttribute(o?o:'onclick', 'this.parentNode.removeChild(this); return false'); return e;}
+function setClass(e,c) {
+	if (e) {
+		if (c && (c = replaceAdd(' '+getSpaceReduced(c), ' ', NS+'-').trim())) e.className = c;
+		else if (e.getAttribute(c = 'class')) e.removeAttribute(c);
+	}
+	return e;
+}
+
+function clearContent(e) {while (e.lastChild) e.removeChild(e.lastChild); return e;}	//* <- works without a blink, unlike e.innerHTML = '';
 function setContent(e,c) {
 var	a = ['class','id','onChange','onClick'];
 	for (i in a) c = replaceAdd(c, ' '+a[i]+'="', NS+(a[i][0]=='o'?'.':'-'));
@@ -322,7 +332,7 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 		if (c == 'g') {
 			setContent(pt, getSlider('S', -1));
 			setSlider('S'), updateSliders(id('rangeS'));
-			setId(c = cre('canvas', pt), 'gradient'), c.c2d = c.getContext('2d'), c.width = 300, c.height = 133;
+			setId(c = cre('canvas', pt), 'gradient').c2d = c.getContext('2d'), c.width = 300, c.height = 133;
 		var	hues = [[255,  0,  0]
 			,	[255,255,  0]
 			,	[  0,255,  0]
@@ -369,8 +379,7 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 		} else c = 'TODO';
 		if (!c.tagName) setContent(pt, c);
 	} else {
-		while (pt.childNodes.length) pt.removeChild(pt.lastChild);
-	var	tbl = cre('table', pt), tr, td, fill, t = '', colCount = 0, autoRows = true;
+	var	tbl = cre('table', clearContent(pt)), tr, td, fill, t = '', colCount = 0, autoRows = true;
 		for (i in p) if (p[i][0] == '\n') {autoRows = false; break;}
 		for (i in p) {
 			c = p[i];
@@ -378,11 +387,11 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 				colCount = PALETTE_COL_COUNT;
 				(tr = cre('tr', tbl)).textContent = '\n';
 			}
-			if (c[0] == '\t') t = c.slice(1); else		//* <- title, no text field
+			if (c[0] == '\t') t = c.slice(1); else			//* <- title, no text field
 			if (c[0] == '\n') {
-				if (c.length > 1) t = c.slice(1);	//* <- new line, title optional
+				if (c.length > 1) t = c.slice(1);		//* <- new line, title optional
 			} else {
-				(td = cre('td', tr)).textContent = '\n';
+				(td = cre('td', tr)).textContent = '\n';	//* <- if none else - empty spacer
 				if (c.length > 1 && c[0] == '#') {
 				var	v = (c.length < 7 ? (c.length < 4 ?
 						parseInt((c += repeat(c[1], 5))[1], 16)*3 : (
@@ -396,11 +405,10 @@ var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
 					setEvent(fill, 'onclick', 'updateColor("'+c+'",0);');
 					setEvent(fill, 'oncontextmenu', 'updateColor("'+c+'",1); return false;');
 					fill.title = c+(t?(' ('+t+')'):'');
-					td.style.backgroundColor = c;	//* <- color field
+					td.style.backgroundColor = c;		//* <- color field
 				} else if (c) {
-					td.textContent = t = c;		//* <- title + text field
-					setClass(td, 't');
-				}			//* <- otherwise - empty spacer
+					setClass(td, 't').textContent = t = c;	//* <- title + text field
+				}
 				if (autoRows) --colCount;
 			}
 		}
@@ -1235,12 +1243,15 @@ function updateDimension(e) {
 			setClass(b, 'button-active');
 		}
 	}
-	container.style.minWidth = (v = canvas.width+id('right').offsetWidth+14)+'px';
-	if (a = outside.restyle) {
-		v += 24;
-		if (!(c = id(i = 'restyle'))) setId(c = cre('style', id()), i);
-		if ((b = outside.restmin) && (b = eval(b).offsetWidth) > v) v = b;
-		c.innerHTML = a+'{max-width:'+v+'px;}';
+	c = container.style, b = 'minWidth', a = (v = canvas.width+id('right').offsetWidth+14)+'px';
+	if (c[b] != a) {
+		c[b] = a;
+		if (a = outside.restyle) {
+			v += 24;
+			if ((b = outside.restmin) && (b = eval(b).offsetWidth) > v) v = b;
+			c = id(i = 'restyle') || setId(cre('style', id()), i);
+			c.innerHTML = a+'{max-width:'+v+'px;}';
+		}
 	}
 }
 
@@ -1281,21 +1292,19 @@ var	t,i = orz(back);
 }
 
 function toggleMode(i, keep) {
-	if (i < 0 || i >= modes.length) return alert(
+	if (i < 0 || i >= modes.length) alert(
 		lang.bad_id
 	+	'\nNo '+i
 	+	' in '+modes.length
-	), false;
-
-var	n = modes[i];
-	if (n == 'debug') {
-		if (!text.debug.textContent.length) return false;
-		text.debug.textContent = '';
-		interval.fps ? clearInterval(interval.fps) : (interval.fps = setInterval(fpsCount, 1000));
+	); else {
+	var	n = modes[i], v = mode[n];
+		if (n == 'debug' && text.debug.textContent.length) {
+			text.debug.textContent = '';
+			interval.fps ? clearInterval(interval.fps) : (interval.fps = setInterval(fpsCount, 1000));
+		}
+		if (!keep) v = mode[n] = !v;
+		setClass(id('check'+modeL[i]), v ? 'button-active' : 'button');
 	}
-var	v = mode[n], e = id('check'+modeL[i]);
-	if (!keep) v = mode[n] = !v;
-	if (e) setClass(e, v ? 'button-active' : 'button');
 	return false;
 }
 
@@ -1479,15 +1488,15 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 			for (i in a) if (canvas[i] < a[i][0] || canvas[i] > a[i][1]) c = 'size';
 		}
 		if (c && confirm(lang.confirm[c])) {
-			if (!outside.send.tagName) {
+			if ((f = outside.send) && f.tagName) clearContent(f);
+			else {
 				setId(e = cre('form', container), 'send');
-				if (!outside.send.length || outside.send.toLowerCase() != 'get') e.setAttribute('method', 'post');
-				outside.send = e;
+				if (!f.length || f.toLowerCase() != 'get') e.setAttribute('method', 'post');
+				outside.send = f = e;
 			}
-		var	pngData = savePic(2,-1), jpgData, a = {txt:0,pic:0}, f = outside.send;
+		var	pngData = savePic(2,-1), jpgData, a = {txt:0,pic:0};
 			for (i in a) if (!(a[i] = id(i))) {
-				setId(e = a[i] = cre('input', f), e.name = i);
-				e.type = 'hidden';
+				setId(e = a[i] = cre('input', f), e.name = i).type = 'hidden';
 			}
 			e = pngData.length;
 			d = (((i = outside.jp || outside.jpg_pref)
@@ -1513,12 +1522,14 @@ function readPic(s,ls) {
 	if (!s.data) s = {data: s, name: (0 === s.indexOf('data:') ? s.split(',', 1) : s)};
 var	d = draw.time, e = new Image(), t = +new Date, i;
 	for (i in d) if (!d[i]) d[i] = t;
-	e.setAttribute('onclick', 'this.parentNode.removeChild(this); return false');
+
 	e.onload = function () {
 		try {
-			c2s.drawImage(e, 0,0);
-			c2s.getImageData(0,0, 1,1);	//* <- disposable test of data source safety
-
+	//* throw-away test of data source safety:
+			d = cre('canvas'), d.width = d.height = 1, d = d.getContext('2d');
+			d.drawImage(e, 0,0, 1,1);
+			d.getImageData(0,0, 1,1);
+	//* actual work:
 			if (mode.resize) {
 				clearFill(canvas).drawImage(e, 0,0, e.width, e.height, 0,0, canvas.width, canvas.height);
 			} else {
@@ -1531,13 +1542,12 @@ var	d = draw.time, e = new Image(), t = +new Date, i;
 			if (lastUsedSaveSlot = ls) updateDebugScreen(ls,3);
 		} catch(i) {
 			alert(lang.err_code+': '+i.code+', '+i.message);
-			c2s = clearFill(cnvHid = cre('canvas'));
-			for (i in select.imgSizes) cnvHid[i] = canvas[i];
 		} finally {
 			if (d = e.parentNode) d.removeChild(e);
 		}
 	}
-	draw.container.appendChild(e);
+
+	draw.container.appendChild(setClickRemove(e));
 	return e.src = s.data, s.name;
 }
 
@@ -1798,15 +1808,15 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	,	['eraser','E'	,'&#x25CB;'	,i+'2)']
 	,	['reset' ,'G'	,'&#x25CE;'	,i+'3)']
 	, 0
-	,	['line|area|copy'	,'L'	,'&ndash;|&#x25A0;|&#x25A4;'	,d+'1)'	,k+'L']
-	,	['curve|outline|rect'	,'U'	,'~|&#x25A1;|&#x25AD;'		,d+'2)'	,k+'U']
+	,	['line|area|copy'	,'L'	,'&ndash;|&#x25A0;|&#x25EB;'	,d+'1)'	,k+'L']
+	,	['curve|outline|rect'	,'U'	,'~|&#x25A1;|&#x25AF;'		,d+'2)'	,k+'U']
 	,	['cursor'		,'F3'	,'&#x25CF;'			,d+'4)'	,k+'V']
 	, 0
 	,	['png'	,'F9'	,'&#x25EA;'	,e+'0)'	,b+'P']
 	,	['jpeg'	,'F7'	,'&#x25A9;'	,e+'1)'	,b+'J']
 	,	['save'	,'F2'	,'!'		,e+'2)'	,b+'S']
 	,	['load'	,'F4'	,'?'		,e+'3)'	,b+'L']
-	, !o.read || 0 == o.read?1:['read'	,'F6'	,'&#x21E7;'	,e+'4)']
+	, !o.read || 0 == o.read?1:['read'	,'F6'	,'&#x2324;'	,e+'4)']
 	, !o.send || 0 == o.send?1:['done'	,'F8'	,'&check;'	,e+')']
 	, 0
 	,	['info'	,'F1'	,'?'	,'showInfo()'	,b+'H']
@@ -1822,7 +1832,7 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 
 	for (i in a) if (1 !== (k = a[i])) {
 		if (k) {
-			e = cre(b, f);
+			setClass(e = cre(b,f), b);
 			if (k[0].indexOf('|') > 0) {
 			var	subt = k[0].split('|')
 			,	pict = k[2].split('|');
@@ -1832,7 +1842,6 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 			} else btnContent(e, k);
 			if (k.length > 3) setEvent(e, 'onclick', k[3]);
 			if (k.length > 4) setId(e, k[4]);
-			setClass(e, b);
 		} else f.innerHTML += s;
 	}
 	if (canvas.height < BOTH_PANELS_HEIGHT) toggleView('info');
@@ -2222,7 +2231,7 @@ document.write(
 	+		'#|-text textarea {margin: 2px; width: 150px; min-width: 150px; max-width: 311px; max-height: 356px; min-height: 22px; height: 22px;}'
 	+		'#|-texts > * {float: left;}'
 	+		'#|-texts {margin-top: -2px;}'
-	+		'#|>a {display: none;}'
+	+		'#|>a, #| form {display: none;}'
 	+		'</style>'
 	+	'</div>'
 	, '|', NS)
