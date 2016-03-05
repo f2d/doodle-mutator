@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.60'
-,	INFO_DATE = '2013-04-01 — 2016-02-28'
+,	INFO_VERSION = 'v0.9.61'
+,	INFO_DATE = '2013-04-01 — 2016-03-05'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -14,6 +14,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 		lineWidth: 1
 	,	shadowBlur: 0
 	,	shadowColor: A0
+	,	fillStyle: A0
 	,	strokeStyle: 'rgba(123,123,123,0.5)'
 	}
 
@@ -615,13 +616,14 @@ var	sf = select.shapeFlags[select.shape.value];
 	,	pf = ((sf & 8) && (mode.shape || !mode.step))
 	,	fig = ((sf & 2) && (mode.shape || pf));
 
-		for (i in (t = {
-			lineWidth: (((sf & 4) || (pf && !mode.step))?1:t.width)
+		t = (sf & 4 ? DRAW_HELPER : {
+			lineWidth: (pf && !mode.step?1:t.width)
 		,	fillStyle: (fig ? 'rgba('+(mode.step?tools[i]:t).color+', '+t.opacity+')' : A0)
-		,	strokeStyle: (fig && !(mode.step || pf) ? A0 : 'rgba('+t.color+', '+((sf & 4)?(draw.step?0.33:0.66):t.opacity)+')')
+		,	strokeStyle: (fig && !(mode.step || pf) ? A0 : 'rgba('+t.color+', '+t.opacity+')')
 		,	shadowColor: (t.blur ? 'rgb('+t.color+')' : A0)
 		,	shadowBlur: t.blur
-		})) c2s[i] = c2d[i] = t[i];
+		});
+		for (i in t) c2s[i] = c2d[i] = t[i];
 
 		updatePosition(event);
 
@@ -697,7 +699,7 @@ var	redraw = true, s = select.shape.value, sf = select.shapeFlags[s]
 				draw.line.preview = true;
 				c2s.clearRect(0,0, canvas.width, canvas.height);
 				c2s.beginPath();
-				drawShape(c2s, s, (mode.step && (sf & 4) && (!draw.step || !draw.step.done)));
+				drawShape(c2s, (mode.step && (sf & 4) && (!draw.step || !draw.step.done)?-1:s));
 				c2s.stroke();
 				c2d.drawImage(cnvHid, 0,0);				//* <- draw 2nd canvas overlay with sole shape
 			}
@@ -750,10 +752,10 @@ function drawEnd(event) {
 	updateDebugScreen();
 }
 
-function drawShape(ctx, i, area) {
-var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeModel[i = orz(i)]);
+function drawShape(ctx, i) {
+var	s = draw.step, v = draw.prev, r = draw.cur, AREA = 0;
 
-	switch (fig) {
+	switch (select.shapeModel[i] || '[') {
 	//* pan
 		case '<':
 		case '>':
@@ -764,22 +766,20 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 		case '[':
 			if (s) {
 		//* show pan source area
-				ctx.strokeRect(s.prev.x, s.prev.y, s.cur.x-s.prev.x, s.cur.y-s.prev.y);
+				v = s.prev, r = s.cur;
 			} else {
-				if (!isA0(ctx.fillStyle)) ctx.fillRect(v.x, v.y, r.x-v.x, r.y-v.y);
 				if (draw.text) {
 				var	x = (v.x+r.x)/2
 				,	y = (v.y+r.y)/2
 				,	h = Math.abs(v.y-r.y);
-					ctx.moveTo(v.x, v.y);
-					ctx.lineTo(r.x, v.y);
-					ctx.lineTo(r.x, r.y);
-					ctx.lineTo(v.x, r.y);
-					ctx.lineTo(v.x, v.y);
-				} else {
-					ctx.strokeRect(v.x, v.y, r.x-v.x, r.y-v.y);
 				}
+				AREA = 1;
 			}
+			ctx.moveTo(v.x, v.y);
+			ctx.lineTo(r.x, v.y);
+			ctx.lineTo(r.x, r.y);
+			ctx.lineTo(v.x, r.y);
+			ctx.closePath();
 		break;
 	//* circle
 		case 'o':
@@ -790,8 +790,8 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 
 			ctx.moveTo(xCenter + radius, yCenter);
 			ctx.arc(xCenter, yCenter, radius, 0, 7, false);
-
-			if (!isA0(ctx.fillStyle)) ctx.fill(FILL_RULE);
+			ctx.closePath();
+			AREA = 1;
 		break;
 	//* ellipse
 		case 'O':
@@ -824,14 +824,13 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 
 				ctx.moveTo(a, b);
 				ctx.arc(xCenter, yCenter, radius, a1+a2, p2-a1+a2, false);
-				ctx.closePath();
 			} else {
 				ctx.moveTo(xCenter + xRadius/a, yCenter);
 				ctx.arc(xCenter, yCenter, radius, 0, p2, false);
 			}
+			ctx.closePath();
 			ctx.restore();
-
-			if (!isA0(ctx.fillStyle)) ctx.fill(FILL_RULE);
+			AREA = 1;
 		break;
 	//* speech box
 		case '{':
@@ -941,14 +940,13 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 				? drawSpeechFig(x, y, r1, dx/2, dy/2, 4, q.x, q.y)
 				: drawSpeechFig(x, y, r1, dx/2, dy/2)
 			);
-
-			if (!isA0(ctx.fillStyle)) ctx.fill(FILL_RULE);
+			AREA = 1;
 		break;
 	//* line
 		default:
 			if (s) {
-			var	d = r, old = {};
-				for (i in t) old[i] = c2s[i], c2s[i] = DRAW_HELPER[i];
+			var	d = r, old = {}, t = DRAW_HELPER;
+				for (i in t) old[i] = c2s[i], c2s[i] = t[i];
 				c2s.beginPath();
 				if (s.prev.x != v.x || s.prev.y != v.y) {
 					c2s.moveTo(d.x, d.y), d = v;
@@ -968,6 +966,7 @@ var	s = draw.step, v = draw.prev, r = draw.cur, fig = (area?'[':select.shapeMode
 				ctx.lineTo(r.x, r.y);
 			}
 	}
+	if (AREA && !isA0(ctx.fillStyle)) ctx.fill(FILL_RULE);
 	if (draw.text) {
 	var	d = draw.text, f = ctx.fillStyle, t = d.lines, o = d.offset;
 		if (!o.y) o = getTextOffsetXY(h/(t.length*2-1)+'px '+d.font, ctx, d.align, t);
@@ -1184,6 +1183,10 @@ var	c = select.shapeClass[s = orz((s||select.shape).value)], i,j = [];
 	for (i in MODE_LABELS) if (c != i) j.push(MODE_LABELS[i]);
 	setClass(id('bottom'), j.join(' '));
 	setClass(id('texts'), (select.shapeFlags[s] & 32)?'texts':'sliders');
+	for (i in {L:0,U:1}) if (j = id('check'+i)) {
+		s = j.firstElementChild;
+		do if (s.className.substr(-1) == MODE_LABELS[c]) {j.title = s.title; break;} while (s = s.nextElementSibling);
+	}
 	return false;
 }
 
@@ -2028,11 +2031,11 @@ var	o = outside
 			,	eraser:	{sub:'стёрка',	t:'Инструмент — толстый белый карандаш.'}
 			,	swap:	{sub:'смена',	t:'Поменять инструменты местами.'}
 			,	reset:	{sub:'сброс',	t:'Сбросить инструменты к начальным.'}
-			,	line:	{sub:'прямая',	t:'Прямая линия 1 зажатием.'}
-			,	curve:	{sub:'сгиб',	t:'Сглаживать углы пути / кривая линия 2 зажатиями.'}
+			,	line:	{sub:'прямая',	t:'Прямая линия (1 клик-зажатие).'}
+			,	curve:	{sub:'сгиб',	t:'Сглаживать углы пути. Вместе с "прямой" — кривая линия (2 клик-зажатия подряд).'}
 			,	area:	{sub:'закрас.',	t:'Закрашивать площадь геометрических фигур.'}
 			,	outline:{sub:'контур',	t:'Рисовать контур геометрических фигур.'}
-			,	copy:	{sub:'копия',	t:'Оставить старую копию.'}
+			,	copy:	{sub:'копия',	t:'Оставить старую копию при сдвиге.'}
 			,	rect:	{sub:'прямоуг.',t:'Сдвиг прямоугольником.'}
 			,	cursor:	{sub:'указат.',	t:'Показывать кисть на указателе.'}
 			,	rough:	{sub:'п.штрих',	t:'Уменьшить нагрузку, пропуская перерисовку штриха.'}
@@ -2140,8 +2143,8 @@ var	o = outside
 			,	eraser:	'Set tool to large white.'
 			,	swap:	'Swap your tools.'
 			,	reset:	'Reset both tools.'
-			,	line:	'Draw straight line with 1 drag.'
-			,	curve:	'Smooth path corners / draw single curve with 2 drags.'
+			,	line:	'Draw straight line (1 click-drag).'
+			,	curve:	'Draw lines with smooth corners. With "straight" — draw single curve (2 click-drags).'
 			,	area:	'Fill geometric shapes.'
 			,	outline:'Draw outline of geometric shapes.'
 			,	copy:	'Keep old copy.'
