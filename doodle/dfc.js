@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.61'
-,	INFO_DATE = '2013-04-01 — 2016-03-05'
+,	INFO_VERSION = 'v0.9.62'
+,	INFO_DATE = '2013-04-01 — 2016-03-06'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -67,7 +67,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 			shape	: ['line', 'freehand poly', 'rectangle', 'circle', 'ellipse', 'speech balloon', 'speech box', 'move']
 		,	lineCap	: ['round', 'butt', 'square']
 		,	lineJoin: ['round', 'bevel', 'miter']
-		,	textStyle:['...', 'default', 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'modern', 'narrow', 'comic', 'gothic', 'script']
+		,	textStyle:['...', 'default font', 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'modern', 'narrow', 'comic', 'gothic', 'script']
 		,	palette	: ['history', 'auto', 'legacy', 'Touhou', 'gradient']
 		}
 	}
@@ -632,7 +632,7 @@ var	sf = select.shapeFlags[select.shape.value];
 		for (i in select.lineCaps) c2s[i] = c2d[i] = select.options[i][select[i].value];
 
 		if ((sf & 32) && (t = id('text-content').value).replace(regTrim, '').length) {
-		var	i = id('text-font'), f = DEFAULT_FONT, s = c2d.strokeStyle, a = draw.textAlign || 'center', t = t.split('\n');
+		var	i = id('text-font'), f = c2d.font = DEFAULT_FONT, s = c2d.strokeStyle, a = draw.textAlign || 'center', t = t.split('\n');
 			if (k = checkTextStyle(i, 1)) {
 				f = i.value;
 			} else {
@@ -968,20 +968,19 @@ var	s = draw.step, v = draw.prev, r = draw.cur, AREA = 0;
 	}
 	if (AREA && !isA0(ctx.fillStyle)) ctx.fill(FILL_RULE);
 	if (draw.text) {
-	var	d = draw.text, f = ctx.fillStyle, t = d.lines, o = d.offset;
-		if (!o.y) o = getTextOffsetXY(h/(t.length*2-1)+'px '+d.font, ctx, d.align, t);
+	var	d = draw.text, t = d.lines, o = d.offset, f = d.font;
+		if (!o.y) f = Math.round(h/(t.length*2-1))+'px '+f, o = getTextOffsetXY(f, ctx, d.align, t);
 		h = o.y*2;
 		x += o.x;
 		y -= h/2*(t.length-1);
-		ctx.font = d.font;
-		ctx.textAlign = d.align;
-		ctx.textBaseline = 'middle';
-		ctx.fillStyle = d.style;
 		ctx.save();
 		ctx.clip();
+		ctx.font = f;
+		ctx.fillStyle = d.style;
+		ctx.textAlign = d.align;
+		ctx.textBaseline = 'middle';
 		for (i in t) ctx.fillText(t[i], Math.round(x), Math.round(y)), y += h;
 		ctx.restore();
-		ctx.fillStyle = f;
 	}
 	ctx.moveTo(r.x, r.y);
 }
@@ -2060,7 +2059,7 @@ var	o = outside
 			shape	: ['линия', 'замкнутая линия', 'прямоугольник', 'круг', 'овал', 'овал для речи', 'коробка для речи', 'сдвиг']
 		,	lineCap	: ['круг', 'срез', 'квадрат']
 		,	lineJoin: ['круг', 'срез', 'угол']
-		,	textStyle:['...', 'средний', 'без засечек', 'с заческами', 'моноширинный', 'курсив', 'фантастика', 'модерн', 'узкий', 'комикс', 'готика', 'рукопись']
+		,	textStyle:['...', 'шрифт по умолчанию', 'без засечек', 'с засечками', 'моноширинный', 'курсив', 'фантастика', 'модерн', 'узкий', 'комикс', 'готика', 'рукопись']
 		,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент']
 		};
 	} else {
