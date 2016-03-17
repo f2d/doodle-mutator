@@ -1,6 +1,6 @@
-body.new-year {
-	background-image: url(d.ny.png);
-}
+body.new-year { background-image: url(d.ny.png);}
+body.leap-year {background-image: url(d.ly.png);}
+body.cirno-day {background-image: url(d.9.png);}
 body, body>* {
 	margin: 0 auto;			/* <- centered */
 	min-width: 656px;

@@ -17,6 +17,8 @@ example:
 	array('cirno-day', 'Y-m-d', '2009-09-09', '2009-09-09', 2)
 */
 	array('new-year', 'nd', 1231, 109)
+,	array('leap-year', 'nd', 229, 229)
+,	array('cirno-day', 'nd', 909, 909)
 );
 $cfg_draw_app = array('dfc', 'milf');
 $cfg_draw_vars = array(
@@ -64,10 +66,10 @@ define(DRAW_DEFAULT_HEIGHT, 360);
 define(DRAW_LIMIT_WIDTH, '100,1920');
 define(DRAW_LIMIT_HEIGHT, '100,1280');
 define(DRAW_MAX_FILESIZE, 10020030);
-define(DRAW_MAX_RECOVERY, 3);
+define(DRAW_MAX_RECOVERY, 9);
 define(DRAW_MAX_UNDO, 99);
 define(DRAW_JPG_PREF, 1002003);	//* <- bytes
-define(DRAW_REST, ';restyle=body,#task;restmin=document.body.firstElementChild');	//* <- on canvas resize
+define(DRAW_REST, ';resize_style=body,#task;resize_min_id=header');
 
 define(TARGET_CHANGE_TIME, 600);//* 10min
 define(TARGET_DESC_TIME, 1200);	//* 20min
@@ -84,8 +86,8 @@ define(THUMB_EXT, '.png');
 define(THUMB_MAX_WIDTH, 160);
 define(THUMB_MAX_HEIGHT, 90);
 
-define(ENC_FALLBACK, 'windows-1251');	//* <- search requests from weird browsers
 define(ENC, 'utf-8');
+define(ENC_FALLBACK, 'windows-1251, Shift_JIS');	//* <- comma-separated list, to convert search requests from weird browsers into ENC
 define(NB, '&nbsp;');
 define(NL, "\n");
 define(O, 'opt_');

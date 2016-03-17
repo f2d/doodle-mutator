@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.62'
-,	INFO_DATE = '2013-04-01 — 2016-03-06'
+,	INFO_VERSION = 'v0.9.63'
+,	INFO_DATE = '2013-04-01 — 2016-03-17'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -1248,10 +1248,10 @@ function updateDimension(e) {
 	c = container.style, b = 'minWidth', a = (v = canvas.width+id('right').offsetWidth+14)+'px';
 	if (c[b] != a) {
 		c[b] = a;
-		if (a = outside.restyle) {
+		if (a = outside[i = 'resize_style']) {
 			v += 24;
-			if ((b = outside.restmin) && (b = eval(b).offsetWidth) > v) v = b;
-			c = id(i = 'restyle') || setId(cre('style', id()), i);
+			if ((e = outside.resize_min_id) && (e = document.getElementById(e)) && (e = e.offsetWidth) && e > v) v = e;
+			c = id(i) || setId(cre('style', id()), i);
 			c.innerHTML = a+'{max-width:'+v+'px;}';
 		}
 	}
@@ -1501,20 +1501,21 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 			for (i in a) if (!(a[i] = id(i))) {
 				setId(e = a[i] = cre('input', f), e.name = i).type = 'hidden';
 			}
-			e = pngData.length;
-			d = (((i = outside.jp || outside.jpg_pref)
-				&& (e > i)
-				&& (((c = canvas.width * canvas.height
-				) <= (d = select.imgSizes.width * select.imgSizes.height
-				))
-				|| (e > (i *= c/d)))
-				&& (e > (t = (jpgData = canvas.toDataURL(IJ)).length))
+			e = pngData.length, c = canvas, d = select.imgSizes;
+			c = c.width * c.height;
+			d = d.width * d.height;
+			d = ((
+				(i = outside.jpg)
+			&&	e > i
+			&&	((c <= d) || (e > (i *= c/d)))
+			&&	e > (t = (jpgData = c.toDataURL(IJ)).length)
 			) ? jpgData : pngData);
 			if (mode.debug) alert('png limit = '+i+'\npng = '+e+'\njpg = '+t);
 			a.pic.value = d;
 			a.txt.value = getSendMeta(d.length);
 			f.encoding = f.enctype = 'multipart/form-data';
-			f.submit();
+			if ((i = outside.check) && (e = document.getElementById(i))) e.setAttribute('data-id', f.id), e.click();
+			else f.submit();
 		}
 	}
 	return c;
@@ -1924,7 +1925,8 @@ var	o = outside
 			if ((e = e.split('=')).length > 1) {
 				k = e.pop();
 				for (j in e) o[e[j]] = k;
-			} else o[e[0]] = 1;
+			} else o[e[0]] = k = 1;
+			if (e[0].substr(0,2) == 'jp') o.jpg = k;
 		}
 		break;			//* <- read vars batch in the first found attribute only; no care about the rest
 	}

@@ -346,10 +346,9 @@ function data_get_full_threads() {
 			$tab[0] = date(TIMESTAMP, $last_time = $tab[0]);
 			$tab[1] = $usernames[$tab[1]];
 			if ($tab[2]) {
-				$p = pic_subpath($tab[3]);
-				if (!$a[2]) $a[2] = $p;		//* <- thumb
-				$p = ROOTPRFX.(PIC_SUB ? $p : DIR_PICS.$tab[3]);
-				if ($b = (strpos($p, ';') ? explode(';', $p, 2) : '')) $p = pic_resized_path($b[0]);
+				if (!$a[2]) $a[2] = get_pic_subpath($tab[3]);		//* <- thumb
+				$p = get_pic_url($tab[3]);
+				if ($b = (strpos($p, ';') ? explode(';', $p, 2) : '')) $p = get_pic_resized_path($b[0]);
 				$p = '<img src="'.$p.'">';
 				$tab[3] = ($b ? '<a href="'.$b[0].'">'.$p.'</a>;'.$b[1] : $p);
 			}
@@ -369,14 +368,14 @@ function data_archive_ready_go() {
 }
 
 function data_del_pic($f) {
-	if (is_file($r = pic_resized_path($f))) unlink($r);
+	if (is_file($r = get_pic_resized_path($f))) unlink($r);
 	return unlink($f);
 }
 
 function data_del_thread($t, $n = -1, $pics = 0) {
 	global $room;
 	if ($pics && preg_match_all('~(<img src="[^>]*/|'.IMG.')([^/">	]+)[	"]~is', file_get_contents($t), $m)) {
-		foreach ($m[2] as $p) if (($f = pic_subpath($p)) && is_file($f) && data_del_pic($f)) ++$c;
+		foreach ($m[2] as $p) if (($f = get_pic_subpath($p)) && is_file($f) && data_del_pic($f)) ++$c;
 	}
 	if ($n < 0) $n = preg_replace('~^(.*?[\//]+)?(\d+)(\D[^\//]+)?$~', '$2', $t);
 	$t = (unlink($t) && ($n === false || !is_file($r = DIR_META_R."$room/$n.report.txt") || unlink($r)));
@@ -450,7 +449,7 @@ function data_log_mod($a) {			//* <- array(option name, thread, row, column, opt
 	if ($o == 'delete pic') {
 		if ((list($d,$f,$m) = data_get_thread_by_num($a[0]))
 		&& ($fn = data_get_u_by_file($d.$f, $a[1], 1))
-		&& (is_file($f = pic_subpath($fn)))
+		&& (is_file($f = get_pic_subpath($fn)))
 		&& (GOD || ((is_dir($n = DIR_PICS.'del/') || mkdir($n, 0755)) && rename($f, $n.$fn)))
 		&& ($un
 			? (file_put_contents($f, '') === 0)		//* <- 0-truncate

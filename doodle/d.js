@@ -7,7 +7,7 @@
 ,	count = {u:0, uLast:'', o:0, oLast:'', img:0}
 ,	u_bar = {0:'born', b:'burn', g:'goo', m:'ice', n:'null', u:'me'}
 ,	m,n,mm,mt = {frozen:[], burnt:[], full:[]}
-,	filter, checking, cs = 'checkStatus', data = {}, flag = {}
+,	filter, checking, CS = 'checkStatus', CM = 'checkMistype', data = {}, flag = {}
 ,	inout = (('ontouchstart' in document.documentElement)?'':'date-out')
 ,	la, lang = document.documentElement.lang || 'en';
 
@@ -16,12 +16,13 @@ if (lang == 'ru') la = {
 ,	draw: 'Рисовать'
 ,	checked: 'Подтверждение'
 ,	check: 'Нажмите, чтобы проверить и продлить задание.'
+,	mistype: 'Тип задания сменился, обновите страницу или нажмите сюда.'
+,	send_anyway: 'Будет создана новая нить. Всё равно отправить?'
 ,	close: 'Закрыть'
 ,	top: 'Наверх'
 ,	skip: 'Пропустить'
 ,	skip_hint: 'Пропускать задания из этой нити до её завершения.'
 ,	unskip: 'Список пропущенных заданий будет очищен для этих комнат:'
-,	mistype: 'Тип задания сменился, обновите страницу.'
 ,	load: 'Проверка... '
 ,	fail: 'Ошибка '
 ,	hax: '(?)'		//'Неизвестный набор данных.'
@@ -51,12 +52,13 @@ if (lang == 'ru') la = {
 ,	draw: 'Draw'
 ,	checked: 'Confirm'
 ,	check: 'Click this to verify and prolong your task.'
+,	mistype: 'Task type changed, please reload the page or click here.'
+,	send_anyway: 'Send anyway to make a new thread?'
 ,	close: 'Close'
 ,	top: 'Top'
 ,	skip: 'Skip'
 ,	skip_hint: 'Skip any task from this thread from now on.'
 ,	unskip: 'Skipped tasks will be cleared for following rooms:'
-,	mistype: 'Task type changed, please reload the page.'
 ,	load: 'Checking... '
 ,	fail: 'Error '
 ,	hax: '(?)'		//'Unknown data set.'
@@ -133,43 +135,66 @@ var	a = getSkipList(), k = a.qk;
 function checkMyTask() {
 	if (checking) return;
 	checking = 1;
-var	s = id(cs), r = new XMLHttpRequest(), i,j,k,e,t;
+var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
+	if (f) f.parentNode.removeChild(f);
+	if (f = s.getAttribute(d)) f = id(f), s.removeAttribute(d);
 	s.textContent = la.load+0;
 	r.onreadystatechange = function() {
 		if (r.readyState == 4) {
 			if (r.status == 200) {
-				t = (j = r.responseText.split('\n'))[2];
-				s.textContent = j[0].replace(/<[^>]+>/g, '');
-				j = !j[1];			//* <- 0:describe, 1:draw task
+			var	k = '\n'
+			,	j = r.responseText.split(k)
+			,	i = j.pop()
+			,	j = j.join(k)
+			,	e = j.match(/\bid=["']*([^"'>\s]*)/i)
+			,	error = (e?e[1]:'')
+			,	message = s.textContent = j
+					.replace(/<[^>]+>/g, '')
+					.replace(/\s+/, ' ')
+					.replace(WS, '')
+			,	img = i.match(/<img[^>]+\balt=["']*([^"'>\s]+)/i)
+			,	task = (img?img[1]:i);
 				if (k = id('task')) {
 					i = (e = gn('img', k)).length;
-					if (!i != j) s.innerHTML +=
-'<b class="post">'+
-'<b class="date-out l">'+
-'<b class="report">'+la.mistype+'</b></b></b>';
-					if (j) {
-						if ((e = gn('p', k)).length > 1
-							&& !/^form$/i.test((e = e[1]).previousElementSibling.tagName)
-							&& e.innerHTML != t
-						) e.innerHTML = t;
-					} else if (i) {
+					if (!i == !!img) {
+						e = s;
+						while (!DP.test(e.tagName) && (i = e.parentNode)) e = i;
+						e = cre('b', e);
+						e.id = CM;
+						e.className = 'post r';
+						e.innerHTML =
+							'<b class="date-out l">'
+						+		'<b class="report">'
+						+			la.mistype.replace(/\s(\S+)$/, ' <a href="?">$1</a>')
+						+		'</b>'
+						+	'</b>';
+					} else
+					if (!img) {
+						if (
+							(e = gn('p', k)).length > 1
+						&&	!/^form$/i.test((e = e[1]).previousElementSibling.tagName)
+						&&	e.innerHTML != task
+						) e.innerHTML = task;
+					} else
+					if (i) {
 						e = e[0];
-						k = t.indexOf(';')+1;
-						j = (flag.pixr?flag.pixr:flag.pixr = e.src.split('/').slice(0, flag.p?-3:-1).join('/')+'/')
-							+(flag.p?getPicSubDir(t):'')
-							+(k?t.replace(/(\.[^.\/;]+);.+$/,'_res$1'):t);
-						if (e.src != j) e.src = j, e.alt = t, setPicResize(e, k);
+						k = task.indexOf(';')+1;
+						j =	(flag.pixr || (flag.pixr = e.src.split('/').slice(0, flag.p?-3:-1).join('/')+'/'))
+						+	(flag.p?getPicSubDir(task):'')
+						+	(k?task.replace(/(\.[^.\/;]+);.+$/,'_res$1'):task);
+						if (e.src != j) e.src = j, e.alt = task, setPicResize(e, k);
 					}
 				}
+				if (f && f.firstElementChild && (!error || confirm(message+'.\n'+la.send_anyway))) f.submit();
 			} else {
 				s.textContent = la.fail;
-				t = r.status || 0;
+				task = r.status || 0;
 			}
-			s.title = new Date()+'\r\n'+t;
+			s.title = new Date()+'\n\n'+task;
 			checking = 0;
 		} else s.textContent = la.load+r.readyState;
 	};
-	r.open('GET', '-', true);
+	r.open('GET', f?'--':'-', true);
 	r.send();
 }
 
@@ -628,7 +653,7 @@ if (k = id('task')) {
 				:''
 			)+'<a class="r" href="'+(
 				(j[0] && (j = parseInt(j[0])))
-				? 'javascript:checkMyTask()" title="'+new Date(j*1000)+'\r\n'+la.check+'">「<span id="'+cs+'">?</span>'
+				? 'javascript:checkMyTask()" title="'+new Date(j*1000)+'\n\n'+la.check+'">「<span id="'+CS+'">?</span>'
 				: '?draw">「'+la.draw
 			)+'」</a>';
 		if ((i = gn('img',k)).length && (i = i[0]) && (j = i.alt.indexOf(';')+1)) i.alt = i.alt

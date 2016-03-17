@@ -26,14 +26,15 @@ function get_dir_top_filemtime($d) {
 	if (is_dir($d)) foreach (scandir($d) as $f) if (trim($f, '.') && $t < ($mt = filemtime("$d/$f"))) $t = $mt;
 	return $t;
 }
-function pic_normal_path($p) {return preg_replace('~(^|[\\/])([^._-]+)[^._-]*(\.[^.,;]+)([;,].*$)?~', '$2$3', $p);}
-function pic_resized_path($p) {return substr_replace($p, '_res', -4, 0);}
-function pic_subpath($f, $mk = 0) {
-	$f = pic_normal_path($f);
-	$n = DIR_PICS.$f[strrpos($f, '.')+1].'/'.$f[0].'/';
+function get_pic_normal_path($p) {return preg_replace('~(^|[\\/])([^._-]+)[^._-]*(\.[^.,;]+)([;,].*$)?~', '$2$3', $p);}
+function get_pic_resized_path($p) {return substr_replace($p, '_res', -4, 0);}
+function get_pic_subpath($p, $mk = 0) {
+	$p = get_pic_normal_path($p);
+	$n = DIR_PICS.$p[strrpos($p, '.')+1].'/'.$p[0].'/';
 	if ($mk && !is_dir($n)) mkdir($n, 0755, true);
-	return $n.($mk === ''?'':$f);
+	return $n.($mk === ''?'':$p);
 }
+function get_pic_url($p) {return ROOTPRFX.(PIC_SUB?get_pic_subpath($p):DIR_PICS.$p);}
 function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for archive pages; default = current date
 	global $cfg_date_class;
 	if (!$t_first) $t_first = T0;
@@ -246,7 +247,7 @@ function get_template_page($t) {
 	<title>'.$t['title'].'</title>':'').'
 </head>
 <body'.($class?' class="'.implode(' ', $class).'"':'').'>'.($t['header']?'
-	<header>'.($ano?'
+	<header id="header">'.($ano?'
 		<p class="anno">'.$ano.'
 		</p>':'').$t['header'].'
 	</header>

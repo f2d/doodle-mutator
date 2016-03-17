@@ -277,7 +277,7 @@ if ($u_key) {
 			$post_status = 'file_size';
 			$log = $x;
 		} else
-		if (is_file($f = pic_subpath($fn = ($md5 = md5($data)).($png?'.png':'.jpg'), 1))) {
+		if (is_file($f = get_pic_subpath($fn = ($md5 = md5($data)).($png?'.png':'.jpg'), 1))) {
 			$post_status = 'file_dup';
 			$log = $fn;
 		} else
@@ -320,7 +320,7 @@ if ($u_key) {
 					imageCopyResampled($p, $pic, 0,0,0,0, $x,$y, $w,$h);
 					imageDestroy($pic);
 					$i = "image$g";
-					$i($p, $f = pic_resized_path($f));
+					$i($p, $f = get_pic_resized_path($f));
 					optimize_pic($f);
 					if ($png && ($z < filesize($f))) {
 						$c = imageCreateTrueColor($x, $y);
@@ -411,7 +411,18 @@ Target$op$t$ed"
 //* archive posts search ------------------------------------------------------
 			if (list($subj, $que) = get_req()) {
 				$s = $tmp_archive_find_by[$k = array_search($subj, $qa = explode(',', $qa))];
-				if (!mb_check_encoding($q = urldecode($que), ENC)) $q = iconv(ENC_FALLBACK, ENC, $q);
+				if (
+					!mb_check_encoding($q = urldecode($que), ENC)
+				&&	($f = constant('ENC_FALLBACK'))
+				) {
+					foreach (explode(',', $f) as $e) if (
+						($e = trim($e))
+					&&	mb_check_encoding($i = iconv($e, ENC, $q), ENC)
+					) {
+						$q = $i;
+						break;
+					}
+				}
 				$search_res = $tmp_archive_found.' '.$tmp_archive_found_by[$k].': <a id="r">'.$q.'</a>';
 				$q = mb_strtolower(trim_post($q, FIND_MAX_LENGTH), ENC);
 				$task .= '
@@ -555,15 +566,30 @@ if ($u_key) {
 		if ($etc) {
 			if ($etc[0] == '-') {
 		//* show current task:
-				if (strlen($etc) == 1) die(
+				$sending = (strlen($etc) > 1);
+				if (!strlen(trim($etc, '-'))) die(
 					data_lock($room)
-					? '<meta charset="'.ENC.'"><title>'.(
+					? '<!--'.date(TIMESTAMP, T0).'-->'
+					.NL.'<meta charset="'.ENC.'">'
+					.NL.'<title'.(
 						is_array($t = data_check_my_task())
-						? $tmp_target_status[$t[0]].'. '.$tmp_time_limit.': '.format_time_units($t[1])
-						: $tmp_target_status[$t]
-					).'</title><!--'.date(TIMESTAMP, T0).'-->'
-					.NL.$target['pic']
-					.NL.$target['task']
+						? '>'.(
+							$sending
+							? $tmp_sending
+							: $tmp_target_status[$t[0]].'. '.$tmp_time_limit.': '.format_time_units($t[1])
+						)
+						: (
+							$sending
+							? ' id="confirm-sending"'
+							: ''
+						).'>'.$tmp_target_status[$t]
+					).'</title>'
+					.NL.(
+						($t = $target['task'])
+					&&	$target['pic']
+						? '<img src="'.get_pic_url($t).'" alt="'.$t.'">'
+						: $t
+					)
 					: $tmp_post_err['no_lock']
 				);
 		//* skip current task (obsolete way):
@@ -618,7 +644,7 @@ if (TIME_PARTS) time_check_point('ignore user abort');
 						if ($a == 0) {
 							if (is_dir($d = DIR_PICS))
 							foreach (scandir($d) as $f) if (trim($f, '.') && is_file($old = $d.$f)) {
-								$new = pic_subpath($f, 1);
+								$new = get_pic_subpath($f, 1);
 								$done .=
 NL.(++$a)."	$old => $new	".($old == $new?'same':(rename($old, $new)?'OK':'fail'));
 							}
@@ -756,12 +782,12 @@ if (TIME_PARTS) time_check_point('after sort + join');
 ,	GOD?$tmp_filter_placeholder:''
 ), DESCRIBE_MIN_LENGTH);
 				if ($t) {
-					$src = (strpos($t, ';') ? pic_resized_path(pic_normal_path($t)) : $t);
+					$src = (strpos($t, ';') ? get_pic_resized_path(get_pic_normal_path($t)) : $t);
 					$task .= '
-		<img src="'.ROOTPRFX.(PIC_SUB?pic_subpath($src):DIR_PICS.$src).'" alt="'.$t.'">';
+		<img src="'.get_pic_url($src).'" alt="'.$t.'">';
 				} else $task_time = '-';
 			} else {
-				$vars = "t0=$task_time;send".(DRAW_JPG_PREF?';jp='.DRAW_JPG_PREF:'').get_draw_vars();
+				$vars = "t0=$task_time;check=checkStatus;send=png,layers,log".(DRAW_JPG_PREF?';jp='.DRAW_JPG_PREF:'').get_draw_vars();
 				$task = '
 		<p>'.($t?$tmp_draw_this.'</p>
 		<p>'.$t:$tmp_draw_free).'</p><noscript>

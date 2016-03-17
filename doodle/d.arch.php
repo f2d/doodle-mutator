@@ -122,8 +122,7 @@ function data_archive_rewrite() {
 			foreach ($x as $y) {
 				$src = substr($y, 0, $q = strpos($y, '"'));	//* <- web path
 				$n = substr($src, strrpos($src, '/')+1);	//* <- pic filename
-				$n = (PIC_SUB?pic_subpath($n):DIR_PICS.$n);	//* <- new relative path
-				$new .= $i.ROOTPRFX.$n.substr($y, $q);		//* <- new web path
+				$new .= $i.get_pic_url($n).substr($y, $q);	//* <- new web path
 			}
 			$new = data_get_template_page($dn, rtrim($fn, PAGE_EXT), $new);
 			if ($old == $new) $x = 'same';

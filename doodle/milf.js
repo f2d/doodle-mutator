@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2015-05-31'
+,	INFO_DATE = '2014-07-16 — 2016-03-17'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -891,18 +891,17 @@ var	cd = ctx.draw, v = draw.prev, r = draw.cur
 			,	r2 =		dist(r.x-x, r.y-y)		//* <- always current (2nd or 3rd)
 			,	r3 = (s.done ?	dist(v.x-x, v.y-y) : r2);	//* <- 2nd or current (2nd click down)
 
-				if (GEAR) {
-					if (r3 < r1+1) r3 = dist(
+				function r2far() {
+					return dist(
 						Math.max(cnv.draw.width-x, x)
-					,	Math.max(cnv.draw.height-y, y)	//* <- infinite ray length = to farthest image corner + outline width
-					)+tool.width;
-					if (r2 > r3) r2 = 0;
-				} else {
-					if (r1 < 1) r1 = dist(
-						Math.max(cnv.draw.width-x, x)
-					,	Math.max(cnv.draw.height-y, y)
+					,	Math.max(cnv.draw.height-y, y)	//* <- "infinite" ray length = to farthest image corner + outline width
 					)+tool.width;
 				}
+
+				if (GEAR) {
+					if (r3 < r1+1) r3 = r2far()*10;	//* <- for later out-of-border moves
+					if (r2 > r3) r2 = 0;
+				} else	if (r1 < 1) r1 = r2far();	//* <- just as a 1-click default; infinity is not needed here
 				if (r3 > 1) {
 				var	a1 =		Math.atan2(s.cur.y-y, s.cur.x-x)
 				,	a2 =		Math.atan2(r.y-y, r.x-x)
@@ -1404,12 +1403,15 @@ function updateDim(i) {
 		if (v > c) //historyAct(0),
 			draw.view(2);
 	}
-	container.style.minWidth = (v = cnv.view.width)+'px';
-	if (a = outside.restyle) {
-		v += 24;
-		if (!(c = id(i = 'restyle'))) setId(container.parentNode.insertBefore(c = document.createElement('style'), container), i);
-		if ((b = outside.restmin) && ((b = eval(b).offsetWidth) > v)) v = b;
-		c.innerHTML = a+'{max-width:'+v+'px;}';
+	c = container.style, b = 'minWidth', a = (v = cnv.view.width)+'px';
+	if (c[b] != a) {
+		c[b] = a;
+		if (a = outside[i = 'resize_style']) {
+			v += 24;
+			if ((e = outside.resize_min_id) && (e = document.getElementById(e)) && (e = e.offsetWidth) && e > v) v = e;
+			c = id(i) || setId(cre('style', id()), i);
+			c.innerHTML = a+'{max-width:'+v+'px;}';
+		}
 	}
 }
 
@@ -1573,8 +1575,15 @@ function saveDL(content, suffix) {
 }
 
 function sendPic(dest, auto) {
-var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
+var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 	draw.view(1);
+
+	function getTimeToShow(s) {
+	var	a = s.split('-'), i,t,r = '';
+		for (i = 0; i < 2; i++) t = +a[i], r += ' \r\n'+(t ? unixDateToHMS(t,0,1) : '-');
+		return r;
+	}
+
 	switch (dest) {
 	case 0:
 	case 1:	saveDL(c = cnv.view.toDataURL(dest?IJ:''), dest?'.jpg':'.png');
@@ -1596,7 +1605,7 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 			LS[CR[2].L] = l;
 			alert(lang.found_swap);
 		} else
-		if (a || confirm(lang.confirm_save)) {
+		if (a || confirm(lang.confirm.save + getTimeToShow(t))) {
 			function rem(a) {var r = 'RTL', i = r.length; while (i--) LS.removeItem(CR[a][r[i]]);}
 			try {
 				if (e) rem(2);
@@ -1653,7 +1662,7 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 		} else
 //* load project
 		if (!LS[i] || (b = JSON.parse(LS[i])).time != t) alert(lang.no_layers); else
-		if (confirm(lang.confirm_load)) used = {LS:'Local Storage'}, readSavedLayers(b);
+		if (confirm(lang.confirm.load + getTimeToShow(t))) used = {LS:'Local Storage'}, readSavedLayers(b);
 		break;
 	case 5:
 	case 6:
@@ -1690,33 +1699,36 @@ var	a = auto || false, b, c, d, e, f, i, j, k, l, t;
 	default:
 		if (dest) alert(lang.bad_id+'\n\nid='+dest+'\na='+auto); else
 		if (!outside.send) alert(lang.no_form); else
-		if (fillCheck()) alert(lang.flood); else
-		if (confirm(lang.confirm_send)) {
-			if (!outside.send.tagName) {
-				setId(e = document.createElement('form'), 'send');
-				e.setAttribute('method', (outside.send.length && outside.send.toLowerCase() == 'get')?'get':'post');
-				container.appendChild(outside.send = e);
+		if (fillCheck()) alert(lang.flood); else {
+			a = select.imgLimits, c = 'send';
+			for (i in a) if (v[i] < a[i][0] || v[i] > a[i][1]) c = 'size';
+		}
+		if (c && confirm(lang.confirm[c])) {
+			if ((f = outside.send) && f.tagName) clearContent(f);
+			else {
+				setId(e = cre('form', container), 'send');
+				if (!f.length || f.toLowerCase() != 'get') e.setAttribute('method', 'post');
+				outside.send = f = e;
 			}
-		var	pngData = sendPic(2, 1), jpgData, a = {txt:0,pic:0}, f = outside.send;
+		var	pngData = sendPic(2,-1), jpgData, a = {txt:0,pic:0};
 			for (i in a) if (!(a[i] = id(i))) {
-				setId(e = a[i] = document.createElement('input'), e.name = i);
-				e.type = 'hidden';
-				f.appendChild(e);
+				setId(e = a[i] = cre('input', f), e.name = i).type = 'hidden';
 			}
-			e = pngData.length;
-			d = (((i = outside.jp || outside.jpg_pref)
-				&& (e > i)
-				&& (((c = cnv.view.width * cnv.view.height
-				) <= (d = select.imgRes.width * select.imgRes.height
-				))
-				|| (e > (i *= c/d)))
-				&& (e > (t = (jpgData = cnv.view.toDataURL(IJ)).length))
+			e = pngData.length, d = select.imgRes;
+			c = v.width * v.height;
+			d = d.width * d.height;
+			d = ((
+				(i = outside.jpg)
+			&&	e > i
+			&&	((c <= d) || (e > (i *= c/d)))
+			&&	e > (t = (jpgData = v.toDataURL(IJ)).length)
 			) ? jpgData : pngData);
 			if (mode.debug) alert('png limit = '+i+'\npng = '+e+'\njpg = '+t);
 			a.pic.value = d;
 			a.txt.value = getSendMeta(d.length);
 			f.encoding = f.enctype = 'multipart/form-data';
-			f.submit();
+			if ((i = outside.check) && (e = document.getElementById(i))) e.setAttribute('data-id', f.id), e.click();
+			else f.submit();
 		}
 	}
 	return c;
@@ -1784,10 +1796,10 @@ function hotWheel(event) {
 
 function hotKeys(event) {
 	if (!loading && browserHotKeyPrevent(event)) {
-		function c(s) {return s.charCodeAt(0);}
+		function c(s) {return s.charCodeAt(0);}	//* <- only 1st letter is a hotkey
 	var	n = event.keyCode - c('0');
 		if ((n?n:n=10) > 0 && n < 11) {
-		var	k = [event.shiftKey, event.altKey, event.ctrlKey, 1];
+		var	i, k = [event.shiftKey, event.altKey, event.ctrlKey, 1];
 			for (i in k) if (k[i]) return toolTweak(k = BOWL[i], RANGE[k].step < 1 ? n/10 : (n>5 ? (n-5)*10 : n));
 		} else
 		if (event.altKey)
@@ -1869,7 +1881,7 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *,
 				for (i = 1, k = ''; i < 3; i++) k += '<br>Save'+i+'.time: '+LS[CR[i].T]
 +(LS[CR[i].R]?', pic size: '+LS[CR[i].R].length:'')
 +(LS[CR[i].L]?', layers sum: <a href="javascript:alert('+NS+'.LS[\''+CR[i].L+'\'])">'+LS[CR[i].L].length+'</a>':'');
-
+				draw.view(1);
 				text.debug.innerHTML = replaceAll(
 "\n<a href=\"javascript:var s=' ',t='';for(i in |)t+='\\n'+i+' = '+(|[i]+s).split(s,1);alert(t);\">self.props</a>"+
 "\n<a href=\"javascript:var t='',o=|.o;for(i in o)t+='\\n'+i+' = '+o[i];alert(t);\">self.outside</a>"+
@@ -2338,7 +2350,8 @@ var	o = outside, v = id('vars'), e, i, j, k
 			if ((e = e.split('=')).length > 1) {
 				k = e.pop();
 				for (j in e) o[e[j]] = k;
-			} else o[e[0]] = 1;
+			} else o[e[0]] = k = 1;
+			if (e[0].substr(0,2) == 'jp') o.jpg = k;
 //*	a) varname; var2=;		//noequal=1, empty=0
 //*	b) warname=two=3=last_val;	//samevalue, rightmost
 		}
@@ -2367,10 +2380,12 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 ,	bad_data:	'Неправильный формат данных.'
 ,	bad_id:		'Ошибка выбора.'
 ,	flood:		'Полотно пусто.'
-,	confirm_send:	'Отправить рисунок в сеть?'
-,	confirm_save:	'Сохранить слои в память браузера?'
-,	confirm_load:	'Вернуть слои из памяти браузера?'
-,	copy_to_save:	'Откройте новый текстовый файл, скопируйте в него всё ниже этой линии'
+,	confirm: {
+		send:	'Отправить рисунок в сеть?'
+	,	size:	'Превышен размер полотна. Отправить всё равно?'
+	,	save:	'Сохранить слои в память браузера? \r\nПерезаписать копию, изменённую: '
+	,	load:	'Вернуть слои из памяти браузера? \r\nВосстановить копию, изменённую: '
+},	copy_to_save:	'Откройте новый текстовый файл, скопируйте в него всё ниже этой линии'
 ,	found_swap:	'Рисунок был в запасе, поменялись местами.'
 ,	loading:	'Ожидание загрузки изображений'
 ,	no_LS:		'Локальное Хранилище (память браузера) недоступно.'
@@ -2499,10 +2514,12 @@ else o.lang = 'en'
 ,	bad_data:	'Invalid data format.'
 ,	bad_id:		'Invalid case.'
 ,	flood:		'Canvas is empty.'
-,	confirm_send:	'Send image to server?'
-,	confirm_save:	'Save layers to your browser memory?'
-,	confirm_load:	'Restore layers from your browser memory?'
-,	copy_to_save:	'Open new text file, copy and paste to it after this line'
+,	confirm: {
+		send:	'Send image to server?'
+	,	size:	'Canvas size exceeds limit. Send anyway?'
+	,	save:	'Save layers to your browser memory? \r\nOverwrite the copy edited at:'
+	,	load:	'Restore layers from your browser memory? \r\nOverwrite the copy edited at:'
+},	copy_to_save:	'Open new text file, copy and paste to it after this line'
 ,	found_swap:	'Found image at slot 2, swapped slots.'
 ,	loading:	'Waitind for images to load'
 ,	no_LS:		'Local Storage (browser memory) not supported.'
@@ -2709,18 +2726,24 @@ function ltrim(str, chars) {return str.replace(new RegExp('^['+(chars || '\\s')+
 function rtrim(str, chars) {return str.replace(new RegExp('['+(chars || '\\s')+']+$', 'g'), '');}
 function trim(str, chars) {return ltrim(rtrim(str, chars), chars);}
 
+function cre(e,p,b) {
+	e = document.createElement(e);
+	if (b) p.insertBefore(e, b); else
+	if (p) p.appendChild(e);
+	return e;
+}
 function id(i) {return document.getElementById(NS+(i?'-'+i:''));}
 function reId(e) {return e.id.slice(NS.length+1);}
-function setId(e,id) {return e.id = NS+'-'+id;}
-function setClass(e,c) {return e.className = c?replaceAdd(' '+c,' ',NS+'-').trim():'';}
-function setEvent(e,onWhat,func) {return e.setAttribute(onWhat, NS+'.'+func);}
+function setId(e,id) {return e.id = NS+'-'+id, e;}
+function setClass(e,c) {return e.className = c?replaceAdd(' '+c,' ',NS+'-').trim():'', e;}
+function setEvent(e,onWhat,func) {return e.setAttribute(onWhat, NS+'.'+func), e;}
 function setContent(e,c) {
 var	a = ['class','id','onChange','onClick','onContextMenu'];
 	for (i in a) c = replaceAdd(c, ' '+a[i]+'="', NS+(a[i][0]=='o'?'.':'-'));
-	return e.innerHTML = c;
+	return e.innerHTML = c, e;
 }
-function setRemove(e,o) {e.setAttribute(o?o:'onclick', 'this.parentNode.removeChild(this); return false');}
-function clearContent(e) {while (e.childNodes.length) e.removeChild(e.lastChild);}	//* <- works without a blink, unlike e.innerHTML = '';
+function setRemove(e,o) {return e.setAttribute(o?o:'onclick', 'this.parentNode.removeChild(this); return false'), e;}
+function clearContent(e) {while (e.childNodes.length) e.removeChild(e.lastChild); return e;}	//* <- works without a blink, unlike e.innerHTML = '';
 function toggleView(e) {if (!e.tagName) e = id(e); return e.style.display = e.style.display?'':'none';}
 function dist(x,y) {return Math.sqrt(x*x + y*y)};
 function cut_period(x,y,z) {if (!y) y = -Math.PI; if (!z) z = Math.PI; return (x < y ? x-y+z : (x > z ? x+y-z : x));}
