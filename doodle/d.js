@@ -16,8 +16,11 @@ if (lang == 'ru') la = {
 ,	draw: 'Рисовать'
 ,	checked: 'Подтверждение'
 ,	check: 'Нажмите, чтобы проверить и продлить задание.'
-,	mistype: 'Тип задания сменился, обновите страницу или нажмите сюда.'
-,	send_anyway: 'Будет создана новая нить. Всё равно отправить?'
+,	task_mistype: 'Тип задания сменился, обновите страницу или нажмите сюда.'
+,	task_changed: 'Задание было изменено другими действиями за прошедшее время.'
+,	send_new_thread: 'Будет создана новая нить.'
+,	send_anyway: 'Всё равно отправить?'
+,	canceled: 'Отменено'
 ,	close: 'Закрыть'
 ,	top: 'Наверх'
 ,	skip: 'Пропустить'
@@ -52,8 +55,11 @@ if (lang == 'ru') la = {
 ,	draw: 'Draw'
 ,	checked: 'Confirm'
 ,	check: 'Click this to verify and prolong your task.'
-,	mistype: 'Task type changed, please reload the page or click here.'
-,	send_anyway: 'Send anyway to make a new thread?'
+,	task_mistype: 'Task type changed, please reload the page or click here.'
+,	task_changed: 'Task was changed by some actions in the meantime.'
+,	send_new_thread: 'Sending will make a new thread.'
+,	send_anyway: 'Send anyway?'
+,	canceled: 'Canceled'
 ,	close: 'Close'
 ,	top: 'Top'
 ,	skip: 'Skip'
@@ -146,18 +152,18 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 			,	j = r.responseText.split(k)
 			,	i = j.pop()
 			,	j = j.join(k)
-			,	e = j.match(/\bid=["']*([^"'>\s]*)/i)
-			,	error = (e?e[1]:'')
-			,	message = s.textContent = j
+			,	status = j
 					.replace(/<[^>]+>/g, '')
 					.replace(/\s+/, ' ')
 					.replace(WS, '')
+			,	error = j.match(/\bid=["']*([^"'>\s]*)/i)
+			,	message = (error?status:'')
 			,	img = i.match(/<img[^>]+\balt=["']*([^"'>\s]+)/i)
 			,	task = (img?img[1]:i);
 				if (k = id('task')) {
 					i = (e = gn('img', k)).length;
 					if (!i == !!img) {
-						e = s;
+						e = s, error = 1;
 						while (!DP.test(e.tagName) && (i = e.parentNode)) e = i;
 						e = cre('b', e);
 						e.id = CM;
@@ -165,7 +171,7 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 						e.innerHTML =
 							'<b class="date-out l">'
 						+		'<b class="report">'
-						+			la.mistype.replace(/\s(\S+)$/, ' <a href="?">$1</a>')
+						+			la.task_mistype.replace(/\s(\S+)$/, ' <a href="?">$1</a>')
 						+		'</b>'
 						+	'</b>';
 					} else
@@ -174,7 +180,7 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 							(e = gn('p', k)).length > 1
 						&&	!/^form$/i.test((e = e[1]).previousElementSibling.tagName)
 						&&	e.innerHTML != task
-						) e.innerHTML = task;
+						) e.innerHTML = task, error = 1;
 					} else
 					if (i) {
 						e = e[0];
@@ -182,14 +188,24 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 						j =	(flag.pixr || (flag.pixr = e.src.split('/').slice(0, flag.p?-3:-1).join('/')+'/'))
 						+	(flag.p?getPicSubDir(task):'')
 						+	(k?task.replace(/(\.[^.\/;]+);.+$/,'_res$1'):task);
-						if (e.src != j) e.src = j, e.alt = task, setPicResize(e, k);
+						if (e.src != j) e.src = j, e.alt = task, setPicResize(e, k), error = 1;
 					}
 				}
-				if (f && f.firstElementChild && (!error || confirm(message+'.\n'+la.send_anyway))) f.submit();
+				if (f && f.firstElementChild) {
+					if (!error || confirm(
+						(
+							message
+							? message+'.\n'+la.send_new_thread
+							: la.task_changed
+						)+'\n'+la.send_anyway
+					)) f.submit();
+					else status = la.canceled;
+				}
 			} else {
-				s.textContent = la.fail;
+				status = la.fail;
 				task = r.status || 0;
 			}
+			s.textContent = status;
 			s.title = new Date()+'\n\n'+task;
 			checking = 0;
 		} else s.textContent = la.load+r.readyState;
