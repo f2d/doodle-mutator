@@ -194,6 +194,22 @@ a:hover	{
 	font-size: 17px;
 	line-height: 20px;
 }
+.post .center input[type="radio"] {
+	display: none;
+}
+.post .center input[type="radio"]:not(:checked)+b {
+	color: #888;
+	font-weight: normal;
+	text-decoration: underline;
+}
+.post .center label {
+	display: inline-block;
+	text-align: center;
+	min-width: 25px;
+}
+.post .center label:hover {
+	background-color: #fff;
+}
 .post img {
 	max-width: 640px;
 	vertical-align: bottom;

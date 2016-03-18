@@ -1,12 +1,13 @@
 ﻿var	h = gn('header')[0], i,j,k,l = location.href
 ,	rootPath = (h?gn('a',h)[0].href.replace(/^\w+:\/+[^\/]+\/+/, '/'):'/')
-,	AN = /\banno\b/i, PT = /\bpost\b/i, DP = /^(div|p)$/i
+,	AN = /\banno\b/i, PT = /\bpost\b/i, DP = /^(div|p)$/i, FM = /^form$/i
 ,	TU = /^\d+(<|>|$)/
 ,	WS = /^\s+|\s+$/g
 ,	NL = /^(\r\n|\r|\n)/g
 ,	count = {u:0, uLast:'', o:0, oLast:'', img:0}
 ,	u_bar = {0:'born', b:'burn', g:'goo', m:'ice', n:'null', u:'me'}
 ,	m,n,mm,mt = {frozen:[], burnt:[], full:[]}
+,	AF = mt.full.filter
 ,	filter, checking, CS = 'checkStatus', CM = 'checkMistype', data = {}, flag = {}
 ,	inout = (('ontouchstart' in document.documentElement)?'':'date-out')
 ,	la, lang = document.documentElement.lang || 'en';
@@ -100,7 +101,7 @@ var	o;
 
 function showProps(o,z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; alert(t); return o;}
 function gn(n,p) {return (p||document).getElementsByTagName(n);}
-function gi(d) {return gn('input',d);}
+function gi(t,p) {return (p = gn('input',p)) && t ? AF.call(p, function(e) {return e.type == t;}) : p;}
 function id(i) {return document.getElementById(i);}
 function cre(e,p,b) {
 	e = document.createElement(e);
@@ -108,6 +109,7 @@ function cre(e,p,b) {
 	if (p) p.appendChild(e);
 	return e;
 }
+
 function deleteCookie(c) {document.cookie = c+'=; expires=Thu, 01 Jan 1970 00:00:01 GMT; Path='+rootPath;}
 function toggleHide(e,d) {e.style.display = (e.style.display != (d?d:d='')?d:'none');}
 function getPicSubDir(p) {var s = p.split('.'); return s[1][0]+'/'+s[0][0]+'/';}
@@ -138,12 +140,17 @@ var	a = getSkipList(), k = a.qk;
 	}
 }
 
-function checkMyTask() {
+function checkMyTask(event, e) {
 	if (checking) return;
 	checking = 1;
 var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 	if (f) f.parentNode.removeChild(f);
-	if (f = s.getAttribute(d)) f = id(f), s.removeAttribute(d);
+	if (f = e) while (f && !FM.test(f.tagName)) f = f.parentNode; else
+	if (f = s.getAttribute(d)) {
+		f = id(f), s.removeAttribute(d);
+		if (!FM.test(f.tagName)) f = ((f = gn('form', f)) && f.length ? f[0] : 0);
+	}
+	if (f && event) event.preventDefault();
 	s.textContent = la.load+0;
 	r.onreadystatechange = function() {
 		if (r.readyState == 4) {
@@ -178,7 +185,7 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 					if (!img) {
 						if (
 							(e = gn('p', k)).length > 1
-						&&	!/^form$/i.test((e = e[1]).previousElementSibling.tagName)
+						&&	!FM.test((e = e[1]).previousElementSibling.tagName)
 						&&	e.innerHTML != task
 						) e.innerHTML = task, error = 1;
 					} else
@@ -188,7 +195,7 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 						j =	(flag.pixr || (flag.pixr = e.src.split('/').slice(0, flag.p?-3:-1).join('/')+'/'))
 						+	(flag.p?getPicSubDir(task):'')
 						+	(k?task.replace(/(\.[^.\/;]+);.+$/,'_res$1'):task);
-						if (e.src != j) e.src = j, e.alt = task, setPicResize(e, k), error = 1;
+						if (e.getAttribute('src') != j) e.src = j, e.alt = task, setPicResize(e, k), error = 1;
 					}
 				}
 				if (f && f.firstElementChild) {
@@ -286,15 +293,6 @@ var	c,d = gn('div',c), i,j,l = d.length, o = [], p,alt;
 
 function allowApply(n) {
 	apply.disabled = (n < 0);
-}
-
-function toggleOpt(e) {
-var	p = e.parentNode, i = gi(p)[0], v = 0, s = gn('span',p);
-	if (e == i) v = (parseInt(i.value)?1:0);
-	else i.value = v = (e == s[1]?1:0);
-	s[v].innerHTML = '<b>'+s[v].textContent+'</b>';
-	s[1-v].innerHTML = '<a href="javascript:void(\''+i.name+'=o'+(v?'n':'ff')+'\')" onClick="toggleOpt(this.parentNode)">'+s[1-v].textContent+'</a>';
-	allowApply();
 }
 
 function selectLink(e,r,t) {
@@ -431,10 +429,13 @@ e+'<option value="'+k[j]+'"'+(m == j?' selected':'')+'>'+(l[j]?l:k)[j]+'</option
 e+'<select name="'+opts+
 e+'</select>';
 						} else {
-							tab[1] =
-' <span> [ <span>'+f[0]+
-'</span> | <span>'+f[1]+
-'</span> ]<input type="hidden" name="'+opt+k[0]+'" value="'+k[1]+'"></span>';
+							tab[1] = '['+[0,1].map(function(v) {
+								return '<label>'
+								+	'<input type="radio" name="'+opt+k[0]+'" value="'+v+'" onChange="allowApply()"'
+								+	(k[1] == v?' checked':'')
+								+	'>\n<b>'+f[v]+'</b>\n'
+								+ '</label>';
+							}).join('|')+']';
 						}
 					} else
 					if (tab.length > 2) {
@@ -566,7 +567,7 @@ i+'l">'+count.u.join(f[1])+l+
 i+'r">'+count.o.join(f[1])+l+'<br>');
 		}
 		if (hell && flag.hell[j = hell.class]) output =
-d+'<div class="post alt anno"><a href="javascript:;" onclick="toggleHide(this.parentNode.nextElementSibling)">'+la.hint[j]+la.hint.show+'</a>'+
+d+'<div class="post alt anno"><a href="javascript:;" onClick="toggleHide(this.parentNode.nextElementSibling)">'+la.hint[j]+la.hint.show+'</a>'+
 d+'</div>'+
 d+'<div style="display:none">'+output+
 d+'</div>';
@@ -622,7 +623,6 @@ d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.gro
 	}
 
 	if (g == '|') {
-		for (h in (i = gi())) if (i[h].name && i[h].name.slice(0,4) == opt && i[h].type == 'hidden') toggleOpt(i[h]);
 		for (h in (i = gn('select'))) if (i[h].onchange) i[h].onchange();
 	} else
 	if (g == '*') {
@@ -662,16 +662,22 @@ if (k = id('task')) {
 		i.innerHTML = la.checked+': <input type="checkbox" name="check" required>';
 	}
 	if (j = k.getAttribute('data-t')) {
+		f = 0;
 		if ((i = gn('p',k)).length) i[0].innerHTML +=
 			(
-				((j = j.split('-')).length > 1 && j[1])
+				(j = j.split('-')).length > 1 && j[1]
 				? '<a class="r" href="javascript:skipMyTask('+j[1]+')" title="'+la.skip_hint+'">「X」</a>'
 				:''
 			)+'<a class="r" href="'+(
-				(j[0] && (j = parseInt(j[0])))
+				(f = j[0] && (j = parseInt(j[0])))
 				? 'javascript:checkMyTask()" title="'+new Date(j*1000)+'\n\n'+la.check+'">「<span id="'+CS+'">?</span>'
 				: '?draw">「'+la.draw
 			)+'」</a>';
+		if (f && (i = gi('submit',k)).length) {
+			f = i[0];
+			while (f && !FM.test(f.tagName)) f = f.parentNode;
+			if (f) f.setAttribute('onsubmit', 'checkMyTask(event, this)');
+		}
 		if ((i = gn('img',k)).length && (i = i[0]) && (j = i.alt.indexOf(';')+1)) i.alt = i.alt
 			.replace(';',', ')
 			.replace('*','x'), setPicResize(i,j);
@@ -680,7 +686,7 @@ if (k = id('task')) {
 		n = (m = gn('b')).length, k = 1;
 		while (n--) if (AN.test(m[n].className)) {k = 0; break;}
 		while (i--) if (m = j[i].previousElementSibling) {
-			m.innerHTML = '<a href="javascript:;" onclick="toggleHide(this.parentNode.nextElementSibling)">'+m.innerHTML+'</a>';
+			m.innerHTML = '<a href="javascript:;" onClick="toggleHide(this.parentNode.nextElementSibling)">'+m.innerHTML+'</a>';
 			if (k) toggleHide(j[i]), allowApply(-1);
 		}
 	}
