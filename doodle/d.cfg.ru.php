@@ -47,6 +47,12 @@ $tmp_name_yourself = 'Назовитесь:';
 $tmp_no_play_hint = 'Ваше участие в игре отключено (не отбирать цели).';
 $tmp_options = 'Настройки. О сайте';
 $tmp_options_apply = 'Применить';
+$tmp_options_drop = array(
+	'out'	=> 'Выйти'
+,	'save'	=> 'Удалить сохранения'
+,	'skip'	=> 'Сбросить пропуски'
+,	'pref'	=> 'Сбросить настройки'
+);
 $tmp_options_first = 'Нажмите '.$tmp_options_apply.' для продолжения.';
 $tmp_options_flags = 'Статус';
 $tmp_options_input = array(
@@ -74,15 +80,12 @@ $tmp_options_input = array(
 	,	'room_home'		=> 'Домашняя комната (одна точка = список комнат)'
 	)
 );
-$tmp_options_logout = 'Выйти';
 $tmp_options_name = 'Ваша подпись';
 $tmp_options_qk = 'Ваш ключ для входа (видна часть, подсказка при наведении)';
 $tmp_options_qk_hint = 'Кликните дважды, чтобы выделить целиком для копирования. Используйте при входе вместо имени.';
-$tmp_options_reset = 'Сброс настроек';
 $tmp_options_time = 'Часовой пояс';
 $tmp_options_turn_off = 'нет';
 $tmp_options_turn_on = 'да';
-$tmp_options_unskip = 'Сброс пропускаемых нитей';
 $tmp_post_err = array(
 	'file_dup'	=> 'Файл отклонён: копия уже существует.'
 ,	'file_part'	=> 'Файл отклонён: неполные данные, попытайтесь загрузить в рисовалке и отправить ещё раз.'

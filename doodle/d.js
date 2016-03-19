@@ -1,4 +1,5 @@
-﻿var	h = gn('header')[0], i,j,k,l = location.href
+﻿var	LS = window.localStorage || localStorage
+,	h = gn('header')[0], i,j,k,l = location.href
 ,	rootPath = (h?gn('a',h)[0].href.replace(/^\w+:\/+[^\/]+\/+/, '/'):'/')
 ,	AN = /\banno\b/i, PT = /\bpost\b/i, DP = /^(div|p)$/i, FM = /^form$/i
 ,	TU = /^\d+(<|>|$)/
@@ -26,7 +27,10 @@ if (lang == 'ru') la = {
 ,	top: 'Наверх'
 ,	skip: 'Пропустить'
 ,	skip_hint: 'Пропускать задания из этой нити до её завершения.'
-,	unskip: 'Список пропущенных заданий будет очищен для этих комнат:'
+,	clear: {
+		unsave: {ask: 'Удалить данные из памяти браузера:', unit: 'байт'}
+	,	unskip: {ask: 'Пропуски будут очищены для этих комнат:', unit: 'нитей'}
+	}
 ,	load: 'Проверка... '
 ,	fail: 'Ошибка '
 ,	hax: '(?)'		//'Неизвестный набор данных.'
@@ -65,7 +69,10 @@ if (lang == 'ru') la = {
 ,	top: 'Top'
 ,	skip: 'Skip'
 ,	skip_hint: 'Skip any task from this thread from now on.'
-,	unskip: 'Skipped tasks will be cleared for following rooms:'
+,	clear: {
+		unsave: {ask: 'Data to be deleted from browser memory (Local Storage):', unit: 'bytes'}
+	,	unskip: {ask: 'Skipping will be cleared for following rooms:', unit: 'threads'}
+	}
 ,	load: 'Checking... '
 ,	fail: 'Error '
 ,	hax: '(?)'		//'Unknown data set.'
@@ -122,22 +129,38 @@ var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
 	return t.slice(0,3).join('-')+' '+t.slice(3).join(':');
 }
 
-function getSkipList() {
-var	a = document.cookie.split(/;\s*/), i = a.length, j = [], k = [], m,r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+)\/(.*)$/i;
-	while (i--) if (m = a[i].match(r)) j.push(decodeURIComponent(m[2]+' ('+m[3].split('/').length+')')), k.push(m[1]);
-	return {rooms:j, qk:k};
+function getSaves(v) {
+var	j = [], k = [];
+	if (v == 'unsave') {
+	var	m = 'string';
+		for (i in LS) if (typeof (a = LS[i]) === m) j.push(i+': '+a.length+' '+la.clear[v].unit), k.push(i);
+		if (!k.length) k = LS;
+	} else
+	if (v == 'unskip') {
+	var	a = document.cookie.split(/;\s*/), i = a.length, r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+)\/(.*)$/i;
+		while (i--) if (m = a[i].match(r)) j.push(decodeURIComponent(m[2])+': '+m[3].split('/').length+' '+la.clear[v].unit), k.push(m[1]);
+	}
+	return {rows: j, keys: k};
 }
 
-function checkSkipList(e) {
-	e.disabled = !(getSkipList().qk.length);
+function checkSaves(e) {
+	if (e.target) var v = (e = e.target).id; else e = id(v = e);
+	if (e) e.disabled = !(getSaves(v).keys.length);
 }
 
-function clearSkipList(e) {
-var	a = getSkipList(), k = a.qk;
-	if (k.length && confirm(la.unskip+'\n\n'+a.rooms.join('\n'))) {
-		for (i in k) deleteCookie(k[i]);
+function clearSaves(e) {
+	if (e.preventDefault) e.preventDefault();
+	if (e = e.target) v = e.id;
+var	v,a = getSaves(v), k = a.keys;
+	if (!v) alert(la.fail+': '+v); else
+	if (k.length && confirm(la.clear[v].ask+'\n\n'+a.rows.join('\n'))) {
+		for (i in k) {
+			if (v == 'unskip') deleteCookie(k[i]); else
+			if (v == 'unsave') LS.removeItem(k[i]);
+		}
 		if (e) e.disabled = true;
 	}
+	return false;
 }
 
 function checkMyTask(event, e) {
@@ -649,7 +672,6 @@ d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.gro
 }
 
 if ((i = gn('pre')).length) showContent(i[0]);
-if (i = id('unskip')) i.onmouseover();
 if (k = id('task')) {
 	if ((filter = k.getAttribute('data-filter')) !== null && (i = gi()).length) {
 		j = k.nextSibling;
@@ -698,7 +720,7 @@ if (k = id('tabs')) {
 	h = '', l = l.split('/').slice(-1)[0], n = k.textContent.replace(WS, '').split('|');
 	for (i in n) h += (h?'\n|	':'')+a(+i+1, n[i]);
 	k.innerHTML = '[	'+h+'	]';	//* <- category tabs
-var	p = k.parentNode, c,d,r = /^\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
+var	p = k.parentNode, c,d,e,r = /^\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
 	while ((m = p.lastElementChild) && !((j = m.lastElementChild) && j.id) && r.test(j = m.innerHTML.replace(WS, ''))) {
 		j = j.split('-'), y = 'year'+(f = j[0]), n = j.pop().split(','), j = j.join('-'), h = j+':';
 		for (i in n) h += '\n'+a(j+'-'+n[i].replace(w, ''), n[i]);
@@ -709,4 +731,7 @@ var	p = k.parentNode, c,d,r = /^\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
 		}
 		d.appendChild(m);
 	}
+}
+for (i in (j = ['unsave', 'unskip'])) if (e = id(k = j[i])) {
+	e.onclick = clearSaves, (e.onmouseover = checkSaves)(k);
 }

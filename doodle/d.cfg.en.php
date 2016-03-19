@@ -47,6 +47,12 @@ $tmp_name_yourself = 'Name yourself:';
 $tmp_no_play_hint = 'Game playing turned off for you (no taking targets).';
 $tmp_options = 'Options. About';
 $tmp_options_apply = 'Apply';
+$tmp_options_drop = array(
+	'out'	=> 'Log out'
+,	'save'	=> 'Delete drawing save slots'
+,	'skip'	=> 'Reset skipped threads'
+,	'pref'	=> 'Reset options'
+);
 $tmp_options_first = 'Press '.$tmp_options_apply.' to continue.';
 $tmp_options_flags = 'Status';
 $tmp_options_input = array(
@@ -74,15 +80,12 @@ $tmp_options_input = array(
 	,	'room_home'		=> 'Home room (single dot = room list)'
 	)
 );
-$tmp_options_logout = 'Log out';
 $tmp_options_name = 'Your signature';
 $tmp_options_qk = 'Your key to login (displayed partly, hover it for hint)';
 $tmp_options_qk_hint = 'Double click to select it all for copying. Use in place of name at login form.';
-$tmp_options_reset = 'Reset options';
 $tmp_options_time = 'Time zone';
 $tmp_options_turn_off = 'no';
 $tmp_options_turn_on = 'yes';
-$tmp_options_unskip = 'Reset skipped threads';
 $tmp_post_err = array(
 	'file_dup'	=> 'File denied: copy already exists.'
 ,	'file_part'	=> 'File denied: upload not completed, please try to load in draw app and send again.'

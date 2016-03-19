@@ -517,19 +517,22 @@ if ($u_key) {
 			if (!$qdir) $o1 = "$nst<br>$nst<b class=\"anno\">$tmp_options_first</b>$nst<br>";
 		}
 		$s = ':	';
-		$a = $b = $c = '';
+		$a = $b = $c = $d = '';
 		if (GOD)
 		foreach ($cfg_opts_order[$i = 'admin'] as $k => $v) $a .= NL.$tmp_options_input[$i][$v].$s.abbr($v).'='.($u_opta[$k]?1:'');
 		foreach ($cfg_opts_order[$i = 'input'] as $k => $v) $b .= NL.$tmp_options_input[$i][$v].$s.abbr($v).'='.($$v?$$v:'='.${'u_'.$v});
 		foreach ($cfg_opts_order[$i = 'check'] as $k => $v) $c .= NL.$tmp_options_input[$i][$v].$s.abbr($v).'='.($u_opti[$k]?1:'');
 		$i = '
 |<input type="submit" value="';
+		foreach (array(
+			'out'	=> 'name="quit'
+		,	'save'	=> 'id="unsave'
+		,	'skip'	=> 'id="unskip'
+		,	'pref'	=> 'name="'.O.'o'
+		) as $k => $v) $d .= $i.$tmp_options_drop[$k].'" '.$v.'">';
 
 		$content = $tmp_options_turn_on.'|'.$tmp_options_turn_off.$o1.'
-<form method="post">'
-.$i.$tmp_options_logout.'" name="quit">'
-.$i.$tmp_options_unskip.'" onClick="clearSkipList(this); return false" onMouseOver="checkSkipList(this)" id="unskip">'
-.$i.$tmp_options_reset.'" name="'.O.'o">
+<form method="post">'.$d.'
 </form><form method="post">'
 .NL.$tmp_options_name.$s.$usernames[$u_num]
 .NL.$tmp_options_qk.$s.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">'.$b.$c
