@@ -526,7 +526,7 @@ if ($u_key) {
 |<input type="submit" value="';
 		foreach (array(
 			'out'	=> 'name="quit'
-		,	'save'	=> 'id="unsave'
+		,	'save'	=> 'id="unsave" data-keep="'.DRAW_PERSISTENT_PREFIX
 		,	'skip'	=> 'id="unskip'
 		,	'pref'	=> 'name="'.O.'o'
 		) as $k => $v) $d .= $i.$tmp_options_drop[$k].'" '.$v.'">';

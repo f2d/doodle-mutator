@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.63'
-,	INFO_DATE = '2013-04-01 — 2016-03-17'
+,	INFO_VERSION = 'v0.9.64'
+,	INFO_DATE = '2013-04-01 — 2016-03-20'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -73,7 +73,6 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	}
 ,	PALETTE_COL_COUNT = 16	//* <- used if no '\n' found
 ,	palette = [
-		(LS = window.localStorage || localStorage) && (i = LS.historyPalette) ? JSON.parse(i) : ['#f']
 /* palette field format:
 	'\t' = title
 	'\n' = new row + optional title
@@ -81,6 +80,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	'#f00' = hex color field
 	anything else = title + label
 */
+		['#f']
 	,	[	'#f', '#d', '#a', '#8', '#5', '#2', '#0',				'#a00', '#740', '#470', '#0a0', '#074', '#047', '#00a', '#407', '#704'
 		, '\n',	'#7f0000', '#007f00', '#00007f', '#ff007f', '#7fff00', '#007fff', '#3', '#e11', '#b81', '#8b1', '#1e1', '#1b8', '#18b', '#11e', '#81b', '#b18'
 		, '\n',	'#ff0000', '#00ff00', '#0000ff', '#ff7f00', '#00ff7f', '#7f00ff', '#6', '#f77', '#db7', '#bd7', '#7f7', '#7db', '#7bd', '#77f', '#b7d', '#d7b'
@@ -147,7 +147,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 
 ,	MODE_LABELS = 'abc'.split('')
 
-,	self = this, container, canvas, c2d, cnvHid, c2s, lang, DL, LS, i, outside = this.o = {}
+,	self = this, outside = this.o = {}, container, canvas, c2d, cnvHid, c2s, lang, i,DL,HP,LP,LS = window.localStorage || localStorage
 ,	fps = 0, ticks = 0, timer = 0, lastUsedSaveSlot = 0
 ,	interval = {fps:0, timer:0, save:0}, text = {debug:0, timer:0, undo:0}, used = {}, cue = {upd:{}}
 
@@ -234,6 +234,11 @@ function cutPeriod(x,y,z) {
 	if (isNaN(z)) z = Math.PI;
 	return (x < y ? x-y+z : (x > z ? x+y-z : x));
 }
+
+//* From http://www.webtoolkit.info/javascript-trim.html
+function ltrim(str, chars) {return str.replace(new RegExp('^['+(chars || '\\s')+']+', 'g'), '');}
+function rtrim(str, chars) {return str.replace(new RegExp('['+(chars || '\\s')+']+$', 'g'), '');}
+function trim(str, chars) {return ltrim(rtrim(str, chars), chars);}
 
 function isA0(s) {return (s == A0 || regA0.test(s));}
 function orz(n) {return parseInt(n||0)||0;}
@@ -327,7 +332,7 @@ var	d = getSaveLSDict(i);
 
 function updatePalette() {
 var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
-	if (LS) LS.lastPalette = c;
+	if (LS) LS[LP] = c;
 	if (p[0] == '\r') {
 		c = p[1];
 		if (c == 'g') {
@@ -1080,35 +1085,40 @@ function pickColor(keep, c, event) {
 	return keep ? c : updateColor(c, (!event || event.which != 3)?0:1);
 }
 
-function updateColor(value, toolIndex) {
-var	t = tools[toolIndex || 0]
+function hex2fix(v) {
+	v = '#'+trim(v, '#');
+	if (v.length == 2) v += repeat(v[1], 5); else
+	if (regHex3.test(v)) v = v.replace(regHex3, '#$1$1$2$2$3$3');
+	return regHex.test(v) ? v.toLowerCase() : false;
+}
+
+function updateColor(value, i) {
+var	t = tools[i || 0]
 ,	c = id('color-text')
 ,	v = value || c.value;
 	if (regInt3.test(v)) {
 	var	a = (t.color = v).split(regCommaSplit);
 		v = '#';
 		for (i in a) v += ((a[i] = parseInt(a[i]).toString(16)).length == 1) ? '0'+a[i] : a[i];
-	} else {
-		if (v[0] != '#') v = '#'+v;
-		if (v.length == 2) v += repeat(v[1], 5);
-		if (regHex3.test(v)) v = v.replace(regHex3, '#$1$1$2$2$3$3');
-		if (!regHex.test(v)) return c.style.backgroundColor = 'red';
+	} else
+	if (v = hex2fix(v)) {
 		if (value != '') t.color =
 			parseInt(v.substr(1,2), 16)+', '+
 			parseInt(v.substr(3,2), 16)+', '+
 			parseInt(v.substr(5,2), 16);
-	}
+	} else return c.style.backgroundColor = 'red';
 	if (t == tool) c.value = v, c.style.backgroundColor = '';
 
 //* put on top of history palette:
-var	p = palette[0], found = p.length, i;
-	for (i = 0; i < found; i++) if (p[i] == v) found = i;
-	if (found) {
-		i = Math.min(found+1, PALETTE_COL_COUNT*9);		//* <- history length limit
-		while (i--) p[i] = p[i-1];
-		p[0] = v;
-		if (0 == select.palette.value) updatePalette();
-		if (LS) LS.historyPalette = JSON.stringify(p);
+var	p = palette[i = c = 0], k = p.length;
+	while (1 < --k) if (hex2fix(p[k]) == v) p.splice(k, 1), ++c;	//* <- remove duplicates, count changes
+	if (p.indexOf(v) < 0) {
+		p.unshift(v), k = PALETTE_COL_COUNT*9, ++c;		//* <- insert new value
+		if (p.length > k) p.length = k;
+	}
+	if (c) {
+		if (i == select.palette.value) updatePalette();
+		if (LS) LS[HP] = JSON.stringify(p);
 	}
 
 //* update buttons:
@@ -1864,7 +1874,7 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	d = {	lineCap: ['<->', '|-|', '[-]']
 	,	lineJoin: ['-x-', '\\_/', 'V']
 	};
-	a = select.options, c = select.translated || a, f = (LS && (e = LS.lastPalette) && palette[e]?e:1);
+	a = select.options, c = select.translated || a, f = (LS && (LP in LS) && palette[e = LS[LP]]?e:1);
 	for (b in a) if (e = select[b] = id(b))
 	for (i in a[b]) (
 		e.options[e.options.length] = new Option(c[b][i]+(b == 'shape'?' ['+shapeHotKey[i]+']':(b in d?' '+d[b][i]:'')), i)
@@ -1932,15 +1942,28 @@ var	o = outside
 	}
 
 	if (LS) {
+		i = (o.keep_prefix || o.keepprfx || NS), LP = i+'LastPalette', k = 'lastPalette';
+		if (!(LP in LS) && (k in LS)) LS[LP] = LS[k];
+		if (j = LS[HP = i+'HistoryPalette'] || LS.historyPalette) palette[0] = JSON.parse(j);
+
 		i = o.save = Math.max(orz(o.save), 3)
-	,	j = (o.saveprfx || NS)+CR
+	,	j = (o.save_prefix || o.saveprfx || NS)+CR
+	,	f = (o.saveprfx ? o.saveprfx+CR : '')
 	,	CR = [];
 
-		do CR[i] = (
-			LS[k = (i == 1?j:j.slice(0,-1)+i)]
-			? {R:k, T:k+CT, keepSavedInOldFormat:true}
-			: {R:(k = j+i), T:k+CT}
-		); while (--i);
+		function getOldFormat(i,j) {return (i == 1?j:j.slice(0,-1)+i);}
+
+		do {
+			v = (f && (
+				(k = getOldFormat(i,f)) in LS
+			||	(k = f+i) in LS
+			))
+			||	(k = getOldFormat(i,j)) in LS
+			||	(k = j+i, 0);
+			a = {R:k, T:k+CT};
+			if (v) a.keepSavedInOldFormat = true;
+			CR[i] = a;
+		} while (--i);
 
 		CT = CR[1].T;
 	} else o.save = 0;

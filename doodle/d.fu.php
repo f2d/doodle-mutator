@@ -81,8 +81,11 @@ function get_draw_app_list($n) {
 }
 function get_draw_vars() {
 	global $cfg_draw_vars, $tmp_wh, $tmp_whu, $u_draw_app, $u_draw_max_undo, $u_opts;
-	$vars = DRAW_REST;
-	if (!$u_opts['save2common']) $vars .= ';saveprfx='.NAMEPRFX;
+	$vars = DRAW_REST.
+		';keep_prefix='.DRAW_PERSISTENT_PREFIX
+	.($u_opts['save2common']?'':
+		';save_prefix='.DRAW_BACKUPCOPY_PREFIX.';saveprfx='.NAMEPRFX
+	);
 	if (($r = get_req()) && $r[0] && $r[0] != '!') {
 		$u_draw_app = $r[0];
 		if (strpos($r[1], 'x')) $wh = explode('x', $r[1]);

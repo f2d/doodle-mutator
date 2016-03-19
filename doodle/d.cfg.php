@@ -69,6 +69,8 @@ define(DRAW_MAX_FILESIZE, 10020030);
 define(DRAW_MAX_RECOVERY, 9);
 define(DRAW_MAX_UNDO, 99);
 define(DRAW_JPG_PREF, 1002003);	//* <- bytes
+define(DRAW_PERSISTENT_PREFIX, NAMEPRFX.'Keep');
+define(DRAW_BACKUPCOPY_PREFIX, NAMEPRFX.'Save');
 define(DRAW_REST, ';resize_style=body,#task;resize_min_id=header');
 
 define(TARGET_CHANGE_TIME, 600);//* 10min

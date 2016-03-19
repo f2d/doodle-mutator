@@ -49,7 +49,7 @@ $tmp_options = 'Options. About';
 $tmp_options_apply = 'Apply';
 $tmp_options_drop = array(
 	'out'	=> 'Log out'
-,	'save'	=> 'Delete drawing save slots'
+,	'save'	=> 'Delete save data'
 ,	'skip'	=> 'Reset skipped threads'
 ,	'pref'	=> 'Reset options'
 );

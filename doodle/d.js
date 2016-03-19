@@ -129,29 +129,40 @@ var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
 	return t.slice(0,3).join('-')+' '+t.slice(3).join(':');
 }
 
-function getSaves(v) {
-var	j = [], k = [];
+function getSaves(v,e) {
+var	j = [], k = [], keep = (e?e.getAttribute('data-keep'):0) || '', l = keep.length;
 	if (v == 'unsave') {
 	var	m = 'string';
-		for (i in LS) if (typeof (a = LS[i]) === m) j.push(i+': '+a.length+' '+la.clear[v].unit), k.push(i);
-		if (!k.length) k = LS;
+		for (i in LS) if (
+			(typeof (a = LS[i]) === m)
+		&&	(!keep || keep !== i.substr(0,l))
+		) {
+			k.push(i);
+			j.push(i+': '+a.length+' '+la.clear[v].unit);
+		}
 	} else
 	if (v == 'unskip') {
 	var	a = document.cookie.split(/;\s*/), i = a.length, r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+)\/(.*)$/i;
-		while (i--) if (m = a[i].match(r)) j.push(decodeURIComponent(m[2])+': '+m[3].split('/').length+' '+la.clear[v].unit), k.push(m[1]);
+		while (i--) if (
+			(m = a[i].match(r))
+		&&	(!keep || keep !== m[1].substr(0,l))
+		) {
+			k.push(m[1]);
+			j.push(decodeURIComponent(m[2])+': '+m[3].split('/').length+' '+la.clear[v].unit);
+		}
 	}
 	return {rows: j, keys: k};
 }
 
 function checkSaves(e) {
 	if (e.target) var v = (e = e.target).id; else e = id(v = e);
-	if (e) e.disabled = !(getSaves(v).keys.length);
+	if (e) e.disabled = !(getSaves(v,e).keys.length);
 }
 
 function clearSaves(e) {
 	if (e.preventDefault) e.preventDefault();
 	if (e = e.target) v = e.id;
-var	v,a = getSaves(v), k = a.keys;
+var	v,a = getSaves(v,e), k = a.keys;
 	if (!v) alert(la.fail+': '+v); else
 	if (k.length && confirm(la.clear[v].ask+'\n\n'+a.rows.join('\n'))) {
 		for (i in k) {
@@ -560,21 +571,27 @@ d+'</div>';
 			if (l == '|') {
 				tr.push(line[i].slice(1));
 				if (!line[j = parseInt(i) +1] || line[j][0] != '|') {
+					j = tr.length, m = (j > 1 && j < 4);
 					output +=
-d+'<div class="post'+(alt = (alt?'':' alt'))+'">'+
-e+'<div class="center">'+
-e+'	<table width="100%"><tr>';
-					l =
-e+'		<td width="'+Math.floor(100/(j = tr.length))+'%"';
-					for (k in tr) output += l+(j > 1 && j < 4?' align="'+(
-						k == 0	?'left':(
-						k == j-1?'right':'center')
-					)+'">':'>')+tr[k]+'</td>';
+					'<div class="post'+(alt = (alt?'':' alt'))+'">'
+					+	'<div class="center">'
+					+		'<table width="100%">'
+					+			'<tr>', l =
+									'<td'+(m?' width="'+Math.floor(100/j)+'%"':'');
+					for (k in tr) output +=
+					l+(
+						m
+						? ' align="'+(
+							k == 0?'left':(k == j-1?'right':'center')
+						)+'">'
+						: '>'
+					)+tr[k]
+					+				'</td>';
+					output +=		'</tr>'
+					+		'</table>'
+					+	'</div>'
+					+ '</div>';
 					tr = [];
-					output +=
-e+'	</tr></table>'+
-e+'</div>'+
-d+'</div>';
 				}
 			}
 		}
