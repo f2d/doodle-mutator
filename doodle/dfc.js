@@ -3,7 +3,7 @@
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
 ,	INFO_VERSION = 'v0.9.64'
-,	INFO_DATE = '2013-04-01 — 2016-03-20'
+,	INFO_DATE = '2013-04-01 — 2016-03-24'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -87,24 +87,25 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 		, '\n',	'#ff7f7f', '#7fff7f', '#7f7fff', '#ffff00', '#00ffff', '#ff00ff', '#9', '#faa', '#eca', '#cea', '#afa', '#aec', '#ace', '#aaf', '#cae', '#eac'
 		, '\n',	'#ffbebe', '#beffbe', '#bebeff', '#ffff7f', '#7fffff', '#ff7fff', '#c', '#fcc', '#fdc', '#dfc', '#cfc', '#cfd', '#cdf', '#ccf', '#dcf', '#fcd'
 		]
-	,	[ '\tPixiv/illust.49093780'
+	,	[ '\nMS Paint, Win7 version', '#0', '#7f7f7f', '#880015', '#ed1c24', '#ff7f27', '#fff200', '#22b14c', '#00a2e8', '#3f48cc', '#a349a4'
+		, '\tBurichan', '#0f0c5d', '\tFutaba, TEGAKI', '#800000', '\tGurochan', '#d9af9e', '#af0a0f', '#285', '#0f0c5d'
+		, '\nMS Paint, Win7 version', '#f', '#c3c3c3', '#b97a57', '#ffaec9', '#ffc90e', '#efe4b0', '#b5e61d', '#99d9ea', '#7092be', '#c8bfe7'
+		, '\tBurichan', '#d6daf0', '\tFutaba, TEGAKI', '#f0e0d6', '\tGurochan', '#eddad2', '#ca927b', '#792', '#34345c'
+		, '\tPixiv/illust.49093780'
 		, '\n',	'#000000', '#271b8f', '#0000ab', '#47009f', '#8f0077', '#ab0013', '#a70000', '#7f0b00', '#432f00', '#004700', '#005100', '#003f17', '#1b3f5f'
 		, '\n',	'#757575', '#0073ef', '#233bef', '#8300f3', '#bf00bf', '#e7005b', '#db2b00', '#cb4f0f', '#8b7300', '#009700', '#00ab00', '#00933b', '#00838b'
 		, '\n',	'#bcbcbc', '#3fbfff', '#5f97ff', '#a78bfd', '#f77bff', '#ff77b7', '#ff7763', '#ff9b3b', '#f3bf3f', '#83d313', '#4fdf4b', '#58f898', '#00ebdb'
 		, '\n',	'#ffffff', '#abe7ff', '#c7d7ff', '#d7cbff', '#ffc7ff', '#ffc7db', '#ffbfb3', '#ffdbab', '#ffe7a3', '#e3ffa3', '#abf3bf', '#b3ffcf', '#9ffff3'
 		, '\nGrayScale', '#f', '#e', '#d', '#c', '#b', '#a', '#9', '#8', '#7', '#6', '#5', '#4', '#3', '#2', '#1', '#0'
 		, '\nPaint.NET'
-		,	'#000000', '#404040', '#ff0000', '#ff6a00', '#ffd800', '#b6ff00', '#4cff00', '#00ff21'
-		,	'#00ff90', '#00ffff', '#0094ff', '#0026ff', '#4800ff', '#b200ff', '#ff00dc', '#ff006e'
-		, '\n',	'#ffffff', '#808080', '#7f0000', '#7f3300', '#7f6a00', '#5b7f00', '#267f00', '#007f0e'
-		,	'#007f46', '#007f7f', '#004a7f', '#00137f', '#21007f', '#57007f', '#7f006e', '#7f0037'
-		, '\n',	'#a0a0a0', '#303030', '#ff7f7f', '#ffb27f', '#ffe97f', '#daff7f', '#a5ff7f', '#7fff8e'
+		,	'#a0a0a0', '#303030', '#ff7f7f', '#ffb27f', '#ffe97f', '#daff7f', '#a5ff7f', '#7fff8e'
 		,	'#7fffc5', '#7fffff', '#7fc9ff', '#3f647f', '#a17fff', '#d67fff', '#ff7fed', '#ff7fb6'
 		, '\n',	'#c0c0c0', '#606060', '#7f3f3f', '#7f593f', '#7f743f', '#6d7f3f', '#527f3f', '#3f7f47'
 		,	'#3f7f62', '#3f7f7f', '#3f647f', '#3f497f', '#503f7f', '#6b3f7f', '#7f3f76', '#7f3f5b'
-		, '\nMS Paint, Win7 version'
-		,	'#0', '#7f7f7f', '#880015', '#ed1c24', '#ff7f27', '#fff200', '#22b14c', '#00a2e8', '#3f48cc', '#a349a4'
-		, '\n', '#f', '#c3c3c3', '#b97a57', '#ffaec9', '#ffc90e', '#efe4b0', '#b5e61d', '#99d9ea', '#7092be', '#c8bfe7'
+		, '\n',	'#000000', '#404040', '#ff0000', '#ff6a00', '#ffd800', '#b6ff00', '#4cff00', '#00ff21'
+		,	'#00ff90', '#00ffff', '#0094ff', '#0026ff', '#4800ff', '#b200ff', '#ff00dc', '#ff006e'
+		, '\n',	'#ffffff', '#808080', '#7f0000', '#7f3300', '#7f6a00', '#5b7f00', '#267f00', '#007f0e'
+		,	'#007f46', '#007f7f', '#004a7f', '#00137f', '#21007f', '#57007f', '#7f006e', '#7f0037'
 		, '\nClassic', '#000000', '#000080', '#008000', '#008080', '#800000', '#800080', '#808000', '#c0c0c0', '\tApple II', '#000000', '#7e3952', '#524689', '#df4ef2', '#1e6952', '#919191', '#35a6f2', '#c9bff9'
 		, '\nClassic', '#808080', '#0000ff', '#00ff00', '#00ffff', '#ff0000', '#ff00ff', '#ffff00', '#ffffff', '\tApple II', '#525d0d', '#df7a19', '#919191', '#efb5c9', '#35cc19', '#c9d297', '#a2dcc9', '#ffffff'
 		, '\nCGA', '#0', '#00a', '#0a0', '#0aa', '#a00', '#a0a', '#aa0', '#a', '\tMSX', '#0', '#0', '#3eb849', '#74d07d', '#5955e0', '#8076f1', '#b95e51', '#65dbef'
@@ -465,7 +466,7 @@ function updateDebugScreen(lsid, refresh) {
 				'{,0,1;props}'
 		+		'{.o;outside}'
 		+		'{.mode;mode}'
-		+		'LStorage: '+(k?k+'total bytes = '+getFormattedNum(s):CT+', '+CR)
+		+		'LStorage: '+(k?k+'sum = '+getFormattedNum(s)+' bytes':CR)
 		+		', Save file as: '+(DL || 'new tab')
 			, '{', f+'show(|')
 			, ';', g)
@@ -587,7 +588,7 @@ var	sf = select.shapeFlags[select.shape.value];
 
 function drawStart(event) {
 	if (!isMouseIn()) return false;
-	canvas.focus();
+//	canvas.focus();
 	event.preventDefault();
 	event.stopPropagation();
 	event.cancelBubble = true;
@@ -1874,7 +1875,7 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	d = {	lineCap: ['<->', '|-|', '[-]']
 	,	lineJoin: ['-x-', '\\_/', 'V']
 	};
-	a = select.options, c = select.translated || a, f = (LS && (LP in LS) && palette[e = LS[LP]]?e:1);
+	a = select.options, c = select.translated || a, f = (LS && (e = LS.getItem(LP)) !== null && palette[e]?e:1);
 	for (b in a) if (e = select[b] = id(b))
 	for (i in a[b]) (
 		e.options[e.options.length] = new Option(c[b][i]+(b == 'shape'?' ['+shapeHotKey[i]+']':(b in d?' '+d[b][i]:'')), i)
@@ -1915,7 +1916,11 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 
 
 function isTest() {
+
+	function getOldFormat(i,j) {return (i == 1?j:j.slice(0,-1)+i);}
+
 	if (!CR[0]) return !o.send;
+
 var	o = outside
 ,	f = o.send = id('send')
 ,	r = o.read = id('read')
@@ -1942,23 +1947,24 @@ var	o = outside
 	}
 
 	if (LS) {
-		i = (o.keep_prefix || o.keepprfx || NS), LP = i+'LastPalette', k = 'lastPalette';
-		if (!(LP in LS) && (k in LS)) LS[LP] = LS[k];
+		i = (o.keep_prefix || o.keepprfx || NS);
 		if (j = LS[HP = i+'HistoryPalette'] || LS.historyPalette) palette[0] = JSON.parse(j);
+		if (
+			null === LS.getItem(LP = i+'LastPalette')
+		&&	null !== LS.getItem(k = 'lastPalette')
+		) LS[LP] = LS[k];
 
 		i = o.save = Math.max(orz(o.save), 3)
 	,	j = (o.save_prefix || o.saveprfx || NS)+CR
 	,	f = (o.saveprfx ? o.saveprfx+CR : '')
 	,	CR = [];
 
-		function getOldFormat(i,j) {return (i == 1?j:j.slice(0,-1)+i);}
-
 		do {
 			v = (f && (
-				(k = getOldFormat(i,f)) in LS
-			||	(k = f+i) in LS
+				null !== LS.getItem(k = getOldFormat(i,f))
+			||	null !== LS.getItem(k = f+i)
 			))
-			||	(k = getOldFormat(i,j)) in LS
+			||	null !== LS.getItem(k = getOldFormat(i,j))
 			||	(k = j+i, 0);
 			a = {R:k, T:k+CT};
 			if (v) a.keepSavedInOldFormat = true;
@@ -1966,7 +1972,7 @@ var	o = outside
 		} while (--i);
 
 		CT = CR[1].T;
-	} else o.save = 0;
+	} else o.save = 0, CR = 'none';
 
 	o.t0 = (o.t0 > 0 ? o.t0+'000' : +new Date)
 ,	i = ' \r\n'

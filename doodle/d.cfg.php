@@ -18,6 +18,7 @@ example:
 */
 	array('new-year', 'nd', 1231, 109)
 ,	array('leap-year', 'nd', 229, 229)
+,	array('april-fools','nd',401, 401)
 ,	array('cirno-day', 'nd', 909, 909)
 );
 $cfg_draw_app = array('dfc', 'milf');
@@ -91,7 +92,8 @@ define(THUMB_MAX_HEIGHT, 90);
 define(ENC, 'utf-8');
 define(ENC_FALLBACK, 'windows-1251, Shift_JIS');	//* <- comma-separated list, to convert search requests from weird browsers into ENC
 define(NB, '&nbsp;');
-define(NL, "\n");
+define(NL, '
+');
 define(O, 'opt_');
 define(OK, 'OK');
 define(OQ, 'OK. ');

@@ -22,7 +22,7 @@ if (lang == 'ru') la = {
 ,	task_changed: 'Задание было изменено другими действиями за прошедшее время.'
 ,	send_new_thread: 'Будет создана новая нить.'
 ,	send_anyway: 'Всё равно отправить?'
-,	canceled: 'Отменено'
+,	canceled: 'Отправка отменена'
 ,	close: 'Закрыть'
 ,	top: 'Наверх'
 ,	skip: 'Пропустить'
@@ -64,7 +64,7 @@ if (lang == 'ru') la = {
 ,	task_changed: 'Task was changed by some actions in the meantime.'
 ,	send_new_thread: 'Sending will make a new thread.'
 ,	send_anyway: 'Send anyway?'
-,	canceled: 'Canceled'
+,	canceled: 'Sending canceled'
 ,	close: 'Close'
 ,	top: 'Top'
 ,	skip: 'Skip'
@@ -97,6 +97,14 @@ if (lang == 'ru') la = {
 	,	each: 'All at once'
 	,	total: 'Total'
 }};
+
+function decodeHTMLSpecialChars(t) {
+	return String(t)
+	.replace(/&amp;/gi, '&')
+	.replace(/&lt;/gi, '<')
+	.replace(/&gt;/gi, '>')
+	.replace(/&quot;/gi, '"');
+}
 
 function propNameForIE(n) {return n.split('-').map(function(v,i) {return i > 0 ? v.slice(0,1).toUpperCase()+v.slice(1).toLowerCase() : v;}).join('');}
 function getStyleValue(obj, prop) {
@@ -200,7 +208,7 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 			,	error = j.match(/\bid=["']*([^"'>\s]*)/i)
 			,	message = (error?status:'')
 			,	img = i.match(/<img[^>]+\balt=["']*([^"'>\s]+)/i)
-			,	task = (img?img[1]:i);
+			,	task = (img?img[1]:decodeHTMLSpecialChars(i));
 				if (k = id('task')) {
 					i = (e = gn('img', k)).length;
 					if (!i == !!img) {
@@ -220,8 +228,8 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 						if (
 							(e = gn('p', k)).length > 1
 						&&	!FM.test((e = e[1]).previousElementSibling.tagName)
-						&&	e.innerHTML != task
-						) e.innerHTML = task, error = 1;
+						&&	e.textContent != task
+						) e.textContent = task, error = 1;
 					} else
 					if (i) {
 						e = e[0];
