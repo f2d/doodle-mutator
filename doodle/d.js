@@ -100,10 +100,11 @@ if (lang == 'ru') la = {
 
 function decodeHTMLSpecialChars(t) {
 	return String(t)
-	.replace(/&amp;/gi, '&')
 	.replace(/&lt;/gi, '<')
 	.replace(/&gt;/gi, '>')
-	.replace(/&quot;/gi, '"');
+	.replace(/&quot;/gi, '"')
+	.replace(/&#0*39;/g, "'")
+	.replace(/&amp;/gi, '&');
 }
 
 function propNameForIE(n) {return n.split('-').map(function(v,i) {return i > 0 ? v.slice(0,1).toUpperCase()+v.slice(1).toLowerCase() : v;}).join('');}
