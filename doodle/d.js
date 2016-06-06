@@ -1,6 +1,7 @@
 ﻿var	LS = window.localStorage || localStorage
 ,	h = gn('header')[0], i,j,k,l = location.href
 ,	rootPath = (h?gn('a',h)[0].href.replace(/^\w+:\/+[^\/]+\/+/, '/'):'/')
+,	TOS = ['object','string']
 ,	AN = /\banno\b/i, PT = /\bpost\b/i, DP = /^(div|p)$/i, FM = /^form$/i
 ,	TU = /^\d+(<|>|$)/
 ,	WS = /^\s+|\s+$/g
@@ -12,6 +13,8 @@
 ,	filter, checking, CS = 'checkStatus', CM = 'checkMistype', data = {}, flag = {}
 ,	inout = (('ontouchstart' in document.documentElement)?'':'date-out')
 ,	la, lang = document.documentElement.lang || 'en';
+
+//* UI translation *-----------------------------------------------------------
 
 if (lang == 'ru') la = {
 	arch: 'архив'
@@ -27,9 +30,11 @@ if (lang == 'ru') la = {
 ,	top: 'Наверх'
 ,	skip: 'Пропустить'
 ,	skip_hint: 'Пропускать задания из этой нити до её завершения.'
+,	unskip: 'Сбросить пропуски'
+,	unskip_hint: 'Очистить список нитей, пропущенных в этой комнате.'
 ,	clear: {
 		unsave: {ask: 'Удалить данные из памяти браузера:', unit: 'байт'}
-	,	unskip: {ask: 'Пропуски будут очищены для этих комнат:', unit: 'нитей'}
+	,	unskip: {ask: 'Пропуски будут очищены для этих комнат:', unit: ['нить','нити','нитей']}
 	}
 ,	load: 'Проверка... '
 ,	fail: 'Ошибка '
@@ -43,11 +48,14 @@ if (lang == 'ru') la = {
 ,	frozen: 'Замороженные нити'
 ,	burnt: 'Выжженные нити'
 ,	full: 'Полные нити'
-,	hint: {	show: 'Кликните, чтобы показать/спрятать.'
+,	hint: {
+		show: 'Кликните, чтобы показать/спрятать.'
 	,	frozen: 'Замороженная нить.\n'
 	,	burnt: 'Выжженная нить.\n'
 	,	full: 'Полная нить.\n'
-},	count: {img: 'Рисунков'
+	}
+,	count: {
+		img: 'Рисунков'
 	,	u: 'Своих постов'
 	,	o: 'Прочих'
 	,	last: 'последний'
@@ -55,7 +63,8 @@ if (lang == 'ru') la = {
 	,	self: 'Себя'
 	,	each: 'Всех'
 	,	total: 'Всего'
-}}; else la = {
+	}
+}; else la = {
 	arch: 'archive'
 ,	draw: 'Draw'
 ,	checked: 'Confirm'
@@ -69,9 +78,11 @@ if (lang == 'ru') la = {
 ,	top: 'Top'
 ,	skip: 'Skip'
 ,	skip_hint: 'Skip any task from this thread from now on.'
+,	unskip: 'Unskip'
+,	unskip_hint: 'Clear list of threads, skipped in this room.'
 ,	clear: {
 		unsave: {ask: 'Data to be deleted from browser memory (Local Storage):', unit: 'bytes'}
-	,	unskip: {ask: 'Skipping will be cleared for following rooms:', unit: 'threads'}
+	,	unskip: {ask: 'Skipping will be cleared for following rooms:', unit: ['thread','threads']}
 	}
 ,	load: 'Checking... '
 ,	fail: 'Error '
@@ -85,18 +96,24 @@ if (lang == 'ru') la = {
 ,	frozen: 'Frozen threads'
 ,	burnt: 'Burnt threads'
 ,	full: 'Full threads'
-,	hint: {	show: 'Click here to show/hide.'
+,	hint: {
+		show: 'Click here to show/hide.'
 	,	frozen: 'Frozen thread.\n'
 	,	burnt: 'Burnt thread.\n'
 	,	full: 'Full thread.\n'
-},	count: {img: 'Pictures'
+	}
+,	count: {
+	img: 'Pictures'
 	,	u: 'Own posts'
 	,	o: 'Others'
 	,	last: 'last'
 	,	self: 'Self'
 	,	each: 'All at once'
 	,	total: 'Total'
-}};
+	}
+};
+
+//* Utility functions *--------------------------------------------------------
 
 function decodeHTMLSpecialChars(t) {
 	return String(t)
@@ -119,6 +136,10 @@ function showProps(o,z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'
 function gn(n,p) {return (p||document).getElementsByTagName(n);}
 function gi(t,p) {return (p = gn('input',p)) && t ? AF.call(p, function(e) {return e.type == t;}) : p;}
 function id(i) {return document.getElementById(i);}
+function del(e,p) {
+	if (p?p:p = e.parentNode) p.removeChild(e);
+	return p;
+}
 function cre(e,p,b) {
 	e = document.createElement(e);
 	if (b) p.insertBefore(e, b); else
@@ -130,7 +151,7 @@ function deleteCookie(c) {document.cookie = c+'=; expires=Thu, 01 Jan 1970 00:00
 function toggleHide(e,d) {e.style.display = (e.style.display != (d?d:d='')?d:'none');}
 function getPicSubDir(p) {var s = p.split('.'); return s[1][0]+'/'+s[0][0]+'/';}
 function unixTimeToStamp(t,u) {
-	if (['object','string'].indexOf(typeof t) > -1) t = parseInt(t)*1000;
+	if (TOS.indexOf(typeof t) > -1) t = parseInt(t)*1000;
 var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
 	t = ['FullYear','Month','Date','Hours','Minutes','Seconds'];
 	u = 'get'+(u?'UTC':'');
@@ -138,8 +159,26 @@ var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
 	return t.slice(0,3).join('-')+' '+t.slice(3).join(':');
 }
 
+function getFormattedNUnit(num, unit) {
+	if (unit.join) {
+	var	i = unit.length-1, n = Math.floor(num) % 100;
+		if (n < 11 || n >= 20) {
+			n %= 10;
+			if (n == 1) i = 0; else
+			if (n > 1 && n < 5) i = 1;
+		}
+		unit = unit[i];
+	}
+	return num+' '+unit;
+}
+
+getFormattedNUnit
+//* Specific functions *-------------------------------------------------------
+
 function getSaves(v,e) {
-var	j = [], k = [], keep = (e?e.getAttribute('data-keep'):0) || '', l = keep.length;
+var	keep = (e?e.getAttribute('data-keep'):0) || ''
+,	room = (e?e.getAttribute('data-room'):0) || ''
+,	j = [], k = [], l = keep.length;
 	if (v == 'unsave') {
 	var	m = 'string';
 		for (i in LS) if (
@@ -147,17 +186,19 @@ var	j = [], k = [], keep = (e?e.getAttribute('data-keep'):0) || '', l = keep.len
 		&&	(!keep || keep !== i.substr(0,l))
 		) {
 			k.push(i);
-			j.push(i+': '+a.length+' '+la.clear[v].unit);
+			j.push(i+': '+getFormattedNUnit(a.length, la.clear[v].unit));
 		}
 	} else
 	if (v == 'unskip') {
 	var	a = document.cookie.split(/;\s*/), i = a.length, r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+)\/(.*)$/i;
 		while (i--) if (
 			(m = a[i].match(r))
+		&&	(m[2] = decodeURIComponent(m[2]))
 		&&	(!keep || keep !== m[1].substr(0,l))
+		&&	(!room || room === m[2])
 		) {
 			k.push(m[1]);
-			j.push(decodeURIComponent(m[2])+': '+m[3].split('/').length+' '+la.clear[v].unit);
+			j.push(m[2]+': '+getFormattedNUnit(m[3].split('/').length, la.clear[v].unit));
 		}
 	}
 	return {rows: j, keys: k};
@@ -169,16 +210,19 @@ function checkSaves(e) {
 }
 
 function clearSaves(e) {
-	if (e.preventDefault) e.preventDefault();
-	if (e = e.target) v = e.id;
-var	v,a = getSaves(v,e), k = a.keys;
-	if (!v) alert(la.fail+': '+v); else
-	if (k.length && confirm(la.clear[v].ask+'\n\n'+a.rows.join('\n'))) {
-		for (i in k) {
-			if (v == 'unskip') deleteCookie(k[i]); else
-			if (v == 'unsave') LS.removeItem(k[i]);
+	if (e) {
+		if (e.preventDefault) e.preventDefault(), e = e.target;
+		if (v = e.id) {
+		var	v,a = getSaves(v,e), k = a.keys;
+			if (k.length && confirm(la.clear[v].ask+'\n\n'+a.rows.join('\n'))) {
+				for (i in k) {
+					if (v == 'unskip') deleteCookie(k[i]); else
+					if (v == 'unsave') LS.removeItem(k[i]);
+				}
+				if (e.getAttribute('data-room')) del(e), document.location.reload(true);
+				else e.disabled = true;
+			}
 		}
-		if (e) e.disabled = true;
 	}
 	return false;
 }
@@ -187,7 +231,7 @@ function checkMyTask(event, e) {
 	if (checking) return;
 	checking = 1;
 var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
-	if (f) f.parentNode.removeChild(f);
+	if (f) del(f);
 	if (f = e) while (f && !FM.test(f.tagName)) f = f.parentNode; else
 	if (f = s.getAttribute(d)) {
 		f = id(f), s.removeAttribute(d);
@@ -281,11 +325,8 @@ var	a = e.parentNode, nested = /^a$/i.test(a.tagName);
 			a.setAttribute('onclick', 'togglePicSize(this.firstElementChild)');
 		}
 		a.title = e.alt.slice(i);
-	} else if (nested) {
-		r = a.parentNode;
-		r.appendChild(e);
-		r.removeChild(a);
-	}
+	} else
+	if (nested) del(a).appendChild(e);
 	e.setAttribute('onload', 'setPicStyle(this)');
 }
 
@@ -354,6 +395,8 @@ var	t = id(i) || (showContent(), id(i)), d = t.firstElementChild;
 	if (/^a$/i.test(d.firstElementChild.tagName)) d.nextElementSibling.style.display = '';
 	t.scrollIntoView(false);
 }
+
+//* HTML builder *-------------------------------------------------------------
 
 function showContent(pre) {
 	s = data.sort;
@@ -697,6 +740,8 @@ d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.gro
 	}
 }
 
+//* Runtime *------------------------------------------------------------------
+
 if ((i = gn('pre')).length) showContent(i[0]);
 if (k = id('task')) {
 	if ((filter = k.getAttribute('data-filter')) !== null && (i = gi()).length) {
@@ -711,8 +756,8 @@ if (k = id('task')) {
 	}
 	if (j = k.getAttribute('data-t')) {
 		f = 0;
-		if ((i = gn('p',k)).length) i[0].innerHTML +=
-			(
+		if ((i = gn('p',k)).length) {
+			i[0].innerHTML += (
 				(j = j.split('-')).length > 1 && j[1]
 				? '<a class="r" href="javascript:skipMyTask('+j[1]+')" title="'+la.skip_hint+'">「X」</a>'
 				:''
@@ -721,6 +766,7 @@ if (k = id('task')) {
 				? 'javascript:checkMyTask()" title="'+new Date(j*1000)+'\n\n'+la.check+'">「<span id="'+CS+'">?</span>'
 				: '?draw">「'+la.draw
 			)+'」</a>';
+		}
 		if (f && (i = gi('submit',k)).length) {
 			f = i[0];
 			while (f && !FM.test(f.tagName)) f = f.parentNode;
@@ -729,6 +775,15 @@ if (k = id('task')) {
 		if ((i = gn('img',k)).length && (i = i[0]) && (j = i.alt.indexOf(';')+1)) i.alt = i.alt
 			.replace(';',', ')
 			.replace('*','x'), setPicResize(i,j);
+	}
+	if (j = k.getAttribute('data-skip')) {
+		if ((i = gn('p',k)).length) {
+			j = j.split('/', 1)[0];
+			i[0].innerHTML +=
+				'<a class="r" href="javascript:void '+j+'" data-room="'
+			+	decodeURIComponent(location.pathname.replace(/^.*?\/+([^/]+)\/*$/, '$1'))
+			+	'" id="unskip" title="'+la.unskip_hint+'">「'+la.unskip+'」</a>';
+		}
 	}
 	if (i = (j = gn('ul',k)).length) {
 		n = (m = gn('b')).length, k = 1;

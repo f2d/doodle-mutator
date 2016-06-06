@@ -495,7 +495,7 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 		<p class="hint">'.$tmp_draw_hint.'</p>').'<noscript>
 		<p class="hint">'.$tmp_require_js.'</p></noscript>';
 		$subtask = '
-		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.get_draw_vars().'"></script>
+		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.csv2nl(get_draw_vars()).'"></script>
 		<div class="task">
 			<p class="hint">'.$n['list'].'</p>
 		</div>';
@@ -708,7 +708,7 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data
 		if ($room) {
 			data_lock($room);
 if (TIME_PARTS) time_check_point('inb4 aim, locked');
-			data_aim(!$u_opts['unknown'], get_room_skip_list());
+			data_aim(!$u_opts['unknown'], $skip_list = get_room_skip_list());
 			list($thread, $report, $last) = data_get_visible_threads();
 			data_unlock();
 if (TIME_PARTS) time_check_point('got visible data, unlocked');
@@ -788,7 +788,10 @@ if (TIME_PARTS) time_check_point('after sort + join');
 					$src = (strpos($t, ';') ? get_pic_resized_path(get_pic_normal_path($t)) : $t);
 					$task .= '
 		<img src="'.get_pic_url($src).'" alt="'.$t.'">';
-				} else $task_time = '-';
+				} else {
+					$task_time = '-';
+					if ($skip_list) $task_data['skip'] = count($skip_list).'/'.$target['count_free_tasks'];
+				}
 			} else {
 				$vars = "t0=$task_time;check=checkStatus;send=png,layers,log".(DRAW_JPG_PREF?';jp='.DRAW_JPG_PREF:'').get_draw_vars();
 				$task = '
@@ -797,7 +800,7 @@ if (TIME_PARTS) time_check_point('after sort + join');
 		<p class="hint">'.$tmp_require_js.'</p></noscript>';
 				$n = get_draw_app_list($u_draw_app);
 				$subtask = '
-		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.$vars.'"></script>
+		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.csv2nl($vars).'"></script>
 		<div class="task">
 			<p class="hint">'.$n['list'].'</p>
 		</div>';

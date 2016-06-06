@@ -1,6 +1,7 @@
 <?php
 
 function str_replace_first($f, $to, $s) {return (false !== ($pos = strpos($s, $f)) ? substr_replace($s, $to, $pos, strlen($f)) : $s);}
+function csv2nl($v, $d = ';', $n = 3) {return ($n = NL.($n?str_repeat('	', $n):'')).str_replace($d, $d.$n, trim($v, $d).$d);}
 function abbr($a, $sep = '_') {foreach ((is_array($a)?$a:explode($sep, $a)) as $word) $r .= $word[0]; return $r;}
 function fln($f) {return file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);}
 function get_req() {return GET_Q ? explode('=', end(explode('?', $_SERVER['REQUEST_URI'])), 2) : array();}
@@ -109,11 +110,11 @@ function format_time_units($t) {
 	global $tmp_time_units;
 	foreach ($tmp_time_units as $k => $v) if ($t >= $k) {
 		if ($k) {$rem = $t%$k; $t = floor($t/$k);}
-		$i = 1;
+		$i = count($v)-1;
 		if ($t < 11 || $t >= 20) {
 			$s = $t%10;
 			if ($s == 1) $i = 0; else
-			if (count($v) > 2 && ($s < 1 || $s >= 5)) $i = 2;
+			if ($s > 1 && $s < 5) $i = 1;
 		}
 		$r .= ($r?' ':'').$t.' '.$v[$i];
 		if ($rem) $t = $rem; else break;
