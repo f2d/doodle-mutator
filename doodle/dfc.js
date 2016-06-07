@@ -187,6 +187,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 							t.reversable = '';
 						} else
 						if (i.slice && i.slice(0,3) == 'res') {
+							i = select.resize.value;
 							if (t.reversable == i) --t.pos;
 							else t.reversable = i;
 							for (i in select.imgSizes) cnvHid[i] = canvas[i] = orz(id('img-'+i).value);
@@ -1253,16 +1254,21 @@ var	i = e.id.slice(-1);
 }
 
 function updateResize(e) {
-	mode.scale = (e.value.indexOf(' ') < 0);
+	mode.scale = (e.value.indexOf(' ') < 0?e.value.substr(-1):'');
 }
 
 function updateDimension(e) {
 	if (e) {
-		i = getLastWord(e.id), c = canvas[i], v = orz(e.value);
-		cnvHid[i] = canvas[i] = e.value = v = (
+		i = mode.scale, c = canvas, a = (i == 'W' || i == 'H' ? c.width/c.height : 0);
+		i = getLastWord(e.id), v = orz(e.value);
+		cnvHid[i] = c[i] = e.value = v = (
 			v < (b = select.imgLimits[i][0]) ? b : (
 			v > (b = select.imgLimits[i][1]) ? b : v)
 		);
+		if (a) {
+			if (i == 'width') a = v/a, b = 'height'; else a *= v, b = 'width';
+			cnvHid[b] = c[b] = id('img-'+b).value = Math.max(1, Math.round(a));
+		}
 		historyAct(mode.scale?'rescale':'resize');
 	}
 	if (!e || i == 'height') {
@@ -1557,7 +1563,7 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 function readPic(s,ls) {
 	if (!s || s == 0 || (!s.data && !s.length)) return;
 	if (!s.data) s = {data: s, name: (0 === s.indexOf('data:') ? s.split(',', 1) : s)};
-var	d = draw.time, e = new Image(), t = +new Date, i,j,k;
+var	d = draw.time, e = new Image(), t = +new Date, i,j;
 	for (i in d) if (!d[i]) d[i] = t;
 
 	e.onload = function () {
@@ -1574,17 +1580,13 @@ var	d = draw.time, e = new Image(), t = +new Date, i,j,k;
 			d.getImageData(0,0, 1,1);
 	//* actual work:
 			d = canvas;
-			if (mode.scale) {
-				k = 'scaleKeep', i = k.length, j = select.resize.value;
-				if (
-					j.substr(0,i) == k
-				&&	(d.width != e.width || d.height != e.height)
-				) {
-					i = j.substr(i), j = e.width/e.height, k = {
+			if (i = mode.scale) {
+				if ((i == 'W' || i == 'H') && (d.width != e.width || d.height != e.height)) {
+					j = e.width/e.height, j = {
 						width: (i == 'W' ? d.width : Math.max(1, Math.round(d.height*j)))
 					,	height: (i == 'H' ? d.height : Math.max(1, Math.round(d.width/j)))
 					};
-					updateD(k);
+					updateD(j);
 				}
 				clearFill(d).drawImage(e, 0,0, e.width, e.height, 0,0, d.width, d.height);
 			} else {
