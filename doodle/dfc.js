@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.64'
-,	INFO_DATE = '2013-04-01 — 2016-03-24'
+,	INFO_VERSION = 'v0.9.65'
+,	INFO_DATE = '2013-04-01 — 2016-06-07'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -36,14 +36,14 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 		debug:	false
 	,	shape:	false	//* <- straight line	/ fill area	/ copy
 	,	step:	false	//* <- curve line	/ erase area	/ rect pan
-	,	resize:	false
+	,	scale:	false
 	,	lowQ:	false
 	,	brushView:	false
 	,	limitFPS:	false
 	,	autoSave:	true
 	}
 ,	modes = []
-,	modeL = 'DLURQVFA'
+,	modeL = 'DLUSQVFA'
 ,	shapeHotKey = 'NPRTYQ.M'
 ,	select = {
 		imgSizes: {width:640, height:360}
@@ -64,7 +64,21 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	,	shapeModel: '//[oOO{<'
 	,	textStylePreset:['', DEFAULT_FONT, 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'Modern', 'Impact, "Arial Narrow"', 'Anime Ace, Comic Sans', '"Century Gothic"', 'Script']
 	,	options: {
-			shape	: ['line', 'freehand poly', 'rectangle', 'circle', 'ellipse', 'speech balloon', 'speech box', 'move']
+			resize: {
+				'top left':	'TL crop/pad: anchor to top left'
+			,	'top center':	'TC crop/pad: anchor to top center'
+			,	'top right':	'TR crop/pad: anchor to top right'
+			,	'middle left':	'ML crop/pad: anchor to middle left'
+			,	'middle center':'MC crop/pad: anchor to center'
+			,	'middle right':	'MR crop/pad: anchor to middle right'
+			,	'bottom left':	'BL crop/pad: anchor to bottom left'
+			,	'bottom center':'BC crop/pad: anchor to bottom center'
+			,	'bottom right':	'BR crop/pad: anchor to bottom right'
+			,	'scaleKeepW':	'W scale: keep aspect ratio, load: keep width'
+			,	'scaleKeepH':	'H scale: keep aspect ratio, load: keep height'
+			,	'scaleDeform':	'D scale: keep another side, load: keep both'
+			}
+		,	shape	: ['line', 'freehand poly', 'rectangle', 'circle', 'ellipse', 'speech balloon', 'speech box', 'move']
 		,	lineCap	: ['round', 'butt', 'square']
 		,	lineJoin: ['round', 'bevel', 'miter']
 		,	textStyle:['...', 'default font', 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'modern', 'narrow', 'comic', 'gothic', 'script']
@@ -198,22 +212,30 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 		var	d = this.history.cur();
 			if (!d) return;
 
-		var	s = select.imgSizes, i;
-			if (res && mode.resize) {
-				for (i in s) cnvHid[i] = d[i], canvas[i] = orz(id('img-'+i).value);
+		var	c = canvas, s = select.imgSizes, i;
+			if (res && mode.scale) {
+				for (i in s) cnvHid[i] = d[i], c[i] = orz(id('img-'+i).value);
 				c2s.putImageData(d, 0,0);
-				clearFill(canvas).drawImage(cnvHid, 0,0, d.width, d.height, 0,0, canvas.width, canvas.height);
-				for (i in s) cnvHid[i] = canvas[i];
+				clearFill(c).drawImage(cnvHid, 0,0, d.width, d.height, 0,0, c.width, c.height);
+				for (i in s) cnvHid[i] = c[i];
 			} else {
-				if (!res) {
-				var	dif = 0, e = document.activeElement, unfocused = !(e.id && s[getLastWord(e.id)]);
+				if (res) {
+				var	a = select.resize.value.split(' ')
+				,	w = c.width, h = c.height
+				,	i = d.width, j = d.height
+				,	y = (a[0] == 'top'?0:h-j)
+				,	x = (a[1] == 'left'?0:w-i);
+					if (a[0] == 'middle') y = Math.floor(y/2);
+					if (a[1] == 'center') x = Math.floor(x/2);
+				} else {
+				var	dif = x = y = 0, e = document.activeElement, unfocused = !(e.id && s[getLastWord(e.id)]);
 					for (i in s) {
-						if (canvas[i] != d[i]) cnvHid[i] = canvas[i] = d[i];
+						if (c[i] != d[i]) cnvHid[i] = c[i] = d[i];
 						if (unfocused && (e = id('img-'+i)).value != d[i]) e.value = d[i], ++dif;
 					}
 					if (dif) updateDimension();
 				}
-				c2d.putImageData(d, 0,0);
+				c2d.putImageData(d, x,y);
 			}
 		}
 	};
@@ -1231,7 +1253,7 @@ var	i = e.id.slice(-1);
 }
 
 function updateResize(e) {
-	mode.resize = !!e.checked;
+	mode.scale = (e.value.indexOf(' ') < 0);
 }
 
 function updateDimension(e) {
@@ -1241,7 +1263,7 @@ function updateDimension(e) {
 			v < (b = select.imgLimits[i][0]) ? b : (
 			v > (b = select.imgLimits[i][1]) ? b : v)
 		);
-		historyAct(mode.resize?'rescale':'resize');
+		historyAct(mode.scale?'rescale':'resize');
 	}
 	if (!e || i == 'height') {
 	var	b = id('buttonH')
@@ -1535,22 +1557,39 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 function readPic(s,ls) {
 	if (!s || s == 0 || (!s.data && !s.length)) return;
 	if (!s.data) s = {data: s, name: (0 === s.indexOf('data:') ? s.split(',', 1) : s)};
-var	d = draw.time, e = new Image(), t = +new Date, i;
+var	d = draw.time, e = new Image(), t = +new Date, i,j,k;
 	for (i in d) if (!d[i]) d[i] = t;
 
 	e.onload = function () {
+
+		function updateD(e) {
+			for (i in select.imgSizes) id('img-'+i).value = cnvHid[i] = d[i] = e[i];
+			updateDimension();
+		}
+
 		try {
 	//* throw-away test of data source safety:
 			d = cre('canvas'), d.width = d.height = 1, d = d.getContext('2d');
 			d.drawImage(e, 0,0, 1,1);
 			d.getImageData(0,0, 1,1);
 	//* actual work:
-			if (mode.resize) {
-				clearFill(canvas).drawImage(e, 0,0, e.width, e.height, 0,0, canvas.width, canvas.height);
+			d = canvas;
+			if (mode.scale) {
+				k = 'scaleKeep', i = k.length, j = select.resize.value;
+				if (
+					j.substr(0,i) == k
+				&&	(d.width != e.width || d.height != e.height)
+				) {
+					i = j.substr(i), j = e.width/e.height, k = {
+						width: (i == 'W' ? d.width : Math.max(1, Math.round(d.height*j)))
+					,	height: (i == 'H' ? d.height : Math.max(1, Math.round(d.width/j)))
+					};
+					updateD(k);
+				}
+				clearFill(d).drawImage(e, 0,0, e.width, e.height, 0,0, d.width, d.height);
 			} else {
-				for (i in select.imgSizes) id('img-'+i).value = cnvHid[i] = canvas[i] = e[i];
-				updateDimension();
-				clearFill(canvas).drawImage(e, 0,0);
+				updateD(e);
+				clearFill(d).drawImage(e, 0,0);
 			}
 			historyAct();
 			cue.autoSave = 0;
@@ -1677,7 +1716,8 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 		break;
 	}
 
-	setContent(container = id().firstElementChild
+	setContent(
+		container = id().firstElementChild
 	,	d+'draw">'			//* <- transform offset fix for o11
 	+		d+'load">'
 	+			'<'+c+' id="'+c+'" tabindex="0">'+lang.no.canvas+'</'+c+'>'
@@ -1751,19 +1791,12 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 
 	a = '<a href="javascript:void(0);" onClick="', b = '">', c = '</abbr>', d = '';
 
-	for (i in select.imgSizes) d +=
-		lang.size[i]+': '
+	for (i in select.imgSizes) d += (d?' x ':lang.size+': ')
 	+	'<input type="text" value="'+o[i[0]]+'" id="img-'+i+'" onChange="updateDimension(this)'+t
 	+	lang.size_hint
-	+	select.imgLimits[i].join(lang.range_hint)+'"> ';
+	+	select.imgLimits[i].join(lang.range_hint)+'">';
 
 	b = '<abbr title="', f = '<span class="rf">';
-
-	g = '<b class="L">'
-	+	'<b class="T"></b>'
-	+	'<i></i>'
-	+	'<b class="B"></b>'
-	+ '</b>';
 
 	setContent(id('info'),
 //* top of 2 angle brackets:
@@ -1790,13 +1823,9 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	+		'">'+INFO_VERSION+'</abbr>.'
 	+	'</p>'
 	+	'<div>'
-	+		d+'<label id="fit" title="'
-	+		lang.resize_hint+'">'
-//* 4 angle brackets:
-	+			g
-	+			'<input type="checkbox" onChange="updateResize(this)"'+(mode.resize?' checked':'')+'>'
-	+			g.replace('L', 'R')
-	+		'</label>'
+	+		'<select id="resize" onChange="updateResize(this)'+t
+	+		lang.resize_hint+'"></select>\n'
+	+		d
 	+	'</div>'
 	);
 
@@ -1832,7 +1861,7 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	,	['save'	,'F2'	,'!'		,e+'2)'	,b+'S']
 	,	['load'	,'F4'	,'?'		,e+'3)'	,b+'L']
 	, !o.read || 0 == o.read?1:['read'	,'F6'	,'&#x2324;'	,e+'4)']
-	, !o.send || 0 == o.send?1:['done'	,'F8'	,'&check;'	,e+')']
+	, !o.send || 0 == o.send?1:['done'	,'F8'	,'&#x2713;'	,e+')']
 	, 0
 	,	['info'	,'F1'	,'?'	,'showInfo()'	,b+'H']
 	]
@@ -2042,13 +2071,10 @@ var	o = outside
 		,	info_undo:	'Шаги'
 		,	info_pad:	'доска для набросков'
 		,	info_drop:	'Можно перетащить сюда файлы с диска.'
-		,	size: {
-				width:	'Ширина'
-			,	height:	'Высота'
-			}
+		,	size:		'Размер'
 		,	size_hint:	'Число от '
 		,	range_hint:	' до '
-		,	resize_hint:	'Отметить, чтобы содержимое полотна растягивалось с изменением размера или при загрузке файлов.'
+		,	resize_hint:	'Как умещать или растягивать содержимое полотна при изменении размера или загрузке файлов. Без растягивания файл просто пезезаписывает всё полотно и его размер.'
 		,	b: {
 				undo:	{sub:'назад',	t:'Отменить последнее действие.'}
 			,	redo:	{sub:'вперёд',	t:'Отменить последнюю отмену.'}
@@ -2087,7 +2113,21 @@ var	o = outside
 		,	lineJoin:	'Сгибы линий'
 		}
 	,	select.translated = {
-			shape	: ['линия', 'замкнутая линия', 'прямоугольник', 'круг', 'овал', 'овал для речи', 'коробка для речи', 'сдвиг']
+			resize: {
+				'top left':	'ЛВ дополнить/обрезать: держать левый верх'
+			,	'top center':	'СВ дополнить/обрезать: держать средний верх'
+			,	'top right':	'ПВ дополнить/обрезать: держать правый верх'
+			,	'middle left':	'ЛЦ дополнить/обрезать: держать левый центр'
+			,	'middle center':'СЦ дополнить/обрезать: держать центр'
+			,	'middle right':	'ПЦ дополнить/обрезать: держать правый центр'
+			,	'bottom left':	'ЛН дополнить/обрезать: держать левый низ'
+			,	'bottom center':'СН дополнить/обрезать: держать средний низ'
+			,	'bottom right':	'ПН дополнить/обрезать: держать правый низ'
+			,	'scaleKeepW':	'Ш масштаб: держать соотношение, загрузка: держ.ширину'
+			,	'scaleKeepH':	'В масштаб: держать соотношение, загрузка: держ.высоту'
+			,	'scaleDeform':	'Д масштаб: оставить другую сторону, загрузка: держ.обе'
+			}
+		,	shape	: ['линия', 'замкнутая линия', 'прямоугольник', 'круг', 'овал', 'овал для речи', 'коробка для речи', 'сдвиг']
 		,	lineCap	: ['круг', 'срез', 'квадрат']
 		,	lineJoin: ['круг', 'срез', 'угол']
 		,	textStyle:['...', 'шрифт по умолчанию', 'без засечек', 'с засечками', 'моноширинный', 'курсив', 'фантастика', 'модерн', 'узкий', 'комикс', 'готика', 'рукопись']
@@ -2154,13 +2194,10 @@ var	o = outside
 		,	info_undo:	'Steps'
 		,	info_pad:	'sketch pad'
 		,	info_drop:	'You can drag files from disk and drop here.'
-		,	size: {
-				width:	'Width'
-			,	height:	'Height'
-			}
+		,	size: 		'Size'
 		,	size_hint:	'Number from '
 		,	range_hint:	' to '
-		,	resize_hint:	'Check to resize canvas content to fit on size changes or when loading files.'
+		,	resize_hint:	'How to fit/resize canvas content when changing size or loading files. Without rescaling loaded file just overwrites the whole canvas and its size.'
 		,	b: {
 				undo:	'Revert last change.'
 			,	redo:	'Redo next reverted change.'
@@ -2232,10 +2269,11 @@ document.write(
 	+		'#| input[type="text"] {width: 48px; height: 22px;}'
 	+		'#| select, #| #|-color-text {width: 78px;}'
 	+		'#| textarea {min-width: 80px; min-height: 16px; height: 16px; vertical-align: top;}'
-	+		'#| {text-align: center; padding: 12px; background-color: #f8f8f8;}'
+	+		'#| {white-space: nowrap; text-align: center; padding: 12px; background-color: #f8f8f8;}'
 	+		'#|, #| input, #| select {font-family: "Arial"; font-size: 19px; line-height: normal;}'
 	+		'#|-bottom > button {border: 1px solid #000; width: 38px; height: 38px; margin: 2px; padding: 2px; font-size: 15px; line-height: 7px; text-align: center; vertical-align: top; cursor: pointer;}'
 	+		'#|-bottom {margin: 10px 0 -2px;}'
+	+		'#|-bottom, #|-debug {white-space: initial;}'
 	+		'#|-debug td {width: 234px;}'
 	+		'#|-draw canvas {vertical-align: bottom;}'
 	+		'#|-draw canvas, #|-bottom > button {box-shadow: 3px 3px rgba(0,0,0, 0.1);}'
