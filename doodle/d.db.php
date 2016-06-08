@@ -825,6 +825,10 @@ function data_aim($unknown_1st = 0, $skip_list = 0) {
 				if ($unknown_1st && !strpos(str_replace(IMG, TXT, $dfc), $u_t)) $b[$f] = $m[1];
 			}
 		}
+		$c = array(
+			'count_free_tasks' => count($a)
+		,	'count_free_unknown' => count($b)
+		);
 		if (!$a || $tt) $a[''] = 0;
 		if (!($k = array_rand($b?$b:$a)) || !is_file($get = $d.$k)) $target = array($k = '');
 		if ($k != $tt) {
@@ -859,8 +863,7 @@ function data_aim($unknown_1st = 0, $skip_list = 0) {
 //* rename old target as unlocked
 			if (is_array($u_own)) foreach ($u_own as $f => $n) rename($d.$f, $d.$n);
 		}
-		$target['count_free_tasks'] = count($a);
-		$target['count_free_unknown'] = count($b);
+		$target = array_merge($target, $c);
 	}
 }
 

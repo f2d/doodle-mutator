@@ -790,7 +790,9 @@ if (TIME_PARTS) time_check_point('after sort + join');
 		<img src="'.get_pic_url($src).'" alt="'.$t.'">';
 				} else {
 					$task_time = '-';
-					if ($skip_list) $task_data['skip'] = count($skip_list).'/'.$target['count_free_tasks'];
+					$s = count($skip_list);
+					$n = $target['count_free_tasks'];
+					if ($s && !$n) $task_data['skip'] = "$s/$n/$target[count_free_unknown]";
 				}
 			} else {
 				$vars = "t0=$task_time;check=checkStatus;send=png,layers,log".(DRAW_JPG_PREF?';jp='.DRAW_JPG_PREF:'').get_draw_vars();

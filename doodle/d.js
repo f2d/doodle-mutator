@@ -778,7 +778,7 @@ if (k = id('task')) {
 	}
 	if (j = k.getAttribute('data-skip')) {
 		if ((i = gn('p',k)).length) {
-			j = j.split('/', 1)[0];
+			j = j.split(/\D+/, 1)[0];
 			i[0].innerHTML +=
 				'<a class="r" href="javascript:void '+j+'" data-room="'
 			+	decodeURIComponent(location.pathname.replace(/^.*?\/+([^/]+)\/*$/, '$1'))
