@@ -1,19 +1,21 @@
 ﻿# doodle-mutator
 
-Parallel turn-based multiplayer online drawing game.
-Web server scripts in PHP and client-side in JS.
-A Perl message/image board included for convenience.
+## EN:
 
-## Installation steps
+Parallel turn-based multiplayer online drawing game.
+Server-side scripts in PHP and client-side in JS.
+Apache htaccess URL-rewriting is currently required to work.
+A Perl message/image board is included for convenience.
+
 
 1. Put the folders onto your web-server, make sure they are writeable by the scripts.
 	1. You can rename both folders as you wish (if you do, change the paths in respective config files).
-	2. You can use anything in place of the default board, which is modified [Kareha](http://wakaba.c3.cx/s/web/wakaba_kareha), Public Domain and written in Perl by Dag Ågren/WAHa.06x36.
+	2. You can use anything in place of the default board, which is modified [Kareha](http://wakaba.c3.cx/s/web/wakaba_kareha), Public Domain and originally written in Perl by Dag Ågren/WAHa.06x36.
 	3. If you keep everything as is, don't forget to change passwords in config.
 2. Get the web-server up and running, index.php must be default root for the doodle folder.
 3. Open the doodle folder in a web-browser, input a name for the admin account.
 
-## EN: What is it all about?
+### What is the game about?
 
 0. Make a room.
 1. First person writes some initial descriptions.
@@ -26,7 +28,12 @@ May be continued as long as the participants wish to, then watch resulting chain
 Can be fun, depending on people's efforts and ideas.
 Another way to name the game is "broken telephone", it can be played with just a pen and paper.
 
-## RU: В чём смысл игры?
+
+Want to show your appreciation? Nice drawing is better, any help with development is even cooler, and still, if you'd like to support my server hosting, here is a button - [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU)
+
+## RU:
+
+### В чём смысл игры?
 
 0. Создаётся комната.
 1. Один человек пишет начальные описания.
@@ -38,3 +45,6 @@ Another way to name the game is "broken telephone", it can be played with just a
 Можно продолжать, пока не надоест, потом смотреть на получившиеся цепочки.
 Иногда забавно выходит, смотря кто как постарается и какие идеи принесёт.
 Вариант названия - "испорченный телефон", в такое можно играть и на бумаге.
+
+
+Хотите выразить признательность? Няшный рисунок лучше, помощь в разработке - совсем классно, и всё же, если угодно оказать помощь в оплате сервера, вот кнопка - [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU)
