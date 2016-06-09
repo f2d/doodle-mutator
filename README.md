@@ -7,6 +7,7 @@ Server-side scripts in PHP and client-side in JS.
 Apache htaccess URL-rewriting is currently required to work.
 A Perl message/image board is included for convenience.
 
+### How to install
 
 1. Put the folders onto your web-server, make sure they are writeable by the scripts.
 	1. You can rename both folders as you wish (if you do, change the paths in respective config files).
@@ -28,6 +29,7 @@ May be continued as long as the participants wish to, then watch resulting chain
 Can be fun, depending on people's efforts and ideas.
 Another way to name the game is "broken telephone", it can be played with just a pen and paper.
 
+### Contributing
 
 Want to show your appreciation? Nice drawing is better, any help with development is even cooler, and still, if you'd like to support my server hosting, here is a button - [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU)
 
@@ -46,5 +48,6 @@ Want to show your appreciation? Nice drawing is better, any help with developmen
 Иногда забавно выходит, смотря кто как постарается и какие идеи принесёт.
 Вариант названия - "испорченный телефон", в такое можно играть и на бумаге.
 
+### Помощь проекту
 
 Хотите выразить признательность? Няшный рисунок лучше, помощь в разработке - совсем классно, и всё же, если угодно оказать помощь в оплате сервера, вот кнопка - [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU)
