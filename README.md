@@ -31,7 +31,7 @@ Another way to name the game is "broken telephone", it can be played with just a
 
 ### Contributing
 
-Want to show your appreciation? Nice drawing is better, any help with development is even cooler, and still, if you'd like to support my server hosting, here is a button - [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU)
+Want to show your appreciation? Nice drawing is better, any help with development is even cooler, and still, if you'd like to support my server hosting, here is a button — [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU)
 
 ## RU:
 
@@ -46,8 +46,8 @@ Want to show your appreciation? Nice drawing is better, any help with developmen
 
 Можно продолжать, пока не надоест, потом смотреть на получившиеся цепочки.
 Иногда забавно выходит, смотря кто как постарается и какие идеи принесёт.
-Вариант названия - "испорченный телефон", в такое можно играть и на бумаге.
+Вариант названия — "испорченный телефон", в такое можно играть и на бумаге.
 
 ### Помощь проекту
 
-Хотите выразить признательность? Няшный рисунок лучше, помощь в разработке - совсем классно, и всё же, если угодно оказать помощь в оплате сервера, вот кнопка - [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU)
+Хотите выразить признательность? Няшный рисунок лучше, помощь в разработке — совсем классно, и всё же, если угодно оказать помощь в оплате сервера, вот кнопка — [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU)
