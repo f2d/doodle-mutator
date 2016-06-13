@@ -1,10 +1,4 @@
-﻿var	BR = /^br$/i
-,	DIV = /^div$/i
-,	FORM = /^form$/i
-,	INPUT = /^input$/i
-,	MENU = /^m_(\d+_)+menu$/i;
-
-function mm() {
+﻿function mm() {
 	if (!(flag || flag.g || flag.m)) return;	//* <- god|mod
 var	a = gn('p'), i = a.length, p = id('tower'), f;
 	if (!p && (p = id('task'))) while ((p = p.nextSibling) && !DIV.test(p.tagName));
@@ -18,8 +12,8 @@ var	a = gn('p'), i = a.length, p = id('tower'), f;
 }
 
 function mDropAll(p) {
-var	a = gn('div'), i = a.length, p;
-	while (i--) if ((p = a[i]).id && MENU.test(p.id)) mDrop(p.parentNode);
+var	a = gn('div'), i = a.length, p,r = /^m_(\d+_)+menu$/i;
+	while (i--) if ((p = a[i]).id && r.test(p.id)) mDrop(p.parentNode);
 }
 
 function mDropDown(p) {
@@ -32,7 +26,8 @@ var	n = p.id+'_menu', m = id(n);
 		if (lang == 'ru') la = {
 			tip: (c
 ?'Пункты пойдут снизу вверх, разом со всей комнаты.|\
-Удалить пост и файл - 2 разных пункта.|\
+Удалить пост и файл - 2 разных пункта..|\
+Удаление файла без стирания переместит его в подпапку для мусора.|\
 На 1 строке сработает только 1 пункт.|\
 Рекомендуется заморозка и действия по шагам.|\
 Также рекомендуется вмешиваться пореже.'
@@ -52,7 +47,7 @@ var	n = p.id+'_menu', m = id(n);
 		,	z: 'Сбросить всё.'
 		,	o: (c
 ?(flag.v?'':'в архив+готово+нет|замороз.нить+отм.+сжечь||удалить нить'
-+(g?'+файлы':'')+'|удалить пост|удалить файл+обнулить|'
++(g?'+файлы+стереть с диска':'')+'|удалить пост (но не файл)|удалить файл+обнулить'+(g?'+стереть с диска':'')+'|'
 +(g?'доб.пост+допис.+заменить|':'')+'|слить сюда+отсюда|разделить нить отсюда')
 +(g?'|снос комн.+файлов+архива|переназв.комн.'+(flag.v?'':'+копир.нить в'):'')
 
@@ -66,6 +61,7 @@ var	n = p.id+'_menu', m = id(n);
 ?'Apply changes on entire room.|\
 Options go last to first, avoid batch submits, use freeze.|\
 Deleting post with file requires 2 checkboxes.|\
+Deleting pic without erasing will move it to trash subfolder.|\
 Only 1 checkbox per line will work.|\
 Also, do not ruin the game modifying too much.'
 
@@ -85,7 +81,7 @@ Green: you.')
 		};
 	var	o = (c
 ?(flag.v?'':'archive+ready+wait|freeze tr.+warm up+burn||delete thread'
-+(g?'+pics':'')+'|delete post|delete pic+nullify|'
++(g?'+pics+erase from disk':'')+'|delete post (but not pic)|delete pic+nullify'+(g?'+erase from disk':'')+'|'
 +(g?'insert post+add+replace|':'')+'|merge thread target+source|split thread from here')
 +(g?'|nuke room+pics+arch|rename room'+(flag.v?'':'+copy trd to'):'')
 

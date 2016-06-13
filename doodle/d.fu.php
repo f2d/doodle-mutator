@@ -11,6 +11,8 @@ function trim_room($r) {
 '/[^\w\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}.!-]+/u', '_', trim(trim($r), '\\/')	//* <- add more unicode alphabets to complement \w?
 	)), 0, ROOM_NAME_MAX_LENGTH, ENC));
 }
+function get_file_name($path, $delim = '/') {return false === ($rr = strrpos($path, $delim)) ? '' : substr($path, $rr+1);}
+function get_file_ext($path) {return strtolower(get_file_name($path, '.'));}
 function get_room_skip_name($r) {return array(ME.'-skip-'.md5($r = rawurlencode($r)), $r);}
 function get_room_skip_list($k = '') {
 	return ($v = $_COOKIE[$k?$k:reset(get_room_skip_name($GLOBALS['room']))])
@@ -130,21 +132,28 @@ function exit_if_not_mod($t) {
 }
 
 function optimize_pic($filepath) {
-	if (function_exists('exec') && (substr($f = $filepath, -4) == '.png') && is_file('optipng.exe')) {
-		$e = './optipng.exe -fix "'.$f.'"';
-	//	$e = './optipng.exe -fix -quiet "'.$f.'"';
-		$output = array('');
-		data_lock('/pic');
-		exec(DIRECTORY_SEPARATOR == '/' ? $e : str_replace('/', DIRECTORY_SEPARATOR, $e), $output, $return);
-		data_unlock('/pic');
-		if (is_file($f .= '.bak') && filesize($f)) {
-			data_log_adm("Optimizing $filepath failed, restoring from $f");
-			if (filesize($filepath) ? rename($filepath, $filepath.'.bad') : unlink($filepath)) rename($f, $filepath);
-			if (!$return) $return = 'fallback';
-		}
-		if ($return) {
-			if (!strlen($o = trim(is_array($output) ? implode(NL, $output) : $output))) $o = 'empty';
-			data_log_adm("Command line: $e\nReturn code: $return\nShell output: $o");
+	if (function_exists('exec') && ($f = $filepath) && ($e = get_file_ext($f))) {
+		global $cfg_optimize_pics;
+		foreach ($cfg_optimize_pics as $format => $tool) if ($e == $format)
+		foreach ($tool as $program => $command) {
+			if (is_file($p = $program) || is_file($p .= '.exe')) $p = "./$p";
+			else continue;
+
+			$e = vsprintf($command, array($p, $f));
+			$output = array('');
+			data_lock('/pic');
+			exec(DIRECTORY_SEPARATOR == '/' ? $e : str_replace('/', DIRECTORY_SEPARATOR, $e), $output, $return);
+			data_unlock('/pic');
+			if (is_file($f .= '.bak') && filesize($f)) {
+				data_log_adm("Optimizing $filepath failed, restoring from $f");
+				if (filesize($filepath) ? rename($filepath, $filepath.'.bad') : unlink($filepath)) rename($f, $filepath);
+				if (!$return) $return = 'fallback';
+			}
+			if ($return) {
+				if (!strlen($o = trim(is_array($output) ? implode(NL, $output) : $output))) $o = 'empty';
+				data_log_adm("Command line: $e\nReturn code: $return\nShell output: $o");
+			}
+			return;
 		}
 	}
 }
@@ -205,7 +214,7 @@ function get_template_hint($t) {
 	,	array('<a href="', '">', '</a>', '<span class="', '</span>', NL)
 	, nl2br(htmlspecialchars(preg_replace_callback('~\b(\d+)s\b~', function ($match) {
 		return format_time_units($match[1]);
-        }, $t))));
+	}, $t))));
 }
 
 function get_template_pre($p, $R = 0) {

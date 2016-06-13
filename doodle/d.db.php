@@ -367,24 +367,38 @@ function data_archive_ready_go() {
 	}
 }
 
-function data_del_pic($f) {
-	if (is_file($r = get_pic_resized_path($f))) unlink($r);
-	return unlink($f);
+function data_del_pic_file($f, $keep) {
+	if (!is_file($f)) return false;
+	return (
+		$keep
+		? rename($f, $keep.get_file_name($f))
+		: unlink($r)
+	);
 }
 
-function data_del_thread($t, $n = -1, $pics = 0) {
+function data_del_pic($f, $keep) {
 	global $room;
-	if ($pics && preg_match_all('~(<img src="[^>]*/|'.IMG.')([^/">	]+)[	"]~is', file_get_contents($t), $m)) {
-		foreach ($m[2] as $p) if (($f = get_pic_subpath($p)) && is_file($f) && data_del_pic($f)) ++$c;
+	if ($keep && !is_dir($keep = DIR_PICS."trash/$room/")) mkdir($keep, 0755);
+	foreach (array(get_pic_resized_path($f), $f) as $f) $status = data_del_pic_file($f, $keep);
+	return $status;
+}
+
+function data_del_thread($t, $n = -1, $del_pics = 0) {
+	global $room;
+	if ($del_pics && preg_match_all('~(<img src="[^>]*/|'.IMG.')([^/">	]+)[	"]~is', file_get_contents($t), $m)) {
+		$to_trash = (1 == $del_pics);
+		foreach ($m[2] as $p) if (data_del_pic(get_pic_subpath($p), $to_trash)) ++$c;
 	}
 	if ($n < 0) $n = preg_replace('~^(.*?[\//]+)?(\d+)(\D[^\//]+)?$~', '$2', $t);
 	$t = (unlink($t) && ($n === false || !is_file($r = DIR_META_R."$room/$n.report.txt") || unlink($r)));
 	return ($t && $c?$c:$t);
 }
 
-function data_log_mod($a) {			//* <- array(option name, thread, row, column, option num)
+function data_mod_action($a) {			//* <- array(option name, thread, row, column, option num)
 	global $u_num, $u_flag, $room, $merge;
+
 	if (!MOD) return 0;
+
 	$ok = 0;
 	$q = explode('+', array_shift($a));
 	$o = array_shift($q);
@@ -406,7 +420,7 @@ function data_log_mod($a) {			//* <- array(option name, thread, row, column, opt
 			if ($ok) data_post_refresh();
 		}
 	} else
-	if ($o == 'freeze tr.') {
+	if (substr($o,0,8) == 'freeze t') {
 		if ((list($d,$f,$m) = data_get_thread_by_num($a[0]))	//* <- still so much redundancy
 		&& ($f != ($n = $m[1].($un > 1?'.del':($un?'':'.stop'))))
 		&& rename($d.$f, $d.$n)
@@ -416,7 +430,7 @@ function data_log_mod($a) {			//* <- array(option name, thread, row, column, opt
 			data_post_refresh();
 		}
 	} else
-	if ($o == 'delete thread') {
+	if (substr($o,0,8) == 'delete t') {
 		if ((list($d,$f,$m) = data_get_thread_by_num($a[0]))
 		&& (GOD ? (
 				($bak = NL.'['.NL.trim(file_get_contents($d.$f), BOM."\r\n").NL.']')
@@ -428,7 +442,7 @@ function data_log_mod($a) {			//* <- array(option name, thread, row, column, opt
 			data_post_refresh();
 		}
 	} else
-	if ($o == 'delete post') {
+	if (substr($o,0,11) == 'delete post') {
 		if (list($d,$f,$m) = data_get_thread_by_num($a[0])) {
 			$ok = $a[1];
 			$old = fln($f = $d.$f);
@@ -446,17 +460,17 @@ function data_log_mod($a) {			//* <- array(option name, thread, row, column, opt
 			} else $ok = -$ok;
 		}
 	} else
-	if ($o == 'delete pic') {
+	if (substr($o,0,10) == 'delete pic') {
 		if ((list($d,$f,$m) = data_get_thread_by_num($a[0]))
 		&& ($fn = data_get_u_by_file($d.$f, $a[1], 1))
 		&& (is_file($f = get_pic_subpath($fn)))
-		&& (GOD || ((is_dir($n = DIR_PICS.'del/') || mkdir($n, 0755)) && rename($f, $n.$fn)))
-		&& ($un
-			? (file_put_contents($f, '') === 0)		//* <- 0-truncate
-			: (GOD ? data_del_pic($f) : 1)
-		)) $ok = $a[1].'='.$f;
+		&& (
+			$un == 1
+			? (file_put_contents($f, '') === 0)	//* <- 0-truncate
+			: data_del_pic($f, !(GOD && $un > 1))
+		)) $ok = "$a[1]=$f";
 	} else
-	if ($o == 'merge thread target') {
+	if (substr($o,0,7) == 'merge t') {
 		if (list($d,$f,$m) = data_get_thread_by_num($a[0])) {
 			if ($un) {
 				$ok = $a[1];
@@ -476,7 +490,7 @@ function data_log_mod($a) {			//* <- array(option name, thread, row, column, opt
 			}
 		}
 	} else
-	if ($o == 'split thread from here') {
+	if (substr($o,0,7) == 'split t') {
 		if (list($d,$f,$m) = data_get_thread_by_num($a[0])) {
 			$ok = $a[1];
 			$old = fln($f = $d.$f);
@@ -498,7 +512,7 @@ function data_log_mod($a) {			//* <- array(option name, thread, row, column, opt
 	} else
 
 //* ----	right	----
-	if (substr($o, 0, 8) == 'harakiri') $ok = data_set_u_flag($u_num, 'mod_'.$room, 0, 1); else
+	if (substr($o,0,8) == 'harakiri') $ok = data_set_u_flag($u_num, 'mod_'.$room, 0, 1); else
 	if ($o == 'ban'		) $ok = data_set_u_flag($a, 'ban', !$un); else
 	if ($o == 'can report'	) $ok = data_set_u_flag($a, 'nor', $un); else
 	if ($o == 'give mod'	) $ok = data_set_u_flag($a, 'mod_'.$room, !$un); else
@@ -574,6 +588,8 @@ function data_log_mod($a) {			//* <- array(option name, thread, row, column, opt
 		$r = DIR_META_R.$room;
 		$cf = array('room', 'post');
 		if ($da = ($un > 1)) $cf[] = 'arch';
+		if ($un) $erase_pics = 2;
+
 		foreach ($cf as $f) if (($f .= '.count') && is_file($n = "$r/$f")) $ok .= ",$f:".unlink($n);
 		if ($r = glob($r.'/*.report.txt', GLOB_NOSORT)) foreach ($r as $f) unlink($f);
 
@@ -585,12 +601,12 @@ function data_log_mod($a) {			//* <- array(option name, thread, row, column, opt
 		$tc = $ac = $pc = 0;
 		if (is_dir($r = DIR_ROOM.$room.'/')) {
 			foreach (scandir($r) as $f) if (trim($f, '.'))
-			if ($un ? ($pc += data_del_thread($r.$f, 0, 1)) : unlink($r.$f)) $tc++;
+			if ($un ? ($pc += data_del_thread($r.$f, 0, $erase_pics)) : unlink($r.$f)) $tc++;
 			rmdir($r);
 		}
 		if ($da && is_dir($r = DIR_ARCH.$room.'/')) {
 			foreach (scandir($r) as $f) if (is_file($f = $r.$f)) {
-				if ($pc += data_del_thread($f, 0, 1)) $ac++;	//* <- with pics!!
+				if ($pc += data_del_thread($f, 0, $erase_pics)) $ac++;
 			}
 			delTree($r);
 		}

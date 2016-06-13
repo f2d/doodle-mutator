@@ -362,7 +362,7 @@ if ($u_key) {
 				$post_status = 'no_lock';
 			} else
 			foreach (array_reverse($k) as $i) {
-				$m = data_log_mod($act[$i]);	//* <- act = array(option name, thread, row, column)
+				$m = data_mod_action($act[$i]);	//* <- act = array(option name, thread, row, column)
 				if ($post_status != 'unkn_res') $post_status = ($m?OK:'unkn_res');
 			}
 		}

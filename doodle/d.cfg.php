@@ -21,6 +21,11 @@ example:
 ,	array('april-fools','nd',401, 401)
 ,	array('cirno-day', 'nd', 909, 909)
 );
+$cfg_optimize_pics = array(
+	'png' => array(
+		'optipng' => '"%s" -fix "%s"'
+	)
+);
 $cfg_draw_app = array('dfc', 'milf');
 $cfg_draw_vars = array(
 	'save' => 'draw_max_recovery'

@@ -2,7 +2,13 @@
 ,	h = gn('header')[0], i,j,k,l = location.href
 ,	rootPath = (h?gn('a',h)[0].href.replace(/^\w+:\/+[^\/]+\/+/, '/'):'/')
 ,	TOS = ['object','string']
-,	AN = /\banno\b/i, PT = /\bpost\b/i, DP = /^(div|p)$/i, FM = /^form$/i
+,	ANNO = /\banno\b/i
+,	POST = /\bpost\b/i
+,	BR = /^br$/i
+,	DIV = /^div$/i
+,	DIVP = /^(div|p)$/i
+,	FORM = /^form$/i
+,	INPUT = /^input$/i
 ,	TU = /^\d+(<|>|$)/
 ,	WS = /^\s+|\s+$/g
 ,	NL = /^(\r\n|\r|\n)/g
@@ -172,25 +178,14 @@ function getFormattedNUnit(num, unit) {
 	return num+' '+unit;
 }
 
-getFormattedNUnit
 //* Specific functions *-------------------------------------------------------
 
 function getSaves(v,e) {
 var	keep = (e?e.getAttribute('data-keep'):0) || ''
 ,	room = (e?e.getAttribute('data-room'):0) || ''
 ,	j = [], k = [], l = keep.length;
-	if (v == 'unsave') {
-	var	m = 'string';
-		for (i in LS) if (
-			(typeof (a = LS[i]) === m)
-		&&	(!keep || keep !== i.substr(0,l))
-		) {
-			k.push(i);
-			j.push(i+': '+getFormattedNUnit(a.length, la.clear[v].unit));
-		}
-	} else
 	if (v == 'unskip') {
-	var	a = document.cookie.split(/;\s*/), i = a.length, r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+)\/(.*)$/i;
+	var	m,a = document.cookie.split(/;\s*/), i = a.length, r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+)\/(.*)$/i;
 		while (i--) if (
 			(m = a[i].match(r))
 		&&	(m[2] = decodeURIComponent(m[2]))
@@ -200,8 +195,17 @@ var	keep = (e?e.getAttribute('data-keep'):0) || ''
 			k.push(m[1]);
 			j.push(m[2]+': '+getFormattedNUnit(m[3].split('/').length, la.clear[v].unit));
 		}
+	} else
+	if (v == 'unsave' && LS && (i = LS.length)) {
+		while (i--) if (
+			(m = LS.key(i))
+		&&	(!keep || keep !== m.substr(0,l))
+		) {
+			k.push(m);
+			j.push(m+': '+getFormattedNUnit(LS[m].length, la.clear[v].unit));
+		}
 	}
-	return {rows: j, keys: k};
+	return {rows: j.sort(), keys: k.sort()};
 }
 
 function checkSaves(e) {
@@ -232,10 +236,10 @@ function checkMyTask(event, e) {
 	checking = 1;
 var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 	if (f) del(f);
-	if (f = e) while (f && !FM.test(f.tagName)) f = f.parentNode; else
+	if (f = e) while (f && !FORM.test(f.tagName)) f = f.parentNode; else
 	if (f = s.getAttribute(d)) {
 		f = id(f), s.removeAttribute(d);
-		if (!FM.test(f.tagName)) f = ((f = gn('form', f)) && f.length ? f[0] : 0);
+		if (!FORM.test(f.tagName)) f = ((f = gn('form', f)) && f.length ? f[0] : 0);
 	}
 	if (f && event) event.preventDefault();
 	s.textContent = la.load+0;
@@ -258,7 +262,7 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 					i = (e = gn('img', k)).length;
 					if (!i == !!img) {
 						e = s, error = 1;
-						while (!DP.test(e.tagName) && (i = e.parentNode)) e = i;
+						while (!DIVP.test(e.tagName) && (i = e.parentNode)) e = i;
 						e = cre('b', e);
 						e.id = CM;
 						e.className = 'post r';
@@ -272,7 +276,7 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 					if (!img) {
 						if (
 							(e = gn('p', k)).length > 1
-						&&	!FM.test((e = e[1]).previousElementSibling.tagName)
+						&&	!FORM.test((e = e[1]).previousElementSibling.tagName)
 						&&	e.textContent != task
 						) e.textContent = task, error = 1;
 					} else
@@ -353,14 +357,14 @@ var	e = event.target, v = (e.value||'').replace(WS, '').toLowerCase(), k = 'last
 	if (!c) return;
 	e[k] = v;
 var	c,d = gn('div',c), i,j,l = d.length, o = [], p,alt;
-	for (i = 0; i < l; i++) if (PT.test((e = d[i]).className)) {
+	for (i = 0; i < l; i++) if (POST.test((e = d[i]).className)) {
 		if (o.indexOf(p = e.parentNode) < 0) o.push(p);
 		if (e == p.firstElementChild) alt = 1;
 		if (!(k = gn('p',e)).length) k = e.textContent;
 		else if (filter == 1 && k.length > 1) k = k[1].textContent;
 		else {
 			j = k.length-1, j = k[j > 1?1:j], k = '';
-			while (j = j.nextSibling) if (!DP.test(j.tagName)) k += j.textContent;
+			while (j = j.nextSibling) if (!DIVP.test(j.tagName)) k += j.textContent;
 		}
 		if (j = (!v || !(k = k.replace(WS, '').toLowerCase()) || k.indexOf(v) >= 0)) {
 			alt = (alt?'':' alt');
@@ -719,7 +723,7 @@ d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.gro
 	} else
 	if (g == '*') {
 		d = gn('div'), i = d.length;
-		while (i--) if (PT.test((c = d[i]).className) && (p = gn('p',c)).length > 1) {
+		while (i--) if (POST.test((c = d[i]).className) && (p = gn('p',c)).length > 1) {
 
 			function w(e) {
 			var	sum = e.offsetWidth, i,a = ['border-left-width', 'padding-left', 'padding-right', 'border-right-width'];
@@ -769,7 +773,7 @@ if (k = id('task')) {
 		}
 		if (f && (i = gi('submit',k)).length) {
 			f = i[0];
-			while (f && !FM.test(f.tagName)) f = f.parentNode;
+			while (f && !FORM.test(f.tagName)) f = f.parentNode;
 			if (f) f.setAttribute('onsubmit', 'checkMyTask(event, this)');
 		}
 		if ((i = gn('img',k)).length && (i = i[0]) && (j = i.alt.indexOf(';')+1)) i.alt = i.alt
@@ -787,7 +791,7 @@ if (k = id('task')) {
 	}
 	if (i = (j = gn('ul',k)).length) {
 		n = (m = gn('b')).length, k = 1;
-		while (n--) if (AN.test(m[n].className)) {k = 0; break;}
+		while (n--) if (ANNO.test(m[n].className)) {k = 0; break;}
 		while (i--) if (m = j[i].previousElementSibling) {
 			m.innerHTML = '<a href="javascript:;" onClick="toggleHide(this.parentNode.nextElementSibling)">'+m.innerHTML+'</a>';
 			if (k) toggleHide(j[i]), allowApply(-1);
@@ -813,6 +817,10 @@ var	p = k.parentNode, c,d,e,r = /^\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
 		d.appendChild(m);
 	}
 }
-for (i in (j = ['unsave', 'unskip'])) if (e = id(k = j[i])) {
-	e.onclick = clearSaves, (e.onmouseover = checkSaves)(k);
+k = 0;
+for (i in (j = ['unsave', 'unskip'])) if (e = id(j[i])) e.disabled = true, ++k;
+if (k) {
+	document.addEventListener('load', function() {
+		for (i in j) if (e = id(k = j[i])) e.onclick = clearSaves, (e.onmouseover = checkSaves)(k);
+	}, false);
 }
