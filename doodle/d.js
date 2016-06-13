@@ -202,7 +202,7 @@ var	keep = (e?e.getAttribute('data-keep'):0) || ''
 		&&	(!keep || keep !== m.substr(0,l))
 		) {
 			k.push(m);
-			j.push(m+': '+getFormattedNUnit(LS[m].length, la.clear[v].unit));
+			j.push(m+': '+getFormattedNUnit(LS.getItem(m).length, la.clear[v].unit));
 		}
 	}
 	return {rows: j.sort(), keys: k.sort()};
@@ -817,10 +817,4 @@ var	p = k.parentNode, c,d,e,r = /^\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
 		d.appendChild(m);
 	}
 }
-k = 0;
-for (i in (j = ['unsave', 'unskip'])) if (e = id(j[i])) e.disabled = true, ++k;
-if (k) {
-	document.addEventListener('load', function() {
-		for (i in j) if (e = id(k = j[i])) e.onclick = clearSaves, (e.onmouseover = checkSaves)(k);
-	}, false);
-}
+for (i in la.clear) if (e = id(i)) e.disabled = true, e.onclick = clearSaves, (e.onmouseover = checkSaves)(i);

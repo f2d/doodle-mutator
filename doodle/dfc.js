@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.65'
-,	INFO_DATE = '2013-04-01 — 2016-06-07'
+,	INFO_VERSION = 'v0.9.66'
+,	INFO_DATE = '2013-04-01 — 2016-06-14'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -65,18 +65,19 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	,	textStylePreset:['', DEFAULT_FONT, 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'Modern', 'Impact, "Arial Narrow"', 'Anime Ace, Comic Sans', '"Century Gothic"', 'Script']
 	,	options: {
 			resize: {
-				'top left':	'TL crop/pad: anchor to top left'
-			,	'top center':	'TC crop/pad: anchor to top center'
-			,	'top right':	'TR crop/pad: anchor to top right'
-			,	'middle left':	'ML crop/pad: anchor to middle left'
-			,	'middle center':'MC crop/pad: anchor to center'
-			,	'middle right':	'MR crop/pad: anchor to middle right'
-			,	'bottom left':	'BL crop/pad: anchor to bottom left'
-			,	'bottom center':'BC crop/pad: anchor to bottom center'
-			,	'bottom right':	'BR crop/pad: anchor to bottom right'
-			,	'scaleKeepW':	'W scale: keep aspect ratio, load: keep width'
-			,	'scaleKeepH':	'H scale: keep aspect ratio, load: keep height'
-			,	'scaleDeform':	'D scale: keep another side, load: keep both'
+				'top left':		'TL crop/pad anchor: top left'
+			,	'top center':		'TC crop/pad anchor: top'
+			,	'top right':		'TR crop/pad anchor: top right'
+			,	'middle left':		'ML crop/pad anchor: middle left'
+			,	'middle center':	'MC crop/pad anchor: center'
+			,	'middle right':		'MR crop/pad anchor: middle right'
+			,	'bottom left':		'BL crop/pad anchor: bottom left'
+			,	'bottom center':	'BC crop/pad anchor: bottom'
+			,	'bottom right':		'BR crop/pad anchor: bottom right'
+			,	'auto crop':		'Auto crop all outer space'
+			,	'scaleKeepW':		'W scale: keep ratio, load: keep width'
+			,	'scaleKeepH':		'H scale: keep ratio, load: keep height'
+			,	'scaleDeform':		'D scale: keep other, load: keep both'
 			}
 		,	shape	: ['line', 'freehand poly', 'rectangle', 'circle', 'ellipse', 'speech balloon', 'speech box', 'move']
 		,	lineCap	: ['round', 'butt', 'square']
@@ -224,10 +225,10 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 				var	a = select.resize.value.split(' ')
 				,	w = c.width, h = c.height
 				,	i = d.width, j = d.height
-				,	y = (a[0] == 'top'?0:h-j)
-				,	x = (a[1] == 'left'?0:w-i);
-					if (a[0] == 'middle') y = Math.floor(y/2);
-					if (a[1] == 'center') x = Math.floor(x/2);
+				,	y = (a.indexOf('top') < 0?h-j:0)
+				,	x = (a.indexOf('left') < 0?w-i:0);
+					if (a.indexOf('middle') >= 0) y = Math.floor(y/2);
+					if (a.indexOf('center') >= 0) x = Math.floor(x/2);
 				} else {
 				var	dif = x = y = 0, e = document.activeElement, unfocused = !(e.id && s[getLastWord(e.id)]);
 					for (i in s) {
@@ -1033,9 +1034,9 @@ var	d = draw.history.cur(), p = draw.step, n = !mode.shape;
 }
 
 function fillCheck() {
-var	d = draw.history.cur(), i = d.data.length;
-	while (--i) if (d.data[i] != d.data[i%4]) return 0;	//* <- drawn content confirmed
-	return 1;			//* <- fill flood confirmed
+var	c = draw.history.cur(), d = c.data, i = d.length;
+	while (--i) if (d[i] != d[i%4]) return 0;	//* <- drawn content confirmed
+	return 1;					//* <- fill flood confirmed
 }
 
 function fillScreen(i) {
@@ -1254,12 +1255,55 @@ var	i = e.id.slice(-1);
 }
 
 function updateResize(e) {
+	if (e.value == 'auto crop') {
+		if (d = draw.history.cur()) {
+		var	d,a = d.data, i = a.length, j = i-4, k,x,y = 0, w = d.width, h = 0, b = w*4;
+//* from bottom right:
+		up:	while (--i) if (a[i] != a[i%4 + j]) {
+				h = Math.floor(i/b) + 1;
+//* from top left:
+			down:	for (i = 0; i < j; i++) if (a[i] != a[i%4]) {h -= y = Math.floor(i/b); break down;}
+//* from y to y+h:
+				w = b;
+			rtl:	while (--w)
+				for (i = h; i--;) if (a[k = w + (y+i)*b] != a[k%4 + j]) {w = Math.floor(w/4) + 1; break rtl;}
+			ltr:	for (x = 0; x < b; x++)
+				for (i = h; i--;) if (a[k = x + (y+i)*b] != a[k%4]) {w -= x = Math.floor(x/4); break ltr;}
+//* draw cut box:
+				if (x || y || w != canvas.width || h != canvas.height) {
+					c2d.save();
+					for (i in DRAW_HELPER) c2d[i] = DRAW_HELPER[i];
+					i = DRAW_PIXEL_OFFSET;
+					c2d.translate(i,i);
+					c2d.beginPath();
+					c2d.moveTo(x,   0), c2d.lineTo(x, canvas.height);
+					c2d.moveTo(x+w, 0), c2d.lineTo(x+w, canvas.height);
+					c2d.moveTo(0,   y), c2d.lineTo(canvas.width, y);
+					c2d.moveTo(0, y+h), c2d.lineTo(canvas.width, y+h);
+					c2d.stroke();
+					c2d.restore();
+//* save:
+					if (confirm('x = '+x+', y = '+y+'\nw = '+w+', h = '+h)) {
+						c2s.putImageData(d, 0,0);
+						d = c2s.getImageData(x,y, w,h);
+						updateDimension(w,h);
+						c2d.putImageData(d, 0,0);
+						historyAct();
+					}
+				} else alert(lang.no.change);
+				break up;
+			}
+		}
+		if (!h) alert(lang.no.drawn);
+		e.value = mode.scalePrev || 'top left';
+	} else mode.scalePrev = e.value;
 	mode.scale = (e.value.indexOf(' ') < 0?e.value.substr(-1):'');
 }
 
-function updateDimension(e) {
-	if (e) {
-		i = mode.scale, c = canvas, a = (i == 'W' || i == 'H' ? c.width/c.height : 0);
+function updateDimension(e,h) {
+	c = canvas;
+	if (e && e.id) {
+		i = mode.scale, a = (i == 'W' || i == 'H' ? c.width/c.height : 0);
 		i = getLastWord(e.id), v = orz(e.value);
 		cnvHid[i] = c[i] = e.value = v = (
 			v < (b = select.imgLimits[i][0]) ? b : (
@@ -1270,8 +1314,12 @@ function updateDimension(e) {
 			cnvHid[b] = c[b] = id('img-'+b).value = Math.max(1, Math.round(a));
 		}
 		historyAct(mode.scale?'rescale':'resize');
+	} else
+	if (e || h) {
+		if (h) e = {width: e, height: h};
+		for (i in select.imgSizes) id('img-'+i).value = cnvHid[i] = c[i] = orz(e[i]);
 	}
-	if (!e || i == 'height') {
+	if (!v || i == 'height') {
 	var	b = id('buttonH')
 	,	c = id('colors').style
 	,	i = id('info').style;
@@ -1479,8 +1527,8 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 				LS[CR[1].R] = c;
 				LS[CR[1].T] = t;
 				break;
-			} catch(e) {
-				if (c.length + t.length > d) return a?c:alert(lang.no.space+'\n'+lang.err_code+': '+e.code+', '+e.message);
+			} catch (err) {
+				if (c.length + t.length > d) return a?c:alert(lang.no.space+'\n'+lang.err_code+': '+err.code+', '+err.message);
 				saveClear(1), saveClear(j);	//* <- probably maxed out allowed LS capacity, try to clean up from oldest slots first
 			}
 			setClass(id(b+'L'), b);
@@ -1567,12 +1615,6 @@ var	d = draw.time, e = new Image(), t = +new Date, i,j;
 	for (i in d) if (!d[i]) d[i] = t;
 
 	e.onload = function () {
-
-		function updateD(e) {
-			for (i in select.imgSizes) id('img-'+i).value = cnvHid[i] = d[i] = e[i];
-			updateDimension();
-		}
-
 		try {
 	//* throw-away test of data source safety:
 			d = cre('canvas'), d.width = d.height = 1, d = d.getContext('2d');
@@ -1586,18 +1628,18 @@ var	d = draw.time, e = new Image(), t = +new Date, i,j;
 						width: (i == 'W' ? d.width : Math.max(1, Math.round(d.height*j)))
 					,	height: (i == 'H' ? d.height : Math.max(1, Math.round(d.width/j)))
 					};
-					updateD(j);
+					updateDimension(j);
 				}
 				clearFill(d).drawImage(e, 0,0, e.width, e.height, 0,0, d.width, d.height);
 			} else {
-				updateD(e);
+				updateDimension(e);
 				clearFill(d).drawImage(e, 0,0);
 			}
 			historyAct();
 			cue.autoSave = 0;
 			if (lastUsedSaveSlot = ls) updateDebugScreen(ls,3);
-		} catch(i) {
-			alert(lang.err_code+': '+i.code+', '+i.message);
+		} catch (err) {
+			alert(lang.err_code+': '+err.code+', '+err.message);
 		} finally {
 			if (d = e.parentNode) d.removeChild(e);
 		}
@@ -2076,7 +2118,7 @@ var	o = outside
 		,	size:		'Размер'
 		,	size_hint:	'Число от '
 		,	range_hint:	' до '
-		,	resize_hint:	'Как умещать или растягивать содержимое полотна при изменении размера или загрузке файлов. Без растягивания файл просто пезезаписывает всё полотно и его размер.'
+		,	resize_hint:	'Как умещать или растягивать содержимое полотна при изменении размера или загрузке файлов. Без растягивания файл просто перезаписывает всё полотно и его размер.'
 		,	b: {
 				undo:	{sub:'назад',	t:'Отменить последнее действие.'}
 			,	redo:	{sub:'вперёд',	t:'Отменить последнюю отмену.'}
@@ -2116,18 +2158,19 @@ var	o = outside
 		}
 	,	select.translated = {
 			resize: {
-				'top left':	'ЛВ дополнить/обрезать: держать левый верх'
-			,	'top center':	'СВ дополнить/обрезать: держать средний верх'
-			,	'top right':	'ПВ дополнить/обрезать: держать правый верх'
-			,	'middle left':	'ЛЦ дополнить/обрезать: держать левый центр'
-			,	'middle center':'СЦ дополнить/обрезать: держать центр'
-			,	'middle right':	'ПЦ дополнить/обрезать: держать правый центр'
-			,	'bottom left':	'ЛН дополнить/обрезать: держать левый низ'
-			,	'bottom center':'СН дополнить/обрезать: держать средний низ'
-			,	'bottom right':	'ПН дополнить/обрезать: держать правый низ'
-			,	'scaleKeepW':	'Ш масштаб: держать соотношение, загрузка: держ.ширину'
-			,	'scaleKeepH':	'В масштаб: держать соотношение, загрузка: держ.высоту'
-			,	'scaleDeform':	'Д масштаб: оставить другую сторону, загрузка: держ.обе'
+				'top left':		'ЛВ доп./обрез.: держать за верх слева'
+			,	'top center':		'СВ доп./обрез.: держать за верх'
+			,	'top right':		'ПВ доп./обрез.: держать за верх справа'
+			,	'middle left':		'ЛЦ доп./обрез.: держать за центр слева'
+			,	'middle center':	'СЦ доп./обрез.: держать за центр'
+			,	'middle right':		'ПЦ доп./обрез.: держать за центр справа'
+			,	'bottom left':		'ЛН доп./обрез.: держать за низ слева'
+			,	'bottom center':	'СН доп./обрез.: держать за низ'
+			,	'bottom right':		'ПН доп./обрез.: держать за низ справа'
+			,	'auto crop':		'Обрезать пустоту по краям'
+			,	'scaleKeepW':		'Ш масштаб: держ.отношение, загрузка: держ.ширину'
+			,	'scaleKeepH':		'В масштаб: держ.отношение, загрузка: держ.высоту'
+			,	'scaleDeform':		'Д масштаб: оставить другую сторону, загрузка: обе'
 			}
 		,	shape	: ['линия', 'замкнутая линия', 'прямоугольник', 'круг', 'овал', 'овал для речи', 'коробка для речи', 'сдвиг']
 		,	lineCap	: ['круг', 'срез', 'квадрат']
@@ -2304,4 +2347,5 @@ document.write(
 );
 
 document.addEventListener('DOMContentLoaded', init, false);
+
 };

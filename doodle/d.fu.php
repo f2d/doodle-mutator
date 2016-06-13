@@ -11,8 +11,8 @@ function trim_room($r) {
 '/[^\w\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}.!-]+/u', '_', trim(trim($r), '\\/')	//* <- add more unicode alphabets to complement \w?
 	)), 0, ROOM_NAME_MAX_LENGTH, ENC));
 }
-function get_file_name($path, $delim = '/') {return false === ($rr = strrpos($path, $delim)) ? '' : substr($path, $rr+1);}
-function get_file_ext($path) {return strtolower(get_file_name($path, '.'));}
+function get_file_name($path, $full = 1, $delim = '/') {return false === ($rr = strrpos($path, $delim)) ? ($full?$path:'') : substr($path, $rr+1);}
+function get_file_ext($path, $full = 0) {return strtolower(get_file_name($path, $full, '.'));}
 function get_room_skip_name($r) {return array(ME.'-skip-'.md5($r = rawurlencode($r)), $r);}
 function get_room_skip_list($k = '') {
 	return ($v = $_COOKIE[$k?$k:reset(get_room_skip_name($GLOBALS['room']))])
