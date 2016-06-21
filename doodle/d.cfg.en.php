@@ -97,8 +97,9 @@ $tmp_post_err = array(
 ,	'pic_fill'	=> 'Image denied: same color flood.'
 ,	'pic_size'	=> 'Image denied: size out of limits.'
 ,	'text_short'	=> 'Text denied: too short.'
+,	'trd_arch'	=> 'Room archive has been updated.'
 ,	'trd_max'	=> 'Too much threads.'
-,	'trd_miss'	=> 'Thread misfire fork.'
+,	'trd_miss'	=> 'Thread miss, posting into new thread.'
 ,	'unkn_req'	=> 'Unexpected error: invalid request.'
 ,	'unkn_res'	=> 'Unexpected error: invalid result.'
 );

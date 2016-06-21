@@ -1,10 +1,11 @@
 <?php
 
 function str_replace_first($f, $to, $s) {return (false !== ($pos = strpos($s, $f)) ? substr_replace($s, $to, $pos, strlen($f)) : $s);}
-function csv2nl($v, $d = ';', $n = 3) {return ($n = NL.($n?str_repeat('	', $n):'')).str_replace($d, $d.$n, trim($v, $d).$d);}
+function indent($t, $n = 1) {return preg_replace('~\v+~u', NL.str_repeat("\t", $n), $t);}
+function csv2nl($v, $d = ';', $n = 3) {return ($n = NL.($n?str_repeat("\t", $n):'')).str_replace($d, $d.$n, trim($v, $d).$d);}
 function abbr($a, $sep = '_') {foreach ((is_array($a)?$a:explode($sep, $a)) as $word) $r .= $word[0]; return $r;}
 function fln($f) {return file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);}
-function get_req() {return GET_Q ? explode('=', end(explode('?', $_SERVER['REQUEST_URI'])), 2) : array();}
+function get_req() {return GET_Q ? explode('=', rawurldecode(end(explode('?', $_SERVER['REQUEST_URI'], 2))), 2) : array();}
 function trim_post($p, $len = 456) {return htmlspecialchars(mb_substr(stripslashes(trim(preg_replace('~\s+~us', ' ', $p))),0,$len,ENC));}
 function trim_room($r) {
 	return strtolower(mb_substr(preg_replace('/\.+/', '.', preg_replace(
@@ -231,14 +232,19 @@ function get_template_pre($p, $R = 0) {
 }
 
 function get_template_page($t) {
+	global $tmp_announce, $tmp_post_err;
 	$j = $t['js'];
 	$R = ($j === 'arch');
 	$L = (LINK_TIME && !$R);
 	$n = ROOTPRFX.NAMEPRFX;
-	global $tmp_announce;
-	foreach (data_global_announce() as $k => $v) $ano .= ($ano?'
-		<br>':'')."
-			$tmp_announce[$k]: $v";
+	foreach (data_global_announce() as $k => $v) $ano .= ($ano?NL.'<br>':'').NL."$tmp_announce[$k]: $v";
+	if ($a = $t['report']) {
+		if (!is_array($a)) $a = explode('/', $a);
+		foreach ($a as $v) if ($v = trim($v)) $err .= NL.
+			'<p class="anno '.($v == 'trd_arch'?'gloom':'report').'">'.
+				(($e = $tmp_post_err[$v])?$e:$v).
+			'</p>';
+	}
 	$class = (($v = $t['body']) ? is_array($v?$v:array($v)) : array());
 	if (!$R) {
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
@@ -256,13 +262,15 @@ function get_template_page($t) {
 	<meta name="viewport" content="width=690">
 	<link rel="shortcut icon" type="image/png" href="'.($t['icon']?ROOTPRFX.$t['icon']:$n).'.png">
 	<link rel="stylesheet" type="text/css" href="'.$n.'.css'.($L?'?'.filemtime(NAMEPRFX.'.css'):'').'">'.($t['head']?'
-	'.preg_replace('~\v+~u', NL.'	', $t['head']):'').($t['title']?'
+	'.indent($t['head']):'').($t['title']?'
 	<title>'.$t['title'].'</title>':'').'
 </head>
-<body'.($class?' class="'.implode(' ', $class).'"':'').'>'.($t['header']?'
+<body'.($class?' class="'.implode(' ', $class).'"':'').'>'.(($v = $t['header']) || $ano || $err?'
 	<header id="header">'.($ano?'
-		<p class="anno">'.$ano.'
-		</p>':'').$t['header'].'
+		<p class="anno">'.indent($ano, 3).'
+		</p>':'').($err?indent($err, 2):'').($v?'
+		<div>'.indent($v, 3).'
+		</div>':'').'
 	</header>
 ':'').($t['task']?'
 	<div id="task"'.$data.($t['subtask']
@@ -272,7 +280,7 @@ function get_template_page($t) {
 		:($R?'>':' class="task">').$t['task']).'
 	</div>
 ':'').$pre.($t['footer']?'
-	<footer>'.$t['footer'].'
+	<footer>'.indent($t['footer'], 2).'
 	</footer>
 ':'').$scr.'
 </body>

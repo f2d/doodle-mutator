@@ -79,8 +79,10 @@ function data_get_template_page($room, $num, $tsv) {
 
 function data_archive_full_threads($threads) {
 	global $room;
+	if (!is_array($threads) || !count($threads)) return false;
 	if (!is_dir($b = ($a = DIR_ARCH.$room.'/').DIR_THUMB)) mkdir($b, 0755, true);
-	$done = $gone = 0;
+	$done_count = 0;
+	$gone_count = 0;
 	$c = data_get_archive_count();
 	foreach ($threads as $f) {
 		$th = $b.(++$c).THUMB_EXT;
@@ -90,7 +92,7 @@ function data_archive_full_threads($threads) {
 		if (file_put_contents($a.$c.PAGE_EXT, data_get_template_page($room, $c, $f[1]))
 	//	&& unlink($f[0])
 		&& data_del_thread($f[0])	//* <- clean up comments, etc
-		) ++$done;
+		) ++$done_count;
 	}
 	data_put(1, $c);
 	if (R1 && R1_DEL
@@ -98,11 +100,14 @@ function data_archive_full_threads($threads) {
 	&& (($k -= TRD_PER_PAGE) > 0)) {
 		$c -= TRD_PER_PAGE;
 		while ($k--) {
-			if (is_file($f = $a.$c.PAGE_EXT) && data_del_thread($f, false, 1)) ++$gone;
+			if (is_file($f = $a.$c.PAGE_EXT) && data_del_thread($f, false, 1)) ++$gone_count;
 			if (is_file($f = $b.($c--).THUMB_EXT)) unlink($f);
 		}
 	}
-	return array($done, $gone);
+	return array(
+		'done' => $done_count
+	,	'gone' => $gone_count
+	);
 }
 
 function data_archive_rewrite() {
@@ -132,13 +137,13 @@ function data_archive_rewrite() {
 				if (!unlink($x)) $x = 'delete old failed'; else
 				$x = strlen($old)." => $sz bytes";
 			}
-			$done .= NL."$f	$x";
+			$text_report .= NL."$f	$x";
 			++$t;
 		}
 		++$a;
 		if (TIME_PARTS && $t) time_check_point("done $a: $d, $t threads");
 	}
-	return $done;
+	return $text_report;
 }
 
 ?>

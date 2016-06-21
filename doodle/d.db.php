@@ -412,10 +412,12 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 			if ($un > 1) {
 				$p = substr_count($t = file_get_contents($d.$f), IMG);
 				$t = data_get_last_post_time($t);
-				if (rename($d.$f, "$d$m[2].p$p.t$t$m[4]")) $ok = OK;	//* <- wait
+				if (rename($d.$f, "$d$m[2].p$p.t$t$m[4]")) $ok = OK;	//* <- put to wait
 			} else {
-				if (rename($d.$f, "$d$m[2].pf$m[4]")) $ok = OK;		//* <- ready
-				if ($ok && !$un && ($r = data_archive_ready_go())) $ok .= ", $r[0] done, $r[1] gone";
+				if (rename($d.$f, "$d$m[2].pf$m[4]")) $ok = OK;		//* <- get ready
+				if ($ok && !$un && is_array($r = data_archive_ready_go())) {
+					foreach ($r as $k => $v) if ($v) $ok .= ", $v $k";
+				}
 			}
 			if ($ok) data_post_refresh();
 		}
@@ -812,14 +814,14 @@ function data_check_my_task($aim = 0) {
 	return 'task_let_go';
 }
 
-function data_aim($unknown_1st = 0, $skip_list = 0) {
+function data_aim($unknown_1st = 0, $skip_list = 0, $ignore_q = 0) {
 	global $u_num, $u_flag, $u_task, $u_t_f, $room, $target, $file_cache;
 	$target = array();
 	if ($u_flag['nop'] || !is_dir($d = DIR_ROOM.$room.'/')) return $target;
 
 //* check personal target list
 	$tt = data_check_my_task(1);
-	if (POST || GET_Q) return $target;
+	if (POST || (GET_Q && !$ignore_q)) return $target;
 
 	if (!$tt
 	|| ($target['time'] + TARGET_CHANGE_TIME < T0 || (is_array($skip_list) && in_array(intval($target['thread']), $skip_list)))
@@ -903,16 +905,22 @@ function data_log_post($t) {
 	} else {
 
 //* archive old full threads
-		data_archive_ready_go();
+		$arch = data_archive_ready_go();
 
 //* create new thread, if not too many
-		if (!($ptp = ($pic && !$target['pic'])) && ($n = data_is_thread_cap())) return -$n;
+		if (!($ptp = ($pic && !$target['pic'])) && ($n = data_is_thread_cap())) return array(
+			'cap' => $n
+		,	'arch' => $arch
+		);
 
 		if (($n = data_get_thread_count()+1) <= 1) data_set_u_flag($u_num, 'mod_'.$room, 1, 2);
 		$f = "$d$n$pic.log";
-		if ($pic) $fork = data_log($f, $ptp && $target['post']
+		if ($pic) $fork = data_log(
+			$f
+		,	$ptp && $target['post']
 			? $target['post']			//* <- late misfire: fork with request copy, if any
-			: T0.'	'.$u_num.TXT.($target
+			: T0.'	'.$u_num.TXT.(
+				$target
 				? '<span title="'.htmlspecialchars($target['time'].', '.$target['task']).'">'.NOR.'</span>'
 				: NOR
 			)
@@ -921,9 +929,15 @@ function data_log_post($t) {
 	}
 	$p = ($pic ? IMG.implode('	', $t) : TXT.$t);
 	$l = data_log($f, T0."	$u_num$p");
-	if (R1) data_archive_ready_go();
+
+	if (R1 && !$arch) $arch = data_archive_ready_go();
+
 	data_post_refresh();
-	return (($target && $fork)?-$l:$l);
+	return array(
+		'post' => $l
+	,	'fork' => $target?$fork:0
+	,	'arch' => $arch
+	);
 }
 
 ?>
