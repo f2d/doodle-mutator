@@ -143,8 +143,11 @@ c+'</div>', page(1);
 }
 
 function resetSearch() {
-var	i = gi()[0];
-	i.value = r.textContent, i.onkeyup();
+var	a = id('r'), i = gn('input');
+	if (a && i) {
+		(i = i[0]).value = a.textContent;
+		if (a = i.onkeyup) a();
+	}
 }
 
 function page(p) {
