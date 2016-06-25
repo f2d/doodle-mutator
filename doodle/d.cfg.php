@@ -15,11 +15,10 @@ flag:
 	omit: 2, so archived content is like it was/would be last seen
 example:
 	array('cirno-day', 'Y-m-d', '2009-09-09', '2009-09-09', 2)
-*/
-	array('new-year', 'nd', 1231, 109)
 ,	array('leap-year', 'nd', 229, 229)
 ,	array('april-fools','nd',401, 401)
-,	array('cirno-day', 'nd', 909, 909)
+*/
+	array('new-year', 'nd', 1231, 109)
 );
 $cfg_optimize_pics = array(
 	'png' => array(

@@ -370,7 +370,7 @@ if ($u_key) {
 		if ($log = $x['cap']) $t[] = 'trd_max';
 		if (!$x['post']) $t[] = 'unkn_res';
 		if (is_array($x = $x['arch']) && $x['done']) $t[] = 'trd_arch';
-		$post_status = (count($t) ? implode('/', $t) : OQ.${'tmp_'.$post_status});
+		$post_status = (count($t) ? implode('!', $t) : OQ.${'tmp_'.$post_status});
 	}
 
 //* after user posting --------------------------------------------------------

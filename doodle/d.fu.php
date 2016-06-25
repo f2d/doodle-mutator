@@ -235,18 +235,20 @@ function get_template_page($t) {
 	global $tmp_announce, $tmp_post_err;
 	$j = $t['js'];
 	$R = ($j === 'arch');
-	$L = (LINK_TIME && !$R);
 	$n = ROOTPRFX.NAMEPRFX;
-	foreach (data_global_announce() as $k => $v) $ano .= ($ano?NL.'<br>':'').NL."$tmp_announce[$k]: $v";
-	if ($a = $t['report']) {
-		if (!is_array($a)) $a = explode('/', $a);
-		foreach ($a as $v) if ($v = trim($v)) $err .= NL.
-			'<p class="anno '.($v == 'trd_arch'?'gloom':'report').'">'.
-				(($e = $tmp_post_err[$v])?$e:$v).
-			'</p>';
-	}
-	$class = (($v = $t['body']) ? is_array($v?$v:array($v)) : array());
+	$class = (($v = $t['body']) ? (is_array($v)?$v:array($v)) : array());
 	if (!$R) {
+		$L = LINK_TIME;
+		foreach (data_global_announce() as $k => $v) $ano .= ($ano?NL.'<br>':'').NL."$tmp_announce[$k]: $v";
+		if ($a = $t['report']) {
+			if (!is_array($a)) $a = preg_split('~\W+~', $a);
+			foreach ($a as $v) if ($v = trim($v)) {
+				$err .= NL.
+				'<p class="anno '.($v == 'trd_arch'?'gloom':'report').'">'.
+					(($e = $tmp_post_err[$v])?$e:$v).
+				'</p>';
+			}
+		}
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
 		if ($d = get_date_class()) $class = array_merge($class, $d);
 	}
@@ -275,7 +277,7 @@ function get_template_page($t) {
 ':'').($t['task']?'
 	<div id="task"'.$data.($t['subtask']
 		?'>
-		<div class="task">'.str_replace(NL, NL.'	', $t['task']).'
+		<div class="task">'.indent($t['task']).'
 		</div>'.$t['subtask']
 		:($R?'>':' class="task">').$t['task']).'
 	</div>
