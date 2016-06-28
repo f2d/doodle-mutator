@@ -12,6 +12,7 @@
 ,	TU = /^\d+(<|>|$)/
 ,	WS = /^\s+|\s+$/g
 ,	NL = /^(\r\n|\r|\n)/g
+,	split_sec = 60
 ,	count = {u:0, uLast:'', o:0, oLast:'', img:0}
 ,	u_bar = {0:'born', b:'burn', g:'goo', m:'ice', n:'null', u:'me'}
 ,	m,n,mm,mt = {frozen:[], burnt:[], full:[]}
@@ -479,12 +480,12 @@ e+'<span title="'+tab[2]+'">'+tab[3].slice(1)+'</span>';
 					} else {
 						if (m = tab[3].match(/^((\d+)-(\d+)|[\d:]+),(.*)$/m)) {
 							if (m[2]) {
-								k = [0, 0, Math.floor((+m[3]-m[2])/1000)], l = 3;
+								j = +m[3]-m[2], k = [0, 0, Math.floor(Math.abs(j)/1000)], l = k.length;
 								while (--l) {
-									if (k[l] > 59) k[l-1] = Math.floor(k[l]/60), k[l] %= 60;
+									if (k[l] >= split_sec) k[l-1] = Math.floor(k[l]/split_sec), k[l] %= split_sec;
 									if (k[l] < 10) k[l] = '0'+k[l];
 								}
-								m[1] = k.join(':');
+								m[1] = (j < 0?'-':'')+k.join(':');
 							}
 							q = m[1]+', '+m[4], m = la.time+s+m[1]+s+la.using+s+m[4];
 						} else q = m = la.hax+s+tab[3];

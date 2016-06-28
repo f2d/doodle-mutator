@@ -1,14 +1,23 @@
-﻿var	m = gn('meta'), p = gn('pre'), wsp = /^\s+|\s+$/g
-,	d = document.body.style, w = [d.maxWidth||'1000px', '690px'], touch = ('ontouchstart' in document.documentElement)
-,	v = location.href.match(/\/([^\/]+)\/[^\/]*$/), lastDir = (v ? v[1] : document.title), laa, lang = document.documentElement.lang || 'en';
+﻿var	m = gn('meta')
+,	p = gn('pre')
+,	wsp = /^\s+|\s+$/g
+,	split_sec = 60
+,	d = document.body.style
+,	w = [d.maxWidth||'1000px', '690px']
+,	touch = ('ontouchstart' in document.documentElement)
+,	v = location.href.match(/\/([^\/]+)\/[^\/]*$/)
+,	lastDir = (v?v[1]:document.title)
+,	laa, lang = document.documentElement.lang || 'en';
+
+//* UI translation *-----------------------------------------------------------
+
 if (lang == 'ru') laa = {
 	page: 'Страница'
 }; else laa = {
 	page: 'Page'
 };
-for (i in m) if (m[i].name == 'viewport') {v = m[i]; break;}
-if (p.length) showArch(p[0]);
-if (touch) fit(), meta(' {font-size: 56pt; line-height: 56pt; text-decoration: none;}');	//* <- big buttons for touch screen
+
+//* Utility functions *--------------------------------------------------------
 
 function gn(n,d) {return (d?d:document).getElementsByTagName(n);}
 function id(i) {return document.getElementById(i);}
@@ -20,9 +29,14 @@ var	s = 'style', h = gn('header')[0], e = gn(s, h);
 		if (b) e[0].innerHTML = 'header a, .task a'+b;
 	} else 	if (b) h.appendChild(document.createElement(s)).innerHTML = '#pages'+b;
 }
+
+//* Specific functions *-------------------------------------------------------
+
 function showArch(p) {
-var	i, j, k, l, m, n = '\n', s = ' ', t = '	', thread = '', thread_num, alt = 1, img = 1, num = 1
-,	line = p.innerHTML.split(n), a = /^[\d\s]/.test(p.textContent), b = n+t, c = b+t, d = c+t, e = d+t, t0, t1;
+var	i,j,k,l,m,n = '\n', s = ' ', t = '	', thread = '', thread_num, alt = 1, img = 1, num = 1
+,	line = p.innerHTML.split(n)
+,	a = /^[\d\s]/.test(p.textContent)
+,	b = n+t, c = b+t, d = c+t, e = d+t, t0, t1;
 	for (i in line) if (!a && line[i][0] == t) thread_num = line[i].slice(1), alt = (alt?'':' alt');
 	else if (line[i].indexOf(t) > 0) {
 	var	tab = line[i].split(t), post = '<br>';
@@ -34,12 +48,12 @@ e+'<span title="'+tab[2]+'">'+tab[3].slice(1)+'</span>';
 			} else {
 				if (m = tab[3].match(/^((\d+)-(\d+)|[\d:]+),(.*)$/m)) {
 					if (m[2]) {
-						k = [0, 0, Math.floor((+m[3]-m[2])/1000)], l = 3;
+						j = +m[3]-m[2], k = [0, 0, Math.floor(Math.abs(j)/1000)], l = k.length;
 						while (--l) {
-							if (k[l] > 59) k[l-1] = Math.floor(k[l]/60), k[l] %= 60;
+							if (k[l] >= split_sec) k[l-1] = Math.floor(k[l]/split_sec), k[l] %= split_sec;
 							if (k[l] < 10) k[l] = '0'+k[l];
 						}
-						m[1] = k.join(':');
+						m[1] = (j < 0?'-':'')+k.join(':');
 					}
 					tab[3] = m[1]+', '+m[4];
 				}
@@ -185,3 +199,9 @@ var	j = [];
 	g.f.p.innerHTML = j.join(', ');
 	g.f.i.name = f;
 }
+
+//* Runtime *------------------------------------------------------------------
+
+for (i in m) if (m[i].name == 'viewport') {v = m[i]; break;}
+if (p.length) showArch(p[0]);
+if (touch) fit(), meta(' {font-size: 56pt; line-height: 56pt; text-decoration: none;}');	//* <- big buttons for touch screen
