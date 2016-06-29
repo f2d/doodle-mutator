@@ -3,7 +3,7 @@
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
 ,	INFO_VERSION = 'v0.9.66'
-,	INFO_DATE = '2013-04-01 — 2016-06-14'
+,	INFO_DATE = '2013-04-01 — 2016-06-30'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -1406,6 +1406,15 @@ var	d = t ? new Date(t+(t >0?0:new Date())) : new Date(), t = ['Hours','Minutes'
 	return y ? t[0]+d+t[1]+d+t[2]+(y > 1?'_':' ')+t[3]+u+t[4]+u+t[5] : t.join(u);
 }
 
+function getDateUTCFromTZ(timeAtZone) {
+	if (timeAtZone && (m = (''+timeAtZone).match(/^(\d+)(?:\b\D*?(-?\d+))?(\D.*)?$/))) {
+	var	m,i = orz(m[1]) - orz(m[2]);
+		if (m[3] && m[3][0] == 's') i *= 1000;
+		return +new Date(i);
+	}
+	return 0;
+}
+
 function timeElapsed() {text.timer.textContent = unixDateToHMS(timer += 1000, 1);}
 function autoSave() {if (mode.autoSave && cue.autoSave && !(cue.autoSave = (draw.active?-1:0))) savePic(2,-1);}
 
@@ -2047,9 +2056,9 @@ var	o = outside
 		CT = CR[1].T;
 	} else o.save = 0, CR = 'none';
 
-	o.t0 = (o.t0 > 0 ? o.t0+'000' : +new Date)
-,	i = ' \r\n'
-,	j = shapeHotKey.split('').join(k = ', ');
+	o.t0 = getDateUTCFromTZ(o.t0) || +new Date;
+	i = ' \r\n';
+	j = shapeHotKey.split('').join(k = ', ');
 
 	if ((o.undo = orz(o.undo)) < 3) o.undo = 123;
 	if (!o.lang) o.lang = document.documentElement.lang || 'en';

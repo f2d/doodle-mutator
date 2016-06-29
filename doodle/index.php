@@ -726,7 +726,7 @@ if (TIME_PARTS) time_check_point('got visible data, unlocked');
 
 			$t = $target['time'];
 			exit_if_not_mod($t > $last || T0 < $last?$t:$last);
-			$task_time = ($t?$t:0);
+			$task_time = ($t?$t:T0).'@+0s';	//* <- UTC seconds
 
 			if (GET_Q && $err_sign != '!' && !$target['task']) {
 				if (data_is_thread_cap()) {
@@ -770,7 +770,8 @@ if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
 						,	$tab[4]				//* <- post content
 						);
 						if (count($tab) > 5) $ta[] = $tab[5];	//* <- pic comment
-						if (/*MOD &&*/ is_array($r = $report[$tid][$postnum])) {
+					//	if (MOD)
+						if (is_array($r = $report[$tid][$postnum])) {
 							foreach ($r as $col => $l)
 							foreach ($l as $time => $line)
 							$ta[$col+1] .= "<br>$time: $line";
@@ -802,10 +803,13 @@ if (TIME_PARTS) time_check_point('after sort + join');
 					$task_time = '-';
 					$s = count($skip_list);
 					$n = $target['count_free_tasks'];
-					if ($s && !$n) $task_data['skip'] = "$s/$n/$target[count_free_unknown]";
+					if ($s && !$n) $task_data['unskip'] = "$s/$n/$target[count_free_unknown]";
 				}
 			} else {
-				$vars = "t0=$task_time;check=checkStatus;send=png,layers,log".(DRAW_JPG_PREF?';jp='.DRAW_JPG_PREF:'').get_draw_vars();
+				$vars = ($t?"t0=$task_time;":'')
+				.	'check=checkStatus;send=png,layers,log'
+				.	get_draw_vars()
+				.	(DRAW_JPG_PREF?';jp='.DRAW_JPG_PREF:'');
 				$task = '
 		<p>'.($t?$tmp_draw_this.'</p>
 		<p>'.$t:$tmp_draw_free).'</p><noscript>
@@ -817,7 +821,8 @@ if (TIME_PARTS) time_check_point('after sort + join');
 			<p class="hint">'.$n['list'].'</p>
 		</div>';
 			}
-			if ($desc || $t) $task_data['t'] = $task_time.($t?'-'.intval($target['thread']):'');
+			if ($t || $desc) $task_data['t'] = $task_time;
+			if ($t) $task_data['skip'] = intval($target['thread']);
 			$js[0]++;
 		} else {
 

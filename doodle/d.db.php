@@ -372,7 +372,7 @@ function data_del_pic_file($f, $keep) {
 	return (
 		$keep
 		? rename($f, $keep.get_file_name($f))
-		: unlink($r)
+		: unlink($f)
 	);
 }
 

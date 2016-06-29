@@ -759,16 +759,23 @@ if (k = id('task')) {
 		i.className = 'r';
 		i.innerHTML = la.checked+': <input type="checkbox" name="check" required>';
 	}
+	if ((i = gn('p',k)).length) {
+		if (j = k.getAttribute('data-skip')) {
+			i[0].innerHTML += '<a class="r" href="javascript:skipMyTask('+j+')" title="'+la.skip_hint+'">「X」</a>'
+		}
+		if (j = k.getAttribute('data-unskip')) {
+			j = j.split(/\D+/, 1)[0];
+			i[0].innerHTML += '<a class="r" href="javascript:void '+j+'" data-room="'
+			+	decodeURIComponent(location.pathname.replace(/^.*?\/+([^/]+)\/*$/, '$1'))
+			+	'" id="unskip" title="'+la.unskip_hint+'">「'+la.unskip+'」</a>';
+		}
+	}
 	if (j = k.getAttribute('data-t')) {
-		f = 0;
-		if ((i = gn('p',k)).length) {
-			i[0].innerHTML += (
-				(j = j.split('-')).length > 1 && j[1]
-				? '<a class="r" href="javascript:skipMyTask('+j[1]+')" title="'+la.skip_hint+'">「X」</a>'
-				:''
-			)+'<a class="r" href="'+(
-				(f = j[0] && (j = parseInt(j[0])))
-				? 'javascript:checkMyTask()" title="'+new Date(j*1000)+'\n\n'+la.check+'">「<span id="'+CS+'">?</span>'
+		f = parseInt(j);
+		if (i.length) {
+			i[0].innerHTML += '<a class="r" href="'+(
+				f
+				? 'javascript:checkMyTask()" title="'+new Date(f*1000)+'\n\n'+la.check+'">「<span id="'+CS+'">?</span>'
 				: '?draw">「'+la.draw
 			)+'」</a>';
 		}
@@ -777,17 +784,11 @@ if (k = id('task')) {
 			while (f && !FORM.test(f.tagName)) f = f.parentNode;
 			if (f) f.setAttribute('onsubmit', 'checkMyTask(event, this)');
 		}
-		if ((i = gn('img',k)).length && (i = i[0]) && (j = i.alt.indexOf(';')+1)) i.alt = i.alt
-			.replace(';',', ')
-			.replace('*','x'), setPicResize(i,j);
-	}
-	if (j = k.getAttribute('data-skip')) {
-		if ((i = gn('p',k)).length) {
-			j = j.split(/\D+/, 1)[0];
-			i[0].innerHTML +=
-				'<a class="r" href="javascript:void '+j+'" data-room="'
-			+	decodeURIComponent(location.pathname.replace(/^.*?\/+([^/]+)\/*$/, '$1'))
-			+	'" id="unskip" title="'+la.unskip_hint+'">「'+la.unskip+'」</a>';
+		if ((i = gn('img',k)).length && (i = i[0]) && (j = i.alt.indexOf(';')+1)) {
+			i.alt = i.alt
+				.replace(';',', ')
+				.replace('*','x');
+			setPicResize(i,j);
 		}
 	}
 	if (i = (j = gn('ul',k)).length) {

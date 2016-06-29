@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2016-03-17'
+,	INFO_DATE = '2014-07-16 — 2016-06-30'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -63,8 +63,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 	}}
 
 ,	PALETTE_COL_COUNT = 16	//* <- used if no '\n' found, for example - unformatted history
-,	palette = [(LS && LS.historyPalette) ? JSON.parse(LS.historyPalette) : ['#f']
-
+,	palette = [['#f']
 //* '\t' = title, '\n' = line break + optional title, '\r' = special cases, '#f00' = hex color field, anything else = title + plaintext spacer
 	, [	'#f', '#d', '#a', '#8', '#5', '#2', '#0',				'#a00', '#740', '#470', '#0a0', '#074', '#047', '#00a', '#407', '#704'
 	, '\n',	'#7f0000', '#007f00', '#00007f', '#ff007f', '#7fff00', '#007fff', '#3', '#e11', '#b81', '#8b1', '#1e1', '#1b8', '#18b', '#11e', '#81b', '#b18'
@@ -111,7 +110,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 //* Set up (don't change) *----------------------------------------------------
 
-,	o12 = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)	//* <- broken forever, sadly
+,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)	//* <- broken forever, sadly
 ,	abc = 'abc'.split('')
 ,	regLastNum = /^.*\D(\d+)$/
 ,	regHex = /^#*[0-9a-f]{6}$/i
@@ -696,7 +695,7 @@ var	s = select.shape.value, fig = select.shapeFig[s], sf = select.shapeFlags[s]
 			drawShape(ctx.draw, s);
 		} else
 		if (draw.line.back = mode.step) {
-			if (o12) ctx.draw.shadowColor = A0, ctx.draw.shadowBlur = 0;	//* <- shadow, once used with CurveTo + stroke(), totally breaks for given canvas in Opera 12
+			if (noShadowBlurCurve) ctx.draw.shadowColor = A0, ctx.draw.shadowBlur = 0;
 			if (draw.line.started) ctx.draw.quadraticCurveTo(draw.prev.x, draw.prev.y, (draw.cur.x + draw.prev.x)/2, (draw.cur.y + draw.prev.y)/2);
 		} else ctx.draw.lineTo(draw.cur.x, draw.cur.y);
 		draw.line.preview =	!(draw.line.started = true);
@@ -1506,6 +1505,16 @@ var	d = t ? new Date(t+(t >0?0:new Date())) : new Date(), t = ['Hours','Minutes'
 	return y ? t[0]+d+t[1]+d+t[2]+(y > 1?'_':' ')+t[3]+u+t[4]+u+t[5] : t.join(u);
 }
 
+function getDateUTCFromTZ(timeAtZone) {
+//* arg sample: 1234567890@-7200sec
+	if (timeAtZone && (m = (''+timeAtZone).match(/^(\d+)(?:\b\D*?(-?\d+))?(\D.*)?$/))) {
+	var	m,i = orz(m[1]) - orz(m[2]);
+		if (m[3] && m[3][0] == 's') i *= 1000;
+		return +new Date(i);
+	}
+	return 0;
+}
+
 function getSendMeta(sz) {
 var	a = ['clip', 'mask', 'lighter', 'xor']
 ,	b = ['resize', 'integral']
@@ -1671,7 +1680,11 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 			if (dest == 5) a = readPic(a);
 			else {
 				try {
-					readSavedLayers(JSON.parse(a.data)), a = a.name;
+					if (readSavedLayers(b = JSON.parse(a.data))) a = a.name;
+					else if (confirm(lang.bad_data+' \r\n'+lang.confirm.reprint)) {
+						b = JSON.stringify(b, null, '\t');
+						saveDL('data:text/plain,'+encodeURIComponent(b), '.json');
+					}
 				} catch(e) {
 					alert(lang.bad_data), a = '';
 				}
@@ -2299,8 +2312,10 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 		if (f == 'toggleView' && !(m = b[c]).title) m.title = lang[h.test(m.parentNode.tagName)?'hide_hint':'show_hint'];
 	}
 
+	if (LS && (i = LS.historyPalette)) palette[0] = JSON.parse(i);
+
 	d = 'download', DL = (d in b[0]?d:'');
-	a = select.options, c = select.translated || a, f = (LS && LS.lastPalette && palette[LS.lastPalette]) ? LS.lastPalette : 1;
+	a = select.options, c = select.translated || a, f = (LS && (i = LS.lastPalette) && palette[i]?i:1);
 	a.affect = a.compose, c.affect = c.compose;
 	for (b in a) if (e = select[b] = id(b))
 	for (i in a[b]) (
@@ -2338,7 +2353,7 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 
 function isTest() {
 	if (CR[0] !== 'C') return !o.send;
-var	o = outside, v = id('vars'), e, i, j, k
+var	o = outside, v = id('vars'), e,i,j,k
 ,	f = o.send = id('send')
 ,	r = o.read = id('read'), a = [v,f,r];
 	for (i in a) if ((e = a[i]) && (e = (e.getAttribute('data-vars') || e.name))) {
@@ -2360,7 +2375,8 @@ var	o = outside, v = id('vars'), e, i, j, k
 	k = 'y2', i = k.length, j = (o.saveprfx?o.saveprfx:NS)+CR, CR = [];
 	while (i) CR[i--] = {R:e = j+k[i], T:e+CT, L:e+CL};
 	CT = CR[1].T, CL = CR[1].L;
-	o.t0 = o.t0 > 0 ? o.t0+'000' : +new Date;
+
+	o.t0 = getDateUTCFromTZ(o.t0) || +new Date;
 	if (!o.undo || isNaN(o.undo) || o.undo < 3) o.undo = 123; else o.undo = parseInt(o.undo);
 	if (!o.lang) o.lang = document.documentElement.lang || 'en';
 
@@ -2385,6 +2401,7 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 	,	size:	'Превышен размер полотна. Отправить всё равно?'
 	,	save:	'Сохранить слои в память браузера? \r\nПерезаписать копию, изменённую: '
 	,	load:	'Вернуть слои из памяти браузера? \r\nВосстановить копию, изменённую: '
+	,	reprint:'Пересохранить с переносами строк и отступами?'
 },	copy_to_save:	'Откройте новый текстовый файл, скопируйте в него всё ниже этой линии'
 ,	found_swap:	'Рисунок был в запасе, поменялись местами.'
 ,	loading:	'Ожидание загрузки изображений'
@@ -2519,6 +2536,7 @@ else o.lang = 'en'
 	,	size:	'Canvas size exceeds limit. Send anyway?'
 	,	save:	'Save layers to your browser memory? \r\nOverwrite the copy edited at:'
 	,	load:	'Restore layers from your browser memory? \r\nOverwrite the copy edited at:'
+	,	reprint:'Resave with line breaks and indents?'
 },	copy_to_save:	'Open new text file, copy and paste to it after this line'
 ,	found_swap:	'Found image at slot 2, swapped slots.'
 ,	loading:	'Waitind for images to load'
