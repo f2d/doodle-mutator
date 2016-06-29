@@ -367,7 +367,7 @@ if ($u_key) {
 		$x = data_log_post($x);
 		$t = array();
 		if ($log = $x['fork']) $t[] = 'trd_miss';
-		if ($log = $x['cap']) $t[] = 'trd_max';
+		if ($log = $x['cap']) $t[] = 'trd_max'; else
 		if (!$x['post']) $t[] = 'unkn_res';
 		if (is_array($x = $x['arch']) && $x['done']) $t[] = 'trd_arch';
 		$post_status = (count($t) ? implode('!', $t) : OQ.${'tmp_'.$post_status});
