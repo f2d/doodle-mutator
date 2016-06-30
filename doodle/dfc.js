@@ -163,6 +163,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 
 ,	MODE_LABELS = 'abc'.split('')
 
+,	t0 = +new Date
 ,	self = this, outside = this.o = {}, container, canvas, c2d, cnvHid, c2s, lang, i,DL,HP,LP,LS = window.localStorage || localStorage
 ,	fps = 0, ticks = 0, timer = 0, lastUsedSaveSlot = 0
 ,	interval = {fps:0, timer:0, save:0}, text = {debug:0, timer:0, undo:0}, used = {}, cue = {upd:{}}
@@ -1406,33 +1407,25 @@ var	d = t ? new Date(t+(t >0?0:new Date())) : new Date(), t = ['Hours','Minutes'
 	return y ? t[0]+d+t[1]+d+t[2]+(y > 1?'_':' ')+t[3]+u+t[4]+u+t[5] : t.join(u);
 }
 
-function getDateUTCFromTZ(timeAtZone) {
-	if (timeAtZone && (m = (''+timeAtZone).match(/^(\d+)(?:\b\D*?(-?\d+))?(\D.*)?$/))) {
-	var	m,i = orz(m[1]) - orz(m[2]);
-		if (m[3] && m[3][0] == 's') i *= 1000;
-		return +new Date(i);
-	}
-	return 0;
-}
-
 function timeElapsed() {text.timer.textContent = unixDateToHMS(timer += 1000, 1);}
 function autoSave() {if (mode.autoSave && cue.autoSave && !(cue.autoSave = (draw.active?-1:0))) savePic(2,-1);}
 
 function getSendMeta(sz) {
-var	d = draw.time, i, j = [], u = [], t = outside.t0;
-	for (i in d) u[i] = parseInt(d[i]) || (i > 0?+new Date:t);
-	for (i in used) j.push(used[i].replace(/[\r\n]+/g, ', '));
-	return 't0: '	+Math.floor(t/1000)
-	+'\ntime: '	+u.join('-')
-	+'\napp: '	+NS+' '+INFO_VERSION
-	+'\npixels: '	+canvas.width+'x'+canvas.height
-	+'\nbytes: '	+(sz?sz:
-		'png = '	+ canvas.toDataURL().length
-		+', jpg = '	+ canvas.toDataURL(IJ).length
-	)
-	+(j.length
-	?'\nused: '	+j.join(', ')
-	:'');
+var	i,j = ', ', u = [], a = [
+		'open_time: '+t0+'-'+(+new Date)
+	,	'draw_time: '+draw.time.map(orz).join('-')
+	,	'app: '+NS+' '+INFO_VERSION
+	,	'pixels: '+canvas.width+'x'+canvas.height
+	,	'bytes: '+(
+			sz || [
+				'png = '+ canvas.toDataURL().length
+			,	'jpg = '+ canvas.toDataURL(IJ).length
+			].join(j)
+		)
+	];
+	for (i in used) u.push(used[i].replace(/[\r\n]+/g, j));
+	if (u.length) a.push('used: '+u.join(j));
+	return a.join('\n');
 }
 
 function getSaveLSKeys(i) {
@@ -2056,7 +2049,6 @@ var	o = outside
 		CT = CR[1].T;
 	} else o.save = 0, CR = 'none';
 
-	o.t0 = getDateUTCFromTZ(o.t0) || +new Date;
 	i = ' \r\n';
 	j = shapeHotKey.split('').join(k = ', ');
 

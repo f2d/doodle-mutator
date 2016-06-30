@@ -222,10 +222,10 @@ if ($u_key) {
 		$log = 0;
 		$ppl = strlen($pp = $_POST['pic']);
 		$txt = (($ptx = $_POST['txt']) ? $ptx : '0-0,(?)');
-	//* metadata, newline separated tagged format:
+	//* metadata, got newline separated tagged format:
 		if (false !== strpos($txt, NL)) {
-			$a = explode(',', 'app,t0,time,used');	//* <- to add to picture mouseover text
-			$b = explode(',', 'bytes,length');	//* <- to validate
+			$a = explode(',', 'app,draw_time,open_time,t0,time,used');	//* <- to add to picture mouseover text
+			$b = explode(',', 'bytes,length');				//* <- to validate
 			$x = preg_split('~\v+~u', $txt);
 			$y = array();
 			$z = 0;
@@ -237,6 +237,14 @@ if ($u_key) {
 				$post_status = 'file_part';
 				$log = "$ppl != $z";
 			} else {
+				if (!$y['time']) {
+					$z = array($target['time'].'000', T0.'000');
+					$a = ($x = $y['open_time']) ? explode('-', $x) : array();
+					$b = ($x = $y['draw_time']) ? explode('-', $x) : array();
+					if ($b[0] == $b[1]) $b[0] = 0;
+					foreach ($z as $k => $v) if (!$b[$k]) $b[$k] = ($a[$k]?$a[$k]:$v);
+					$y['time'] = "$b[0]-$b[1]";
+				} else
 				if (!preg_match('~^(\d+:)+\d+$~', $y['time'])) {
 					$t = array(($y['t0']?$y['t0']:$target['time']).'000', T0.'000');
 					if (preg_match('~^(\d+)\D+(\d+)$~', $y['time'], $m)) {
@@ -250,7 +258,7 @@ if ($u_key) {
 				$txt = "$y[time],$y[app]";
 			}
 		} else
-	//* metadata, old CSV:
+	//* metadata, legacy CSV:
 		if (preg_match('~^(?:(\d+),)?(?:([\d:]+)|(\d+)-(\d+)),(.*)$~is', $txt, $t)) {
 			if ($t[2]) $txt = $t[2].','.$t[5];
 			else {

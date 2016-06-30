@@ -121,6 +121,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 ,	regFunc = /\{[^.]+\.([^(]+)\(/
 ,	regLimit = /^(\d+)\D+(\d+)$/
 
+,	t0 = +new Date
 ,	self = this, outside = this.o = {}, lang, container
 ,	fps = 0, ticks = 0, timer = 0, loading = 0
 ,	interval = o0('fps,timer,save'), cue = {upd:{}}
@@ -1505,41 +1506,32 @@ var	d = t ? new Date(t+(t >0?0:new Date())) : new Date(), t = ['Hours','Minutes'
 	return y ? t[0]+d+t[1]+d+t[2]+(y > 1?'_':' ')+t[3]+u+t[4]+u+t[5] : t.join(u);
 }
 
-function getDateUTCFromTZ(timeAtZone) {
-//* arg sample: 1234567890@-7200sec
-	if (timeAtZone && (m = (''+timeAtZone).match(/^(\d+)(?:\b\D*?(-?\d+))?(\D.*)?$/))) {
-	var	m,i = orz(m[1]) - orz(m[2]);
-		if (m[3] && m[3][0] == 's') i *= 1000;
-		return +new Date(i);
-	}
-	return 0;
-}
-
 function getSendMeta(sz) {
 var	a = ['clip', 'mask', 'lighter', 'xor']
 ,	b = ['resize', 'integral']
-,	c = ', ', d = draw.time, i, j = [], k, m = [], n = [], u = [], s = [], t = outside.t0;
-	for (i in d) j[i] = parseInt(d[i]) || (i > 0?+new Date:t);
-	for (i in count) if ((d = count[i]) > 1 || (i != 'layers' && d > 0)) u.push(d+' '+(d > 1?i:i.replace(/s+$/i, '')));
+,	i,j = ', ', k,m = [], n = [], u = [], s = [];
+	for (i in count) if ((k = count[i]) > 1 || (i != 'layers' && k > 0)) u.push(k+' '+(k > 1?i:i.replace(/s+$/i, '')));
 	for (i in used_shape) s.push(i);
 	for (i in used) u.push(used[i]);
 	draw.history.layers.map(function(v) {
 		if (v.clip > 0 && m.indexOf(k = a[v.clip    - 2]) < 0) m.push(k);
 		if (v.blur > 0 && n.indexOf(k = b[v.filter || 0]) < 0) n.push(k);
 	});
-	for (i in (a = {Shape:s, Composition:m, Filter:n})) if (a[i].length) u.push(i+': '+a[i].join(c));
-
-//	return Math.floor(t/1000)+','+u.join('-')+','+NS+' '+INFO_VERSION + (j.length?' (used '+j.join(c)+')':'');
-
-	return 't0: '	+Math.floor(t/1000)
-	+'\ntime: '	+j.join('-')
-	+'\napp: '	+NS+' '+INFO_VERSION
-	+(u.length
-	?'\nused: '	+u.join(c):'')
-	+'\nlength: '	+(sz?sz:
-		'png = '	+ cnv.view.toDataURL().length
-		+', jpg = '	+ cnv.view.toDataURL(IJ).length
-	);
+	for (i in (a = {Shape:s, Composition:m, Filter:n})) if (a[i].length) u.push(i+': '+a[i].join(j));
+	a = [
+		'open_time: '+t0+'-'+(+new Date)
+	,	'draw_time: '+draw.time.map(orz).join('-')
+	,	'app: '+NS+' '+INFO_VERSION
+	,	'pixels: '+cnv.view.width+'x'+cnv.view.height
+	,	'bytes: '+(
+			sz || [
+				'png = '+ cnv.view.toDataURL().length
+			,	'jpg = '+ cnv.view.toDataURL(IJ).length
+			].join(j)
+		)
+	];
+	if (u.length) a.push('used: '+u.join(j));
+	return a.join('\n');
 }
 
 function getSaveLayers(c) {
@@ -1588,6 +1580,7 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 	draw.view(1);
 
 	function getTimeToShow(s) {
+		if (!s) return '-';
 	var	a = s.split('-'), i,t,r = '';
 		for (i = 0; i < 2; i++) t = +a[i], r += ' \r\n'+(t ? unixDateToHMS(t,0,1) : '-');
 		return r;
@@ -2376,7 +2369,6 @@ var	o = outside, v = id('vars'), e,i,j,k
 	while (i) CR[i--] = {R:e = j+k[i], T:e+CT, L:e+CL};
 	CT = CR[1].T, CL = CR[1].L;
 
-	o.t0 = getDateUTCFromTZ(o.t0) || +new Date;
 	if (!o.undo || isNaN(o.undo) || o.undo < 3) o.undo = 123; else o.undo = parseInt(o.undo);
 	if (!o.lang) o.lang = document.documentElement.lang || 'en';
 
@@ -2750,6 +2742,7 @@ function cre(e,p,b) {
 	if (p) p.appendChild(e);
 	return e;
 }
+function orz(n) {return parseInt(n||0)||0;}
 function id(i) {return document.getElementById(NS+(i?'-'+i:''));}
 function reId(e) {return e.id.slice(NS.length+1);}
 function setId(e,id) {return e.id = NS+'-'+id, e;}
