@@ -734,7 +734,7 @@ if (TIME_PARTS) time_check_point('got visible data, unlocked');
 
 			$t = $target['time'];
 			exit_if_not_mod($t > $last || T0 < $last?$t:$last);
-			$task_time = ($t?$t:T0).'@+0s';	//* <- UTC seconds
+			$task_time = ($t?$t:T0);	//* <- UTC seconds
 
 			if (GET_Q && $err_sign != '!' && !$target['task']) {
 				if (data_is_thread_cap()) {
@@ -814,17 +814,13 @@ if (TIME_PARTS) time_check_point('after sort + join');
 					if ($s && !$n) $task_data['unskip'] = "$s/$n/$target[count_free_unknown]";
 				}
 			} else {
-				$vars = ($t?"t0=$task_time;":'')
-				.	'check=checkStatus;send=png,layers,log'
-				.	get_draw_vars()
-				.	(DRAW_JPG_PREF?';jp='.DRAW_JPG_PREF:'');
 				$task = '
 		<p>'.($t?$tmp_draw_this.'</p>
 		<p>'.$t:$tmp_draw_free).'</p><noscript>
 		<p class="hint">'.$tmp_require_js.'</p></noscript>';
 				$n = get_draw_app_list($u_draw_app);
 				$subtask = '
-		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.csv2nl($vars).'"></script>
+		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.csv2nl(get_draw_vars(DRAW_SEND)).'"></script>
 		<div class="task">
 			<p class="hint">'.$n['list'].'</p>
 		</div>';

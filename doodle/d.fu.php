@@ -2,7 +2,11 @@
 
 function str_replace_first($f, $to, $s) {return (false !== ($pos = strpos($s, $f)) ? substr_replace($s, $to, $pos, strlen($f)) : $s);}
 function indent($t, $n = 1) {return preg_replace('~\v+~u', NL.str_repeat("\t", $n), $t);}
-function csv2nl($v, $d = ';', $n = 3) {return ($n = NL.($n?str_repeat("\t", $n):'')).str_replace($d, $d.$n, trim($v, $d).$d);}
+function csv2nl($v, $c = ';', $n = 3) {
+	$d = "\s*[$c]+\s*";
+	$n = NL.($n > 0?str_repeat("\t", $n):'');
+	return $n.implode($c.$n, preg_split("~$d~u", preg_replace("~^$d|$d$~u", '', $v).$c));
+}
 function abbr($a, $sep = '_') {foreach ((is_array($a)?$a:explode($sep, $a)) as $word) $r .= $word[0]; return $r;}
 function fln($f) {return file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);}
 function get_req() {return GET_Q ? explode('=', rawurldecode(end(explode('?', $_SERVER['REQUEST_URI'], 2))), 2) : array();}
@@ -83,9 +87,9 @@ function get_draw_app_list($n) {
 	if (false !== ($s = strrpos($n, '/'))) $n = substr($n, $s+1);
 	return array('name' => $n, 'src' => ROOTPRFX.$f.(LINK_TIME?'?'.filemtime($f):''), 'list' => $a);
 }
-function get_draw_vars() {
+function get_draw_vars($v) {
 	global $cfg_draw_vars, $tmp_wh, $tmp_whu, $u_draw_app, $u_draw_max_undo, $u_opts;
-	$vars = DRAW_REST.
+	$vars = ($v?"$v;":'').DRAW_REST.
 		';keep_prefix='.DRAW_PERSISTENT_PREFIX
 	.($u_opts['save2common']?'':
 		';save_prefix='.DRAW_BACKUPCOPY_PREFIX.';saveprfx='.NAMEPRFX
