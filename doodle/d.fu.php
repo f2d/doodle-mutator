@@ -74,8 +74,10 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 	}
 	return $classes;
 }
-function get_draw_app_list($n) {
-	global $cfg_draw_app, $tmp_draw_app, $tmp_options_input;
+function get_draw_app_list() {
+	global $cfg_draw_app, $tmp_draw_app, $tmp_options_input, $u_draw_app;
+	list($n, $res) = get_req();
+	if (!$n || $n == '!') $n = $u_draw_app;
 	if (!in_array($n, $cfg_draw_app)) $n = $cfg_draw_app[0];
 	$a = $tmp_options_input['input']['draw_app'];
 	foreach ($cfg_draw_app as $k => $v) $a .= ($k?', ':': ').($n == $v
@@ -87,20 +89,18 @@ function get_draw_app_list($n) {
 	if (false !== ($s = strrpos($n, '/'))) $n = substr($n, $s+1);
 	return array('name' => $n, 'src' => ROOTPRFX.$f.(LINK_TIME?'?'.filemtime($f):''), 'list' => $a);
 }
-function get_draw_vars($v) {
-	global $cfg_draw_vars, $tmp_wh, $tmp_whu, $u_draw_app, $u_draw_max_undo, $u_opts;
+function get_draw_vars($v = '') {
+	global $cfg_draw_vars, $tmp_wh, $tmp_whu, $u_draw_max_undo, $u_opts;
 	$vars = ($v?"$v;":'').DRAW_REST.
 		';keep_prefix='.DRAW_PERSISTENT_PREFIX
 	.($u_opts['save2common']?'':
 		';save_prefix='.DRAW_BACKUPCOPY_PREFIX.';saveprfx='.NAMEPRFX
 	);
-	if (($r = get_req()) && $r[0] && $r[0] != '!') {
-		$u_draw_app = $r[0];
-		if (strpos($r[1], 'x')) $wh = explode('x', $r[1]);
-	}
 	foreach ($cfg_draw_vars as $k => $v) {
 		if (($i = ${'u_'.$v}) || (defined($i = strtoupper($v)) && ($i = constant($i)))) $vars .= ";$k=$i";
 	}
+	list($n, $res) = get_req();
+	if ($n && $n != '!' && $res && strpos($res, 'x')) $wh = explode('x', $res);
 	foreach (array('DEFAULT_', 'LIMIT_') as $i => $j)
 	foreach ($tmp_whu as $k => $l) {
 		$p = $tmp_wh[$k].($i?'l':'');

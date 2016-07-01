@@ -499,9 +499,9 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 	} else
 
 //* draw test -----------------------------------------------------------------
-	if (($qd_opts || !$qdir) && (list($subj, $q) = get_req())) {
+	if (($qd_opts || !$qdir) && GET_Q) {
 		$qd_opts = 2;
-		$n = get_draw_app_list($subj);
+		$n = get_draw_app_list();
 		$icon = $n['name'];
 		$task = ('
 		<p>'.$tmp_draw_free.'</p>
@@ -818,7 +818,7 @@ if (TIME_PARTS) time_check_point('after sort + join');
 		<p>'.($t?$tmp_draw_this.'</p>
 		<p>'.$t:$tmp_draw_free).'</p><noscript>
 		<p class="hint">'.$tmp_require_js.'</p></noscript>';
-				$n = get_draw_app_list($u_draw_app);
+				$n = get_draw_app_list();
 				$subtask = '
 		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.csv2nl(get_draw_vars(DRAW_SEND)).'"></script>
 		<div class="task">
