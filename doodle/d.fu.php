@@ -7,15 +7,17 @@ function csv2nl($v, $c = ';', $n = 3) {
 	$n = NL.($n > 0?str_repeat("\t", $n):'');
 	return $n.implode($c.$n, preg_split("~$d~u", preg_replace("~^$d|$d$~u", '', $v).$c));
 }
+
 function abbr($a, $sep = '_') {foreach ((is_array($a)?$a:explode($sep, $a)) as $word) $r .= $word[0]; return $r;}
 function fln($f) {return file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);}
-function get_req() {return GET_Q ? explode('=', rawurldecode(end(explode('?', $_SERVER['REQUEST_URI'], 2))), 2) : array();}
 function trim_post($p, $len = 456) {return htmlspecialchars(mb_substr(stripslashes(trim(preg_replace('~\s+~us', ' ', $p))),0,$len,ENC));}
 function trim_room($r) {
 	return strtolower(mb_substr(preg_replace('/\.+/', '.', preg_replace(
 '/[^\w\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}.!-]+/u', '_', trim(trim($r), '\\/')	//* <- add more unicode alphabets to complement \w?
 	)), 0, ROOM_NAME_MAX_LENGTH, ENC));
 }
+
+function get_req() {return GET_Q ? explode('=', rawurldecode(end(explode('?', $_SERVER['REQUEST_URI'], 2))), 2) : array();}
 function get_file_name($path, $full = 1, $delim = '/') {return false === ($rr = strrpos($path, $delim)) ? ($full?$path:'') : substr($path, $rr+1);}
 function get_file_ext($path, $full = 0) {return strtolower(get_file_name($path, $full, '.'));}
 function get_room_skip_name($r) {return array(ME.'-skip-'.md5($r = rawurlencode($r)), $r);}
@@ -24,16 +26,19 @@ function get_room_skip_list($k = '') {
 	?	array_slice(explode('/', $v, TRD_MAX_SKIP_PER_ROOM+1), 1, TRD_MAX_SKIP_PER_ROOM-($k?1:0))
 	:	array();
 }
+
 function get_dir_top_file_id($d) {
 	$i = 0;
 	if (is_dir($d)) foreach (scandir($d) as $f) if (preg_match('~^\d+~', $f, $m) && $i < ($n = intval($m[0]))) $i = $n;
 	return $i;
 }
+
 function get_dir_top_filemtime($d) {
 	$t = 0;
 	if (is_dir($d)) foreach (scandir($d) as $f) if (trim($f, '.') && $t < ($mt = filemtime("$d/$f"))) $t = $mt;
 	return $t;
 }
+
 function get_pic_normal_path($p) {return preg_replace('~(^|[\\/])([^._-]+)[^._-]*(\.[^.,;]+)([;,].*$)?~', '$2$3', $p);}
 function get_pic_resized_path($p) {return substr_replace($p, '_res', -4, 0);}
 function get_pic_subpath($p, $mk = 0) {
@@ -42,7 +47,16 @@ function get_pic_subpath($p, $mk = 0) {
 	if ($mk && !is_dir($n)) mkdir($n, 0755, true);
 	return $n.($mk === ''?'':$p);
 }
+
 function get_pic_url($p) {return ROOTPRFX.(PIC_SUB?get_pic_subpath($p):DIR_PICS.$p);}
+function get_time_html($t = 0) {
+	$f = date(DATE_ATOM, $t?$t:T0);
+	$i = strpos($f, 'T');
+	$d = substr($f, 0, $i);
+	$t = substr($f, $i+1, 8);
+	return '<time datetime="'.$f.'">'.$d.' <small>'.$t.'</small></time>';
+}
+
 function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for archive pages; default = current date
 	global $cfg_date_class;
 	if (!$t_first) $t_first = T0;
@@ -74,6 +88,7 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 	}
 	return $classes;
 }
+
 function get_draw_app_list() {
 	global $cfg_draw_app, $tmp_draw_app, $tmp_options_input, $u_draw_app;
 	list($n, $res) = get_req();
@@ -89,6 +104,7 @@ function get_draw_app_list() {
 	if (false !== ($s = strrpos($n, '/'))) $n = substr($n, $s+1);
 	return array('name' => $n, 'src' => ROOTPRFX.$f.(LINK_TIME?'?'.filemtime($f):''), 'list' => $a);
 }
+
 function get_draw_vars($v = '') {
 	global $cfg_draw_vars, $tmp_wh, $tmp_whu, $u_draw_max_undo, $u_opts;
 	$vars = ($v?"$v;":'').DRAW_REST.
@@ -108,11 +124,13 @@ function get_draw_vars($v = '') {
 	}
 	return $vars;
 }
+
 function format_filesize($B, $D = 2) {
 	if ($F = floor((strlen($B) - 1) / 3)) $S = 'BkMGTPEZY';
 	else return $B.' B';
 	return sprintf("%.{$D}f", $B/pow(1024, $F)).' '.$S[$F].'B';
 }
+
 function format_time_units($t) {
 	global $tmp_time_units;
 	foreach ($tmp_time_units as $k => $v) if ($t >= $k) {
@@ -128,6 +146,7 @@ function format_time_units($t) {
 	}
 	return $r;
 }
+
 function exit_if_not_mod($t) {
 	if (!$GLOBALS['u_opts']['modtime304'] && isset($_SERVER[$h = 'HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER[$h]) == $t) {
 		header('HTTP/1.0 304 Not Modified');
@@ -222,24 +241,24 @@ function get_template_hint($t) {
 	}, $t))));
 }
 
-function get_template_pre($p, $R = 0) {
+function get_template_pre($p, $R = 0, $NOS = 0) {
 	if (is_array($a = $p)) {
 		foreach ($a as $k => $v) if (!$k) $p = $v; else if ($v) $attr .= " $k=\"$v\"";
 	}
 	return ($p?'
 	<div class="thread">
 		<pre'.$attr.'>'.$p.'
-		</pre>
-		<noscript><p class="hint report">'.($R?'JavaScript support required.':$GLOBALS['tmp_require_js']).'</p></noscript>
+		</pre>'.($NOS?'':'
+		<noscript><p class="hint report">'.($R?'JavaScript support required.':$GLOBALS['tmp_require_js']).'</p></noscript>').'
 	</div>
 ':'');
 }
 
-function get_template_page($t) {
+function get_template_page($t, $NOS = 0) {
 	global $tmp_announce, $tmp_post_err;
 	$j = $t['js'];
 	$R = ($j === 'arch');
-	$n = ROOTPRFX.NAMEPRFX;
+	$N = ROOTPRFX.NAMEPRFX;
 	$class = (($v = $t['body']) ? (is_array($v)?$v:array($v)) : array());
 	if (!$R) {
 		$L = LINK_TIME;
@@ -257,17 +276,22 @@ function get_template_page($t) {
 		if ($d = get_date_class()) $class = array_merge($class, $d);
 	}
 	if (is_array($a = $t['data'])) foreach ($a as $k => $v) $data .= ' data-'.$k.'="'.$v.'"';
-	if (is_array($a = $t['content'])) foreach ($a as $v) $pre .= get_template_pre($v, $R); else $pre = get_template_pre($a, $R);
+	if (is_array($a = $t['content'])) {
+		if ($NOS) {
+			foreach ($a as $k => $v) $pre .= ($pre?NL:'').NL.$k.$NOS.NL.$v;
+			$pre = get_template_pre($pre, $R, $NOS);
+		} else foreach ($a as $v) $pre .= get_template_pre($v, $R);
+	} else $pre = get_template_pre($a, $R, $NOS);
 	if (is_array($a = $j) || ($j && ($a = array(".$j" => 0)))) foreach ($a as $k => $v) $scr .= '
-	<script src="'.$n.($v = ($v?'':$k).'.js').($L?'?'.filemtime(NAMEPRFX.$v):'').'"></script>';
+	<script src="'.$N.($v = ($v?'':$k).'.js').($L?'?'.filemtime(NAMEPRFX.$v):'').'"></script>';
 
 	return '<!doctype html>
 <html lang="'.($t['lang']?$t['lang']:'en').'">
 <head>
-	<meta charset="'.ENC.'">
+	<meta charset="'.ENC.'">'.($NOS?'':'
 	<meta name="viewport" content="width=690">
-	<link rel="shortcut icon" type="image/png" href="'.($t['icon']?ROOTPRFX.$t['icon']:$n).'.png">
-	<link rel="stylesheet" type="text/css" href="'.$n.'.css'.($L?'?'.filemtime(NAMEPRFX.'.css'):'').'">'.($t['head']?'
+	<link rel="stylesheet" type="text/css" href="'.$N.'.css'.($L?'?'.filemtime(NAMEPRFX.'.css'):'').'">').'
+	<link rel="shortcut icon" type="image/png" href="'.($t['icon']?ROOTPRFX.$t['icon']:$N).'.png">'.($t['head']?'
 	'.indent($t['head']):'').($t['title']?'
 	<title>'.$t['title'].'</title>':'').'
 </head>

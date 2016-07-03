@@ -10,8 +10,9 @@
 ,	FORM = /^form$/i
 ,	INPUT = /^input$/i
 ,	TU = /^\d+(<|>|$)/
-,	WS = /^\s+|\s+$/g
-,	NL = /^(\r\n|\r|\n)/g
+,	SPACE = /\s+/g
+,	TRIM = /^\s+|\s+$/g
+,	NL = /^(\r\n|\r|\n)/gm
 ,	split_sec = 60
 ,	count = {u:0, uLast:'', o:0, oLast:'', img:0}
 ,	u_bar = {0:'born', b:'burn', g:'goo', m:'ice', n:'null', u:'me'}
@@ -147,6 +148,7 @@ function del(e,p) {
 	if (p?p:p = e.parentNode) p.removeChild(e);
 	return p;
 }
+
 function cre(e,p,b) {
 	e = document.createElement(e);
 	if (b) p.insertBefore(e, b); else
@@ -157,16 +159,25 @@ function cre(e,p,b) {
 function deleteCookie(c) {document.cookie = c+'=; expires=Thu, 01 Jan 1970 00:00:01 GMT; Path='+rootPath;}
 function toggleHide(e,d) {e.style.display = (e.style.display != (d?d:d='')?d:'none');}
 function getPicSubDir(p) {var s = p.split('.'); return s[1][0]+'/'+s[0][0]+'/';}
-function unixTimeToStamp(t,u) {
+function orz(n) {return parseInt(n||0)||0;}
+function leftPad(n) {return (n = orz(n)) > 9?n:'0'+n;}
+function getFormattedTime(t, plain) {
 	if (TOS.indexOf(typeof t) > -1) t = parseInt(t)*1000;
-var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
-	t = ['FullYear','Month','Date','Hours','Minutes','Seconds'];
-	u = 'get'+(u?'UTC':'');
-	for (i in t) if ((t[i] = d[u+t[i]]()+(i==1?1:0)) < 10) t[i] = '0'+t[i];
-	return t.slice(0,3).join('-')+' '+t.slice(3).join(':');
+var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date()), z = (plain ? 0 : d.getTimezoneOffset());
+	t = ['FullYear','Month','Date','Hours','Minutes','Seconds'].map(function(v,i) {
+		v = d['get'+v](); if (i == 1) ++v; return leftPad(v);
+	});
+	d = t.slice(0,3).join('-'), t = t.slice(3).join(':');
+	return (
+		plain
+		? d+' '+t
+		: '<time datetime="'+d+'T'+t
+		+(z ? (z < 0?(z = -z, '+'):'-')+leftPad(Math.floor(z/60))+':'+leftPad(z%60) : 'Z')
+		+'">'+d+' <small>'+t+'</small></time>'
+	);
 }
 
-function getFormattedNUnit(num, unit) {
+function getFormattedNumUnits(num, unit) {
 	if (unit.join) {
 	var	i = unit.length-1, n = Math.floor(num) % 100;
 		if (n < 11 || n >= 20) {
@@ -194,7 +205,7 @@ var	keep = (e?e.getAttribute('data-keep'):0) || ''
 		&&	(!room || room === m[2])
 		) {
 			k.push(m[1]);
-			j.push(m[2]+': '+getFormattedNUnit(m[3].split('/').length, la.clear[v].unit));
+			j.push(m[2]+': '+getFormattedNumUnits(m[3].split('/').length, la.clear[v].unit));
 		}
 	} else
 	if (v == 'unsave' && LS && (i = LS.length)) {
@@ -203,7 +214,7 @@ var	keep = (e?e.getAttribute('data-keep'):0) || ''
 		&&	(!keep || keep !== m.substr(0,l))
 		) {
 			k.push(m);
-			j.push(m+': '+getFormattedNUnit(LS.getItem(m).length, la.clear[v].unit));
+			j.push(m+': '+getFormattedNumUnits(LS.getItem(m).length, la.clear[v].unit));
 		}
 	}
 	return {rows: j.sort(), keys: k.sort()};
@@ -253,8 +264,8 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 			,	j = j.join(k)
 			,	status = j
 					.replace(/<[^>]+>/g, '')
-					.replace(/\s+/, ' ')
-					.replace(WS, '')
+					.replace(SPACE, ' ')
+					.replace(TRIM, '')
 			,	error = j.match(/\bid=["']*([^"'>\s]*)/i)
 			,	message = (error?status:'')
 			,	img = i.match(/<img[^>]+\balt=["']*([^"'>\s]+)/i)
@@ -350,7 +361,7 @@ var	r = '_res';
 }
 
 function filterList(event) {
-var	e = event.target, v = (e.value||'').replace(WS, '').toLowerCase(), k = 'lastFilterValue';
+var	e = event.target, v = (e.value||'').replace(TRIM, '').toLowerCase(), k = 'lastFilterValue';
 	if (!filter || (e[k] && e[k] == v)) return;
 	if (c = id('tower')) {
 		if (v.length && !c.innerHTML.length) showContent();
@@ -367,7 +378,7 @@ var	c,d = gn('div',c), i,j,l = d.length, o = [], p,alt;
 			j = k.length-1, j = k[j > 1?1:j], k = '';
 			while (j = j.nextSibling) if (!DIVP.test(j.tagName)) k += j.textContent;
 		}
-		if (j = (!v || !(k = k.replace(WS, '').toLowerCase()) || k.indexOf(v) >= 0)) {
+		if (j = (!v || !(k = k.replace(TRIM, '').toLowerCase()) || k.indexOf(v) >= 0)) {
 			alt = (alt?'':' alt');
 			e.className = e.className.replace(/\s(alt|ok)\b/i, '')+(k == v?' ok':alt);
 		}
@@ -405,7 +416,7 @@ var	t = id(i) || (showContent(), id(i)), d = t.firstElementChild;
 
 function showContent(pre) {
 	s = data.sort;
-	if (pre && pre.innerHTML) data.ph = pre.innerHTML.replace(WS, ''); else data.sort = pre;
+	if (pre && pre.innerHTML) data.ph = pre.innerHTML.replace(TRIM, ''); else data.sort = pre;
 	if (h = id(o = 'tower')) {
 		i = h.innerHTML.length, h.innerHTML = '';
 		if (i && pre == s) return;
@@ -451,7 +462,7 @@ var	i,j,k,l,m,n = '\n', o,p = data.ph, opt = 'opt_', q,s = ' ', t = '	'
 	function getThread(txt, preCount) {
 	var	line = txt.split(n), output = '', placeholder = '<!--?-->'
 	,	img = (flag.u?0:1), alt = 1, tr = []
-	,	desc_num = (g == ':'?1:0), post_num = 0, thread_num = 0, i,j,k,l,m,mark;
+	,	desc_num = (g == ':'?1:0), post_num = 0, thread_num = 0, i,j,k,l,m,mark,time;
 		hell = 0;
 		for (i in line) if (line[i].indexOf(t) > 0) {
 		var	tab = line[i].split(t), u = (tab.length > 3?tab.shift():''), post = '<br>', res = 0;
@@ -468,7 +479,7 @@ var	i,j,k,l,m,n = '\n', o,p = data.ph, opt = 'opt_', q,s = ' ', t = '	'
 			if (preCount) {
 				++count[u == 'u'?u:u = 'o'];
 				if (tab.length > 3) ++count.img;
-				if (TU.test(post = tab[0])) post = unixTimeToStamp(post);
+				if (TU.test(post = tab[0])) post = getFormattedTime(post);
 				if (count[u += 'Last'] < post) count[u] = post;
 				if (mark && (!mark.t || mark.t < post)) mark.t = post;
 			} else {
@@ -541,15 +552,18 @@ e+'</select>';
 							}
 							if (m) an += '" class="room-title'+(m[0] != '"'?' '+m:m);
 							if ((m = tab[1].split(f[1])).length > 2) {
-								da[inout?'l':'r'] = m[2];				//* <- last post date
-								if (count.oLast < m[2]) count.oLast = m[2];
+								if (time = m[2]) {
+									if (TU.test(time)) time = getFormattedTime(time);
+									da[inout?'l':'r'] = time;
+									if (count.oLast < time) count.oLast = time;	//* <- last post date
+								}
 								for (k in (m = m.slice(0,2))) count.o[k] += parseInt(m[k]);
 								tab[1] = m.join(f[1]);
 							}
 							if ((m = tab[2].split(f[1])).length > 1) {
 								tab[2] = m.shift();					//* <- room name
 								l = '';
-								for (k in m) if ((m[k] = m[k].replace(WS, '')).length && m[k] != 0) {
+								for (k in m) if ((m[k] = m[k].replace(TRIM, '')).length && m[k] != 0) {
 									l += '<span class="'+recl[k]+'" title="'+la[recl[k]]+'">'+m[k]+'</span>'+f[1];
 								}
 								tab[1] = l+tab[1];					//* <- colored counters
@@ -559,9 +573,10 @@ e+'</select>';
 								da[k = 'a '+(inout?'r':'l')] = '';			//* <- arch date?
 							}
 							if (m.length > 2) {
-								if (m[3]) {
-									da[k] = m[3];
-									if (count.uLast < m[3]) count.uLast = m[3];	//* <- arch date
+								if (time = m[3]) {
+									if (TU.test(time)) time = getFormattedTime(time);
+									da[k] = time;
+									if (count.uLast < time) count.uLast = time;	//* <- arch date
 								}
 								m[2] = '<a href="'+f[0]+tab[2]+'/">'+m[2]+'</a>';	//* <- arch count
 								tab[0] = m.slice(0,3).join(f[1]);
@@ -572,7 +587,7 @@ e+'</select>';
 								tab[0] = tab[1] = '';
 								if (f[2]) tab[2] = '<span class="a">'+tab[2]+'</span>';
 							} else
-							if (f[2] && tab[2].replace(WS, '').length) tab[2] = '<a href="'+f[2]+tab[2]+an+'">'+tab[2]+'</a>';
+							if (f[2] && tab[2].replace(TRIM, '').length) tab[2] = '<a href="'+f[2]+tab[2]+an+'">'+tab[2]+'</a>';
 						}
 						for (k in da) if (da[k]) dd +=
 e+'<div'+(inout?' class="'+inout+'"':'')+'><p class="'+k+'">'+da[k]+'</p></div>';
@@ -594,18 +609,18 @@ dd+e+(desc_num && img?desc_num++ +'. ':'')+tab[2];
 						.replace(/(task:\s*)(\S+)(\s*<br>\s*pic:\s*1)/gi, '$1<img src="'+f+'$2">$3')
 						.replace(/(<br>)(\s+)/gi, '$1<i></i>')
 				+	'</div>';
-				q = (flag.u?tab[2].slice(0, tab[2].indexOf('.')).replace(WS, ''):0);
+				q = (flag.u?tab[2].slice(0, tab[2].indexOf('.')).replace(TRIM, ''):0);
 				m = (thread_num?thread_num+'-'+post_num+'-':'');
 				k = 2;
-				while (k--) if (tab[k].replace(WS, '').length || (flag.u && (tab[k] += la.count[k > 0?'self':'each']))) {
+				while (k--) if (tab[k].replace(TRIM, '').length || (flag.u && (tab[k] += la.count[k > 0?'self':'each']))) {
 				var	r = '';
 					if (tab[k].indexOf(l = '<br>') > 0) {
 						l = tab[k].split(l);
 						tab[k] = l.shift();
 						for (j in l) r +=
-e+'	<span class="'+recl[0]+'">'+unixTimeToStamp(l[j].slice(0, i = l[j].indexOf(':')))+l[j].slice(i)+'</span>';
+e+'	<span class="'+recl[0]+'">'+getFormattedTime(l[j].slice(0, i = l[j].indexOf(':')))+l[j].slice(i)+'</span>';
 					}
-					if (!k && TU.test(tab[k])) j = tab[k].split('<'), j[0] = unixTimeToStamp(j[0]), tab[k] = j.join('<');
+					if (!k && TU.test(tab[k])) j = tab[k].split('<'), j[0] = getFormattedTime(j[0]), tab[k] = j.join('<');
 					if (r) tab[k] +=
 e+'<span class="date-out '+'rl'[k]+'">'+r+
 e+'</span>';
@@ -704,8 +719,8 @@ c+'</div>'+b:p);
 				}
 				k = (h?e+'<span class="r">'+h+'</span>'+(m?e+m:(h.indexOf('<br>') > 0?'<br>&nbsp;':'')):'');
 			}
-			for (i in mt) if ((j = mt[i]).length) k += '<br>'+la[i]+': '+j.length+','+j.map(function(v,i) {
-				return e+'<a href="javascript:showOpen('+v.i+')">'+v.t.replace(' ', ' <small>')+'</small></a>';
+			for (i in mt) if ((j = mt[i]).length) k += '<br>'+la[i]+': '+j.length+','+j.map(function(v) {
+				return e+'<a href="javascript:showOpen('+v.i+')">'+v.t+'</a>';
 			}).join(',');
 			p.className += ' task';
 			p.innerHTML =
@@ -804,11 +819,11 @@ if (k = id('tabs')) {
 
 	function a(r,t) {return '<a href="'+r+(r == l?'" class="at':'')+'">'+t+'</a>';}
 
-	h = '', l = l.split('/').slice(-1)[0], n = k.textContent.replace(WS, '').split('|');
+	h = '', l = l.split('/').slice(-1)[0], n = k.textContent.replace(TRIM, '').split('|');
 	for (i in n) h += (h?'\n|	':'')+a(+i+1, n[i]);
 	k.innerHTML = '[	'+h+'	]';	//* <- category tabs
 var	p = k.parentNode, c,d,e,r = /^\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
-	while ((m = p.lastElementChild) && !((j = m.lastElementChild) && j.id) && r.test(j = m.innerHTML.replace(WS, ''))) {
+	while ((m = p.lastElementChild) && !((j = m.lastElementChild) && j.id) && r.test(j = m.innerHTML.replace(TRIM, ''))) {
 		j = j.split('-'), y = 'year'+(f = j[0]), n = j.pop().split(','), j = j.join('-'), h = j+':';
 		for (i in n) h += '\n'+a(j+'-'+n[i].replace(w, ''), n[i]);
 		m.innerHTML = h;		//* <- row: month, column: day

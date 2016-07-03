@@ -3,7 +3,7 @@
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
 ,	INFO_VERSION = 'v0.9.66'
-,	INFO_DATE = '2013-04-01 — 2016-06-30'
+,	INFO_DATE = '2013-04-01 — 2016-07-03'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -2000,18 +2000,19 @@ var	o = outside
 ,	f = o.send = id('send')
 ,	r = o.read = id('read')
 ,	v = id('vars')
-,	a = [v,f,r], e,i,j,k;
+,	a = [v,f,r]
+,	s = ';'
+,	regVarSep = /\s*[;\r\n\f]+\s*/g
+,	regVarName = /^([^=]+)\s*=\s*/
+,	e,i,j,k;
 
 /* ext.config syntax:
 	a) varname; var2=;		// no sign => value 1; no value => ''
 	b) warname=two=3=last_val;	// all vars => same value (rightmost part)
 */
 	for (i in a) if ((e = a[i]) && (e = (e.getAttribute('data-vars') || e.name))) {
-		for (i in (a = e
-			.replace(/\s*=\s*/g, '=')
-			.replace(/[\s;]+=*/g, ';')
-			.split(';')
-		)) if ((e = a[i]).length) {
+		a = e.replace(regVarSep, s).split(s);
+		for (i in a) if ((e = a[i].replace(regVarName, '$1=')).length) {
 			if ((e = e.split('=')).length > 1) {
 				k = e.pop();
 				for (j in e) o[e[j]] = k;

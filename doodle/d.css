@@ -57,7 +57,6 @@ a:hover	{
 }
 .task a:hover, .task label:hover {
 	color: #fff;
-	cursor: pointer;
 }
 .anno {
 	white-space: normal;
@@ -141,11 +140,11 @@ a:hover	{
 	color: #fff;
 	background-color: #555;
 }
-.task form>*:not(label), .a>* {
+.task form>*:not(label), header.a>* {
 	display: table;
 	width: 100%;
 }
-.task form>*:not(label)>*, .a>*>* {
+.task form>*:not(label)>*, header.a>*>* {
 	display: table-cell;
 }
 .task form>*:not(label)>*:nth-child(2) {
@@ -208,6 +207,7 @@ a:hover	{
 	text-decoration: underline;
 }
 .post .center label {
+	cursor: pointer;
 	display: inline-block;
 	text-align: center;
 	min-width: 25px;
@@ -268,6 +268,9 @@ a:hover	{
 }
 .post.p {
 	padding-bottom: 8px;
+}
+.post.p p[onclick], input[type="submit"]:not(:disabled) {
+	cursor: pointer;
 }
 .post.p p, .post .date-out>* {
 	width: 169px;
@@ -358,3 +361,6 @@ p.hint, li, .task label {
 }
 .al {	text-align: left;}
 pre {	display: none;}
+time small {
+	line-height: 50%;
+}

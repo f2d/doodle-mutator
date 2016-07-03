@@ -158,6 +158,7 @@ if ($u_key) {
 	if (isset($_POST[$qredir])) goto post_refresh;
 
 //* options change ------------------------------------------------------------
+
 	if (isset($_POST[$p = 'quit'])) {
 		$post_status = OQ.$tmp_post_ok_user_quit;
 		$u_key = $p;
@@ -178,6 +179,7 @@ if ($u_key) {
 	else
 
 //* report problem in active room ---------------------------------------------
+
 	if (isset($_POST['report']) && $etc && (MOD || !(R1 || $u_flag['nor']))) {
 		$post_status = 'no_path';
 		if (preg_match(PAT_DATE, $etc, $r) && ($etc == $r[0])) {	//* <- r = array(t-r-c, t-r, thread, row, column)
@@ -195,6 +197,7 @@ if ($u_key) {
 	if ($etc && !(MOD && $etc == 3)); else	//* <- no "etc" posting without report
 
 //* skip current task ---------------------------------------------------------
+
 	if (isset($_POST['skip'])) {
 		if (preg_match('~^\d+~', $_POST['skip'], $digits)) {
 			$i = $digits[0];
@@ -209,6 +212,7 @@ if ($u_key) {
 	} else
 
 //* process new text post -----------------------------------------------------
+
 	if (isset($_POST['describe'])) {
 		$post_status = 'text_short';
 		if (mb_strlen($x = $ptx = trim_post($_POST['describe'], DESCRIBE_MAX_LENGTH), ENC) >= DESCRIBE_MIN_LENGTH) {
@@ -217,6 +221,7 @@ if ($u_key) {
 	} else
 
 //* process new pic post ------------------------------------------------------
+
 	if (isset($_POST['pic'])) {
 		$post_status = 'file_pic';
 		$log = 0;
@@ -345,6 +350,7 @@ if ($u_key) {
 	} else
 
 //* admin/mod actions ---------------------------------------------------------
+
 	if (isset($_POST['mod']) && MOD) {
 		$d = 'abcdefg';
 		$k = array();
@@ -370,6 +376,7 @@ if ($u_key) {
 	}
 
 //* write user post -----------------------------------------------------------
+
 	if (substr($post_status,0,7) == 'post_ok') {
 		data_aim();
 		$x = data_log_post($x);
@@ -382,6 +389,7 @@ if ($u_key) {
 	}
 
 //* after user posting --------------------------------------------------------
+
 	if ($ptx) {
 		if ($log) {
 			$op = ' = {';
@@ -399,6 +407,7 @@ Target$op$t$ed"
 } else if (isset($_POST[ME]) && strlen($me = trim_post($_POST[ME], USER_NAME_MAX_LENGTH)) >= USER_NAME_MIN_LENGTH) {
 
 //* register new user ---------------------------------------------------------
+
 	$post_status = (data_log_user($u_key = md5($me.T0.substr(M0,2,3)), $me)?OQ.$tmp_post_ok_user_reg:'unkn_res');
 }
 
@@ -422,6 +431,7 @@ Target$op$t$ed"
 			$task = get_template_form($task, FIND_MIN_LENGTH);
 
 //* archive posts search ------------------------------------------------------
+
 			if (list($subj, $q) = get_req()) {
 				$s = $tmp_archive_find_by[$k = array_search($subj, $qa = explode(',', $qa))];
 				if (
@@ -467,6 +477,7 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 			} else {
 
 //* archive threads list ------------------------------------------------------
+
 				if (($i = (R1?($thread_count-TRD_PER_PAGE):0)) < 0) $i = 0;
 				$content = DIR_THUMB.'|'.$thread_count.'|'.(R1?TRD_PER_PAGE.'|'.$i:$u_per_page).($u_key?'':'
 			<!-- static link for scriptless bots, last in chain -->
@@ -475,6 +486,7 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 		} else {
 
 //* archive rooms list --------------------------------------------------------
+
 			$task = get_template_form(array($qredir
 			,	$tmp_archive
 			,	$tmp_archive_hint
@@ -499,6 +511,7 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 	} else
 
 //* draw test -----------------------------------------------------------------
+
 	if (($qd_opts || !$qdir) && GET_Q) {
 		$qd_opts = 2;
 		$n = get_draw_app_list();
@@ -517,6 +530,7 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 if ($u_key) {
 
 //* options -------------------------------------------------------------------
+
 	if ($qd_opts) {
 		$nst = '
  	 	';
@@ -579,6 +593,7 @@ if ($u_key) {
 		}
 
 //* task manipulation ---------------------------------------------------------
+
 		if ($etc) {
 			if ($etc[0] == '-') {
 		//* show current task:
@@ -621,11 +636,21 @@ if ($u_key) {
 			}
 
 //* mod panel -----------------------------------------------------------------
+
 			if (GOD) {
-				if ($etc == 3 && ($a = strpos($etc, '-'))) {
-					$a = intval(substr($etc, $a+1));
-					die('<html><head><meta charset="'.ENC.'"><title>'.$tmp_mod_pages[3].': #'.$a.'</title></head>
-<body><pre>'.date(TIMESTAMP, T0).NL.(($a = data_check_user_info($a))?$a:$tmp_empty).'</pre></body></html>');
+				if ($etc == 3 && ($i = strpos($etc, '-'))) {
+					$i = intval(substr($etc, $i+1));
+					die(get_template_page(array(
+						'title' => $tmp_mod_pages[3].': #'.$i
+					,	'content' => (
+							($a = data_get_user_info($i))
+							? array_merge(array(
+								'Current date' => date(TIMESTAMP, T0)
+							,	'User ID' => $i
+							), $a)
+							: $tmp_empty
+						)
+					), ':'));
 				}
 				$lnk = $done = '';
 				$ymd = preg_match(PAT_DATE, $etc, $m);		//* <- Y-m-d
@@ -712,12 +737,14 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data
 			} else {
 
 //* report form ---------------------------------------------------------------
+
 				$task = get_template_form('report', REPORT_MIN_LENGTH, REPORT_MAX_LENGTH, $rt = 1);
 			}
 			$js[0]++;
 		} else
 
 //* active room task and visible content --------------------------------------
+
 		if ($room) {
 			list($err_sign, $err_name) = get_req();
 
@@ -831,6 +858,7 @@ if (TIME_PARTS) time_check_point('after sort + join');
 		} else {
 
 //* active rooms list ---------------------------------------------------------
+
 			if ($vr = data_get_visible_rooms()) {
 				exit_if_not_mod(array_shift($vr));
 
@@ -848,8 +876,8 @@ NL.($n[2]?'*':NB).'	'.NB."	$rn";
 						if ($n[2]) $n[1] .= $s.$n[2];
 						if (!$u_opts['times']) {
 							if ($n[2]
-							&&  $n[3]) $n[1] .= $s.date(TIMESTAMP, $n[3]);	//* <- last archived
-							if ($n[6]) $n[5] .= $s.date(TIMESTAMP, $n[6]);	//* <- last active post
+							&&  $n[3]) $n[1] .= $s.$n[3];	//* <- last archived
+							if ($n[6]) $n[5] .= $s.$n[6];	//* <- last active post
 						}
 						$content .=
 NL."$n[0]$s$n[1]	$n[4]$s$n[5]	$rn";
@@ -875,42 +903,51 @@ NL."$n[0]$s$n[1]	$n[4]$s$n[5]	$rn";
 } else {
 
 //* not registered ------------------------------------------------------------
+
 	if ($etc) die('x');
 	foreach ($cfg_dir as $k => $v) unset(${'qd_'.$k});
 	$task = get_template_form(array(ME, $tmp_name_yourself, $tmp_name_hint), USER_NAME_MIN_LENGTH);
 	$js[0]++;
 }
 
-$room_title = ($room == ROOM_DEFAULT ? $tmp_room_default : $tmp_room.' '.$room);
+//* generate page, put content into template ----------------------------------
+
+define(S, '. ');
+define(A, '
+	<a href="');
 $s = array();
-foreach (($short = $u_opts['head'])
+$room_title = ($room == ROOM_DEFAULT ? $tmp_room_default : $tmp_room.' '.$room);
+foreach (
+	($short = $u_opts['head'])
 	? array('/','..','.','a','?','?','#')
 	: array($tmp_title, $tmp_rooms, $room_title, $tmp_archive, $tmp_options, $tmp_draw_test, $tmp_mod_panel)
-as $v) $s[] = $v.($short||(substr($v, -1) == '.')?'':'.').'</a>';
-$r = ($a = '
-	<a href="').($qd_room ? ($room?'..':'.') : $cfg_room).'">'.$s[1];
-
-if (false !== strpos($links = vsprintf(FOOT_NOTE, $tmp_foot_notes), NL)) $links = indent(NL.trim($links)).NL;
-
-//* timings -------------------------------------------------------------------
-if (!MOD || !TIME_PARTS || !is_array($tcp)) $tcp = 0;
-$t = explode(' ',microtime());
-$t = ($t[1]-T0) + ($t[0]-M0);
-$took = date(TIMESTAMP, T0).sprintf($tmp_took, ($tcp?'<a href="javascript:'.(++$js[0]).',toggleHide(took)">'.$t.'</a>':$t));
-if ($tcp) {
-	foreach ($tcp as $t => $comment) {
-		$t = explode(' ', $t);
-		$t = ($t[1]-T0) + ($t[0]-M0);
-		$l = strlen($t_diff = sprintf('%.6f', $t - $t_prev));
-		for ($i = 0; $i < $l; $i++) if (trim($t_diff[$i], '0.')) break; else $t_diff[$i] = ' ';
-		$t_prev = $t;
-		$tfc .= NL.sprintf('%.6f, +', $t).$t_diff.' : '.$comment;
-	}
-	$took .= '<span id="took" style="display:none">'.$tfc.'</span>';
+as $v) {
+	$s[] = $v.($short||(substr($v, -1) == '.')?'':'.').'</a>';
 }
+$current_room_link = A.($qd_room ? ($room?'..':'.') : $cfg_room).'">'.$s[1];
 
-//* final page data to show ---------------------------------------------------
-define(S, '. ');
+if (!$u_opts['names'] && constant('FOOT_NOTE')) {
+	if (false !== strpos($links = vsprintf(FOOT_NOTE, $tmp_foot_notes), NL)) $links = indent(NL.trim($links)).NL;
+} else $links = '';
+
+if ($u_key && !$u_opts['times']) {
+	if (!MOD || !TIME_PARTS || !is_array($tcp)) $tcp = 0;
+	$t = explode(' ',microtime());
+	$t = ($t[1]-T0) + ($t[0]-M0);
+	$took = get_time_html().sprintf($tmp_took, ($tcp?'<a href="javascript:'.(++$js[0]).',toggleHide(took)">'.$t.'</a>':$t));
+	if ($tcp) {
+		foreach ($tcp as $t => $comment) {
+			$t = explode(' ', $t);
+			$t = ($t[1]-T0) + ($t[0]-M0);
+			$l = strlen($t_diff = sprintf('%.6f', $t - $t_prev));
+			for ($i = 0; $i < $l; $i++) if (trim($t_diff[$i], '0.')) break; else $t_diff[$i] = ' ';
+			$t_prev = $t;
+			$tfc .= NL.sprintf('%.6f, +', $t).$t_diff.' : '.$comment;
+		}
+		$took .= '<span id="took" style="display:none">'.$tfc.'</span>';
+	}
+} else $took = '';
+
 die(get_template_page(array(
 	'icon' => $icon
 ,	'lang' => $lang
@@ -924,23 +961,24 @@ die(get_template_page(array(
 ,	'header' => $rt?'':
 		($u_key?('
 <p>'.
-			$a.ROOTPRFX.'">'.$s[0].($short?$r:'').
+			A.ROOTPRFX.'">'.$s[0].($short?$current_room_link:'').
 				($room ?
-			$a.($qd_room ? '.' : $cfg_room.$room.'/').'">'.$s[2].
+			A.($qd_room ? '.' : $cfg_room.$room.'/').'">'.$s[2].
 				($qd_arch || is_dir($arch = DIR_ARCH.$room) ?
-			$a.($qd_arch ? '.' : ROOTPRFX.$arch.'/').'">'.$s[3]
+			A.($qd_arch ? '.' : ROOTPRFX.$arch.'/').'">'.$s[3]
 				: '') : '').'
 </p>
 <p class="r">'.(GOD?
-			$a.$cfg_room.($room?$room:ROOM_DEFAULT).'/1">'.$s[6]:'').($short?'':$r).
-			$a.($qdir && $qd_opts?'.':ROOTPRFX.DIR_OPTS.($room?$room.'/':'')).'">'.$s[4].'
+			A.$cfg_room.($room?$room:ROOM_DEFAULT).'/1">'.$s[6]:'').($short?'':$current_room_link).
+			A.($qdir && $qd_opts?'.':ROOTPRFX.DIR_OPTS.($room?$room.'/':'')).'">'.$s[4].'
 </p>'
 		):('
 <p>'.
-			$a.ROOTPRFX.'">'.$s[0].
-			$a.ROOTPRFX.'?drawtest">'.$s[5].'
+			A.ROOTPRFX.'">'.$s[0].
+			A.ROOTPRFX.'?drawtest">'.$s[5].'
 </p>'.(is_dir(DIR_ARCH)?'
-<p class="r">'.$a.ROOTPRFX.DIR_ARCH.'">'.$s[3].'
+<p class="r">'.
+			A.ROOTPRFX.DIR_ARCH.'">'.$s[3].'
 </p>':'')
 		))
 ,	'report' => $err_sign == '!'?$err_name:''
@@ -948,9 +986,9 @@ die(get_template_page(array(
 ,	'task' => $task?$task:'Err... What?'
 ,	'subtask' => $subtask
 ,	'content' => $content
-,	'footer' => $rt?'':($u_opts['times'] || !$u_key?'':'
-<p class="l hint">'.$took.'</p>').($u_opts['names'] || !constant('FOOT_NOTE')?'':'
-<p class="r hint">'.$links.'</p>')
+,	'footer' => $rt?'':($took?'
+<p class="l hint">'.$took.'</p>':'').($links?'
+<p class="r hint">'.$links.'</p>':'')
 ,	'js' => $js
 )));
 
@@ -959,7 +997,8 @@ die(get_template_page(array(
 
 
 
-//* after posting -------------------------------------------------------------
+//* redirect after posting ----------------------------------------------------
+
 post_refresh:
 
 if ($o = ob_get_flush()) data_log_adm('PHP output: '.$o);

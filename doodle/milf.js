@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2016-06-30'
+,	INFO_DATE = '2014-07-16 — 2016-07-03'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -2346,25 +2346,33 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 
 function isTest() {
 	if (CR[0] !== 'C') return !o.send;
-var	o = outside, v = id('vars'), e,i,j,k
+
+var	o = outside
 ,	f = o.send = id('send')
-,	r = o.read = id('read'), a = [v,f,r];
+,	r = o.read = id('read')
+,	v = id('vars')
+,	a = [v,f,r]
+,	s = ';'
+,	regVarSep = /\s*[;\r\n\f]+\s*/g
+,	regVarName = /^([^=]+)\s*=\s*/
+,	e,i,j,k;
+
+/* ext.config syntax:
+	a) varname; var2=;		// no sign => value 1; no value => ''
+	b) warname=two=3=last_val;	// all vars => same value (rightmost part)
+*/
 	for (i in a) if ((e = a[i]) && (e = (e.getAttribute('data-vars') || e.name))) {
-		for (i in (a = e
-			.replace(/\s*=\s*/g, '=')
-			.replace(/[\s;]+=*/g, ';')
-			.split(';')
-		)) if ((e = a[i]).length) {
+		a = e.replace(regVarSep, s).split(s);
+		for (i in a) if ((e = a[i].replace(regVarName, '$1=')).length) {
 			if ((e = e.split('=')).length > 1) {
 				k = e.pop();
 				for (j in e) o[e[j]] = k;
 			} else o[e[0]] = k = 1;
 			if (e[0].substr(0,2) == 'jp') o.jpg = k;
-//*	a) varname; var2=;		//noequal=1, empty=0
-//*	b) warname=two=3=last_val;	//samevalue, rightmost
 		}
-		break;	//* <- no care about the rest
+		break;			//* <- read vars batch in the first found attribute only; no care about the rest
 	}
+
 	k = 'y2', i = k.length, j = (o.saveprfx?o.saveprfx:NS)+CR, CR = [];
 	while (i) CR[i--] = {R:e = j+k[i], T:e+CT, L:e+CL};
 	CT = CR[1].T, CL = CR[1].L;

@@ -319,11 +319,12 @@ function data_set_u_flag($u, $flag, $on = -1, $harakiri = 0) {
 	return $u;
 }
 
-function data_check_user_info($u) {
+function data_get_user_info($u) {
+	$r = array();
 	if (data_lock($u = '/'.$u)) {
 		$n = DIR_META_U.$u;
 		foreach (array('flag' => 'Flags','ip' => 'IPs') as $k => $v)
-			if (is_file($f = "$n.$k")) $r .= NL."$v: ".NL.file_get_contents($f).NL;
+			if (is_file($f = "$n.$k") && ($f = trim(file_get_contents($f)))) $r[$v] = $f;
 		data_unlock($u);
 	}
 	return $r;
