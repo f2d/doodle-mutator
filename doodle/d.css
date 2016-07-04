@@ -86,8 +86,18 @@ a:hover	{
 	padding: 0 !important;
 }
 #took {
-	white-space: pre;
+	border-collapse: collapse;
+}
+#took td {
 	font-family: monospace;
+	line-height: normal;
+	text-align: left;
+}
+#took td:nth-child(2) {
+	text-align: right;
+}
+#took, .task label, p.hint, li {
+	font-size: 13px;
 }
 #tower .thread {
 	margin: 0;
@@ -164,6 +174,9 @@ a:hover	{
 	display: block;
 	padding-right: 6px;
 }
+.thread pre {
+	display: none;
+}
 .post {	background-color: #f5f5f5;} body,
 .alt {	background-color: #eee;} .burnt-hell,
 .burnt .post {	background-color: #fdd;} .post .burnt, .hot,
@@ -207,7 +220,6 @@ a:hover	{
 	text-decoration: underline;
 }
 .post .center label {
-	cursor: pointer;
 	display: inline-block;
 	text-align: center;
 	min-width: 25px;
@@ -269,7 +281,7 @@ a:hover	{
 .post.p {
 	padding-bottom: 8px;
 }
-.post.p p[onclick], input[type="submit"]:not(:disabled) {
+.post.p p[onclick], button:not(:disabled), input:not(:disabled):not([type="text"]), label {
 	cursor: pointer;
 }
 .post.p p, .post .date-out>* {
@@ -356,11 +368,7 @@ a:hover	{
 	display: inline-block;
 	width: 40px;
 }
-p.hint, li, .task label {
-	font-size: 13px;
-}
 .al {	text-align: left;}
-pre {	display: none;}
 time small {
 	line-height: 50%;
 }

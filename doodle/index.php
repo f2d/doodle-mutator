@@ -927,7 +927,7 @@ as $v) {
 $current_room_link = A.($qd_room ? ($room?'..':'.') : $cfg_room).'">'.$s[1];
 
 if (!$u_opts['names'] && constant('FOOT_NOTE')) {
-	if (false !== strpos($links = vsprintf(FOOT_NOTE, $tmp_foot_notes), NL)) $links = indent(NL.trim($links)).NL;
+	if (false !== strpos($links = vsprintf(FOOT_NOTE, $tmp_foot_notes), NL)) $links = indent($links);
 } else $links = '';
 
 if ($u_key && !$u_opts['times']) {
@@ -939,12 +939,10 @@ if ($u_key && !$u_opts['times']) {
 		foreach ($tcp as $t => $comment) {
 			$t = explode(' ', $t);
 			$t = ($t[1]-T0) + ($t[0]-M0);
-			$l = strlen($t_diff = sprintf('%.6f', $t - $t_prev));
-			for ($i = 0; $i < $l; $i++) if (trim($t_diff[$i], '0.')) break; else $t_diff[$i] = ' ';
-			$t_prev = $t;
-			$tfc .= NL.sprintf('%.6f, +', $t).$t_diff.' : '.$comment;
+			$t_diff = ltrim(sprintf('%.6f', $t - $t_prev), '0.');
+			$t = sprintf('%.6f', $t_prev = $t);
+			$took_list .= NL."<tr><td>$t +</td><td>$t_diff</td><td>: $comment</td></tr>";
 		}
-		$took .= '<span id="took" style="display:none">'.$tfc.'</span>';
 	}
 } else $took = '';
 
@@ -988,7 +986,9 @@ die(get_template_page(array(
 ,	'content' => $content
 ,	'footer' => $rt?'':($took?'
 <p class="l hint">'.$took.'</p>':'').($links?'
-<p class="r hint">'.$links.'</p>':'')
+<p class="r hint">'.$links.'</p>':'').($took_list?'
+<br clear="all">
+<table id="took" style="display:none">'.indent($took_list).'</table>':'')
 ,	'js' => $js
 )));
 

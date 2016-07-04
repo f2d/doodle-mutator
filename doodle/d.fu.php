@@ -1,7 +1,7 @@
 <?php
 
 function str_replace_first($f, $to, $s) {return (false !== ($pos = strpos($s, $f)) ? substr_replace($s, $to, $pos, strlen($f)) : $s);}
-function indent($t, $n = 1) {return preg_replace('~\v+~u', NL.str_repeat("\t", $n), $t);}
+function indent($t, $n = 1) {return preg_replace('~\v+~u', NL.str_repeat("\t", $n), NL.trim($t)).NL;}
 function csv2nl($v, $c = ';', $n = 3) {
 	$d = "\s*[$c]+\s*";
 	$n = NL.($n > 0?str_repeat("\t", $n):'');
@@ -50,11 +50,11 @@ function get_pic_subpath($p, $mk = 0) {
 
 function get_pic_url($p) {return ROOTPRFX.(PIC_SUB?get_pic_subpath($p):DIR_PICS.$p);}
 function get_time_html($t = 0) {
-	$f = date(DATE_ATOM, $t?$t:T0);
+	$f = date(DATE_ATOM, $uint = ($t?$t:T0));
 	$i = strpos($f, 'T');
 	$d = substr($f, 0, $i);
 	$t = substr($f, $i+1, 8);
-	return '<time datetime="'.$f.'">'.$d.' <small>'.$t.'</small></time>';
+	return '<time datetime="'.$f.'" data-t="'.$uint.'">'.$d.' <small>'.$t.'</small></time>';
 }
 
 function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for archive pages; default = current date
@@ -148,7 +148,19 @@ function format_time_units($t) {
 }
 
 function exit_if_not_mod($t) {
-	if (!$GLOBALS['u_opts']['modtime304'] && isset($_SERVER[$h = 'HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER[$h]) == $t) {
+	if ($q = $_REQUEST[ME]) header('Etag: '.($q = 'W/"'.md5($q).'"'));	//* <- if user key/options changed, reload page
+	if (
+		!$GLOBALS['u_opts']['modtime304']
+	&&	isset($_SERVER[$h = 'HTTP_IF_MODIFIED_SINCE'])
+	&&	strtotime($_SERVER[$h]) == $t
+	&&	(
+			!$q
+		||	(
+				isset($_SERVER[$h = 'HTTP_IF_NONE_MATCH'])
+			&&	$_SERVER[$h] == $q
+			)
+		)
+	) {
 		header('HTTP/1.0 304 Not Modified');
 		exit;
 	}

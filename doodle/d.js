@@ -2,6 +2,7 @@
 ,	h = gn('header')[0], i,j,k,l = location.href
 ,	rootPath = (h?gn('a',h)[0].href.replace(/^\w+:\/+[^\/]+\/+/, '/'):'/')
 ,	TOS = ['object','string']
+,	AF = TOS.filter
 ,	ANNO = /\banno\b/i
 ,	POST = /\bpost\b/i
 ,	BR = /^br$/i
@@ -17,8 +18,7 @@
 ,	count = {u:0, uLast:'', o:0, oLast:'', img:0}
 ,	u_bar = {0:'born', b:'burn', g:'goo', m:'ice', n:'null', u:'me'}
 ,	m,n,mm,mt = {frozen:[], burnt:[], full:[]}
-,	AF = mt.full.filter
-,	filter, checking, CS = 'checkStatus', CM = 'checkMistype', data = {}, flag = {}
+,	CS = 'checkStatus', CM = 'checkMistype', checking, filter, data = {}, flag = {}
 ,	inout = (('ontouchstart' in document.documentElement)?'':'date-out')
 ,	la, lang = document.documentElement.lang || 'en';
 
@@ -156,24 +156,33 @@ function cre(e,p,b) {
 	return e;
 }
 
+function eventStop(e) {
+	if (e?e:e = event || window.event) {
+		if (e.stopPropagation) e.stopPropagation();
+		if (e.cancelBubble != null) e.cancelBubble = true;
+	}
+	return e;
+}
+
 function deleteCookie(c) {document.cookie = c+'=; expires=Thu, 01 Jan 1970 00:00:01 GMT; Path='+rootPath;}
 function toggleHide(e,d) {e.style.display = (e.style.display != (d?d:d='')?d:'none');}
 function getPicSubDir(p) {var s = p.split('.'); return s[1][0]+'/'+s[0][0]+'/';}
 function orz(n) {return parseInt(n||0)||0;}
-function leftPad(n) {return (n = orz(n)) > 9?n:'0'+n;}
+function leftPad(n) {n = orz(n); return n > 9 || n < 0?n:'0'+n;}
 function getFormattedTime(t, plain) {
 	if (TOS.indexOf(typeof t) > -1) t = parseInt(t)*1000;
-var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date()), z = (plain ? 0 : d.getTimezoneOffset());
+var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
 	t = ['FullYear','Month','Date','Hours','Minutes','Seconds'].map(function(v,i) {
 		v = d['get'+v](); if (i == 1) ++v; return leftPad(v);
 	});
-	d = t.slice(0,3).join('-'), t = t.slice(3).join(':');
+var	YMD = t.slice(0,3).join('-'), HIS = t.slice(3).join(':');
 	return (
 		plain
-		? d+' '+t
-		: '<time datetime="'+d+'T'+t
-		+(z ? (z < 0?(z = -z, '+'):'-')+leftPad(Math.floor(z/60))+':'+leftPad(z%60) : 'Z')
-		+'">'+d+' <small>'+t+'</small></time>'
+		? YMD+' '+HIS
+		: '<time data-t="'+Math.floor(d/1000)
+		+	'" datetime="'+YMD+'T'+HIS
+		+	((d = d.getTimezoneOffset()) ? (d < 0?(d = -d, '+'):'-')+leftPad(Math.floor(d/60))+':'+leftPad(d%60) : 'Z')
+		+	'">'+YMD+' <small>'+HIS+'</small></time>'
 	);
 }
 
