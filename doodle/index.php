@@ -426,7 +426,6 @@ Target$op$t$ed"
 			exit_if_not_mod(data_get_archive_mtime());
 
 			$js['.arch'] = 0;
-			$js[0]++;
 			$task = array('?'.($qa = 'post,file,name'), $tmp_archive, $tmp_archive_find_by, $tmp_archive_find);
 			$task = get_template_form($task, FIND_MIN_LENGTH);
 
@@ -449,7 +448,7 @@ Target$op$t$ed"
 				$search_res = $tmp_archive_found.' '.$tmp_archive_found_by[$k].': <a id="r">'.$q.'</a>';
 				$q = mb_strtolower(trim_post($q, FIND_MAX_LENGTH), ENC);
 				$task .= '
-		<p class="hint">'.$search_res.'</p>';
+<p class="hint">'.$search_res.'</p>';
 				$content = '|||';	//* <- to keep JS happy for now
 				$n = 0;
 if (TIME_PARTS) time_check_point('inb4 search');
@@ -516,15 +515,13 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 		$qd_opts = 2;
 		$n = get_draw_app_list();
 		$icon = $n['name'];
-		$task = ('
-		<p>'.$tmp_draw_free.'</p>
-		<p class="hint">'.$tmp_draw_hint.'</p>').'<noscript>
-		<p class="hint">'.$tmp_require_js.'</p></noscript>';
+		$task = '
+<p>'.$tmp_draw_free.'</p>
+<p class="hint">'.$tmp_draw_hint.'</p><noscript>
+<p class="hint">'.$tmp_require_js.'</p></noscript>';
 		$subtask = '
-		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.csv2nl(get_draw_vars()).'"></script>
-		<div class="task">
-			<p class="hint">'.$n['list'].'</p>
-		</div>';
+<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.csv2nl(get_draw_vars()).'"></script>
+<div class="task">'.indent('<p class="hint">'.indent($n['list']).'</p>').'</div>';
 	} else
 
 if ($u_key) {
@@ -571,16 +568,13 @@ if ($u_key) {
 			if (is_array($hint)) {
 				$s = '';
 				foreach ($hint as $i) $s .= '
-			<li>'.get_template_hint($i).'</li>';
-				$s = "
-		<ul>$s
-		</ul>";
+<li>'.indent(get_template_hint($i)).'</li>';
+				$s = '
+<ul>'.indent($s).'</ul>';
 			} else	$s = '
-		<p class="hint">
-'.get_template_hint($hint).'
-		</p>';
+<p class="hint">'.indent(get_template_hint($hint)).'</p>';
 			$task .= "
-		<p>$head</p>$s";
+<p>$head</p>$s";
 		}
 		$js[0]++;
 	} else
@@ -671,13 +665,13 @@ preg_replace('~\v+~u', '<br>', NL.htmlspecialchars($a)))));
 						if (!$ymd) exit_if_not_mod($last);
 
 						foreach ($l as $ym => $d) $lnk .= ($lnk?'</p>':'').'
-		<p>'.$ym.'-'.implode(',', $d);
+<p>'.$ym.'-'.implode(',', $d);
 						$lnk .= ' <small>'.date('H:i:s', $last).'</small></p>';
 					} else $done = $tmp_empty;
 				} else
 				if ($etc == 2) {
 					foreach ($tmp_mod_files as $k => $v) $lnk .= '
-		<p>'.$k.': <a href="2-'.$k.'">'.str_replace_first(' ', '</a> ', $v).'</p>';
+<p>'.$k.': <a href="2-'.$k.'">'.str_replace_first(' ', '</a> ', $v).'</p>';
 					if (count($a = explode('-', $etc, 2)) > 1) {
 						ignore_user_abort(true);
 						$a = $a[1];
@@ -699,7 +693,7 @@ if (TIME_PARTS && $a) time_check_point("done $a pics");
 							$done = data_fix_user_format();
 						}
 						$done = ($done?'
-		<textarea>Done:'.$done.'</textarea>':$tmp_empty);
+<textarea>Done:'.$done.'</textarea>':$tmp_empty);
 					}
 				} else
 				if ($etc > 2) {
@@ -730,17 +724,16 @@ NL.$t)));
 						$content .= 'ref'.NL.
 preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data fields
 					} else	$done = ($t?'
-		<textarea>'.$t.'</textarea>':$tmp_empty);
+<textarea>'.$t.'</textarea>':$tmp_empty);
 				}
 				$task = '
-		<p id="tabs">'.implode('|', $tmp_mod_pages).'</p>'.$lnk.$done;
+<p id="tabs">'.implode('|', $tmp_mod_pages).'</p>'.$lnk.$done;
 			} else {
 
 //* report form ---------------------------------------------------------------
 
-				$task = get_template_form('report', REPORT_MIN_LENGTH, REPORT_MAX_LENGTH, $rt = 1);
+				$task = get_template_form('report', REPORT_MIN_LENGTH, REPORT_MAX_LENGTH, $is_report_page = 1);
 			}
-			$js[0]++;
 		} else
 
 //* active room task and visible content --------------------------------------
@@ -795,7 +788,8 @@ if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
 						} else $l = $tab[1];
 						if ($tab[2]) {
 							$r = explode($b, $tab[2], 2);
-							$r[0] = (!$u_opts['names'] && isset($usernames[$r[0]])?$usernames[$r[0]]:NB);
+							$uid = $r[0];
+							$r[0] = (!$u_opts['names'] && array_key_exists($uid, $usernames)?$usernames[$uid]:NB);
 							$r = implode($b, $r);
 						} else $r = NB;
 						$ta = array(
@@ -805,6 +799,10 @@ if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
 						,	$tab[4]				//* <- post content
 						);
 						if (count($tab) > 5) $ta[] = $tab[5];	//* <- pic comment
+						if (GOD) {
+							$ta[0] .= '#'.$uid;			//* <- user ID
+							if (count($tab) > 6) $ta[] = $tab[6];	//* <- user-agent
+						}
 					//	if (MOD)
 						if (is_array($r = $report[$tid][$postnum])) {
 							foreach ($r as $col => $l)
@@ -833,7 +831,7 @@ if (TIME_PARTS) time_check_point('after sort + join');
 				if ($t) {
 					$src = (strpos($t, ';') ? get_pic_resized_path(get_pic_normal_path($t)) : $t);
 					$task .= '
-		<img src="'.get_pic_url($src).'" alt="'.$t.'">';
+<img src="'.get_pic_url($src).'" alt="'.$t.'">';
 				} else {
 					$task_time = '-';
 					$s = count($skip_list);
@@ -842,15 +840,13 @@ if (TIME_PARTS) time_check_point('after sort + join');
 				}
 			} else {
 				$task = '
-		<p>'.($t?$tmp_draw_this.'</p>
-		<p>'.$t:$tmp_draw_free).'</p><noscript>
-		<p class="hint">'.$tmp_require_js.'</p></noscript>';
+<p>'.($t?$tmp_draw_this.'</p>
+<p>'.$t:$tmp_draw_free).'</p><noscript>
+<p class="hint">'.$tmp_require_js.'</p></noscript>';
 				$n = get_draw_app_list();
 				$subtask = '
-		<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.csv2nl(get_draw_vars(DRAW_SEND)).'"></script>
-		<div class="task">
-			<p class="hint">'.$n['list'].'</p>
-		</div>';
+<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.csv2nl(get_draw_vars(DRAW_SEND)).'"></script>
+<div class="task">'.indent('<p class="hint">'.indent($n['list']).'</p>').'</div>';
 			}
 			if ($t || $desc) $task_data['t'] = $task_time;
 			if ($t) $task_data['skip'] = intval($target['thread']);
@@ -907,7 +903,6 @@ NL."$n[0]$s$n[1]	$n[4]$s$n[5]	$rn";
 	if ($etc) die('x');
 	foreach ($cfg_dir as $k => $v) unset(${'qd_'.$k});
 	$task = get_template_form(array(ME, $tmp_name_yourself, $tmp_name_hint), USER_NAME_MIN_LENGTH);
-	$js[0]++;
 }
 
 //* generate page, put content into template ----------------------------------
@@ -927,7 +922,7 @@ as $v) {
 $current_room_link = A.($qd_room ? ($room?'..':'.') : $cfg_room).'">'.$s[1];
 
 if (!$u_opts['names'] && constant('FOOT_NOTE')) {
-	if (false !== strpos($links = vsprintf(FOOT_NOTE, $tmp_foot_notes), NL)) $links = indent($links);
+	$links = vsprintf(FOOT_NOTE, $tmp_foot_notes);
 } else $links = '';
 
 if ($u_key && !$u_opts['times']) {
@@ -941,6 +936,7 @@ if ($u_key && !$u_opts['times']) {
 			$t = ($t[1]-T0) + ($t[0]-M0);
 			$t_diff = ltrim(sprintf('%.6f', $t - $t_prev), '0.');
 			$t = sprintf('%.6f', $t_prev = $t);
+			$comment = str_replace(NL, '</td></tr>'.NL.'<tr><td>-', $comment);
 			$took_list .= NL."<tr><td>$t +</td><td>$t_diff</td><td>: $comment</td></tr>";
 		}
 	}
@@ -956,7 +952,7 @@ die(get_template_page(array(
 			$etc ? (GOD?$tmp_mod_panel.' - '.$mod_page:$tmp_report).S : ''
 		).$room_title.S : $tmp_rooms.S) : ''))).$tmp_title.
 		($qd_opts == 2 ? S.$tmp_options_input['input']['draw_app'] : '')
-,	'header' => $rt?'':
+,	'header' => $is_report_page?'':
 		($u_key?('
 <p>'.
 			A.ROOTPRFX.'">'.$s[0].($short?$current_room_link:'').
@@ -984,9 +980,9 @@ die(get_template_page(array(
 ,	'task' => $task?$task:'Err... What?'
 ,	'subtask' => $subtask
 ,	'content' => $content
-,	'footer' => $rt?'':($took?'
-<p class="l hint">'.$took.'</p>':'').($links?'
-<p class="r hint">'.$links.'</p>':'').($took_list?'
+,	'footer' => $is_report_page?'':($took?'
+<p class="l hint">'.indent($took).'</p>':'').($links?'
+<p class="r hint">'.indent($links).'</p>':'').($took_list?'
 <br clear="all">
 <table id="took" style="display:none">'.indent($took_list).'</table>':'')
 ,	'js' => $js

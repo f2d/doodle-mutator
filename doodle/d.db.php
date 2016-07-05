@@ -205,8 +205,9 @@ function data_get_mod_log($t = 0, $mt = 0) {	//* <- Y-m-d|int, 1|0
 	global $room;
 	if ($t) {
 		if (is_file($f = (
-strpos($t, '-') ? DIR_META_R."$room/$t" :
-($t-3 ? DIR_DATA.'ref' : DIR_META_U)
+			strpos($t, '-')
+			? DIR_META_R."$room/$t"
+			: ($t-3 ? DIR_DATA.'ref' : DIR_META_U)
 		).'.log')) return ($mt ? filemtime($f) : ltrim(file_get_contents($f), BOM));
 	} else {
 		$a = glob(DIR_META_R.$room.'/*.log');
@@ -220,16 +221,18 @@ function data_get_last_post_time($t) {return substr($t, $last_line = strrpos($t,
 function data_get_thread_count($r = 0, $a = 0) {
 	if (!$r) {global $room; $r = $room;}
 	$d = ($a?'arch':'room');
-	return ($a <= 0 && is_file($f = DIR_META_R."$r/$d.count")			//* <- seems ~2x faster than scandir() on ~50 files
-	? file_get_contents($f)
-	: (is_dir($d = constant('DIR_'.strtoupper($d)).$r)
-		? get_dir_top_file_id($d)
-	/*	? count(
-			array_diff(scandir($d), array('.', '..', trim(DIR_THUMB, '/')))	//* <- seems ~2x faster than glob()
-		//	glob($d.'/*.htm', GLOB_NOSORT)
-		)*/
-		: 0
-	));
+	return (
+		$a <= 0 && is_file($f = DIR_META_R."$r/$d.count")			//* <- seems ~2x faster than scandir() on ~50 files
+		? file_get_contents($f)
+		: (is_dir($d = constant('DIR_'.strtoupper($d)).$r)
+			? get_dir_top_file_id($d)
+	/*		? count(
+				array_diff(scandir($d), array('.', '..', trim(DIR_THUMB, '/')))	//* <- seems ~2x faster than glob()
+			//	glob($d.'/*.htm', GLOB_NOSORT)
+			)
+	*/		: 0
+		)
+	);
 }
 
 function data_get_archive_count($r = 0, $re = -1) {return data_get_thread_count($r, $re);}
@@ -379,7 +382,7 @@ function data_del_pic_file($f, $keep) {
 
 function data_del_pic($f, $keep) {
 	global $room;
-	if ($keep && !is_dir($keep = DIR_PICS."trash/$room/")) mkdir($keep, 0755);
+	if ($keep && !is_dir($keep = DIR_PICS."deleted/$room/")) mkdir($keep, 0755, true);
 	foreach (array(get_pic_resized_path($f), $f) as $f) $status = data_del_pic_file($f, $keep);
 	return $status;
 }
@@ -407,7 +410,8 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 	$msg = ($_POST[$msg = "t_$a[0]_$a[1]_$a[2]"]?stripslashes($_POST[$msg]):'');
 	if ($a[2] > 1) $a = $a[0];
 
-//* ----	left	----
+//* mod left ------------------------------------------------------------------
+
 	if ($o == 'archive') {
 		if ((list($d,$f,$m) = data_get_thread_by_num($a[0]))) {
 			if ($un > 1) {
@@ -513,8 +517,83 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 			} else $ok .= ' post not found';
 		}
 	} else
+	if ($o == 'add post') {
+		if (($msg = trim($msg)) && list($d,$f,$m) = data_get_thread_by_num($a[0])) {
+			$ok = $a[1];
+			$l = fln($f = $d.$f);
+			if (count($l) > ($n = $a[1])) {
+				$old = $l[$n];
+				$new = '';
+		//* check line-separated keys: ---------------------------------
+				$lsv = array();
+				$keys = explode(',', 're,text,file,meta'.(GOD?',user,time,browser':''));
+				foreach (preg_split('~\v+~u', $msg) as $line)
+				if (
+					preg_match('~^(\w+)\s*(?:[:=]\s*)?(\S.*)$~u', trim($line), $match)
+				&&	in_array($k = strtolower($match[1]), $keys)
+				) {
+					$v = preg_replace('~\s+~u', ' ', $match[2]);
+					$ok .= NL."	$k => $v";
+					if ($k == 're') {
+						$k = 'text';
+						$v = '<span class="mod">'.$v.'</span>';
+					}
+					$lsv[$k] = $v;
+				}
+				if ($lsv) {
+					$tab = (
+						$un < 2
+						? array(T0, $u_num)		//* <- add, insert (own post from now, if not specified)
+						: explode('	', $old)	//* <- edit, replace (assume old post as valid)
+					);
 
-//* ----	right	----
+			//* timestamp/ID, accept digits only, or no change:
+					if (($v = $lsv['time']) && !trim($v, '0123456789')) $tab[0] = $v;
+					if (($v = $lsv['user']) && !trim($v, '0123456789')) $tab[1] = $v;
+
+			//* text, just make a post and be done:
+					if ($v = $lsv['text']) $new = "$tab[0]	$tab[1]".TXT.$v;
+
+			//* file/info, edit parts if post with file or replace full post regardless:
+					else {
+						$old_mark = $tab[2];
+						$img_mark = trim(IMG);
+						$v = get_file_name(strtr($lsv['file'], '"\\:?*<>', '\'/_____'));
+						$t = $lsv['meta'];
+						if ($old_mark == $img_mark) {
+							if ($v) $tab[3] = $v; else if ($tab[3]) $v = 1;
+							if ($t) $tab[4] = $t; else if ($tab[4]) $t = 1;
+						} else {
+							$tab[2] = $img_mark;
+							if ($v) $tab[3] = $v; else $tab[3] = '-';
+							if ($t) $tab[4] = $t; else $tab[4] = '-';
+						}
+						if ($v && $t) {
+							if ($v = $lsv['browser']) $tab[5] = $v;
+							$new = implode('	', $tab);
+						}
+					}
+				}
+		//* save result: -----------------------------------------------
+				if (!trim($new) || ($old == $new)) $ok .= NL.'! no change';
+				else {
+					if ($un == 1) $l[$n] = $new.NL.$old;	//* <- add before
+					else if (!$un) $l[$n] = $old.NL.$new;	//* <- add after
+					else {
+						$l[$n] = $new;
+						$ok .= NL.'old = '.$old;
+					}
+					if (data_put($f, implode(NL, $l))) {
+						$ok .= NL.'new = '.$new;
+						data_post_refresh();
+					} else $ok .= NL.'! save failed';
+				}
+			} else $ok = -$ok;
+		}
+	} else
+
+//* mod right ------------------------------------------------------------------
+
 	if (substr($o,0,8) == 'harakiri') $ok = data_set_u_flag($u_num, 'mod_'.$room, 0, 1); else
 	if ($o == 'ban'		) $ok = data_set_u_flag($a, 'ban', !$un); else
 	if ($o == 'can report'	) $ok = data_set_u_flag($a, 'nor', $un); else
@@ -523,7 +602,8 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 	&& $o != 'room announce') return 0;
 	else
 
-//* ----	god right	----
+//* god right -----------------------------------------------------------------
+
 	if ($o == 'gets targets') $ok = data_set_u_flag($a, 'nop', $un); else
 	if ($o == 'sees unknown') $ok = data_set_u_flag($a, 'see', !$un); else
 	if ($o == 'give god'	) $ok = data_set_u_flag($a, 'god', !$un); else
@@ -544,7 +624,8 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 		);
 	} else
 
-//* ----	god left	----
+//* god left ------------------------------------------------------------------
+
 	if ($o == 'rename room') {
 		if (!($msg = trim_room($msg))) return 0;
 		if (!is_dir(DIR_ROOM.$room)) $ok = $room.' does not exist';
@@ -624,30 +705,11 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 			data_unlock($i);
 		}
 	} else
-	if ($o == 'insert post') {
-		if (trim($msg) && list($d,$f,$m) = data_get_thread_by_num($a[0])) {
-			$ok = $a[1];
-			$l = fln($f = $d.$f);
-			if (count($l) > ($n = $a[1])) {
-				$ok .= '
-old = '.$l[$n];
-				$tc = substr_count($msg = preg_replace('~[ \v]+~u', ' ', $msg), '	');
-				if ($un > 1) {	//* <- replace
-					$l[$n] = ($tc > 1?'':substr($prfx = str_replace(IMG, TXT, $l[$n]), 0, strrpos($prfx, TXT)).($tc?IMG:TXT));
-				} else		//* <- insert
-				if (!$un) $l[$n] .= NL.($tc > 1?'':T0.'	'.$u_num.($tc?IMG:TXT));
-				$l[$n] .= $msg;	//* <- add
 
-				if (data_put($f, implode(NL, $l))) {
-					$ok .= '
-new = '.$l[$n];
-					data_post_refresh();
-				} else $ok .= '
-! save failed';
-			} else $ok = -$ok;
-		}
-	} else
+//* no action -----------------------------------------------------------------
+
 	return 0;
+
 	if ($un) $o .= '+'.end($q);
 	if (is_array($a)) $a = implode('-', $a);
 	return data_log_adm("$a	$o: $ok");
@@ -659,10 +721,19 @@ function data_get_visible_rooms() {
 	global $u_flag;
 	$a = array(0);
 	$sd = array_diff(scandir($dr), array('.', '..'));
-if (TIME_PARTS) time_check_point('done scan'.NL);
-	foreach ($sd as $r) if ((
-		($u_mod = (GOD || $u_flag['mod'] || $u_flag['mod_'.$r])) || !ROOM_HIDE || ROOM_HIDE != $r[0]
-	) && is_dir($d = "$dr$r/")) {
+if (TIME_PARTS) time_check_point('done folder scan'.NL);
+	foreach ($sd as $r) if (
+		(
+			($u_mod = (
+				GOD
+			|| $u_flag['mod']
+			|| $u_flag['mod_'.$r]
+			))
+		|| !ROOM_HIDE
+		|| ROOM_HIDE != $r[0]
+		)
+	&& is_dir($d = "$dr$r/")
+	) {
 		$lmt = 0;			//* <- last mod time in room
 		if (is_file($cf = DIR_META_R.$r.'/post.count') && (list($lmt, $c, $mod) = fln($cf))) {
 			$c = explode(',', $c);
@@ -692,11 +763,18 @@ if (TIME_PARTS) time_check_point('done scan'.NL);
 					if ($m[7]) ++$mod['del'];
 				}
 			}
-			if ($d = glob(DIR_META_R.$r.'/*.report.txt', GLOB_NOSORT)) foreach ($d as $f) $mod['rep'] += substr_count(file_get_contents($f), NL);
-			$c = array($count_thrd	//* <- active
-, data_get_thread_count($r)			//* <- ever
-, data_get_archive_count($r)			//* <- archived
-, data_get_archive_mtime($r), $count_pics, $count_desc, $lpt);
+			if ($d = glob(DIR_META_R.$r.'/*.report.txt', GLOB_NOSORT)) foreach ($d as $f) {
+				$mod['rep'] += substr_count(file_get_contents($f), NL);
+			}
+			$c = array(
+				$count_thrd			//* <- active
+			,	data_get_thread_count($r)	//* <- ever
+			,	data_get_archive_count($r)	//* <- archived
+			,	data_get_archive_mtime($r)
+			,	$count_pics
+			,	$count_desc
+			,	$lpt
+			);
 			file_put_contents($cf, $lmt.NL.implode(',', $c).(
 				implode('', $mod)
 				? NL.implode(',', $mod)
@@ -728,14 +806,14 @@ function data_get_visible_threads() {
 	$reports = array();
 	$last = 0;
 	$sd = array_diff(scandir($d), array('.', '..'));
-if (TIME_PARTS) time_check_point('done scan'.NL);
+if (TIME_PARTS) time_check_point('done folder scan'.NL);
 	foreach ($sd as $fn) if (is_file($f = $d.$fn) && ($f = data_cache($f))) {
 		$pn = preg_match(TRD_MOD, $fn, $n);
 		$pp = preg_match(TRD_PLAY, $fn, $p);
 		$frz = ($pn && $n[6]);
 		if (GOD
-	//	|| (MOD && $frz)				//* <- only own or "frozen" for mods
-		|| ($u_flag['see'] && !($pn && $n[5]))		//* <- any active for seers
+	//	|| (MOD && $frz)			//* <- only own or "frozen" for mods
+		|| ($u_flag['see'] && !($pn && $n[5]))	//* <- any active for seers
 		|| (($pp || $frz) && strpos(str_replace(IMG, TXT, $f), $u_tab))
 		) {
 			$posts = array(0);
@@ -764,10 +842,10 @@ if (TIME_PARTS) time_check_point('done scan'.NL);
 				foreach (fln($r) as $line) if (count($tab = explode('	', $line, 4)) > 3) {
 					if ($last < ($t = intval($tab[0]))) $last = $t;
 					$repl
-					[$tab[1]]	//* row (postnum)
-					[$tab[2]]	//* column (left/right)
-					[$t]		//* time
-					= $tab[3];	//* content
+					[$tab[1]]	//* <- row (postnum)
+					[$tab[2]]	//* <- column (left/right)
+					[$t]		//* <- time
+					= $tab[3];	//* <- content
 				}
 				$reports[$f] = $repl;
 			}
@@ -892,9 +970,9 @@ function data_log_post($t) {
 	$pic = (is_array($t)?'.p1':'');
 
 	if (($tt = $target['thread'])
-	&& (is_file($f = $d.$tt)				//* <- own target still owned
+	&& (is_file($f = $d.$tt)			//* <- own target still owned
 	|| (($tt = preg_replace(TRD_PLAY, '$1$6', $tt))
-	&&  is_file($f = $d.$tt)				//* <- own target, taken and dropped by another user in meanwhile
+	&&  is_file($f = $d.$tt)			//* <- own target, taken and dropped by another user in meanwhile
 	)) && preg_match(TRD_PLAY, $tt, $m)
 	) {
 
@@ -919,14 +997,14 @@ function data_log_post($t) {
 		if ($pic) $fork = data_log(
 			$f
 		,	$ptp && $target['post']
-			? $target['post']			//* <- late misfire: fork with request copy, if any
+			? $target['post']		//* <- late misfire: fork with request copy, if any
 			: T0.'	'.$u_num.TXT.(
 				$target
 				? '<span title="'.htmlspecialchars($target['time'].', '.$target['task']).'">'.NOR.'</span>'
 				: NOR
 			)
 		);
-		data_put(0, $n);				//* <- save last created thread number
+		data_put(0, $n);			//* <- save last created thread number
 	}
 	$p = ($pic ? IMG.implode('	', $t) : TXT.$t);
 	$l = data_log($f, T0."	$u_num$p");

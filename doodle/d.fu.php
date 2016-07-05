@@ -1,8 +1,28 @@
 <?php
 
-function str_replace_first($f, $to, $s) {return (false !== ($pos = strpos($s, $f)) ? substr_replace($s, $to, $pos, strlen($f)) : $s);}
-function indent($t, $n = 1) {return preg_replace('~\v+~u', NL.str_repeat("\t", $n), NL.trim($t)).NL;}
-function csv2nl($v, $c = ';', $n = 3) {
+function exit_if_not_mod($t) {
+	$t = gmdate('r', $t?$t:T0);
+	$q = 'W/"'.md5(
+		'To refresh page if broken since 2016-07-05 00:42:55'.NL.
+		'Or user key/options changed: '.$_REQUEST[ME]
+	).'"';
+	header('Etag: '.$q);
+	if (
+		!$GLOBALS['u_opts']['modtime304']
+	&&	isset($_SERVER[$m = 'HTTP_IF_MODIFIED_SINCE'])
+	&&	isset($_SERVER[$n = 'HTTP_IF_NONE_MATCH'])
+	&&	$_SERVER[$m] == $t
+	&&	$_SERVER[$n] == $q
+	) {
+		header('HTTP/1.0 304 Not Modified');
+		exit;
+	}
+	header('Last-Modified: '.$t);
+}
+
+function str_replace_first($f, $to, $s) {return (false === ($pos = strpos($s, $f)) ? $s : substr_replace($s, $to, $pos, strlen($f)));}
+function indent($t, $n = 1) {return (false === strpos($t = trim($t), NL)) ? $t : preg_replace('~\v+~u', NL.str_repeat("\t", $n), NL.$t).NL;}
+function csv2nl($v, $c = ';', $n = 1) {
 	$d = "\s*[$c]+\s*";
 	$n = NL.($n > 0?str_repeat("\t", $n):'');
 	return $n.implode($c.$n, preg_split("~$d~u", preg_replace("~^$d|$d$~u", '', $v).$c));
@@ -95,7 +115,7 @@ function get_draw_app_list() {
 	if (!$n || $n == '!') $n = $u_draw_app;
 	if (!in_array($n, $cfg_draw_app)) $n = $cfg_draw_app[0];
 	$a = $tmp_options_input['input']['draw_app'];
-	foreach ($cfg_draw_app as $k => $v) $a .= ($k?', ':': ').($n == $v
+	foreach ($cfg_draw_app as $k => $v) $a .= ($k?',':':').NL.($n == $v
 		? $tmp_draw_app[$k]
 		: '<a href="?'.$v.'">'.$tmp_draw_app[$k].'</a>'
 	);
@@ -145,26 +165,6 @@ function format_time_units($t) {
 		if ($rem) $t = $rem; else break;
 	}
 	return $r;
-}
-
-function exit_if_not_mod($t) {
-	if ($q = $_REQUEST[ME]) header('Etag: '.($q = 'W/"'.md5($q).'"'));	//* <- if user key/options changed, reload page
-	if (
-		!$GLOBALS['u_opts']['modtime304']
-	&&	isset($_SERVER[$h = 'HTTP_IF_MODIFIED_SINCE'])
-	&&	strtotime($_SERVER[$h]) == $t
-	&&	(
-			!$q
-		||	(
-				isset($_SERVER[$h = 'HTTP_IF_NONE_MATCH'])
-			&&	$_SERVER[$h] == $q
-			)
-		)
-	) {
-		header('HTTP/1.0 304 Not Modified');
-		exit;
-	}
-	header('Last-Modified: '.gmdate('r', $t?$t:T0));
 }
 
 function optimize_pic($filepath) {
@@ -229,18 +229,18 @@ function get_template_form($a, $min = 0, $max = 0, $area = 0) {
 	if ($name && $plhd) $name .= ' placeholder="'.$plhd.'"';
 	$name .= ($GLOBALS['u_opts']['focus']?'':' autofocus').' required';
 	return ($head?'
-		<p>'.$head.'</p>'
+<p>'.$head.'</p>'
 :'').(($name !== false)?(($name === 0 || $method === 0)?'
-		<p><b><input type="text'.($butn?'" id="'.$butn:'').'"'.$name.'></b></p>'
+<p><b><input type="text'.($butn?'" id="'.$butn:'').'"'.$name.'></b></p>'
 :'
-		<form'.$method.'>
-			<b>
-			<b><'.($area?'textarea'.$name.'></textarea':'input type="text"'.$name).'></b>
-			<b><input type="submit" value="'.($butn?$butn:$GLOBALS['tmp_submit']).'"></b>
-			</b>
-		</form>'
+<form'.$method.'>
+	<b>
+	<b><'.($area?'textarea'.$name.'></textarea':'input type="text"'.$name).'></b>
+	<b><input type="submit" value="'.($butn?$butn:$GLOBALS['tmp_submit']).'"></b>
+	</b>
+</form>'
 ):'').($hint?'
-		<p class="hint'.(is_array($hint)?' r">'.implode(',', $hint):'">'.get_template_hint($hint)).'</p>'
+<p class="hint'.(is_array($hint)?' r">'.implode(',', $hint):'">'.indent(get_template_hint($hint))).'</p>'
 :'');
 }
 
@@ -253,15 +253,15 @@ function get_template_hint($t) {
 	}, $t))));
 }
 
-function get_template_pre($p, $R = 0, $NOS = 0) {
+function get_template_pre($p, $R = 0) {
 	if (is_array($a = $p)) {
 		foreach ($a as $k => $v) if (!$k) $p = $v; else if ($v) $attr .= " $k=\"$v\"";
 	}
 	return ($p?'
 	<div class="thread">
 		<pre'.$attr.'>'.$p.'
-		</pre>'.($NOS?'':'
-		<noscript><p class="hint report">'.($R?'JavaScript support required.':$GLOBALS['tmp_require_js']).'</p></noscript>').'
+		</pre>
+		<noscript><p class="hint report">'.($R?'JavaScript support required.':$GLOBALS['tmp_require_js']).'</p></noscript>
 	</div>
 ':'');
 }
@@ -291,7 +291,7 @@ function get_template_page($t, $NOS = 0) {
 	if (is_array($a = $t['content'])) {
 		if ($NOS) {
 			foreach ($a as $k => $v) $pre .= ($pre?NL:'').NL.$k.$NOS.NL.$v;
-			$pre = get_template_pre($pre, $R, $NOS);
+			$pre = NL.'	<pre>'.$pre.NL.'	</pre>';
 		} else foreach ($a as $v) $pre .= get_template_pre($v, $R);
 	} else $pre = get_template_pre($a, $R, $NOS);
 	if (is_array($a = $j) || ($j && ($a = array(".$j" => 0)))) foreach ($a as $k => $v) $scr .= '
@@ -303,28 +303,29 @@ function get_template_page($t, $NOS = 0) {
 	<meta charset="'.ENC.'">'.($NOS?'':'
 	<meta name="viewport" content="width=690">
 	<link rel="stylesheet" type="text/css" href="'.$N.'.css'.($L?'?'.filemtime(NAMEPRFX.'.css'):'').'">').'
-	<link rel="shortcut icon" type="image/png" href="'.($t['icon']?ROOTPRFX.$t['icon']:$N).'.png">'.($t['head']?'
-	'.indent($t['head']):'').($t['title']?'
-	<title>'.$t['title'].'</title>':'').'
+	<link rel="shortcut icon" type="image/png" href="'.($t['icon']?ROOTPRFX.$t['icon']:$N).'.png">'
+.($t['head']?indent($t['head']):NL)
+.($t['title']?
+'	<title>'.$t['title'].'</title>':'').'
 </head>
 <body'.($class?' class="'.implode(' ', $class).'"':'').'>'.(($v = $t['header']) || $ano || $err?'
-	<header id="header">'.($ano?'
-		<p class="anno">'.indent($ano, 3).'
-		</p>':'').($err?indent($err, 2):'').($v?'
-		<div>'.indent($v, 3).'
-		</div>':'').'
+	<header id="header">'
+.($ano?'
+		<p class="anno">'.indent($ano, 3)
+.'		</p>':'')
+.($err?indent($err, 2):'')
+.($v?'
+		<div>'.indent($v, 3)
+.'		</div>':'').'
 	</header>
 ':'').($t['task']?'
 	<div id="task"'.$data.($t['subtask']
-		?'>
-		<div class="task">'.indent($t['task']).'
-		</div>'.$t['subtask']
-		:($R?'>':' class="task">').$t['task']).'
-	</div>
+		?'>'.indent('<div class="task">'.indent($t['task']).'</div>'.$t['subtask'], 2)
+		:($R?'>':' class="task">').indent($t['task'], 2))
+.'	</div>
 ':'').$pre.($t['footer']?'
-	<footer>'.indent($t['footer'], 2).'
-	</footer>
-':'').$scr.'
+	<footer>'.indent($t['footer'], 2)
+.'	</footer>':'').($scr?NL.$scr:'').'
 </body>
 </html>';
 }

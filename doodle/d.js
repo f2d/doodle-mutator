@@ -9,7 +9,6 @@
 ,	DIV = /^div$/i
 ,	DIVP = /^(div|p)$/i
 ,	FORM = /^form$/i
-,	INPUT = /^input$/i
 ,	TU = /^\d+(<|>|$)/
 ,	SPACE = /\s+/g
 ,	TRIM = /^\s+|\s+$/g
@@ -132,6 +131,15 @@ function decodeHTMLSpecialChars(t) {
 	.replace(/&amp;/gi, '&');
 }
 
+function encodeHTMLSpecialChars(t) {
+	return String(t)
+	.replace(/&/g, '&amp;')
+	.replace(/"/g, '&quot;')
+	.replace(/'/g, '&#39;')
+	.replace(/</g, '&lt;')
+	.replace(/>/g, '&gt;');
+}
+
 function propNameForIE(n) {return n.split('-').map(function(v,i) {return i > 0 ? v.slice(0,1).toUpperCase()+v.slice(1).toLowerCase() : v;}).join('');}
 function getStyleValue(obj, prop) {
 var	o;
@@ -157,7 +165,7 @@ function cre(e,p,b) {
 }
 
 function eventStop(e) {
-	if (e?e:e = event || window.event) {
+	if (e && e.eventPhase?e:e = window.event) {
 		if (e.stopPropagation) e.stopPropagation();
 		if (e.cancelBubble != null) e.cancelBubble = true;
 	}
@@ -474,7 +482,7 @@ var	i,j,k,l,m,n = '\n', o,p = data.ph, opt = 'opt_', q,s = ' ', t = '	'
 	,	desc_num = (g == ':'?1:0), post_num = 0, thread_num = 0, i,j,k,l,m,mark,time;
 		hell = 0;
 		for (i in line) if (line[i].indexOf(t) > 0) {
-		var	tab = line[i].split(t), u = (tab.length > 3?tab.shift():''), post = '<br>', res = 0;
+		var	tab = line[i].split(t), u = (tab.length > 3?tab.shift():''), post = '<br>', res = 0, post_data = 0;
 			if (u.indexOf(',') > -1) {
 				u = u.split(','), thread_num = u.shift(), u = u[0], j = thread_num[0];
 				if (isNaN(j)) {
@@ -485,6 +493,9 @@ var	i,j,k,l,m,n = '\n', o,p = data.ph, opt = 'opt_', q,s = ' ', t = '	'
 					mt[j].push(mark = {i:thread_num});
 				}
 			}
+			if (u && u.indexOf('#') > -1) {
+				u = u.split('#'), post_data = u[1], u = u[0];
+			}
 			if (preCount) {
 				++count[u == 'u'?u:u = 'o'];
 				if (tab.length > 3) ++count.img;
@@ -493,6 +504,19 @@ var	i,j,k,l,m,n = '\n', o,p = data.ph, opt = 'opt_', q,s = ' ', t = '	'
 				if (mark && (!mark.t || mark.t < post)) mark.t = post;
 			} else {
 				++post_num;
+				if (u && flag.m) {
+					j = post_data ? {
+						user: post_data
+					,	time: tab[0]
+					} : {};
+					if (tab.length > 3) {
+						j.file = tab[2];
+						j.meta = tab[3];
+						if (tab.length > 4) j.browser = tab[4];
+					} else j.text = tab[2];
+					post_data = '';
+					for (k in j) post_data += (post_data?'\n':'')+k+': '+j[k];
+				}
 				if (tab.length > 3) {
 					if (tab[3][0] == '?') {
 						post =
@@ -635,7 +659,7 @@ e+'<span class="date-out '+'rl'[k]+'">'+r+
 e+'</span>';
 					l = '', post =
 e+'<p'+(desc_num && f[k]?l+' title="'+f[k]+(m?(mm&&(k||!q)
-?'" id="m_'+(q?q+'_'+thread_num+'_3':(m+k).replace(/-/g, '_'))
+?'" id="m_'+(q?q+'_'+thread_num+'_3':(m+k).replace(/-/g, '_'))+(k && post_data?'':'" data-post="'+encodeHTMLSpecialChars(post_data))
 :'" onClick="window.open(\''+(q?'3-'+q+'\',\'Info\',\'width=400,height=400':m+k+'\',\'Report\',\'width=656,height=267')+'\')'
 ):'')+'"':'')+(k?(flag.ref?' class="e"':' class="r"'):'')+'>'+tab[k]+'</p>'+post;
 				}
@@ -698,7 +722,7 @@ d+'</div>';
 	if (h) {
 		p = '';
 		for (i in a) o = getThread(a[i]), p +=
-c+'<div class="thread'+(flag.u?' al':'')+(hell?' '+hell.class+'" id="'+hell.id:'')+'">'+o+
+c+'<div class="thread'+(flag.m?' mod':'')+(flag.u?' al':'')+(hell?' '+hell.class+'" id="'+hell.id:'')+'">'+o+
 c+'</div>';
 		h.innerHTML = (p?p+
 c+'<div class="thread task">'+
@@ -826,21 +850,25 @@ if (k = id('task')) {
 }
 if (k = id('tabs')) {
 
-	function a(r,t) {return '<a href="'+r+(r == l?'" class="at':'')+'">'+t+'</a>';}
+	function a(r,t) {return '<a href="'+r+(r == l?(at = y, '" class="at'):'')+'">'+t+'</a>';}
 
 	h = '', l = l.split('/').slice(-1)[0], n = k.textContent.replace(TRIM, '').split('|');
 	for (i in n) h += (h?'\n|	':'')+a(+i+1, n[i]);
 	k.innerHTML = '[	'+h+'	]';	//* <- category tabs
-var	p = k.parentNode, c,d,e,r = /^\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
+	p = k.parentNode, r = /^\d+-\d+-\d+(,\d+)*/, w = /\s.*$/;
 	while ((m = p.lastElementChild) && !((j = m.lastElementChild) && j.id) && r.test(j = m.innerHTML.replace(TRIM, ''))) {
-		j = j.split('-'), y = 'year'+(f = j[0]), n = j.pop().split(','), j = j.join('-'), h = j+':';
+	var	at,c,d,j = j.split('-'), y = 'year'+(f = j[0]), n = j.pop().split(','), j = j.join('-'), h = j+':';
 		for (i in n) h += '\n'+a(j+'-'+n[i].replace(w, ''), n[i]);
 		m.innerHTML = h;		//* <- row: month, column: day
 		if (!d || d.id != y) {
 			(d = cre('div',c?c:c = cre('div',p,k.nextElementSibling))).id = y;
-			if (d.previousElementSibling) toggleHide(d), cre('div',c,d).innerHTML = '<p><a href="javascript:toggleHide('+y+')">'+f+'</a></p>';
+			if (d.previousElementSibling) {
+				toggleHide(d);
+				cre('div',c,d).innerHTML = '<p><a href="javascript:toggleHide('+y+')">'+f+'</a></p>';
+			}
 		}
 		d.appendChild(m);
 	}
+	if (at && (d = id(at))) d.style.display = '';
 }
 for (i in la.clear) if (e = id(i)) e.disabled = true, e.onclick = clearSaves, (e.onmouseover = checkSaves)(i);
