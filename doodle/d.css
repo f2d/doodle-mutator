@@ -1,7 +1,7 @@
-body.april-fools {	background-image: url(d.41.png);}
-body.cirno-day {	background-image: url(d.9.png);}
-body.leap-year {	background-image: url(d.ly.png);}
-body.new-year { 	background-image: url(d.ny.png);}
+body.april-fools {	background-image: url("d.41.png");}
+body.cirno-day {	background-image: url("d.9.png");}
+body.leap-year {	background-image: url("d.ly.png");}
+body.new-year { 	background-image: url("d.ny.png");}
 body, body>* {
 	margin: 0 auto;			/* <- centered */
 	min-width: 656px;
@@ -34,17 +34,6 @@ body>header div p {
 body>footer p {
 	line-height: normal;
 	border: 5px solid transparent;
-}
-.room-title {
-	padding: 0 8px;
-}
-.room-title::after {
-	content:attr(data-title);
-	display: inline-block;
-	vertical-align: middle;
-	line-height: normal;
-	font-size: small;
-	max-width: 320px;
 }
 a, .a {
 	color: #888;
@@ -84,6 +73,44 @@ a:hover	{
 .arr .r a:hover {border-right-color:	#eee;}
 .task .arr {
 	padding: 0 !important;
+}
+.room-title {
+	padding: 0 8px;
+}
+.room-title::after {
+	content: attr(data-title);
+	display: inline-block;
+	vertical-align: middle;
+	line-height: normal;
+	font-size: small;
+	max-width: 320px;
+}
+#thumbs {
+	margin: 8px auto 0 auto;
+	max-width: 864px;
+	text-align: left;
+}
+#thumbs a {
+	display: inline-block;
+	background: #ddd no-repeat center;
+	border: 6px solid #a0a0a0;
+	width: 160px;
+	height: 90px;
+	line-height: 90px;
+	font-size: 78px;
+	text-decoration: none;
+	text-align: center;
+	vertical-align: middle;
+}
+#thumbs a:hover::after {
+	display: inline-block;
+	content: attr(data-index);
+	background-color: rgba(160, 160, 160, 0.6);
+	width: 100%;
+	height: 100%;
+}
+#thumbs a:hover {
+	border-color: #09f;
 }
 #took {
 	border-collapse: collapse;
@@ -178,7 +205,7 @@ a:hover	{
 	display: none;
 }
 .thread.mod p:not([onclick]):hover {
-	background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKEAAAFoBAMAAADN74ZNAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABl0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMC4xMK0KCsAAAAASUExURQAAAAAAAAAAAAAAAAAAAAAAAOArGaIAAAAGdFJOUwAEBQ4PFDsktNsAAAJWSURBVHja7dm7bStRDEVRQWABbsI5m2Bug2D/rbzAevZImrnfHZ6bawH7gIkwt9vYu3/f4GdJi5/1AYtRDkdXJR1dcHZUsdn3qqpveEZ4yKhis+9VcLb9iMneTqH3Ew/R4Wgw+380lx2/oqO3A96P/YlJR0PZh2go245isrdD3U88iQ5HI9nP0UR2vIiO3g5yP/YqJh29nf0WvZ1t72Kyt7N9PyfRm9l2JiYdvZcdp6LDM24NeR69kx0XosPRG9l2JSY94/KQl9HL2XYtJh29mh0N0eEZF4dsRa9lR1N0OHop29pi0jMuDNmJXsi2nph09Hx2dEWHZ5wesh89mx0DosPRk9k2IiY949SQQ9FT2TYmJh09kx2DosPRE9mj0ePZMSw6ejsT92PjYtLRg9kT0YPZNiMmezuj9xNTosPRQ9lz0SPZMSk6ejtD92OzYtLR3ezp6G62zYvJ3k7/fmJBdDi6k70S3c6OJdHR2+ncj62JSUc3shejG9m2KiZ7O437WY6+zLZ1Menoq+zYEB2e8WLInejz7NgSHY4+zbY9MekZT4bcjD7Jtl0x6ej37NgWHZ7xbcj96NfsAESHo1+yjRCTnvFpSCT6KdsYMenoY3ZAosMzHoakov+yAxMdjv7NNk5MesbHkGD0I9tIMenon+xARYejq5KObv6la//wa+E7l0SJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChR4vH9AxZaBQZurMB6AAAAAElFTkSuQmCC');
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKEAAAFoBAMAAADN74ZNAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABl0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMC4xMK0KCsAAAAASUExURQAAAAAAAAAAAAAAAAAAAAAAAOArGaIAAAAGdFJOUwAEBQ4PFDsktNsAAAJWSURBVHja7dm7bStRDEVRQWABbsI5m2Bug2D/rbzAevZImrnfHZ6bawH7gIkwt9vYu3/f4GdJi5/1AYtRDkdXJR1dcHZUsdn3qqpveEZ4yKhis+9VcLb9iMneTqH3Ew/R4Wgw+380lx2/oqO3A96P/YlJR0PZh2go245isrdD3U88iQ5HI9nP0UR2vIiO3g5yP/YqJh29nf0WvZ1t72Kyt7N9PyfRm9l2JiYdvZcdp6LDM24NeR69kx0XosPRG9l2JSY94/KQl9HL2XYtJh29mh0N0eEZF4dsRa9lR1N0OHop29pi0jMuDNmJXsi2nph09Hx2dEWHZ5wesh89mx0DosPRk9k2IiY949SQQ9FT2TYmJh09kx2DosPRE9mj0ePZMSw6ejsT92PjYtLRg9kT0YPZNiMmezuj9xNTosPRQ9lz0SPZMSk6ejtD92OzYtLR3ezp6G62zYvJ3k7/fmJBdDi6k70S3c6OJdHR2+ncj62JSUc3shejG9m2KiZ7O437WY6+zLZ1Menoq+zYEB2e8WLInejz7NgSHY4+zbY9MekZT4bcjD7Jtl0x6ej37NgWHZ7xbcj96NfsAESHo1+yjRCTnvFpSCT6KdsYMenoY3ZAosMzHoakov+yAxMdjv7NNk5MesbHkGD0I9tIMenon+xARYejq5KObv6la//wa+E7l0SJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChR4vH9AxZaBQZurMB6AAAAAElFTkSuQmCC");
 	background-position: top;
 	background-repeat: repeat-y;
 }
@@ -357,28 +384,6 @@ a:hover	{
 	margin: 0;
 	padding: 0;
 	vertical-align: top;
-}
-#thumbs {
-	margin: 8px auto 0 auto;
-	max-width: 864px;
-	text-align: left;
-}
-.op {
-	display: inline-block;
-	background-color: #ddd;
-	border: 6px solid #a0a0a0;
-	width: 160px;
-	height: 90px;
-	vertical-align: top;
-}
-.op:hover {
-	border-color: #09f;
-}
-.op>* {	height: 100%;}
-.op * {
-	border: none;
-	text-align: center;
-	vertical-align: middle;
 }
 .log {	padding: 8px 178px;}
 .log i {

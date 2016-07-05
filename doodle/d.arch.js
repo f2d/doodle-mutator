@@ -116,10 +116,7 @@ c+'</div>';
 		document.title = lastDir+' - '+i+', '+t0+' - '+t1;
 		document.write(
 b+'<div class="thread">'+k.innerHTML+
-b+'</div>'/*+
-b+'<footer>'+
-c+'<p class="r hint"><abbr title="CCC, copycat conscious">&copy;</abbr> 2013, iidev</p>'+
-b+'</footer>'*/);
+b+'</div>');
 	} else
 	if ((k = line[0].split('|')).length > 2) {
 		if (!thread) p.parentNode.removeChild(p);
@@ -173,11 +170,9 @@ var	i = g.pp, j = g.max, k = (g.page-1)*i;
 
 	function th(i) {
 		if (i>g.min) (g.fst?0:g.fst = i), g.last = i, g.tt +=
-'<a class="op a" href="'+
-i+'.htm"><b><b><img src="'+g.th+
-i+'.png" alt="'+
-i+'"></b></b></a>';						//* <- b: table; for vertical-align
+			'<a href="'+i+'.htm" data-index="'+i+'" style="background-image:url(\''+g.th+i+'.png\');"></a>';
 	}
+
 	if (g.order) for (i += ++k; k<=j && k<i; k++) th(k);	//* <- from k up to k+pp
 	else for (j -= k+i; i; i--) th(j+i);			//* <- last pp threads, count down
 

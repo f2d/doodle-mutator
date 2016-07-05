@@ -222,9 +222,10 @@ function data_get_thread_count($r = 0, $a = 0) {
 	if (!$r) {global $room; $r = $room;}
 	$d = ($a?'arch':'room');
 	return (
-		$a <= 0 && is_file($f = DIR_META_R."$r/$d.count")			//* <- seems ~2x faster than scandir() on ~50 files
+		$a <= 0 && is_file($f = DIR_META_R."$r/$d.count")	//* <- seems ~2x faster than scandir() on ~50 files
 		? file_get_contents($f)
-		: (is_dir($d = constant('DIR_'.strtoupper($d)).$r)
+		: (
+			is_dir($d = constant('DIR_'.strtoupper($d)).$r)
 			? get_dir_top_file_id($d)
 	/*		? count(
 				array_diff(scandir($d), array('.', '..', trim(DIR_THUMB, '/')))	//* <- seems ~2x faster than glob()
@@ -524,12 +525,12 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 			if (count($l) > ($n = $a[1])) {
 				$old = $l[$n];
 				$new = '';
-		//* check line-separated keys: ---------------------------------
+		//* check line-separated "key: value" pairs: ------------------
 				$lsv = array();
 				$keys = explode(',', 're,text,file,meta'.(GOD?',user,time,browser':''));
 				foreach (preg_split('~\v+~u', $msg) as $line)
 				if (
-					preg_match('~^(\w+)\s*(?:[:=]\s*)?(\S.*)$~u', trim($line), $match)
+					preg_match('~^(\w+)[\s:=]\s*(\S.*)$~u', trim($line), $match)
 				&&	in_array($k = strtolower($match[1]), $keys)
 				) {
 					$v = preg_replace('~\s+~u', ' ', $match[2]);
@@ -548,13 +549,13 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 					);
 
 			//* timestamp/ID, accept digits only, or no change:
-					if (($v = $lsv['time']) && !trim($v, '0123456789')) $tab[0] = $v;
-					if (($v = $lsv['user']) && !trim($v, '0123456789')) $tab[1] = $v;
+					foreach (array('time', 'user') as $i => $k)
+					if (($v = $lsv[$k]) && !trim($v, '0123456789')) $tab[$i] = $v;
 
 			//* text, just make a post and be done:
 					if ($v = $lsv['text']) $new = "$tab[0]	$tab[1]".TXT.$v;
 
-			//* file/info, edit parts if post with file or replace full post regardless:
+			//* file/info, edit parts if post with file, or replace full post if enough values:
 					else {
 						$old_mark = $tab[2];
 						$img_mark = trim(IMG);
@@ -565,7 +566,7 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 							if ($t) $tab[4] = $t; else if ($tab[4]) $t = 1;
 						} else {
 							$tab[2] = $img_mark;
-							if ($v) $tab[3] = $v; else $tab[3] = '-';
+							if ($v) $tab[3] = $v;
 							if ($t) $tab[4] = $t; else $tab[4] = '-';
 						}
 						if ($v && $t) {
@@ -574,7 +575,7 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 						}
 					}
 				}
-		//* save result: -----------------------------------------------
+		//* save result: ----------------------------------------------
 				if (!trim($new) || ($old == $new)) $ok .= NL.'! no change';
 				else {
 					if ($un == 1) $l[$n] = $new.NL.$old;	//* <- add before
@@ -592,7 +593,7 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 		}
 	} else
 
-//* mod right ------------------------------------------------------------------
+//* mod right -----------------------------------------------------------------
 
 	if (substr($o,0,8) == 'harakiri') $ok = data_set_u_flag($u_num, 'mod_'.$room, 0, 1); else
 	if ($o == 'ban'		) $ok = data_set_u_flag($a, 'ban', !$un); else
