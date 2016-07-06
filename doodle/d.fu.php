@@ -288,7 +288,6 @@ function get_template_pre($p, $static = 0, $t = 'pre') {
 }
 
 function get_template_page($t, $NOS = 0) {
-	if (TIME_PARTS) $t1 = get_time_elapsed();
 	global $tmp_announce, $tmp_post_err;
 	$N = ROOTPRFX.NAMEPRFX;
 	$j = $t['js'];
@@ -348,15 +347,9 @@ function get_template_page($t, $NOS = 0) {
 <body'.($class?' class="'.implode(' ', $class).'"':'').'>'
 .indent($header, 1)
 .indent($task, 1)
-.indent($pre, 1)
-.indent($footer, 1)
-.indent($scripts, 1)
-.(TIME_PARTS
-?NL.'<!--page template compilation (sec.):'
-.NL.$t1.' - started'
-.NL.get_time_elapsed().' - finished-->'
-.NL
-:'')
+.indent($pre, 1).(($t =
+ indent($footer, 1)
+.indent($scripts, 1)) && constant('TOOK')?str_replace(TOOK, get_time_elapsed(), $t):$t)
 .'</body>
 </html>';
 }

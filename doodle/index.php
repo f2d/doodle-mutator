@@ -8,9 +8,6 @@ if (POST) {
 	if (!isset($_REQUEST[ME])) goto post_refresh;	//* <- no anonymous posting
 	ignore_user_abort(true);
 }
-function time_check_point($comment) {global $tcp; $tcp[microtime()][] = $comment;}
-
-time_check_point('inb4 cfg');
 ob_start();
 
 define(NAMEPRFX, 'd');
@@ -41,7 +38,9 @@ define(FROZEN_HELL, data_global_announce('stop'));
 data_log_ref();
 
 ob_end_clean();
-time_check_point('after cfg');
+
+function time_check_point($comment) {global $tcp; $tcp[microtime()][] = $comment;}
+time_check_point('done cfg, inb4 user settings');
 
 $opt_sufx = 'aopru';
 $opt_name = array('opta', 'opti', 'per_page', 'draw_max_recovery', 'draw_max_undo');
@@ -77,8 +76,8 @@ if ($me = $_REQUEST[ME]) {
 	}
 }
 define(GOD, $u_flag['god']?1:0);
-define(TIME_PARTS, GOD && !$u_opts['time_check_points']);	//* <- profiling
-if (TIME_PARTS) time_check_point('GOD defined, started time checks');
+define(TIME_PARTS, !POST && GOD && !$u_opts['time_check_points']);	//* <- profiling
+if (TIME_PARTS) time_check_point('GOD defined'); else unset($tcp);
 
 if (!($u_per_page = intval($u_per_page))) $u_per_page = TRD_PER_PAGE;
 $etc = trim($_REQUEST['etc'], '/');
@@ -927,18 +926,19 @@ if (!$u_opts['names'] && constant('FOOT_NOTE')) {
 } else $links = '';
 
 if ($u_key && !$u_opts['times']) {
-	$d = get_time_elapsed();
-	if (TIME_PARTS && $tcp && is_array($tcp)) {
-		$d = '<a href="javascript:'.(++$js[0]).',toggleHide(took)">'.$d.'</a>';
+	define(TOOK, $took = '<!--?-->');
+	if (TIME_PARTS) {
+		time_check_point('inb4 template');
+		$took = '<a href="javascript:'.(++$js[0]).',toggleHide(took)">'.$took.'</a>';
 		foreach ($tcp as $t => $comment) {
 			$t = get_time_elapsed($t);
 			$t_diff = ltrim(sprintf('%.6f', $t - $t_prev), '0.');
 			$t = sprintf('%.6f', $t_prev = $t);
-			$comment = str_replace(NL, '</td></tr>'.NL.'<tr><td>-</td><td>-', is_array($comment)?implode('<br>', $comment):$comment);
+			$comment = str_replace(NL, '<br>-', is_array($comment)?implode('<br>', $comment):$comment);
 			$took_list .= NL."<tr><td>$t +</td><td>$t_diff:</td><td>$comment</td></tr>";
 		}
 	}
-	$took = get_time_html().sprintf($tmp_took, $d);
+	$took = get_time_html().sprintf($tmp_took, $took);
 } else $took = '';
 
 die(get_template_page(array(
