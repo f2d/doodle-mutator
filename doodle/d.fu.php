@@ -22,9 +22,13 @@ function exit_if_not_mod($t = 0) {
 
 function str_replace_first($f, $to, $s) {return (false === ($pos = strpos($s, $f)) ? $s : substr_replace($s, $to, $pos, strlen($f)));}
 function indent($t, $n = 0) {
-	return !($t = trim($t)) || ($n !== 1 && false === strpos($t, NL))
+	return !strlen($t = trim($t)) || (!$n && false === strpos($t, NL))
 	?	$t
-	:	preg_replace('~\v+~u', NL.str_repeat("\t", $n > 0?$n:1), NL.$t).NL;
+	:	preg_replace(
+			'~(?:^|\v+)(?:(\h*<(pre|textarea)\b.+?)(?=\v+\h*</\2>))?~uis'
+		,	NL.str_repeat("\t", $n > 0?$n:1).'$1'
+		,	$t
+		).NL;
 }
 
 function csv2nl($v, $c = ';', $n = 1) {
@@ -80,6 +84,11 @@ function get_time_html($t = 0) {
 	$d = substr($f, 0, $i);
 	$t = substr($f, $i+1, 8);
 	return '<time datetime="'.$f.'" data-t="'.$uint.'">'.$d.NL.'<small>'.$t.'</small></time>';
+}
+
+function get_time_elapsed($t = 0) {
+	$t = explode(' ', $t?$t:microtime());
+	return ($t[1]-T0) + ($t[0]-M0);
 }
 
 function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for archive pages; default = current date
@@ -253,27 +262,33 @@ function get_template_hint($t) {
 	return str_replace(
 		str_split('{|}[]\\')
 	,	array('<a href="', '">', '</a>', '<span class="', '</span>', NL)
-	, nl2br(htmlspecialchars(preg_replace_callback('~\b(\d+)s\b~', function ($match) {
-		return format_time_units($match[1]);
-	}, $t))));
+	,	nl2br(htmlspecialchars(preg_replace_callback(
+			'~\b(\d+)s\b~'
+		,	function ($match) {return format_time_units($match[1]);}
+		,	$t
+		)))
+	);
 }
 
-function get_template_pre($p, $static = 0, $k = 'pre') {
-	global $tmp_result;
+function get_template_pre($p, $static = 0, $t = 'pre') {
+	global $tmp_require_js, $tmp_result;
 	if (is_array($a = $p)) {
 		foreach ($a as $k => $v) if (!$k) $p = $v; else if ($v) $attr .= " $k=\"$v\"";
 	}
-	return ($p?'
-	<div class="thread'.($k == 'pre'?'">':' task">
-		<p>'.$tmp_result.'</p>').'
-		<'.$k.$attr.'>'.$p.'
-		</'.$k.'>'.($k == 'pre'?'
-		<noscript><p class="hint report">'.($static?'JavaScript support required.':$GLOBALS['tmp_require_js']).'</p></noscript>':'').'
-	</div>
-':'');
+	if ($p) {
+		$p = "
+<$t$attr>$p
+</$t>";
+		if ($t = ($t == 'pre'?'':' task')) $p = "
+<p>$tmp_result</p>$p";
+		else $p .= '
+<noscript><p class="hint report">'.($static?'JavaScript support required.':$tmp_require_js).'</p></noscript>';
+		return '<div class="thread'.$t.'">'.indent($p).'</div>';
+	} else return '';
 }
 
 function get_template_page($t, $NOS = 0) {
+	if (TIME_PARTS) $t1 = get_time_elapsed();
 	global $tmp_announce, $tmp_post_err;
 	$N = ROOTPRFX.NAMEPRFX;
 	$j = $t['js'];
@@ -297,7 +312,7 @@ function get_template_page($t, $NOS = 0) {
 	if (is_array($a = $t['content'])) {
 		if ($NOS) {
 			foreach ($a as $k => $v) $pre .= ($pre?NL:'').NL.$k.$NOS.$v;
-			$pre = NL.'	<pre>'.$pre.NL.'	</pre>'.NL;
+			$pre = '<pre>'.$pre.NL.'</pre>';
 		} else foreach ($a as $v) $pre .= get_template_pre($v, $static);
 	} else $pre = get_template_pre($a, $static);
 	if ($v = $t[$k = 'textarea']) $pre .= get_template_pre($v, $static, $k);
@@ -333,9 +348,15 @@ function get_template_page($t, $NOS = 0) {
 <body'.($class?' class="'.implode(' ', $class).'"':'').'>'
 .indent($header, 1)
 .indent($task, 1)
-.$pre			//* <- autopadding not acceptable, leave preformatted manually
+.indent($pre, 1)
 .indent($footer, 1)
 .indent($scripts, 1)
+.(TIME_PARTS
+?NL.'<!--page template compilation (sec.):'
+.NL.$t1.' - started'
+.NL.get_time_elapsed().' - finished-->'
+.NL
+:'')
 .'</body>
 </html>';
 }

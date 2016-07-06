@@ -8,7 +8,7 @@ if (POST) {
 	if (!isset($_REQUEST[ME])) goto post_refresh;	//* <- no anonymous posting
 	ignore_user_abort(true);
 }
-function time_check_point($comment) {global $tcp; $tcp[microtime()] = $comment;}
+function time_check_point($comment) {global $tcp; $tcp[microtime()][] = $comment;}
 
 time_check_point('inb4 cfg');
 ob_start();
@@ -77,7 +77,8 @@ if ($me = $_REQUEST[ME]) {
 	}
 }
 define(GOD, $u_flag['god']?1:0);
-define(TIME_PARTS, !$u_opts['time_check_points']);	//* <- profiling
+define(TIME_PARTS, GOD && !$u_opts['time_check_points']);	//* <- profiling
+if (TIME_PARTS) time_check_point('GOD defined, started time checks');
 
 if (!($u_per_page = intval($u_per_page))) $u_per_page = TRD_PER_PAGE;
 $etc = trim($_REQUEST['etc'], '/');
@@ -144,7 +145,7 @@ if ($qdir) {
 }
 
 define(MOD, (GOD || $u_flag['mod'] || $u_flag['mod_'.$room])?1:0);
-if (TIME_PARTS) time_check_point('inb4 action fork');
+if (TIME_PARTS) time_check_point('MOD defined, inb4 action fork');
 
 
 
@@ -926,20 +927,18 @@ if (!$u_opts['names'] && constant('FOOT_NOTE')) {
 } else $links = '';
 
 if ($u_key && !$u_opts['times']) {
-	if (!MOD || !TIME_PARTS || !is_array($tcp)) $tcp = 0;
-	$t = explode(' ',microtime());
-	$t = ($t[1]-T0) + ($t[0]-M0);
-	$took = get_time_html().sprintf($tmp_took, ($tcp?'<a href="javascript:'.(++$js[0]).',toggleHide(took)">'.$t.'</a>':$t));
-	if ($tcp) {
+	$d = get_time_elapsed();
+	if (TIME_PARTS && $tcp && is_array($tcp)) {
+		$d = '<a href="javascript:'.(++$js[0]).',toggleHide(took)">'.$d.'</a>';
 		foreach ($tcp as $t => $comment) {
-			$t = explode(' ', $t);
-			$t = ($t[1]-T0) + ($t[0]-M0);
+			$t = get_time_elapsed($t);
 			$t_diff = ltrim(sprintf('%.6f', $t - $t_prev), '0.');
 			$t = sprintf('%.6f', $t_prev = $t);
-			$comment = str_replace(NL, '</td></tr>'.NL.'<tr><td>-', $comment);
-			$took_list .= NL."<tr><td>$t +</td><td>$t_diff</td><td>: $comment</td></tr>";
+			$comment = str_replace(NL, '</td></tr>'.NL.'<tr><td>-</td><td>-', is_array($comment)?implode('<br>', $comment):$comment);
+			$took_list .= NL."<tr><td>$t +</td><td>$t_diff:</td><td>$comment</td></tr>";
 		}
 	}
+	$took = get_time_html().sprintf($tmp_took, $d);
 } else $took = '';
 
 die(get_template_page(array(

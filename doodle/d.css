@@ -110,12 +110,14 @@ a:hover	{
 #thumbs a:hover {
 	border-color: #09f;
 }
-#took {
+#took, #took td {
+	margin: 0;
+	padding: 0;
+	border: none;
 	border-collapse: collapse;
-}
-#took td {
 	font-family: monospace;
-	line-height: normal;
+	line-height: 1.4em;
+	vertical-align: top;
 	text-align: left;
 }
 #took td:nth-child(2) {
