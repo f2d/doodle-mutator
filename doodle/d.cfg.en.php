@@ -1,10 +1,10 @@
 ﻿<?php
 
 $tmp_announce = array(
-'anno'	=>	'Global announce'
-,'stop'	=>	'Global freeze'
-,'room_anno'	=>	'Room announce'
-,'room_stop'	=>	'Room freeze'
+	'anno'	=>	'Global announce'
+,	'stop'	=>	'Global freeze'
+,	'room_anno'	=>	'Room announce'
+,	'room_stop'	=>	'Room freeze'
 );
 $tmp_archive = 'Archive';
 $tmp_archive_find = 'Find';
@@ -44,6 +44,7 @@ $tmp_mod_user_hint = 'Modify this user.';
 $tmp_mod_user_info = 'Check flags of this user.';
 $tmp_name_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters. Also you may enter your old key here.';
 $tmp_name_yourself = 'Name yourself:';
+$tmp_no_change = 'No change.';
 $tmp_no_play_hint = 'Game playing turned off for you (no taking targets).';
 $tmp_options = 'Options. About';
 $tmp_options_apply = 'Apply';
@@ -116,6 +117,7 @@ $tmp_report = 'Report problem';
 $tmp_report_hint = REPORT_MIN_LENGTH.'-'.REPORT_MAX_LENGTH.' letters. Reported thread will become frozen.';
 $tmp_report_post_hint = $tmp_report.' in this post.';
 $tmp_report_user_hint = $tmp_report.' with this user.';
+$tmp_result = 'Result';
 $tmp_room = 'Room';
 $tmp_room_count_threads = 'threads alive, made, archive';
 $tmp_room_count_posts = 'pics, descriptions';

@@ -1,6 +1,6 @@
 <?php
 
-function exit_if_not_mod($t) {
+function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t?$t:T0);
 	$q = 'W/"'.md5(
 		'To refresh page if broken since 2016-07-05 00:42:55'.NL.
@@ -79,7 +79,7 @@ function get_time_html($t = 0) {
 	$i = strpos($f, 'T');
 	$d = substr($f, 0, $i);
 	$t = substr($f, $i+1, 8);
-	return '<time datetime="'.$f.'" data-t="'.$uint.'">'.indent($d.NL.'<small>'.$t.'</small>').'</time>';
+	return '<time datetime="'.$f.'" data-t="'.$uint.'">'.$d.NL.'<small>'.$t.'</small></time>';
 }
 
 function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for archive pages; default = current date
@@ -258,15 +258,17 @@ function get_template_hint($t) {
 	}, $t))));
 }
 
-function get_template_pre($p, $static = 0) {
+function get_template_pre($p, $static = 0, $k = 'pre') {
+	global $tmp_result;
 	if (is_array($a = $p)) {
 		foreach ($a as $k => $v) if (!$k) $p = $v; else if ($v) $attr .= " $k=\"$v\"";
 	}
 	return ($p?'
-	<div class="thread">
-		<pre'.$attr.'>'.$p.'
-		</pre>
-		<noscript><p class="hint report">'.($static?'JavaScript support required.':$GLOBALS['tmp_require_js']).'</p></noscript>
+	<div class="thread'.($k == 'pre'?'">':' task">
+		<p>'.$tmp_result.'</p>').'
+		<'.$k.$attr.'>'.$p.'
+		</'.$k.'>'.($k == 'pre'?'
+<noscript><p class="hint report">'.($static?'JavaScript support required.':$GLOBALS['tmp_require_js']).'</p></noscript>':'').'
 	</div>
 ':'');
 }
@@ -293,9 +295,10 @@ function get_template_page($t, $NOS = 0) {
 	if (is_array($a = $t['content'])) {
 		if ($NOS) {
 			foreach ($a as $k => $v) $pre .= ($pre?NL:'').NL.$k.$NOS.$v;
-			$pre = NL.'	<pre>'.$pre.NL.'	</pre>';
+			$pre = NL.'	<pre>'.$pre.NL.'	</pre>'.NL;
 		} else foreach ($a as $v) $pre .= get_template_pre($v, $static);
 	} else $pre = get_template_pre($a, $static);
+	if ($v = $t[$k = 'textarea']) $pre .= get_template_pre($v, $static, $k);
 
 	$head = '<meta charset="'.ENC.'">'.($NOS?'':'
 <meta name="viewport" content="width=690">
@@ -327,8 +330,8 @@ function get_template_page($t, $NOS = 0) {
 .'</head>
 <body'.($class?' class="'.implode(' ', $class).'"':'').'>'
 .indent($header, 1)
-.indent($task, 1)	//* <- textarea gets visible leftpadding, leave as it is for now
-.$pre			//* <- here padding is not acceptable, so leave preformatted manually
+.indent($task, 1)
+.$pre			//* <- autopadding not acceptable, leave preformatted manually
 .indent($footer, 1)
 .indent($scripts, 1)
 .'</body>

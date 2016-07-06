@@ -1,10 +1,10 @@
 ﻿<?php
 
 $tmp_announce = array(
-'anno'	=>	'Общее объявление'
-,'stop'	=>	'Игра заморожена'
-,'room_anno' =>	'Комнатное объявление'
-,'room_stop' =>	'Комната заморожена'
+	'anno'	=>	'Общее объявление'
+,	'stop'	=>	'Игра заморожена'
+,	'room_anno' =>	'Комнатное объявление'
+,	'room_stop' =>	'Комната заморожена'
 );
 $tmp_archive = 'Архив';
 $tmp_archive_find = 'Найти';
@@ -44,6 +44,7 @@ $tmp_mod_user_hint = 'Операции на этого пользователя.
 $tmp_mod_user_info = 'Информация на этого пользователя.';
 $tmp_name_hint = 'Не более '.USER_NAME_MAX_LENGTH.' букв. Также тут можно ввести свой старый ключ.';
 $tmp_name_yourself = 'Назовитесь:';
+$tmp_no_change = 'Нет изменений.';
 $tmp_no_play_hint = 'Ваше участие в игре отключено (не отбирать цели).';
 $tmp_options = 'Настройки. О сайте';
 $tmp_options_apply = 'Применить';
@@ -116,6 +117,7 @@ $tmp_report = 'Сообщить о проблеме';
 $tmp_report_hint = REPORT_MIN_LENGTH.'-'.REPORT_MAX_LENGTH.' букв. Нить будет заморожена.';
 $tmp_report_post_hint = $tmp_report.' в этом посте.';
 $tmp_report_user_hint = $tmp_report.' с этим пользователем.';
+$tmp_result = 'Результат';
 $tmp_room = 'Комната';
 $tmp_room_count_threads = 'нитей живо, было, архив';
 $tmp_room_count_posts = 'рисунков, описаний';

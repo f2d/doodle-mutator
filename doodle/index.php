@@ -646,7 +646,7 @@ if ($u_key) {
 						)
 					), ':'.NL));
 				}
-				$lnk = $done = '';
+				$lnk = $t = '';
 				$ymd = preg_match(PAT_DATE, $etc, $m);		//* <- Y-m-d
 				if (!($mod_page = $tmp_mod_pages[intval($etc)])) $mod_page = $tmp_empty;
 				if ($ymd || $etc == 1) {
@@ -667,7 +667,7 @@ preg_replace('~\v+~u', '<br>', NL.htmlspecialchars($a)))));
 						foreach ($l as $ym => $d) $lnk .= ($lnk?'</p>':'').'
 <p>'.$ym.'-'.implode(',', $d);
 						$lnk .= ' <small>'.date('H:i:s', $last).'</small></p>';
-					} else $done = $tmp_empty;
+					}
 				} else
 				if ($etc == 2) {
 					foreach ($tmp_mod_files as $k => $v) $lnk .= '
@@ -680,25 +680,24 @@ if (TIME_PARTS) time_check_point('ignore user abort');
 							if (is_dir($d = DIR_PICS))
 							foreach (scandir($d) as $f) if (trim($f, '.') && is_file($old = $d.$f)) {
 								$new = get_pic_subpath($f, 1);
-								$done .=
+								$t .=
 NL.(++$a)."	$old => $new	".($old == $new?'same':(rename($old, $new)?'OK':'fail'));
 							}
 if (TIME_PARTS && $a) time_check_point("done $a pics");
 						} else
 						if ($a == 1) {
 							require_once(NAMEPRFX.'.arch.php');
-							$done = data_archive_rewrite();
+							$t = data_archive_rewrite();
 						} else
 						if ($a == 2) {
-							$done = data_fix_user_format();
+							$t = data_fix_user_format();
 						}
-						$done = ($done?'
-<textarea>'.indent('Done:'.$done).'</textarea>':$tmp_empty);
+						if (!$t) $t = $tmp_no_change;
 					}
 				} else
 				if ($etc > 2) {
 					if ($etc == 5) {
-						exit_if_not_mod(T0);		//* <- never exits, just to check if HTTP_IF_MODIFIED_SINCE is sent
+						exit_if_not_mod();		//* <- never exits, just to check if HTTP_IF_MODIFIED_SINCE is sent
 						$t = print_r($_SERVER, true)
 .NL.'DATE_RFC822 = '.gmdate(DATE_RFC822, T0)
 .NL.'DATE_RFC2822 = '.gmdate('r', T0);
@@ -723,11 +722,11 @@ NL.$t)));
 					if ($etc == 4) {
 						$content .= 'ref'.NL.
 preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data fields
-					} else	$done = ($t?'
-<textarea>'.indent($t).'</textarea>':$tmp_empty);
+					}
 				}
+				if (!$content) $textarea = $t;
 				$task = '
-<p id="tabs">'.implode('|', $tmp_mod_pages).'</p>'.$lnk.$done;
+<p id="tabs">'.implode('|', $tmp_mod_pages).'</p>'.($lnk || $content || $textarea ? $lnk : $tmp_empty);
 				$js[0]++;
 			} else {
 
@@ -980,6 +979,7 @@ die(get_template_page(array(
 ,	'data' => $task_data
 ,	'task' => $task?$task:'Err... What?'
 ,	'subtask' => $subtask
+,	'textarea' => $textarea
 ,	'content' => $content
 ,	'footer' => $is_report_page?'':($took?'
 <p class="l hint">'.indent($took).'</p>':'').($links?'
