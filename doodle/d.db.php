@@ -225,7 +225,7 @@ function data_get_thread_count($r = 0, $a = 0) {
 		$a <= 0 && is_file($f = DIR_META_R."$r/$d.count")	//* <- seems ~2x faster than scandir() on ~50 files
 		? file_get_contents($f)
 		: (
-			is_dir($d = constant('DIR_'.strtoupper($d)).$r)
+			($d = get_const('DIR_'.strtoupper($d))) && is_dir($d .= $r)
 			? get_dir_top_file_id($d)
 	/*		? count(
 				array_diff(scandir($d), array('.', '..', trim(DIR_THUMB, '/')))	//* <- seems ~2x faster than glob()
@@ -654,8 +654,7 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 				$ok = "$room -> $msg";
 				$m = 'mod_'.$room;
 				$n = 'mod_'.$msg;
-				foreach (array('arch', 'room', 'meta_r') as $f) {
-					$r = constant('DIR_'.strtoupper($f));
+				foreach (array('arch', 'room', 'meta_r') as $f) if ($r = get_const('DIR_'.strtoupper($f))) {
 					$ok .= ",$f:"
 						.(is_dir($rr = $r.$msg) && rename($rr, $rr.'.'.T0.'.old_bak') ?'old_bak+':'')
 						.(is_dir($rr = $r.$room) && rename($rr, $r.$msg) ?1:0);

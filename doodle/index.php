@@ -298,9 +298,13 @@ if ($u_key) {
 				$post_status = 'file_put';
 			} else
 			if ($sz = getImageSize($f)) {
-				foreach ($tmp_whu as $k => $v) {
+				foreach ($tmp_whu as $k => $v)
+				if (
+					($a = get_const('DRAW_LIMIT_'.$v))
+				||	($a = get_const('DRAW_DEFAULT_'.$v))
+				) {
+					$a = preg_split('~\D+~', $a);
 					$z = $$tmp_wh[$k] = $sz[$k];
-					$a = preg_split('~\D+~', ($a = constant('DRAW_LIMIT_'.$v)) ? $a : constant('DRAW_DEFAULT_'.$v));
 					if (($a[0] && $z < $a[0]) || (($a[1]?$a[1]:$a[1]=$a[0]) && $z > $a[1])) {
 						$x = 0;
 						$post_status = 'pic_size';
@@ -435,7 +439,7 @@ Target$op$t$ed"
 				$s = $tmp_archive_find_by[$k = array_search($subj, $qa = explode(',', $qa))];
 				if (
 					!mb_check_encoding($q, ENC)
-				&&	($f = constant('ENC_FALLBACK'))
+				&&	($f = get_const('ENC_FALLBACK'))
 				) {
 					foreach (explode(',', $f) as $e) if (
 						($e = trim($e))
@@ -520,7 +524,7 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 <p class="hint">'.$tmp_draw_hint.'</p><noscript>
 <p class="hint">'.$tmp_require_js.'</p></noscript>';
 		$subtask = '
-<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.csv2nl(get_draw_vars()).'"></script>
+<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.get_draw_vars().'"></script>
 <div class="task">'.indent('<p class="hint">'.indent($n['list']).'</p>').'</div>';
 	} else
 
@@ -535,7 +539,7 @@ if ($u_key) {
 .':'.implode('|', $cfg_draw_app).':'.implode('|', $tmp_draw_app).':?*:'
 //':'.ROOTPRFX.'*.htm:'
 .$tmp_draw_test;
-		foreach ($cfg_draw_vars as $v) if (!${$i = 'u_'.$v} && defined($k = strtoupper($v))) $$i = constant($k);
+		foreach ($cfg_draw_vars as $v) if (!${$i = 'u_'.$v}) $$i = get_const(strtoupper($v));
 		if (!$u_room_home) {
 			$u_room_home = ROOM_DEFAULT;
 			if (!$qdir) $o1 = "$nst<br>$nst<b class=\"anno\">$tmp_options_first</b>$nst<br>";
@@ -845,7 +849,7 @@ if (TIME_PARTS) time_check_point('after sort + join');
 <p class="hint">'.$tmp_require_js.'</p></noscript>';
 				$n = get_draw_app_list();
 				$subtask = '
-<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.csv2nl(get_draw_vars(DRAW_SEND)).'"></script>
+<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.get_draw_vars(DRAW_SEND).'"></script>
 <div class="task">'.indent('<p class="hint">'.indent($n['list']).'</p>').'</div>';
 			}
 			if ($t || $desc) $task_data['t'] = $task_time;
@@ -921,7 +925,7 @@ as $v) {
 }
 $current_room_link = A.($qd_room ? ($room?'..':'.') : $cfg_room).'">'.$s[1];
 
-if (!$u_opts['names'] && constant('FOOT_NOTE')) {
+if (!$u_opts['names'] && defined('FOOT_NOTE')) {
 	$links = vsprintf(FOOT_NOTE, $tmp_foot_notes);
 } else $links = '';
 

@@ -20,15 +20,14 @@ function exit_if_not_mod($t = 0) {
 	header('Last-Modified: '.$t);
 }
 
-function str_replace_first($f, $to, $s) {return (false === ($pos = strpos($s, $f)) ? $s : substr_replace($s, $to, $pos, strlen($f)));}
-function indent($t, $n = 0) {
-	return !strlen($t = trim($t)) || (!$n && false === strpos($t, NL))
-	?	$t
-	:	preg_replace(
-			'~(?:^|\v+)(?:(\h*<(pre|textarea)\b.+?)(?=\v+\h*</\2>))?~uis'
-		,	NL.str_repeat("\t", $n > 0?$n:1).'$1'
-		,	$t
-		).NL;
+function get_const($name) {return defined($name) ? constant($name) : '';}
+function str_replace_first($f, $to, $s) {return false === ($pos = strpos($s, $f)) ? $s : substr_replace($s, $to, $pos, strlen($f));}
+function abbr($a, $sep = '_') {foreach ((is_array($a)?$a:explode($sep, $a)) as $word) $r .= $word[0]; return $r;}
+function trim_post($p, $len = 456) {return htmlspecialchars(mb_substr(stripslashes(trim(preg_replace('~\s+~us', ' ', $p))),0,$len,ENC));}
+function trim_room($r) {
+	return strtolower(mb_substr(preg_replace('/\.+/', '.', preg_replace(
+'/[^\w\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}.!-]+/u', '_', trim(trim($r), '\\/')	//* <- add more unicode alphabets to complement \w?
+	)), 0, ROOM_NAME_MAX_LENGTH, ENC));
 }
 
 function csv2nl($v, $c = ';', $n = 1) {
@@ -37,16 +36,7 @@ function csv2nl($v, $c = ';', $n = 1) {
 	return $n.implode($c.$n, preg_split("~$d~u", preg_replace("~^$d|$d$~u", '', $v).$c));
 }
 
-function abbr($a, $sep = '_') {foreach ((is_array($a)?$a:explode($sep, $a)) as $word) $r .= $word[0]; return $r;}
-function fln($f) {return file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);}
-function trim_post($p, $len = 456) {return htmlspecialchars(mb_substr(stripslashes(trim(preg_replace('~\s+~us', ' ', $p))),0,$len,ENC));}
-function trim_room($r) {
-	return strtolower(mb_substr(preg_replace('/\.+/', '.', preg_replace(
-'/[^\w\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}.!-]+/u', '_', trim(trim($r), '\\/')	//* <- add more unicode alphabets to complement \w?
-	)), 0, ROOM_NAME_MAX_LENGTH, ENC));
-}
-
-function get_req() {return GET_Q ? explode('=', rawurldecode(end(explode('?', $_SERVER['REQUEST_URI'], 2))), 2) : array();}
+function get_req() {return GET_Q ? explode('=', urldecode(end(explode('?', $_SERVER['REQUEST_URI'], 2))), 2) : array();}
 function get_file_name($path, $full = 1, $delim = '/') {return false === ($rr = strrpos($path, $delim)) ? ($full?$path:'') : substr($path, $rr+1);}
 function get_file_ext($path, $full = 0) {return strtolower(get_file_name($path, $full, '.'));}
 function get_room_skip_name($r) {return array(ME.'-skip-'.md5($r = rawurlencode($r)), $r);}
@@ -56,6 +46,7 @@ function get_room_skip_list($k = '') {
 	:	array();
 }
 
+function fln($f) {return file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);}
 function get_dir_top_file_id($d) {
 	$i = 0;
 	if (is_dir($d)) foreach (scandir($d) as $f) if (preg_match('~^\d+~', $f, $m) && $i < ($n = intval($m[0]))) $i = $n;
@@ -78,19 +69,6 @@ function get_pic_subpath($p, $mk = 0) {
 }
 
 function get_pic_url($p) {return ROOTPRFX.(PIC_SUB?get_pic_subpath($p):DIR_PICS.$p);}
-function get_time_html($t = 0) {
-	$f = date(DATE_ATOM, $uint = ($t?$t:T0));
-	$i = strpos($f, 'T');
-	$d = substr($f, 0, $i);
-	$t = substr($f, $i+1, 8);
-	return '<time datetime="'.$f.'" data-t="'.$uint.'">'.$d.NL.'<small>'.$t.'</small></time>';
-}
-
-function get_time_elapsed($t = 0) {
-	$t = explode(' ', $t?$t:microtime());
-	return ($t[1]-T0) + ($t[0]-M0);
-}
-
 function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for archive pages; default = current date
 	global $cfg_date_class;
 	if (!$t_first) $t_first = T0;
@@ -147,22 +125,29 @@ function get_draw_vars($v = '') {
 		';save_prefix='.DRAW_BACKUPCOPY_PREFIX.';saveprfx='.NAMEPRFX
 	);
 	foreach ($cfg_draw_vars as $k => $v) {
-		if (($i = ${'u_'.$v}) || (defined($i = strtoupper($v)) && ($i = constant($i)))) $vars .= ";$k=$i";
+		if (($i = ${'u_'.$v}) || ($i = get_const(strtoupper($v)))) $vars .= ";$k=$i";
 	}
 	list($n, $res) = get_req();
 	if ($n && $n != '!' && $res && strpos($res, 'x')) $wh = explode('x', $res);
 	foreach (array('DEFAULT_', 'LIMIT_') as $i => $j)
 	foreach ($tmp_whu as $k => $l) {
 		$p = $tmp_wh[$k].($i?'l':'');
-		if ((!$i && $wh && ($v = $wh[$k])) || (defined($v = "DRAW_$j$l") && ($v = constant($v)))) $vars .= ";$p=$v";
+		if ((!$i && $wh && ($v = $wh[$k])) || ($v = get_const("DRAW_$j$l"))) $vars .= ";$p=$v";
 	}
-	return $vars;
+	return csv2nl($vars);
 }
 
-function format_filesize($B, $D = 2) {
-	if ($F = floor((strlen($B) - 1) / 3)) $S = 'BkMGTPEZY';
-	else return $B.' B';
-	return sprintf("%.{$D}f", $B/pow(1024, $F)).' '.$S[$F].'B';
+function get_time_html($t = 0) {
+	$f = date(DATE_ATOM, $uint = ($t?$t:T0));
+	$i = strpos($f, 'T');
+	$d = substr($f, 0, $i);
+	$t = substr($f, $i+1, 8);
+	return '<time datetime="'.$f.'" data-t="'.$uint.'">'.$d.NL.'<small>'.$t.'</small></time>';
+}
+
+function get_time_elapsed($t = 0) {
+	$t = explode(' ', $t?$t:microtime());
+	return ($t[1]-T0) + ($t[0]-M0);
 }
 
 function format_time_units($t) {
@@ -179,6 +164,12 @@ function format_time_units($t) {
 		if ($rem) $t = $rem; else break;
 	}
 	return $r;
+}
+
+function format_filesize($B, $D = 2) {
+	if ($F = floor((strlen($B) - 1) / 3)) $S = 'BkMGTPEZY';
+	else return $B.' B';
+	return sprintf("%.{$D}f", $B/pow(1024, $F)).' '.$S[$F].'B';
 }
 
 function optimize_pic($filepath) {
@@ -208,13 +199,23 @@ function optimize_pic($filepath) {
 	}
 }
 
-//* front end template --------------------------------------------------------
 
-$tmp_wh = 'wh';
-$tmp_whu = array('WIDTH','HEIGHT');
-$tmp_room_new = '{'.($cfg_room = ROOTPRFX.DIR_ROOM).'new/|new}';
-if (constant('ROOM_HIDE') && ROOM_HIDE) $tmp_room_new_hide = '{'.$cfg_room.($s = ROOM_HIDE.'test')."/|$s}";
-//if (constant('ROOM_DUMP') && ROOM_DUMP) $tmp_room_new_dump = '{'.$cfg_room.($s = ROOM_DUMP.'dump')."/|$s}";
+
+
+//* front end templates -------------------------------------------------------
+
+
+
+
+function indent($t, $n = 0) {
+	return !strlen($t = trim($t)) || (!$n && false === strpos($t, NL))
+	?	$t
+	:	preg_replace(
+			'~(?:^|\v+)(?:(\h*<(pre|textarea)\b.+?)(?=\v+\h*</\2>))?~uis'
+		,	NL.str_repeat("\t", $n > 0?$n:1).'$1'
+		,	$t
+		).NL;
+}
 
 function get_template_form($a, $min = 0, $max = 0, $area = 0) {
 	if (is_array($a)) {
@@ -349,9 +350,15 @@ function get_template_page($t, $NOS = 0) {
 .indent($task, 1)
 .indent($pre, 1).(($t =
  indent($footer, 1)
-.indent($scripts, 1)) && constant('TOOK')?str_replace(TOOK, get_time_elapsed(), $t):$t)
+.indent($scripts, 1)) && ($k = get_const('TOOK'))?str_replace($k, get_time_elapsed(), $t):$t)
 .'</body>
 </html>';
 }
+
+$tmp_wh = 'wh';
+$tmp_whu = array('WIDTH','HEIGHT');
+$tmp_room_new = '{'.($cfg_room = ROOTPRFX.DIR_ROOM).'new/|new}';
+if ($s = get_const('ROOM_HIDE')) $tmp_room_new_hide = '{'.$cfg_room.($s .= 'test')."/|$s}";
+//if ($s = get_const('ROOM_DUMP')) $tmp_room_new_dump = '{'.$cfg_room.($s .= 'dump')."/|$s}";
 
 ?>
