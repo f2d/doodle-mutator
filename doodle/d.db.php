@@ -327,8 +327,11 @@ function data_get_user_info($u) {
 	$r = array();
 	if (data_lock($u = '/'.$u)) {
 		$n = DIR_META_U.$u;
-		foreach (array('flag' => 'Flags','ip' => 'IPs') as $k => $v)
-			if (is_file($f = "$n.$k") && ($f = trim(file_get_contents($f)))) $r[$v] = $f;
+		foreach (array(
+			'flag'	=> 'Flags'
+		,	'ip'	=> 'IPs'
+		,	'task'	=> 'Tasks'
+		) as $k => $v) if (is_file($f = "$n.$k") && ($f = trim(file_get_contents($f)))) $r[$v] = $f;
 		data_unlock($u);
 	}
 	return $r;

@@ -975,7 +975,7 @@ die(get_template_page(array(
 			A.ROOTPRFX.DIR_ARCH.'">'.$s[3].'
 </p>':'')
 		))
-,	'report' => $err_sign == '!'?$err_name:''
+,	'report' => $is_report_page?'-':($err_sign == '!'?$err_name:'')
 ,	'data' => $task_data
 ,	'task' => $task?$task:'Err... What?'
 ,	'subtask' => $subtask

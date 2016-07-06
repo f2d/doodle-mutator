@@ -268,7 +268,7 @@ function get_template_pre($p, $static = 0, $k = 'pre') {
 		<p>'.$tmp_result.'</p>').'
 		<'.$k.$attr.'>'.$p.'
 		</'.$k.'>'.($k == 'pre'?'
-<noscript><p class="hint report">'.($static?'JavaScript support required.':$GLOBALS['tmp_require_js']).'</p></noscript>':'').'
+		<noscript><p class="hint report">'.($static?'JavaScript support required.':$GLOBALS['tmp_require_js']).'</p></noscript>':'').'
 	</div>
 ':'');
 }
@@ -281,12 +281,14 @@ function get_template_page($t, $NOS = 0) {
 	$class = (($v = $t['body']) ? (is_array($v)?$v:array($v)) : array());
 	if (!$static) {
 		$L = LINK_TIME;
-		foreach (data_global_announce() as $k => $v) $ano .= ($ano?NL.'<br>':'').NL."$tmp_announce[$k]: $v";
-		if ($a = $t['report']) {
-			if (!is_array($a)) $a = preg_split('~\W+~', $a);
-			foreach ($a as $v) if ($v = trim($v)) {
-				$e = $tmp_post_err[$v];
-				$err .= NL.'<p class="anno '.($v == 'trd_arch'?'gloom':'report').'">'.indent($e?$e:$v).'</p>';
+		if (($a = $t['report']) !== '-') {
+			foreach (data_global_announce() as $k => $v) $ano .= ($ano?NL.'<br>':'').NL."$tmp_announce[$k]: $v";
+			if ($a) {
+				if (!is_array($a)) $a = preg_split('~\W+~', $a);
+				foreach ($a as $v) if ($v = trim($v)) {
+					$e = $tmp_post_err[$v];
+					$err .= NL.'<p class="anno '.($v == 'trd_arch'?'gloom':'report').'">'.indent($e?$e:$v).'</p>';
+				}
 			}
 		}
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
