@@ -21,7 +21,12 @@ function exit_if_not_mod($t) {
 }
 
 function str_replace_first($f, $to, $s) {return (false === ($pos = strpos($s, $f)) ? $s : substr_replace($s, $to, $pos, strlen($f)));}
-function indent($t, $n = 1) {return (false === strpos($t = trim($t), NL)) ? $t : preg_replace('~\v+~u', NL.str_repeat("\t", $n), NL.$t).NL;}
+function indent($t, $n = 0) {
+	return !($t = trim($t)) || ($n !== 1 && false === strpos($t, NL))
+	?	$t
+	:	preg_replace('~\v+~u', NL.str_repeat("\t", $n > 0?$n:1), NL.$t).NL;
+}
+
 function csv2nl($v, $c = ';', $n = 1) {
 	$d = "\s*[$c]+\s*";
 	$n = NL.($n > 0?str_repeat("\t", $n):'');
@@ -74,7 +79,7 @@ function get_time_html($t = 0) {
 	$i = strpos($f, 'T');
 	$d = substr($f, 0, $i);
 	$t = substr($f, $i+1, 8);
-	return '<time datetime="'.$f.'" data-t="'.$uint.'">'.$d.' <small>'.$t.'</small></time>';
+	return '<time datetime="'.$f.'" data-t="'.$uint.'">'.indent($d.NL.'<small>'.$t.'</small>').'</time>';
 }
 
 function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for archive pages; default = current date
@@ -253,7 +258,7 @@ function get_template_hint($t) {
 	}, $t))));
 }
 
-function get_template_pre($p, $R = 0) {
+function get_template_pre($p, $static = 0) {
 	if (is_array($a = $p)) {
 		foreach ($a as $k => $v) if (!$k) $p = $v; else if ($v) $attr .= " $k=\"$v\"";
 	}
@@ -261,72 +266,72 @@ function get_template_pre($p, $R = 0) {
 	<div class="thread">
 		<pre'.$attr.'>'.$p.'
 		</pre>
-		<noscript><p class="hint report">'.($R?'JavaScript support required.':$GLOBALS['tmp_require_js']).'</p></noscript>
+		<noscript><p class="hint report">'.($static?'JavaScript support required.':$GLOBALS['tmp_require_js']).'</p></noscript>
 	</div>
 ':'');
 }
 
 function get_template_page($t, $NOS = 0) {
 	global $tmp_announce, $tmp_post_err;
-	$j = $t['js'];
-	$R = ($j === 'arch');
 	$N = ROOTPRFX.NAMEPRFX;
+	$j = $t['js'];
+	$static = ($NOS || $j === 'arch');
 	$class = (($v = $t['body']) ? (is_array($v)?$v:array($v)) : array());
-	if (!$R) {
+	if (!$static) {
 		$L = LINK_TIME;
 		foreach (data_global_announce() as $k => $v) $ano .= ($ano?NL.'<br>':'').NL."$tmp_announce[$k]: $v";
 		if ($a = $t['report']) {
 			if (!is_array($a)) $a = preg_split('~\W+~', $a);
 			foreach ($a as $v) if ($v = trim($v)) {
-				$err .= NL.
-				'<p class="anno '.($v == 'trd_arch'?'gloom':'report').'">'.
-					(($e = $tmp_post_err[$v])?$e:$v).
-				'</p>';
+				$e = $tmp_post_err[$v];
+				$err .= NL.'<p class="anno '.($v == 'trd_arch'?'gloom':'report').'">'.indent($e?$e:$v).'</p>';
 			}
 		}
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
 		if ($d = get_date_class()) $class = array_merge($class, $d);
 	}
-	if (is_array($a = $t['data'])) foreach ($a as $k => $v) $data .= ' data-'.$k.'="'.$v.'"';
 	if (is_array($a = $t['content'])) {
 		if ($NOS) {
-			foreach ($a as $k => $v) $pre .= ($pre?NL:'').NL.$k.$NOS.NL.$v;
+			foreach ($a as $k => $v) $pre .= ($pre?NL:'').NL.$k.$NOS.$v;
 			$pre = NL.'	<pre>'.$pre.NL.'	</pre>';
-		} else foreach ($a as $v) $pre .= get_template_pre($v, $R);
-	} else $pre = get_template_pre($a, $R, $NOS);
-	if (is_array($a = $j) || ($j && ($a = array(".$j" => 0)))) foreach ($a as $k => $v) $scr .= '
-	<script src="'.$N.($v = ($v?'':$k).'.js').($L?'?'.filemtime(NAMEPRFX.$v):'').'"></script>';
+		} else foreach ($a as $v) $pre .= get_template_pre($v, $static);
+	} else $pre = get_template_pre($a, $static);
+
+	$head = '<meta charset="'.ENC.'">'.($NOS?'':'
+<meta name="viewport" content="width=690">
+<link rel="stylesheet" type="text/css" href="'.$N.'.css'.($L?'?'.filemtime(NAMEPRFX.'.css'):'').'">').'
+<link rel="shortcut icon" type="image/png" href="'.($t['icon']?ROOTPRFX.$t['icon']:$N).'.png">'
+.($t['head']?NL.$t['head']:'')
+.($t['title']?NL.'<title>'.$t['title'].'</title>':'');
+
+	if ($ano) $header .= NL.'<p class="anno">'.indent($ano).'</p>';
+	if ($err) $header .= NL.$err;
+	if ($v = $t['header']) $header .= NL.'<div>'.indent($v).'</div>';
+	if ($header) $header = '<header id="header">'.indent($header).'</header>';
+
+	if ($v = $t['task']) {
+		if ($sub = $t['subtask']) $v = '<div class="task">'.indent($v).'</div>'.$sub;
+		else if (!$static) $data = ' class="task"';
+		if (is_array($a = $t['data'])) foreach ($a as $k => $d) $data .= ' data-'.$k.'="'.$d.'"';
+		$task = '<div id="task"'.$data.'>'.indent($v).'</div>';
+	}
+	if ($v = $t['footer']) $footer = '<footer>'.indent($v).'</footer>';
+
+	if (is_array($a = $j) || ($j && ($a = array(".$j" => 0)))) foreach ($a as $k => $v) $scripts .= '
+<script src="'.$N.($v = ($v?'':$k).'.js').($L?'?'.filemtime(NAMEPRFX.$v):'').'"></script>';
 
 	return '<!doctype html>
 <html lang="'.($t['lang']?$t['lang']:'en').'">
-<head>
-	<meta charset="'.ENC.'">'.($NOS?'':'
-	<meta name="viewport" content="width=690">
-	<link rel="stylesheet" type="text/css" href="'.$N.'.css'.($L?'?'.filemtime(NAMEPRFX.'.css'):'').'">').'
-	<link rel="shortcut icon" type="image/png" href="'.($t['icon']?ROOTPRFX.$t['icon']:$N).'.png">'
-.($t['head']?indent($t['head']):NL)
-.($t['title']?
-'	<title>'.$t['title'].'</title>':'').'
-</head>
-<body'.($class?' class="'.implode(' ', $class).'"':'').'>'.(($v = $t['header']) || $ano || $err?'
-	<header id="header">'
-.($ano?'
-		<p class="anno">'.indent($ano, 3)
-.'		</p>':'')
-.($err?indent($err, 2):'')
-.($v?'
-		<div>'.indent($v, 3)
-.'		</div>':'').'
-	</header>
-':'').($t['task']?'
-	<div id="task"'.$data.($t['subtask']
-		?'>'.indent('<div class="task">'.indent($t['task']).'</div>'.$t['subtask'], 2)
-		:($R?'>':' class="task">').indent($t['task'], 2))
-.'	</div>
-':'').$pre.($t['footer']?'
-	<footer>'.indent($t['footer'], 2)
-.'	</footer>':'').($scr?NL.$scr:'').'
-</body>
+<head>'
+.indent($head)
+.'</head>
+<body'.($class?' class="'.implode(' ', $class).'"':'').'>'
+.indent($header, 1)
+.indent($task, 1)	//* <- textarea gets visible leftpadding, leave as it is for now
+.$pre			//* <- here padding is not acceptable, so leave preformatted manually
+.indent($footer, 1)
+.indent($scripts, 1)
+.'</body>
 </html>';
 }
 

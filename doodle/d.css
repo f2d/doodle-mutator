@@ -78,8 +78,8 @@ a:hover	{
 	padding: 0 8px;
 }
 .room-title::after {
-	content: attr(data-title);
 	display: inline-block;
+	content: attr(data-title);
 	vertical-align: middle;
 	line-height: normal;
 	font-size: small;
@@ -103,11 +103,9 @@ a:hover	{
 	vertical-align: middle;
 }
 #thumbs a:hover::after {
-	display: inline-block;
+	display: block;
 	content: attr(data-index);
 	background-color: rgba(160, 160, 160, 0.6);
-	width: 100%;
-	height: 100%;
 }
 #thumbs a:hover {
 	border-color: #09f;

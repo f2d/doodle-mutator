@@ -644,7 +644,7 @@ if ($u_key) {
 							), $a)
 							: $tmp_empty
 						)
-					), ':'));
+					), ':'.NL));
 				}
 				$lnk = $done = '';
 				$ymd = preg_match(PAT_DATE, $etc, $m);		//* <- Y-m-d
@@ -693,7 +693,7 @@ if (TIME_PARTS && $a) time_check_point("done $a pics");
 							$done = data_fix_user_format();
 						}
 						$done = ($done?'
-<textarea>Done:'.$done.'</textarea>':$tmp_empty);
+<textarea>'.indent('Done:'.$done).'</textarea>':$tmp_empty);
 					}
 				} else
 				if ($etc > 2) {
@@ -724,10 +724,11 @@ NL.$t)));
 						$content .= 'ref'.NL.
 preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data fields
 					} else	$done = ($t?'
-<textarea>'.$t.'</textarea>':$tmp_empty);
+<textarea>'.indent($t).'</textarea>':$tmp_empty);
 				}
 				$task = '
 <p id="tabs">'.implode('|', $tmp_mod_pages).'</p>'.$lnk.$done;
+				$js[0]++;
 			} else {
 
 //* report form ---------------------------------------------------------------
