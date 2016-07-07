@@ -24,6 +24,7 @@ a.quotejs:hover {font-weight: bold;}
 a.quotelink {background: inherit; color: #0f0;}
 a:visited {background: inherit; color: #0c0;}
 a:hover, .spoiler:hover a:hover {color: #fff; background: inherit;}
+code {color: yellow; background-color: rgba(100, 140, 60, 0.2);}
 hr {border: none; color: #090; background-color: #090; height: 1px;}
 html, body {font-size: 10pt; background: #000; color: #0a0;}
 input, textarea {background-color: #000; border: 1px solid #090; color: #0c0;}
