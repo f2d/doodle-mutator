@@ -52,9 +52,9 @@ var	n = 'menu_'+p.id, m = id(n);
 		,	z: 'Закрыть и забыть все меню на странице.'
 		,	o: (
 				leftSide ? (
-					(flag.v?'':'в архив+готово+нет|замороз.нить+отм.+сжечь||удалить нить'
-				+	(g?'+файлы+стереть с диска':'')+'|удалить пост (но не файл)|доб.пост+перед+изменить|уд.файл+обнулить'
-				+	(g?'+стереть с диска':'')+'||слить сюда+отсюда|разделить нить отсюда')
+					(flag.v?'':'в архив+готово+нет|замороз.нить+отм.'+(g?'+скрыть':'')+'|удалить сообщения||удалить нить'
+				+	(g?'+файлы+стереть с диска':'')+'|удалить пост (но не файл)|уд.файл+обнулить'
+				+	(g?'+стереть с диска':'')+'|доб.пост+перед+изменить||слить сюда+отсюда|разделить нить отсюда')
 				+	(g?'|уд.комн.+файлов+архива|переназ.комн.'+(flag.v?'':'+коп.нить в'):'')
 				) : (
 					(flag.v?'':'закрыть доступ+открыть|может жаловаться+нет|'
@@ -95,9 +95,9 @@ var	n = 'menu_'+p.id, m = id(n);
 		};
 	var	o = (
 			leftSide ? (
-				(flag.v?'':'archive+ready+wait|freeze tr.+warm up+burn||delete thread'
-			+	(g?'+pics+erase from disk':'')+'|delete post (but not pic)|add post+before+edit|delete pic+nullify'
-			+	(g?'+erase from disk':'')+'||merge thread target+source|split thread from here')
+				(flag.v?'':'archive+ready+wait|freeze tr.+warm up'+(g?'+hide':'')+'|delete comments||delete thread'
+			+	(g?'+pics+erase from disk':'')+'|delete post (but not pic)|delete pic+nullify'
+			+	(g?'+erase from disk':'')+'|add post+before+edit||merge thread target+source|split thread from here')
 			+	(g?'|nuke room+pics+arch|rename room'+(flag.v?'':'+copy trd to'):'')
 			) : (
 				(flag.v?'':'ban+lift|can report+not|'
@@ -107,10 +107,26 @@ var	n = 'menu_'+p.id, m = id(n);
 				:'||room announce')
 			)
 		).split('|')
-	,	textRequired = ['add post', 'rename', 'rename room', 'room announce', 'global announce']
-	,	textEnabled = ['room freeze', 'global freeze']
+	,	check = {
+			confirm: {
+				erase: ['nuke room+']
+			,	rename: ['rename room']
+			}
+		,	text: {
+				require: ['add post+', 'rename', 'rename room+']
+			,	enable: ['room announce', 'global announce', 'room freeze', 'global freeze']
+			}
+		}
 	,	a = (la.o?la.o.split('|'):o)
 	,	b,b0,v,v0,v1,c,i,j,n = '';
+
+		function checkFeature(f) {
+		var	i,j,r = '';
+			for (i in check)
+			for (j in check[i]) if (check[i][j].indexOf(f) >= 0) {r += '" data-'+i+'="'+j; break;}
+			return r;
+		}
+
 		for (i in a) if (a[i]) {
 			v1 =
 			v0 = (v = o[i].split('+')).shift();
@@ -118,29 +134,29 @@ var	n = 'menu_'+p.id, m = id(n);
 
 			c = '<input type="checkbox" onChange="menuRowCheck(this)" name="'
 			+	p.id.replace('m', 'm'+i)
-			+	(textRequired.indexOf(v0) < 0 ? '' : '" data-require="text')
+			+	checkFeature(v0+'+')
 			+	'" value="';
 
-			n += '<span>';
+			n += '<div class="row">';
 			for (j in b) b[j] = '</label><label title="'+b[j]+'">'
 				+	(leftSide?'':b[j])
 				+	c+(v1 += '+'+v[j])
-				+	(textEnabled.indexOf(v[j]) < 0 ? '' : '" data-enable="text')
+				+	checkFeature(v[j])
 				+	'">'
 				+	(leftSide?b[j]:'');
 
-			n += (n?'<br>':'')+'<label title="'+b0+'">'
+			n += '<label title="'+b0+'">'
 			+(b0
 				?	(leftSide?'':b0)
 				+	c+v0
-				+	(textEnabled.indexOf(v0) < 0 ? '' : '" data-enable="text')
+				+	checkFeature(v0)
 				+	'">'
 				+	(leftSide?b0:'')
 				:''
 			)+b.join('')+'</label>';
-			n += '</span>';
+			n += '</div>';
 		} else {
-			n += '<br>';
+			n += '</div><div class="block">';
 		}
 		b = '<input type="button" value="';
 		a = '" onClick="menuAddText(this)">';
@@ -148,21 +164,27 @@ var	n = 'menu_'+p.id, m = id(n);
 		i = '" title="';
 		v = la.tip.join('\r\n');
 
-		m.innerHTML = '<div title="'+v+'">'+n+'</div>'
-		+	'<textarea name="'+p.id.replace('m', 't')+i+la.i+'" placeholder="'+la.t+'"></textarea>'
+		m.innerHTML = '<div title="'+v+'">'
 		+(g
-			?	'<br>'
-			:	'<u><a href="javascript:void('+(j = p.id.split('_').slice(1).join('-'))
-			+	')" onClick="window.open(\''+j+'\',\'Report\',\'width=656,height=267\')">'+la.r+'</a></u>'
+			?	''
+			:	'<div class="block">'
+			+		'<a href="javascript:void('+(j = p.id.split('_').slice(1).join('-'))
+			+		')" onClick="window.open(\''+j+'\',\'Report\',\'width=656,height=267\')">'+la.r+'</a>'
+			+	'</div>'
 		)
+		+	'<div class="block">'+n+'</div>'
+		+'</div>'
+		+'<textarea name="'+p.id.replace('m', 't')+i+la.i+'" placeholder="'+la.t+'"></textarea>'
+		+'<div>'
 		+	'<input type="submit" value="'+la.go+i+v+'">&ensp;'
 		+(leftSide
-			?	b+'?'+i+la.e+a
-			+	b+'+'+i+la.a+a+'&ensp;'
+			?	b+'+'+i+la.a+a
+			+	b+'?'+i+la.e+a+'&ensp;'
 			:	''
 		)
 		+	b+'x'+i+la.x+c+'this)">'
-		+	b+'&gt;&lt;'+i+la.z+c+')">';
+		+	b+'&gt;&lt;'+i+la.z+c+')">'
+		+'</div>';
 
 		p.appendChild(m);
 		menuRowCheck(p.lastElementChild);
@@ -170,27 +192,51 @@ var	n = 'menu_'+p.id, m = id(n);
 }
 
 function menuRowCheck(target) {
-var	d,e = target;
+var	d,e = target, k = e.checked;
 	while (!(d = e).id && (e = e.parentNode));
-	if ((e = target).checked) {
-		do {if (e = e.parentNode) a = e;} while (e.firstElementChild == e.lastElementChild);
+	if (k) {
+		e = target;
+		if (!e.getAttribute('data-text')) k = 0;
+		do {if (e = e.parentNode) a = e;} while (!DIVP.test(e.tagName));
 		a = gi('checkbox', a), i = a.length;
 		while (i--) if ((e = a[i]) != target) e.checked = 0;
-	}
-var	a = gi('checkbox', d), i = a.length, c = 0, n = 0, t = 0;
+	} else if (d == target) k = 1;
+var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0, req: 0};
+	if (lang == 'ru') la = {
+		erase: 'Комната будет уничтожена, восстановление невозможно.'
+	,	rename: 'Комната сменит адрес, возможны конфликты.'
+	,	sure: 'Вы уверены?'
+	};
+	else la = {
+		erase: 'The room will be deleted, this cannot be reverted.'
+	,	rename: 'The room will be renamed, this can cause conflicts.'
+	,	sure: 'Are you sure?'
+	};
 	while (i--) if ((e = a[i]) && e.checked) {
-		++c;
-		if (e.getAttribute('data-enable') == 'text') ++n;
-		if (e.getAttribute('data-require') == 'text') ++t;
+		count.checked++;
+		if (t = e.getAttribute('data-confirm')) j.push(la[t]);
+		if (t = e.getAttribute('data-text')) {
+			if (t == 'enable') count.text++;
+			if (t == 'require') count.req++;
+		}
 	}
-	i = 0;
-	if ((a = gi('submit', d)).length && (i = a[0])) i.disabled = !c;
+var	i = 0, t = count.text || count.req;
+	if ((a = gi('submit', d)).length && (i = a[0])) i.disabled = !count.checked;
 	if ((a = gn('textarea', d)).length && (e = a[0])) {
-		n = t||n;
-		if (i) while ((i = i.nextElementSibling) && i.value != 'x') i.disabled = !n;
-		e.required = !!t;
-		e.style.display = (n?'':'none');
+		e.required = !!count.req;
+		e.style.display = (t?'':'none');
+		if (i) while ((i = i.nextElementSibling) && i.value != 'x') if (
+			!(i.disabled = !t)
+		&&	(i.value == '+') == (target.value.indexOf('edit') < 0)
+		) i.click();
+		if (k && t) e.focus();
 		menuFixHeight(d.parentNode);
+	}
+	while (!FORM.test(e.tagName) && (e = e.parentNode));
+	if (e) {
+		if (j.length) j.push(la.sure), j = j.join('\n');
+		else j = '';
+		e.onsubmit = (j ? (function() { return confirm(j); }) : null);
 	}
 }
 
@@ -200,10 +246,16 @@ function menuAddText(e) {
 		while (!(p.id && p.id.slice(0,2) == 'm_') && (p = p.parentNode));
 		if (p) p = p.getAttribute('data-post');
 	}
-	while (e = e.previousElementSibling) if (e.name) return e.value = p || (
-		'Re: '+(
-			e.value && (p = e.value.replace(TRIM, ''))
-			? p.replace(/^Re:\s*/i, '').replace(SPACE, ' ')
+var	pref = 'Re: ';
+	while (e = e.previousElementSibling || e.parentNode) if (e.name) return e.value = p || (
+		pref+(
+			e.value
+		&&	(p = e.value.replace(TRIM, ''))
+		&&	(
+				p.indexOf(': ') < 0
+			||	p.substr(0, pref.length).toLowerCase() == pref.toLowerCase()
+			)
+			? p.replace(SPACE, ' ').replace(new RegExp('^'+pref+'*', 'i'), '')
 			: (lang == 'ru' ? 'Ваш текст ответа.' : 'Reply text here.')
 		)
 	);
@@ -217,7 +269,9 @@ var	d = p.parentNode, p = gn('p',d), i = p.length, m = 0;
 
 function menuClose(e) {
 	if (e && e.tagName) {
-	var	m = e.parentNode, p = m.parentNode;
+	var	m = e.parentNode;
+		while (!m.id) m = m.parentNode;
+	var	p = m.parentNode;
 		p.removeChild(m);
 		menuFixHeight(p);
 		menuOpenOnClick(p);

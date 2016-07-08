@@ -188,7 +188,7 @@ if ($u_key) {
 				if (!data_lock($room)) {
 					$post_status = 'no_lock';
 				} else {
-					$r = data_log_report($r);
+					$r = data_log_report($r, $_POST['freeze'] || $_POST['check']);
 					$post_status = ($r > 0?OQ.$tmp_post_ok_text:'unkn_res');
 				}
 			}
@@ -363,11 +363,6 @@ if ($u_key) {
 			$act[$k[] = str_replace_first('_', $d[substr_count($a, '+')], $i)] = $m;
 		}
 		if ($act) {
-			$d = '';
-			$t = array();
-			$uf = array();
-			$u = array();				//* <- cached ids, etc, for batch processing; name collisions, urgh
-		//	ksort($act, SORT_NATURAL);		//* <- since php v5.4.0 only; bummer
 			natsort($k);
 			if (!data_lock($room)) {
 				$post_status = 'no_lock';
@@ -375,6 +370,7 @@ if ($u_key) {
 			foreach (array_reverse($k) as $i) {
 				$m = data_mod_action($act[$i]);	//* <- act = array(option name, thread, row, column)
 				if ($post_status != 'unkn_res') $post_status = ($m?OK:'unkn_res');
+				data_unlock($room);
 			}
 		}
 	}
@@ -384,6 +380,7 @@ if ($u_key) {
 	if (substr($post_status,0,7) == 'post_ok') {
 		data_aim();
 		$x = data_log_post($x);
+		data_unlock($room);
 		$t = array();
 		if ($log = $x['fork']) $t[] = 'trd_miss';
 		if ($log = $x['cap']) $t[] = 'trd_max'; else
@@ -520,7 +517,7 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 		$n = get_draw_app_list();
 		$icon = $n['name'];
 		$task = '
-<p>'.$tmp_draw_free.'</p>
+<p>'.$tmp_draw_free.':</p>
 <p class="hint">'.$tmp_draw_hint.'</p><noscript>
 <p class="hint">'.$tmp_require_js.'</p></noscript>';
 		$subtask = '
@@ -737,7 +734,7 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data
 //* report form ---------------------------------------------------------------
 
 				list($err_sign, $err_name) = get_req();
-				$task = get_template_form('report', REPORT_MIN_LENGTH, REPORT_MAX_LENGTH, $is_report_page = 1);
+				$task = get_template_form('report', REPORT_MIN_LENGTH, REPORT_MAX_LENGTH, $is_report_page = 1, $tmp_report_freeze);
 			}
 		} else
 
@@ -845,8 +842,8 @@ if (TIME_PARTS) time_check_point('after sort + join');
 				}
 			} else {
 				$task = '
-<p>'.($t?$tmp_draw_this.'</p>
-<p>'.$t:$tmp_draw_free).'</p><noscript>
+<p>'.($t?$tmp_draw_this.':</p>
+<p>'.$t:$tmp_draw_free.':').'</p><noscript>
 <p class="hint">'.$tmp_require_js.'</p></noscript>';
 				$n = get_draw_app_list();
 				$subtask = '
@@ -1003,7 +1000,7 @@ die(get_template_page(array(
 
 post_refresh:
 
-if ($o = ob_get_flush()) data_log_adm('PHP output: '.$o);
+if ($o = ob_get_clean()) data_log_adm('POST error buffer: '.$o);
 
 $ek = array_key_exists($p = $post_status, $tmp_post_err);
 $ok = (!$p || OK == substr($p, 0, strlen(OK)));

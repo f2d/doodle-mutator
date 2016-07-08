@@ -217,7 +217,7 @@ function indent($t, $n = 0) {
 		).NL;
 }
 
-function get_template_form($a, $min = 0, $max = 0, $area = 0) {
+function get_template_form($a, $min = 0, $max = 0, $area = 0, $check = 0) {
 	if (is_array($a)) {
 		list($name, $head, $hint, $butn, $plhd) = $a;
 		$a = 0;
@@ -244,15 +244,19 @@ function get_template_form($a, $min = 0, $max = 0, $area = 0) {
 	if ($name && $plhd) $name .= ' placeholder="'.$plhd.'"';
 	$name .= ($GLOBALS['u_opts']['focus']?'':' autofocus').' required';
 	return ($head?'
-<p>'.$head.'</p>'
+<p>'.$head.':</p>'
 :'').(($name !== false)?(($name === 0 || $method === 0)?'
 <p><b><input type="text'.($butn?'" id="'.$butn:'').'"'.$name.'></b></p>'
 :'
 <form'.$method.'>
 	<b>
-	<b><'.($area?'textarea'.$name.'></textarea':'input type="text"'.$name).'></b>
-	<b><input type="submit" value="'.($butn?$butn:$GLOBALS['tmp_submit']).'"></b>
-	</b>
+		<b><'.($area?'textarea'.$name.'></textarea':'input type="text"'.$name).'></b>
+		<b><input type="submit" value="'.($butn?$butn:$GLOBALS['tmp_submit']).'"></b>
+	</b>'.($check?'
+	<label class="r">
+		'.$check.':
+		<input type="checkbox" name="check">
+	</label>':'').'
 </form>'
 ):'').($hint?'
 <p class="hint'.(is_array($hint)?' r">'.implode(',', $hint):'">'.indent(get_template_hint($hint))).'</p>'

@@ -292,10 +292,6 @@ a:hover	{
 	max-width: 465px;
 	max-height: 28px;
 }
-.post p u {
-	display: block;
-	margin: 1em 0;
-}
 .post input[type="text"], .post select {
 	height: 14px;
 	width: 99px;
@@ -376,22 +372,28 @@ a:hover	{
 	text-align: center;
 	padding: 1px;
 }
-.post .u img {
-	border: 2px solid #09f;
+.post .mod-menu .block:not(:first-child) {
+	margin-top: 1em;
 }
-.post .u {
-	color: #09f;
+.post .mod-menu .block:not(:last-child) {
+	margin-bottom: 1em;
 }
-.post.p .mod-menu span:hover {
+.post .mod-menu .row:hover {
 	background-color: rgba(255, 255, 255, 0.3);
 }
-.post.p .mod-menu > input {
+.post .mod-menu input:not([type="checkbox"]) {
 	display: inline-block;
 	min-width: 2em;
 	height: 2em;
 	margin: 0;
 	padding: 0;
 	vertical-align: top;
+}
+.post .u img {
+	border: 2px solid #09f;
+}
+.post .u {
+	color: #09f;
 }
 .log {	padding: 8px 178px;}
 .log i {
