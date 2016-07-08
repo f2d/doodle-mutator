@@ -736,6 +736,7 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data
 
 //* report form ---------------------------------------------------------------
 
+				list($err_sign, $err_name) = get_req();
 				$task = get_template_form('report', REPORT_MIN_LENGTH, REPORT_MAX_LENGTH, $is_report_page = 1);
 			}
 		} else
@@ -978,7 +979,8 @@ die(get_template_page(array(
 			A.ROOTPRFX.DIR_ARCH.'">'.$s[3].'
 </p>':'')
 		))
-,	'report' => $is_report_page?'-':($err_sign == '!'?$err_name:'')
+,	'anno' => !$is_report_page
+,	'report' => $err_sign == '!'?$err_name:''
 ,	'data' => $task_data
 ,	'task' => $task?$task:'Err... What?'
 ,	'subtask' => $subtask
@@ -1007,10 +1009,12 @@ $ek = array_key_exists($p = $post_status, $tmp_post_err);
 $ok = (!$p || OK == substr($p, 0, strlen(OK)));
 $msg = ($ok || !$ek?$p:$tmp_post_err[$p]);
 
-if (isset($_POST['report'])) die(get_template_page(array(
-	'title' => $msg
-,	'task' => $p.($ok?'<script>window.close();</script>':'')
+if ($ok && isset($_POST['report'])) die(get_template_page(array(
+	'head' => '<script>window.close();</script>'
+,	'title' => $msg
+,	'task' => $p
 )));
+
 header('HTTP/1.1 303 Refresh after POST. '.($ek?$p:$p = rawurlencode($p)));
 
 $up = ($room?'../':'');

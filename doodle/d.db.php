@@ -288,7 +288,7 @@ function data_get_u_by_post($a) {
 }
 
 function data_set_u_flag($u, $flag, $on = -1, $harakiri = 0) {
-	global $u_num, $u_flag;
+	global $u_num, $u_flag, $room;
 	if (is_array($u)) $u = data_get_u_by_post($u);
 
 	if ($on < 0) {
@@ -297,17 +297,32 @@ function data_set_u_flag($u, $flag, $on = -1, $harakiri = 0) {
 		if (intval($line) == $u) {
 			$ul[$k] = substr($line, 0, $s = strrpos($line, '	')+1).$flag;
 			data_put($f, implode(NL, $ul));
-			return $u.': '.substr($line, $s).' -> '.$flag;		//* <- rename
+			return $u.': '.substr($line, $s).' -> '.$flag;	//* <- rename
 		}
 		return 'no user with ID '.$u;
 	}
 
-	if (!$u || (!(GOD || $harakiri) && ($u == $u_num))) return 0;		//* <- mods cannot ban self
+	if (!$u) return 0;
+
 	data_lock($n = '/'.$u);
 	if (is_file($f = DIR_META_U.$n.'.flag')) {
 		$flags = array();
 		foreach (fln($f) as $k) $flags[$k] = $k;
-		if (!GOD && ($flags['god'] || $flags['mod'])) return -$u;	//* <- mods cannot ban mods
+		if (!GOD
+		&&	(
+				$flags['god']
+			||	(
+					($flags['mod'] || $flags['mod_'.$room])
+				&&	$flag == 'ban'			//* <- mods cannot ban mods
+				&&	$on
+				)
+			||	(
+					$u == $u_num
+				&&	substr($flag,0,3) == 'mod'	//* <- mods cannot self-resign
+				&&	!$on
+				)
+			)
+		) return -$u;
 
 		foreach ($flags as $k => $v) if ($k == $flag) {
 			if ($on) return $u;		//* <- add, exists
@@ -550,13 +565,10 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 						? array(T0, $u_num)		//* <- add, insert (own post from now, if not specified)
 						: explode('	', $old)	//* <- edit, replace (assume old post as valid)
 					);
-					$reports = explode($br = '<br>', $tab[0], 2);
-					$tab[0] = array_shift($reports);
 
 			//* timestamp/ID, accept digits only, or no change:
 					foreach (array('time', 'user') as $i => $k)
 					if (($v = $lsv[$k]) && !trim($v, '0123456789')) $tab[$i] = $v;
-					if ($reports) $tab[0] .= $br.implode($br, $reports);
 
 			//* text, just make a post and be done:
 					if ($v = $lsv['text']) $new = "$tab[0]	$tab[1]".TXT.$v;
@@ -605,9 +617,8 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 	if ($o == 'ban'		) $ok = data_set_u_flag($a, 'ban', !$un); else
 	if ($o == 'can report'	) $ok = data_set_u_flag($a, 'nor', $un); else
 	if ($o == 'give mod'	) $ok = data_set_u_flag($a, 'mod_'.$room, !$un); else
-	if (!GOD
-	&& $o != 'room announce') return 0;
-	else
+
+	if (!GOD && $o != 'room announce') return 0; else
 
 //* god right -----------------------------------------------------------------
 

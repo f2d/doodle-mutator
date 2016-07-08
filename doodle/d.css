@@ -330,9 +330,12 @@ a:hover	{
 }
 .post.p p .report {
 	display: block;
-	white-space: normal;
 	margin-bottom: 4px;
 	padding: 4px;
+	white-space: normal;
+	overflow-wrap: break-word;
+	word-wrap: break-word;
+	hyphens: auto;
 }
 .post.p p div, .post .date-out, .log {
 	font-size: 11px;
