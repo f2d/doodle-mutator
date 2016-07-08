@@ -315,7 +315,6 @@ function get_template_page($t, $NOS = 0) {
 			$pre = '<pre>'.$pre.NL.'</pre>';
 		} else foreach ($a as $v) $pre .= get_template_pre($v, $static);
 	} else $pre = get_template_pre($a, $static);
-	if ($v = $t[$k = 'textarea']) $pre .= get_template_pre($v, $static, $k);
 
 	$head = '<meta charset="'.ENC.'">'.($NOS?'':'
 <meta name="viewport" content="width=690">
@@ -333,8 +332,12 @@ function get_template_page($t, $NOS = 0) {
 		if ($sub = $t['subtask']) $v = '<div class="task">'.indent($v).'</div>'.$sub;
 		else if (!$static) $data = ' class="task"';
 		if (is_array($a = $t['data'])) foreach ($a as $k => $d) $data .= ' data-'.$k.'="'.$d.'"';
+		if ($sub = $t[$k = 'textarea']) $v .= "
+<$k>$sub
+</$k>";
 		$task = '<div id="task"'.$data.'>'.indent($v).'</div>';
-	}
+	} else
+	if ($v = $t[$k = 'textarea']) $pre .= get_template_pre($v, $static, $k);
 	if ($v = $t['footer']) $footer = '<footer>'.indent($v).'</footer>';
 
 	if (is_array($a = $j) || ($j && ($a = array(".$j" => 0)))) foreach ($a as $k => $v) $scripts .= '

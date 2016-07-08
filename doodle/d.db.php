@@ -550,10 +550,13 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 						? array(T0, $u_num)		//* <- add, insert (own post from now, if not specified)
 						: explode('	', $old)	//* <- edit, replace (assume old post as valid)
 					);
+					$reports = explode($br = '<br>', $tab[0], 2);
+					$tab[0] = array_shift($reports);
 
 			//* timestamp/ID, accept digits only, or no change:
 					foreach (array('time', 'user') as $i => $k)
 					if (($v = $lsv[$k]) && !trim($v, '0123456789')) $tab[$i] = $v;
+					if ($reports) $tab[0] .= $br.implode($br, $reports);
 
 			//* text, just make a post and be done:
 					if ($v = $lsv['text']) $new = "$tab[0]	$tab[1]".TXT.$v;

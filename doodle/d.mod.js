@@ -138,7 +138,7 @@ var	n = 'menu_'+p.id, m = id(n);
 			:	'<u><a href="javascript:void('+(j = p.id.split('_').slice(1).join('-'))
 			+	')" onClick="window.open(\''+j+'\',\'Report\',\'width=656,height=267\')">'+la.r+'</a></u>'
 		)
-		+	'<input type="submit" value="'+la.go+'" title="'+v+'">&ensp;'
+		+	'<input type="submit" value="'+la.go+'" title="'+v+'" disabled>&ensp;'
 		+(c
 			?	'<input type="button" value="?" title="'+la.e+a
 			+	'<input type="button" value="+" title="'+la.a+a+'&ensp;'
@@ -153,14 +153,20 @@ var	n = 'menu_'+p.id, m = id(n);
 }
 
 function menuRowCheck(target) {
-	if (target.checked) {
+var	d,e = target, c = e.checked;
+	do {if (e = e.parentNode) d = e;} while (!e.id);
+	if (c) {
 		e = target;
-		while ((e = e.parentNode) && e.firstElementChild == e.lastElementChild);
-		if (e) {
-		var	e,a = gi('checkbox', e), i = a.length;
+		do {if (e = e.parentNode) a = e;} while (e.firstElementChild == e.lastElementChild);
+		if (a) {
+		var	a = gi('checkbox', a), i = a.length;
 			while (i--) if ((e = a[i]) != target) e.checked = 0;
 		}
+	} else {
+		a = gi('checkbox', d), i = a.length;
+		while (i--) if ((e = a[i]) && e.checked) {c = 1; break;}
 	}
+	if ((a = gi('submit', d)).length) a[0].disabled = !c;
 }
 
 function menuAddText(e) {

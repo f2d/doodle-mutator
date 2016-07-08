@@ -507,7 +507,7 @@ var	i,j,k,l,m,n = '\n', o,p = data.ph, opt = 'opt_', q,s = ' ', t = '	'
 				if (u && flag.m) {
 					j = post_data ? {
 						user: post_data
-					,	time: tab[0]
+					,	time: tab[0].split('<br>',1)[0]
 					} : {};
 					if (tab.length > 3) {
 						j.file = tab[2];

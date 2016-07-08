@@ -156,6 +156,16 @@ a:hover	{
 	margin-top: 8px;
 	vertical-align: bottom;		/* <- removes extra bottom space (sub-baseline) */
 }
+#task>textarea:not(:first-child), .thread>textarea:not(:first-child) {
+	margin-top: 8px;
+}
+#task>textarea, .thread>textarea {
+	min-height: 160px;
+	min-width: 500px;
+	max-width: 978px;
+	width: 978px;
+	height: 978px;
+}
 .task form textarea {
 	width: 456px;
 	height: 160px;
@@ -198,16 +208,6 @@ a:hover	{
 }
 .thread pre {
 	display: none;
-}
-.thread>textarea:not(:first-child) {
-	margin-top: 8px;
-}
-.thread>textarea {
-	min-height: 160px;
-	min-width: 500px;
-	max-width: 978px;
-	width: 978px;
-	height: 978px;
 }
 .thread.mod p:not([onclick]):hover {
 	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKEAAAFoBAMAAADN74ZNAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABl0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMC4xMK0KCsAAAAASUExURQAAAAAAAAAAAAAAAAAAAAAAAOArGaIAAAAGdFJOUwAEBQ4PFDsktNsAAAJWSURBVHja7dm7bStRDEVRQWABbsI5m2Bug2D/rbzAevZImrnfHZ6bawH7gIkwt9vYu3/f4GdJi5/1AYtRDkdXJR1dcHZUsdn3qqpveEZ4yKhis+9VcLb9iMneTqH3Ew/R4Wgw+380lx2/oqO3A96P/YlJR0PZh2go245isrdD3U88iQ5HI9nP0UR2vIiO3g5yP/YqJh29nf0WvZ1t72Kyt7N9PyfRm9l2JiYdvZcdp6LDM24NeR69kx0XosPRG9l2JSY94/KQl9HL2XYtJh29mh0N0eEZF4dsRa9lR1N0OHop29pi0jMuDNmJXsi2nph09Hx2dEWHZ5wesh89mx0DosPRk9k2IiY949SQQ9FT2TYmJh09kx2DosPRE9mj0ePZMSw6ejsT92PjYtLRg9kT0YPZNiMmezuj9xNTosPRQ9lz0SPZMSk6ejtD92OzYtLR3ezp6G62zYvJ3k7/fmJBdDi6k70S3c6OJdHR2+ncj62JSUc3shejG9m2KiZ7O437WY6+zLZ1Menoq+zYEB2e8WLInejz7NgSHY4+zbY9MekZT4bcjD7Jtl0x6ej37NgWHZ7xbcj96NfsAESHo1+yjRCTnvFpSCT6KdsYMenoY3ZAosMzHoakov+yAxMdjv7NNk5MesbHkGD0I9tIMenon+xARYejq5KObv6la//wa+E7l0SJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChR4vH9AxZaBQZurMB6AAAAAElFTkSuQmCC");
