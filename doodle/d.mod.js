@@ -45,9 +45,7 @@ var	n = 'menu_'+p.id, m = id(n);
 		,	go: 'пуск'
 		,	r: 'Сообщить о проблеме'
 		,	t: 'Ваш текст тут.'
-		,	i: 'Новый текст поста / имя комнаты.'
-		,	e: 'Вставить пост для редактирования.'
-		,	a: 'Вставить шаблон ответа.'
+		,	i: 'Новый текст поста / имя / объявление.'
 		,	x: 'Закрыть и забыть это меню.'
 		,	z: 'Закрыть и забыть все меню на странице.'
 		,	o: (
@@ -87,9 +85,7 @@ var	n = 'menu_'+p.id, m = id(n);
 		,	go: 'go'
 		,	r: 'Report a problem'
 		,	t: 'Your text here.'
-		,	i: 'New post content / room name.'
-		,	e: 'Insert post content to edit.'
-		,	a: 'Insert response template.'
+		,	i: 'New post content / name / announcement.'
 		,	x: 'Close and forget this menu.'
 		,	z: 'Close and forget all menus on the page.'
 		};
@@ -159,7 +155,6 @@ var	n = 'menu_'+p.id, m = id(n);
 			n += '</div><div class="block">';
 		}
 		b = '<input type="button" value="';
-		a = '" onClick="menuAddText(this)">';
 		c = '" onClick="eventStop(event); menuClose(';
 		i = '" title="';
 		v = la.tip.join('\r\n');
@@ -177,11 +172,6 @@ var	n = 'menu_'+p.id, m = id(n);
 		+'<textarea name="'+p.id.replace('m', 't')+i+la.i+'" placeholder="'+la.t+'"></textarea>'
 		+'<div>'
 		+	'<input type="submit" value="'+la.go+i+v+'">&ensp;'
-		+(leftSide
-			?	b+'+'+i+la.a+a
-			+	b+'?'+i+la.e+a+'&ensp;'
-			:	''
-		)
 		+	b+'x'+i+la.x+c+'this)">'
 		+	b+'&gt;&lt;'+i+la.z+c+')">'
 		+'</div>';
@@ -226,17 +216,30 @@ var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0
 	var	t = count.text || count.req, focus = (k && t);
 		e.required = !!count.req;
 		e.style.display = (t?'':'none');
-		if (i) {
-		var	v = target.value || '';
-			if (opening || v.indexOf('add post') == 0) {
-				while ((i = i.nextElementSibling) && i.value != 'x') if (
-					!(i.disabled = !t)
-				&&	k
-				&&	(i.value == '+') == (v.indexOf('edit') < 0)
-				) i.click();
-			} else
-			if (focus && v) {
+		if (focus) {
+		var	v = target.value;
+			if (i && v) {
 			var	leftSide = (target.name.slice(-1) == 0);
+				if (v.indexOf('add post') == 0) {
+					if (v.indexOf('edit') < 0) v = '';
+					else {
+						while (!(i.id && i.id.slice(0,2) == 'm_') && (i = i.parentNode));
+						v = (i ? i.getAttribute('data-post') : '');
+					}
+					e.value = v || (
+						(i = 'Re: ')+(
+							e.value
+						&&	(v = e.value.replace(TRIM, ''))
+						&&	(
+								v.indexOf(': ') < 0
+							||	v.substr(0, i.length).toLowerCase() == i.toLowerCase()
+							)
+						&&	(v = v.replace(SPACE, ' ').replace(new RegExp('^'+i+'*', 'i'), ''))
+							? v
+							: (lang == 'ru' ? 'Текст ответа тут.' : 'Reply text here.')
+						)
+					);
+				} else
 				if (v.indexOf('rename') == 0) {
 					v = (
 						leftSide
@@ -250,13 +253,14 @@ var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0
 					);
 				} else
 				if ((i = ['announce', 'freeze'].indexOf(v.split(' ').slice(-1)[0])) >= 0) {
-					v = (v.indexOf('room') == 0?'room_':'') + ['anno', 'stop'][i];
-					if (v = id(v)) v = v.textContent.replace(TRIM, '').replace(SPACE, ' ');
+					if (v = id(v) || id((v.indexOf('room') == 0?'room_':'') + ['anno', 'stop'][i])) {
+						v = v.textContent.replace(TRIM, '').replace(SPACE, ' ');
+					}
 					e.value = v || (lang == 'ru' ? 'Текст сообщения тут.' : 'Announce text here.');
 				}
 			}
+			e.focus();
 		}
-		if (focus) e.focus();
 		menuFixHeight(d.parentNode);
 	}
 	while (!FORM.test(e.tagName) && (e = e.parentNode));
@@ -265,27 +269,6 @@ var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0
 		else j = '';
 		e.onsubmit = (j ? (function() { return confirm(j); }) : null);
 	}
-}
-
-function menuAddText(e) {
-	if (e.value != '+') {
-	var	p = e;
-		while (!(p.id && p.id.slice(0,2) == 'm_') && (p = p.parentNode));
-		if (p) p = p.getAttribute('data-post');
-	}
-var	pref = 'Re: ';
-	while (e = e.previousElementSibling || e.parentNode) if (e.name) return e.value = p || (
-		pref+(
-			e.value
-		&&	(p = e.value.replace(TRIM, ''))
-		&&	(
-				p.indexOf(': ') < 0
-			||	p.substr(0, pref.length).toLowerCase() == pref.toLowerCase()
-			)
-			? p.replace(SPACE, ' ').replace(new RegExp('^'+pref+'*', 'i'), '')
-			: (lang == 'ru' ? 'Текст ответа тут.' : 'Reply text here.')
-		)
-	);
 }
 
 function menuFixHeight(p) {
