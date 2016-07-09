@@ -182,7 +182,7 @@ var	n = 'menu_'+p.id, m = id(n);
 }
 
 function menuRowCheck(target) {
-var	d,e = target, k = e.checked;
+var	e = target, k = e.checked;
 	while (!(d = e).id && (e = e.parentNode));
 var	opening = (d == target);
 	if (k) {
@@ -213,7 +213,7 @@ var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0
 	}
 	if ((a = gi('submit', d)).length && (i = a[0])) i.disabled = !count.checked; else i = 0;
 	if ((a = gn('textarea', d)).length && (e = a[0])) {
-	var	t = count.text || count.req, focus = (k && t);
+	var	d = d.parentNode, t = count.text || count.req, focus = (k && t);
 		e.required = !!count.req;
 		e.style.display = (t?'':'none');
 		if (focus) {
@@ -221,12 +221,11 @@ var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0
 			if (i && v) {
 			var	leftSide = (target.name.slice(-1) == 0);
 				if (v.indexOf('add post') == 0) {
-					if (v.indexOf('edit') < 0) v = '';
-					else {
-						while (!(i.id && i.id.slice(0,2) == 'm_') && (i = i.parentNode));
-						v = (i ? i.getAttribute('data-post') : '');
-					}
-					e.value = v || (
+					e.value = (
+						v.indexOf('edit') < 0
+						? ''
+						: d.getAttribute('data-post')
+					) || (
 						(i = 'Re: ')+(
 							e.value
 						&&	(v = e.value.replace(TRIM, ''))
@@ -241,27 +240,28 @@ var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0
 					);
 				} else
 				if (v.indexOf('rename') == 0) {
-					v = (
+					e.value = (
 						leftSide
 						? location.pathname.split('/').slice(-2)[0]
-						: d.parentNode.firstChild.textContent
-					).replace(TRIM, '');
-					e.value = v || (
+						: d.firstChild.textContent
+					).replace(TRIM, '')
+					|| (
 						leftSide
 						? (lang == 'ru' ? 'Имя комнаты назначения тут.' : 'Target room name here.')
 						: (lang == 'ru' ? 'Новое имя пользователя тут.' : 'New user name here.')
 					);
 				} else
 				if ((i = ['announce', 'freeze'].indexOf(v.split(' ').slice(-1)[0])) >= 0) {
-					if (v = id(v) || id((v.indexOf('room') == 0?'room_':'') + ['anno', 'stop'][i])) {
-						v = v.textContent.replace(TRIM, '').replace(SPACE, ' ');
-					}
-					e.value = v || (lang == 'ru' ? 'Текст сообщения тут.' : 'Announce text here.');
+					e.value = (
+						(v = id(v) || id((v.indexOf('room') == 0?'room_':'') + ['anno', 'stop'][i]))
+						? v.textContent.replace(TRIM, '').replace(SPACE, ' ')
+						: (lang == 'ru' ? 'Текст сообщения тут.' : 'Announce text here.')
+					);
 				}
 			}
 			e.focus();
 		}
-		menuFixHeight(d.parentNode);
+		menuFixHeight(d);
 	}
 	while (!FORM.test(e.tagName) && (e = e.parentNode));
 	if (e) {

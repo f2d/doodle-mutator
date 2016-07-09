@@ -783,7 +783,7 @@ function data_get_visible_rooms() {
 	global $u_flag;
 	$a = array(0);
 	$sd = array_diff(scandir($dr), array('.', '..'));
-	$h = get_const(ROOM_HIDE);
+	$h = get_const('ROOM_HIDE');
 if (TIME_PARTS) time_check_point('done folder scan'.NL);
 	foreach ($sd as $r) if (
 		(
