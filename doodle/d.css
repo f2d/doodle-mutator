@@ -1,7 +1,7 @@
 body.april-fools {	background-image: url("d.41.png");}
-body.cirno-day {	background-image: url("d.9.png");}
-body.leap-year {	background-image: url("d.ly.png");}
-body.new-year { 	background-image: url("d.ny.png");}
+body.cirno-day	{	background-image: url("d.9.png");}
+body.leap-year	{	background-image: url("d.ly.png");}
+body.new-year	{	background-image: url("d.ny.png");}
 body, body>* {
 	margin: 0 auto;			/* <- centered */
 	min-width: 656px;
@@ -53,6 +53,10 @@ a:hover	{
 	padding: 8px 22px;
 	background-color: #ace;
 	color: #fff;
+}
+.anno>b {
+	display: block;
+	font-weight: normal;
 }
 .at, a.at {
 	background-color: #999;

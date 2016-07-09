@@ -298,7 +298,10 @@ function get_template_page($t, $NOS = 0) {
 	$j = $t['js'];
 	$static = ($NOS || $j === 'arch');
 	$class = (($v = $t['body']) ? (is_array($v)?$v:array($v)) : array());
-	if ($t['anno']) foreach (data_global_announce() as $k => $v) $ano .= ($ano?NL.'<br>':'').NL."$tmp_announce[$k]: $v";
+	if ($t['anno']) foreach (data_global_announce() as $k => $v) {
+		if (MOD) $v = "<span id=\"$k\">$v</span>";
+		$ano .= NL."<b>$tmp_announce[$k]: $v</b>";
+	}
 	if (!$static) {
 		$L = LINK_TIME;
 		if ($a = $t['report']) {

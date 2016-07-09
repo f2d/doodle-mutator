@@ -194,13 +194,14 @@ var	n = 'menu_'+p.id, m = id(n);
 function menuRowCheck(target) {
 var	d,e = target, k = e.checked;
 	while (!(d = e).id && (e = e.parentNode));
+var	opening = (d == target);
 	if (k) {
 		e = target;
 		if (!e.getAttribute('data-text')) k = 0;
 		do {if (e = e.parentNode) a = e;} while (!DIVP.test(e.tagName));
 		a = gi('checkbox', a), i = a.length;
 		while (i--) if ((e = a[i]) != target) e.checked = 0;
-	} else if (d == target) k = 1;
+	} else if (opening) k = 1;
 var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0, req: 0};
 	if (lang == 'ru') la = {
 		erase: 'Комната будет уничтожена, восстановление невозможно.'
@@ -220,16 +221,42 @@ var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0
 			if (t == 'require') count.req++;
 		}
 	}
-var	i = 0, t = count.text || count.req;
-	if ((a = gi('submit', d)).length && (i = a[0])) i.disabled = !count.checked;
+	if ((a = gi('submit', d)).length && (i = a[0])) i.disabled = !count.checked; else i = 0;
 	if ((a = gn('textarea', d)).length && (e = a[0])) {
+	var	t = count.text || count.req, focus = (k && t);
 		e.required = !!count.req;
 		e.style.display = (t?'':'none');
-		if (i) while ((i = i.nextElementSibling) && i.value != 'x') if (
-			!(i.disabled = !t)
-		&&	(i.value == '+') == (target.value.indexOf('edit') < 0)
-		) i.click();
-		if (k && t) e.focus();
+		if (i) {
+		var	v = target.value || '';
+			if (opening || v.indexOf('add post') == 0) {
+				while ((i = i.nextElementSibling) && i.value != 'x') if (
+					!(i.disabled = !t)
+				&&	k
+				&&	(i.value == '+') == (v.indexOf('edit') < 0)
+				) i.click();
+			} else
+			if (focus && v) {
+			var	leftSide = (target.name.slice(-1) == 0);
+				if (v.indexOf('rename') == 0) {
+					v = (
+						leftSide
+						? location.pathname.split('/').slice(-2)[0]
+						: d.parentNode.firstChild.textContent
+					).replace(TRIM, '');
+					e.value = v || (
+						leftSide
+						? (lang == 'ru' ? 'Имя комнаты назначения тут.' : 'Target room name here.')
+						: (lang == 'ru' ? 'Новое имя пользователя тут.' : 'New user name here.')
+					);
+				} else
+				if ((i = ['announce', 'freeze'].indexOf(v.split(' ').slice(-1)[0])) >= 0) {
+					v = (v.indexOf('room') == 0?'room_':'') + ['anno', 'stop'][i];
+					if (v = id(v)) v = v.textContent.replace(TRIM, '').replace(SPACE, ' ');
+					e.value = v || (lang == 'ru' ? 'Текст сообщения тут.' : 'Announce text here.');
+				}
+			}
+		}
+		if (focus) e.focus();
 		menuFixHeight(d.parentNode);
 	}
 	while (!FORM.test(e.tagName) && (e = e.parentNode));
@@ -256,7 +283,7 @@ var	pref = 'Re: ';
 			||	p.substr(0, pref.length).toLowerCase() == pref.toLowerCase()
 			)
 			? p.replace(SPACE, ' ').replace(new RegExp('^'+pref+'*', 'i'), '')
-			: (lang == 'ru' ? 'Ваш текст ответа.' : 'Reply text here.')
+			: (lang == 'ru' ? 'Текст ответа тут.' : 'Reply text here.')
 		)
 	);
 }
