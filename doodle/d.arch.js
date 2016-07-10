@@ -117,7 +117,7 @@ var	i,j,k,l,m,t = '	', thread = '', thread_num, alt = 1, img = 1, num = 1
 		k.innerHTML =
 			'<div class="task">'
 		+		'<p class="arr">'
-		+			'<a href="'+(i-1)+'.htm">&#8678; '+(i-1)+'</a>'
+		+			'<a href="'+(i > 1?i-1+'.htm':'.')+'">&#8678; '+(i > 1?i-1:'')+'</a>'
 		+			'<u class="r">'
 		+				'<a href="'+(i+1)+'.htm">'+(i+1)+' &#8680;</a>'
 		+			'</u>'

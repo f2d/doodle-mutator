@@ -106,7 +106,7 @@ define(PAT_DATE, '~((\d+)-(\d+))-(\d+)~');
 define(PAT_CONTENT, '~<pre>(.+\S)\s+</pre>~uis');
 define(FOOT_NOTE, '
 <a href="https://github.com/f2d/doodle-mutator">%s</a> &mdash;
-<a href="/">%s</a>, 2013-2016,
+<a href="https://github.com/f2d">%s</a>, 2013-2016,
 <a href="/board/">%s</a>%s');	//* <- lang specific %s: site engine link, author link, contact board link, plaintext suffix
 
 ?>

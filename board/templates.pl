@@ -8,11 +8,12 @@ BEGIN { require 'wakautils.pl' }
 # Interface strings
 #
 
-use constant S_HOME => 'Back to game';						# Forwards to home page
-use constant S_BOARD => 'Board index';
+use constant S_HOME => 'Back to game';						# Link to home page
+use constant S_BOARD => 'Board index';						# Link to board index
+use constant S_BOARD_MODE => 'Board index';
+use constant S_THREAD_MODE => 'Thread view';
 use constant S_RETURN => 'Return to board index';				# Back from reply mode
 use constant S_RETREF => 'Revisit previous page';				# Back from error
-use constant S_POSTING => 'Reply mode';						# Prints message in red bar atop the reply screen
 
 use constant S_NAME => 'Name';							# Describes name field
 use constant S_EMAIL => 'Link';							# Describes e-mail field
@@ -131,6 +132,10 @@ use constant NORMAL_FOOT_INCLUDE => include(INCLUDE_DIR."footer.html").q{
 
 use constant MAIN_PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
+<div class="replymode theader" id="index-form-header">
+	<const S_BOARD_MODE>:
+</div>
+
 <if ALLOW_TEXT_THREADS or ALLOW_IMAGE_THREADS>
 	<div class="postarea">
 	<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
@@ -220,9 +225,8 @@ use constant MAIN_PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 use constant THREAD_HEAD_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
-<div class="replymode theader">
-	<const S_POSTING>
-	[<a href="<var expand_filename(HTML_SELF)>"><const S_RETURN></a>]
+<div class="replymode theader" id="reply-form-header">
+	<const S_THREAD_MODE>:
 </div>
 
 <if ALLOW_TEXT_REPLIES or ALLOW_IMAGE_REPLIES>
