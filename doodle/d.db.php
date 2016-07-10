@@ -80,12 +80,14 @@ function data_lock($path) {
 	} else
 	if (!is_array($path)) $path = array($path);
 	foreach ($path as $r) {
-		$r = ($r[0] == '/'?DIR_META_U:DIR_META_R).$r;		//* <- "data/lock/user/num.lock" = "l/l/u/0.lock"
-		if (!is_file($f = DIR_DATA.$r.'.lock')) data_put($f);
-		$k = $lock[$r] = fopen($f, 'r+');
-		if (!flock($k, LOCK_EX)) die('Unable to lock data!');	//* <- acquire an exclusive lock
+		$d = DIR_DATA.($r[0] == '/'?DIR_META_U:DIR_META_R);	//* "data/lock/user/num.lock" = "l/l/u/0.lock"
+		if (
+			($k = fopen(data_dir("$d$r.lock"), 'a'))
+		&&	flock($k, LOCK_EX)				//* <- acquire an exclusive lock
+		) $lock[$r] = $k;
+		else die('Unable to lock data!');
 	}
-	return $k;
+	return !!$k;
 }
 
 function data_unlock_key($f) {
