@@ -23,6 +23,7 @@
 .rules {font-size: 10px; font-family: sans-serif;}
 .spoiler, .spoiler a {background: #c4c2ee; color: #c4c2ee;}
 .spoiler:hover {color: #000;}
+.theader a {color: #bee;}
 .theader {background: #0010e0; color: #fff; width: 100%;}
 .thumbnailmsg {background: inherit; font-family: sans-serif; font-size: 9px; color: #000;}
 .unkfunc {background: #c4c2ee; color: #fff;}

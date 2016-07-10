@@ -25,6 +25,7 @@
 .rules {font-size: 0.7em;}
 .spoiler, .spoiler a {background: #f0d0b6; color: #f0d0b6;}
 .spoiler:hover {color: #800;}
+.theader a:hover {color: #f90;}
 .theader {background: #e04000; text-align: center; padding: 2px; color: #fff; width: 100%;}
 .thumbnailmsg {font-size: small; color: #800;}
 .unkfunc {background: inherit; color: #792;}
