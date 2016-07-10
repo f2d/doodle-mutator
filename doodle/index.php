@@ -188,8 +188,12 @@ if ($u_key) {
 				if (!data_lock($room)) {
 					$post_status = 'no_lock';
 				} else {
-					$r = data_log_report($r, $_POST['freeze'] || $_POST['check']);
-					$post_status = ($r > 0?OQ.$tmp_post_ok_text:'unkn_res');
+					$post_status = (
+						data_log_report($r, $_POST['freeze'] || $_POST['check']) > 0
+						? OQ.$tmp_post_ok_text
+						: 'unkn_res'
+					);
+					data_unlock();
 				}
 			}
 		}
@@ -366,11 +370,12 @@ if ($u_key) {
 			natsort($k);
 			if (!data_lock($room)) {
 				$post_status = 'no_lock';
-			} else
-			foreach (array_reverse($k) as $i) {
-				$m = data_mod_action($act[$i]);	//* <- act = array(option name, thread, row, column)
-				if ($post_status != 'unkn_res') $post_status = ($m?OK:'unkn_res');
-				data_unlock($room);
+			} else {
+				foreach (array_reverse($k) as $i) {
+					$m = data_mod_action($act[$i]);	//* <- act = array(option name, thread, row, column)
+					if ($post_status != 'unkn_res') $post_status = ($m?OK:'unkn_res');
+				}
+				data_unlock();
 			}
 		}
 	}
@@ -380,7 +385,7 @@ if ($u_key) {
 	if (substr($post_status,0,7) == 'post_ok') {
 		data_aim();
 		$x = data_log_post($x);
-		data_unlock($room);
+		data_unlock();
 		$t = array();
 		if ($log = $x['fork']) $t[] = 'trd_miss';
 		if ($log = $x['cap']) $t[] = 'trd_max'; else

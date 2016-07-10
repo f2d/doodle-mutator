@@ -79,15 +79,19 @@ function data_lock($path) {
 		if (trim($r, '.') && is_dir($d.$r)) $path[] = $r;
 	} else
 	if (!is_array($path)) $path = array($path);
+	$i = 0;
 	foreach ($path as $r) {
-		$d = DIR_DATA.($r[0] == '/'?DIR_META_U:DIR_META_R);	//* "data/lock/user/num.lock" = "l/l/u/0.lock"
-		if (
-			($k = fopen(data_dir("$d$r.lock"), 'a'))
-		&&	flock($k, LOCK_EX)				//* <- acquire an exclusive lock
-		) $lock[$r] = $k;
-		else die('Unable to lock data!');
+		if (!$lock[$r]) {
+			$d = DIR_DATA.($r[0] == '/'?DIR_META_U:DIR_META_R);	//* "data/lock/user/num.lock" = "l/l/u/0.lock"
+			if (
+				($k = fopen(data_dir("$d$r.lock"), 'a'))
+			&&	flock($k, LOCK_EX)				//* <- acquire an exclusive lock
+			) $lock[$r] = $k;
+			else die('Unable to lock data!');
+		}
+		$i++;
 	}
-	return !!$k;
+	return $i;
 }
 
 function data_unlock_key($f) {
