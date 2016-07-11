@@ -695,9 +695,8 @@ if (TIME_PARTS && $a) time_check_point("done $a pics");
 							require_once(NAMEPRFX.'.arch.php');
 							$t = data_archive_rewrite();
 						} else
-						if ($a == 2) {
-							$t = data_fix_user_format();
-						}
+						if ($a == 2) $t = data_fix('users'); else
+						if ($a == 3) $t = data_fix('reports');
 						if (!$t) $t = $tmp_no_change;
 					}
 				} else
@@ -1005,7 +1004,7 @@ die(get_template_page(array(
 
 post_refresh:
 
-if ($o = ob_get_clean()) data_log_adm('POST error buffer: '.$o);
+if ($o = ob_get_clean()) data_log_adm('POST buffer dump: '.$o);
 
 $ek = array_key_exists($p = $post_status, $tmp_post_err);
 $ok = (!$p || OK == substr($p, 0, strlen(OK)));

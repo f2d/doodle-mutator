@@ -30,6 +30,7 @@ $tmp_mod_files = array(
 	'Pics to subfolders.'
 ,	'Rewrite arch with newest template.'
 ,	'Convert old user data.'
+,	'Convert old report logs.'
 );
 $tmp_mod_pages = array(
 1 =>	'Logs'

@@ -16,20 +16,26 @@ function cre(e,p,b) {
 }
 
 function insert(text,thread) {
-var	textarea = id('postform'+thread).comment;
-	if (textarea) {
-		if (textarea.createTextRange && textarea.caretPos) {// IE
-		var	caretPos = textarea.caretPos;
+var	i = id('show_postform'), t = id('postform'+thread).comment;
+	if (i && i.style.display != 'none') gn('a',i)[0].click();
+	if (t) {
+		if (t.createTextRange && t.caretPos) {// IE
+		var	caretPos = t.caretPos;
 			caretPos.text = caretPos.text.charAt(caretPos.text.length-1) == ' '?text+' ':text;
 		} else
-		if (textarea.setSelectionRange) {// Firefox
-		var	start = textarea.selectionStart, end = textarea.selectionEnd;
-			textarea.value = textarea.value.substr(0,start)+text+textarea.value.substr(end);
-			textarea.setSelectionRange(start+text.length,start+text.length);
+		if (t.setSelectionRange) {// Firefox
+		var	start = t.selectionStart, end = t.selectionEnd;
+			t.value = t.value.substr(0,start)+text+t.value.substr(end);
+			t.setSelectionRange(start+text.length,start+text.length);
 		} else {
-			textarea.value += text+' ';
+			t.value += text+' ';
 		}
-		textarea.focus();
+		if ('activeElement' in document) i = document.activeElement; else
+		if ('querySelector' in document) i = document.querySelector(':focus'); else i = null;
+		if (t !== i) {
+			document.body.firstElementChild.scrollIntoView(false);
+			t.focus();
+		}
 	}
 }
 
