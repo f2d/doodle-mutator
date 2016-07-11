@@ -107,21 +107,27 @@ if ($qdir) {
 } else if ($u_key) {
 	if (!$u_room_home) $qd_opts = 1;
 
-//* rewrite htaccess when there is none, if logged in and viewing root folder:
-	$b = 'RewriteBase '.ROOTPRFX;
-	if (!($e = is_file($f = '.htaccess')) || !strpos($e = file_get_contents($f), $b)) {
+//* rewrite htaccess if none/changed, when logged in and viewing root folder:
+	$start_mark = '# 8<-- start mark: '.NAMEPRFX.', source changed: ';
+	$end_mark = '# 8<-- end mark: '.NAMEPRFX.', placed automatically: ';
+	$new_mark = $start_mark.'2016-07-11 14:40';	//* <- change tail here to invalidate old version
+	if (
+		!($old = (is_file($f = '.htaccess') ? file_get_contents($f) : ''))
+	||	false === strpos($e, $new_mark)
+	||	false === strpos($e, $end_mark)
+	) {
 		$n = 'NO_CACHE';
 		$e_cond = " env=$n";
 		$e_set = "E=$n:1";
 		$d = '('.implode('|', $cfg_dir).')(/([^/]+))?';
-		$d = '
+		$new = $new_mark.' --
 <IfModule rewrite_module>
 	RewriteEngine On
-	'.$b.'
+	RewriteBase '.ROOTPRFX.'
 # variable fix:
 	RewriteCond %{ENV:REDIRECT_'.$n.'} !^$
 	RewriteRule .* - [E='.$n.':%{ENV:REDIRECT_'.$n.'}]
-# virtual folders:'.(defined('DIR_DATA')?'
+# virtual folders:'.(get_const('DIR_DATA')?'
 	RewriteRule ^'.DIR_DATA.'.*$ . [L,R=301]':'').'
 	RewriteRule ^('.DIR_PICS.')(([^/])[^/]+\.([^/])[^/]+)$ $1$4/$3/$2'.'
 	RewriteRule ^'.$d.'$ $0/ [L,R=301]'.'
@@ -138,8 +144,15 @@ if ($qdir) {
 	Header set Expires "Wed, 27 Jan 2016 00:00:00 GMT"'.$e_cond.'
 	Header set Pragma "no-cache"'.$e_cond.'
 	Header unset Vary'.$e_cond.'
-</IfModule>';
-		file_put_contents($f, $e?$d:trim($d), FILE_APPEND);
+</IfModule>
+'.$end_mark.date(TIMESTAMP, T0).' --';
+		if ($old) {
+			$before = (false !== ($i = strpos($old, $start_mark)) ? trim(substr($old, 0, $i)).NL.NL : '');
+			$after = (false !== ($i = strpos($old, $end_mark)) && false !== ($i = strpos($old, NL, $i)) ? NL.NL.trim(substr($old, $i)) : '');
+			if ($before || $after) $new = $before.$new.$after;
+			else $new .= NL.NL.trim($old);
+		}
+		file_put_contents($f, $new);
 	}
 }
 
