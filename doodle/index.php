@@ -108,11 +108,11 @@ if ($qdir) {
 	if (!$u_room_home) $qd_opts = 1;
 
 //* rewrite htaccess if none/changed, when logged in and viewing root folder:
-	$start_mark = '# 8<-- start mark: '.NAMEPRFX.', source changed: ';
+	$start_mark = '# 8<-- start mark: '.NAMEPRFX.', version: ';
 	$end_mark = '# 8<-- end mark: '.NAMEPRFX.', placed automatically: ';
-	$new_mark = $start_mark.'2016-07-11 14:40';	//* <- change tail here to invalidate old version
+	$new_mark = $start_mark.ROOTPRFX.' 2016-07-11 17:04';	//* <- change tail here to invalidate old version
 	if (
-		!($old = (is_file($f = '.htaccess') ? file_get_contents($f) : ''))
+		!($old = (is_file($f = '.htaccess') ? trim(file_get_contents($f)) : ''))
 	||	false === strpos($e, $new_mark)
 	||	false === strpos($e, $end_mark)
 	) {
@@ -120,7 +120,7 @@ if ($qdir) {
 		$e_cond = " env=$n";
 		$e_set = "E=$n:1";
 		$d = '('.implode('|', $cfg_dir).')(/([^/]+))?';
-		$new = $new_mark.' --
+		$new = $new_mark.' -- Do not touch these marks. Only delete them along with the whole block.
 <IfModule rewrite_module>
 	RewriteEngine On
 	RewriteBase '.ROOTPRFX.'
@@ -145,14 +145,24 @@ if ($qdir) {
 	Header set Pragma "no-cache"'.$e_cond.'
 	Header unset Vary'.$e_cond.'
 </IfModule>
-'.$end_mark.date(TIMESTAMP, T0).' --';
+'.$end_mark.date(TIMESTAMP, T0).' -- Manual changes inside will be lost on the next update.';
 		if ($old) {
-			$before = (false !== ($i = strpos($old, $start_mark)) ? trim(substr($old, 0, $i)).NL.NL : '');
-			$after = (false !== ($i = strpos($old, $end_mark)) && false !== ($i = strpos($old, NL, $i)) ? NL.NL.trim(substr($old, $i)) : '');
-			if ($before || $after) $new = $before.$new.$after;
-			else $new .= NL.NL.trim($old);
-		}
-		file_put_contents($f, $new);
+			$b_found = (false !== ($i = strpos($old, $start_mark)));
+			$before = ($b_found ? trim(substr($old, 0, $i)) : '');
+
+			$a_found = (false !== ($i = strpos($old, $end_mark)));
+			$after = ($a_found && false !== ($i = strpos($old, NL, $i)) ? trim(substr($old, $i)) : '');
+
+			if ($b_found || $a_found) $new = ($before?$before.NL.NL:'').$new.($after?NL.NL.$after:'');
+			else $new .= NL.NL.$old;
+		} else $old = 'none';
+		data_log_adm(file_put_contents($f, $new) ? "$f updated, old:
+
+$old
+
+---- new: ----
+
+$new" : 'Failed to update '.$f);
 	}
 }
 

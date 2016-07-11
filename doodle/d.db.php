@@ -211,7 +211,7 @@ function data_log_adm($a) {			//* <- keep logs of administrative actions by date
 	global $u_num, $room;
 	$d = date('Y-m-d', T0);
 	$u = (GOD?'g':(MOD?'m':'r'));
-	$r = ($room?DIR_META_R.$room.'/':'');
+	$r = ($room?DIR_META_R.$room:DIR_DATA);
 	return data_log("$r/actions/$d.log", T0.'+'.M0."	$u$u_num	$a", BOM, 0);
 }
 
