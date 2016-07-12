@@ -1,16 +1,19 @@
 ﻿<?php
 
 $tmp_announce = array(
-	'anno'	=>	'Общее объявление'
-,	'stop'	=>	'Игра заморожена'
+	'anno' =>	'Общее объявление'
+,	'stop' =>	'Игра заморожена'
 ,	'room_anno' =>	'Комнатное объявление'
 ,	'room_stop' =>	'Комната заморожена'
 );
 $tmp_archive = 'Архив';
 $tmp_archive_find = 'Найти';
-$tmp_archive_find_by = array('описание', 'файл', 'имя');
+$tmp_archive_find_by = array(
+	'post' => array('описание', 'описанию')
+,	'file' => array('файл', 'файлу')
+,	'name' => array('имя', 'имени')
+);
 $tmp_archive_found = 'Результаты поиска по';
-$tmp_archive_found_by = array('описанию', 'файлу', 'имени');
 $tmp_archive_hint = 'Скрытые комнаты не показаны.';
 $tmp_arch_count = 'нитей';
 $tmp_arch_last = 'последнее';

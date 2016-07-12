@@ -102,6 +102,15 @@ if (FROZEN_HELL && !GOD && !($u_key && $qd_opts) && !$qd_arch) {
 	)));
 }
 
+$query = array();
+if (GET_Q && ($s = substr($_SERVER['REQUEST_URI'], GET_Q+1))) {
+	foreach (explode('&', $s) as $chain) {
+		$a = explode('=', $chain);
+		$v = (count($a) > 1 ? array_pop($a) : '');
+		foreach ($a as $k) $query[urldecode($k)] = urldecode($v);
+	}
+}
+
 if ($qdir) {
 	if ($l = mb_strlen($room = trim_room($room_url = urldecode($_REQUEST['room'])))) define(R1, $l = (mb_strlen(ltrim($room, '.')) <= 1));
 } else if ($u_key) {
@@ -113,8 +122,8 @@ if ($qdir) {
 	$new_mark = $start_mark.ROOTPRFX.' 2016-07-11 17:04';	//* <- change tail here to invalidate old version
 	if (
 		!($old = (is_file($f = '.htaccess') ? trim(file_get_contents($f)) : ''))
-	||	false === strpos($e, $new_mark)
-	||	false === strpos($e, $end_mark)
+	||	false === strpos($old, $new_mark)
+	||	false === strpos($old, $end_mark)
 	) {
 		$n = 'NO_CACHE';
 		$e_cond = " env=$n";
@@ -455,13 +464,19 @@ Target$op$t$ed"
 			exit_if_not_mod(data_get_archive_mtime());
 
 			$js['.arch'] = 0;
-			$task = array('?'.($qa = 'post,file,name'), $tmp_archive, $tmp_archive_find_by, $tmp_archive_find);
-			$task = get_template_form($task, FIND_MIN_LENGTH);
+			$task = get_template_form(
+				array(
+					'?'
+				,	$tmp_archive
+				,	$tmp_archive_find_by
+				,	$tmp_archive_find
+				)
+			,	FIND_MIN_LENGTH
+			);
 
 //* archive posts search ------------------------------------------------------
 
-			if (list($subj, $q) = get_req()) {
-				$s = $tmp_archive_find_by[$k = array_search($subj, $qa = explode(',', $qa))];
+			foreach ($tmp_archive_find_by as $k => $v) if (array_key_exists($k, $query) && strlen($q = $query[$k])) {
 				if (
 					!mb_check_encoding($q, ENC)
 				&&	($f = get_const('ENC_FALLBACK'))
@@ -474,38 +489,17 @@ Target$op$t$ed"
 						break;
 					}
 				}
-				$search_res = $tmp_archive_found.' '.$tmp_archive_found_by[$k].': <a id="r">'.$q.'</a>';
-				$q = mb_strtolower(trim_post($q, FIND_MAX_LENGTH), ENC);
 				$task .= '
-<p class="hint">'.$search_res.'</p>';
-				$content = '|||';	//* <- to keep JS happy for now
-				$n = 0;
-if (TIME_PARTS) time_check_point('inb4 search');
-				if (strlen($q) && is_dir($d = DIR_ARCH.$room.'/'))
-				for ($i = (R1?(($i = $thread_count-TRD_PER_PAGE) < 0?0:$i):0); $i <= $thread_count; $i++)
-				if (is_file($f = $d.$i.PAGE_EXT)) {
-					$dn = '';
-					if (preg_match(PAT_CONTENT, $txt = file_get_contents($f), $m)) foreach (explode(NL, $m[1]) as $line) {
-						$tab = explode('	', $line);
-						if ($k == 2) $t = $tab[1];				//* <- username
-						else if (!$k	 && $tab[2][0] != '<') $t = $tab[2];	//* <- text post only
-						else if ($k == 1 && $tab[2][0] == '<') {
-							$t = $tab[2];
-							$t = substr($t, strrpos($t, '/')+1);		//* <- pic filename
-							$t = substr($t, 0, strrpos($t, '"'));
-						} else $t = '';
-						if (false !== strpos(mb_strtolower($t, ENC), $q)) {
-							$content .= ($dn?'':NL.'	'.$i).NL.$line;
-							$dn .= '='.(++$n);
-						}
-					}
-if (TIME_PARTS) time_check_point('done '.$i.$dn);
-				}
-				if (!$n) $task .= $tmp_empty;
-			} else {
+<p class="hint">'.$tmp_archive_found.' '.(is_array($v)?end($v):$v).': <a id="r">'.$q.'</a></p>';
+				$q = mb_strtolower(trim_post($q, FIND_MAX_LENGTH), ENC);
+				if (strlen($q) && ($q = data_archive_find_by($k, $q))) $content = '|||'.$q;	//* <- to keep JS happy for now
+				else $task .= $tmp_empty;
+				break;
+			} else $q = '';
 
 //* archive threads list ------------------------------------------------------
 
+			if (!strlen($q)) {
 				if (($i = (R1?($thread_count-TRD_PER_PAGE):0)) < 0) $i = 0;
 				$content = DIR_THUMB.'|'.$thread_count.'|'.(R1?TRD_PER_PAGE.'|'.$i:$u_per_page).($u_key?'':'
 			<!-- static link for scriptless bots, last in chain -->
@@ -515,12 +509,16 @@ if (TIME_PARTS) time_check_point('done '.$i.$dn);
 
 //* archive rooms list --------------------------------------------------------
 
-			$task = get_template_form(array($qredir
-			,	$tmp_archive
-			,	$tmp_archive_hint
-			,	$tmp_rooms_submit
-			,	$tmp_rooms_placeholder
-			), ROOM_NAME_MIN_LENGTH);
+			$task = get_template_form(
+				array(
+					$qredir
+				,	$tmp_archive
+				,	$tmp_archive_hint
+				,	$tmp_rooms_submit
+				,	$tmp_rooms_placeholder
+				)
+			,	ROOM_NAME_MIN_LENGTH
+			);
 			$task_data['filter'] = 2;
 			if ($vr = data_get_visible_archives()) {
 				$mt = array_shift($vr);
@@ -561,7 +559,7 @@ if ($u_key) {
 		$nst = '
  	 	';
 		$draw_app = (($s = array_search($u_draw_app, $cfg_draw_app))?$s:0)
-.':'.implode('|', $cfg_draw_app).':'.implode('|', $tmp_draw_app).':?*:'
+.':'.implode('|', $cfg_draw_app).':'.implode('|', $tmp_draw_app).':?draw_app=*:'
 //':'.ROOTPRFX.'*.htm:'
 .$tmp_draw_test;
 		foreach ($cfg_draw_vars as $v) if (!${$i = 'u_'.$v}) $$i = get_const(strtoupper($v));
@@ -760,22 +758,28 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data
 
 //* report form ---------------------------------------------------------------
 
-				list($err_sign, $err_name) = get_req();
-				$task = get_template_form('report', REPORT_MIN_LENGTH, REPORT_MAX_LENGTH, $is_report_page = 1, $tmp_report_freeze);
+				$task = get_template_form(
+					'report'
+				,	REPORT_MIN_LENGTH
+				,	REPORT_MAX_LENGTH
+				,	$is_report_page = 1
+				,	$tmp_report_freeze
+				);
 			}
 		} else
 
 //* active room task and visible content --------------------------------------
 
 		if ($room) {
-			list($err_sign, $err_name) = get_req();
+			$dont_change = ($y = $query['!']) && ($y != 'trd_arch');
+			$skip_list = get_room_skip_list();
 
+if (TIME_PARTS) time_check_point('inb4 aim lock');
 			data_lock($room);
-if (TIME_PARTS) time_check_point('inb4 aim, locked');
 			data_aim(
 				!$u_opts['unknown']
-			,	$skip_list = get_room_skip_list()
-			,	$err_sign == '!' && $err_name == 'trd_arch'
+			,	$skip_list
+			,	$dont_change		//* <- after POST with error
 			);
 			list($thread, $report, $last) = data_get_visible_threads();
 			data_unlock();
@@ -785,11 +789,13 @@ if (TIME_PARTS) time_check_point('got visible data, unlocked');
 			exit_if_not_mod($t > $last || T0 < $last?$t:$last);
 			$task_time = ($t?$t:T0);	//* <- UTC seconds
 
-			if (GET_Q && $err_sign != '!' && !$target['task']) {
-				if (data_is_thread_cap()) {
-					$err_sign = '!';
-					$err_name = 'trd_max';
-				} else $draw_free = 1;
+			$x = 'trd_max';
+			if (GET_Q && !$target['task'] && (!$y || false === strpos($y, $x))) {
+				foreach ($query as $k => $v) if (substr($k, 0, 4) == 'draw') {
+					if (data_is_thread_cap()) $query['!'] = ($y?$y.'!':'').$x;
+					else $draw_free = 1;
+					break;
+				}
 			}
 			$desc = ($target['pic'] || !($target['task'] || $draw_free));
 			if (MOD) $js['.mod'] = 0;
@@ -851,12 +857,16 @@ if (TIME_PARTS) time_check_point('after sort + join');
 0,0	0	&mdash;	";
 			$t = $target['task'];
 			if ($desc) {
-				$task = get_template_form(array('describe'
-,	$t?$tmp_describe_this:$tmp_describe_new
-,	$tmp_describe_hint.($u_flag['nop']?' '.$tmp_no_play_hint:'')
-,	''
-,	GOD?$tmp_filter_placeholder:''
-), DESCRIBE_MIN_LENGTH);
+				$task = get_template_form(
+					array(
+						'describe'
+					,	$t?$tmp_describe_this:$tmp_describe_new
+					,	$tmp_describe_hint.($u_flag['nop']?' '.$tmp_no_play_hint:'')
+					,	''
+					,	GOD?$tmp_filter_placeholder:''
+					)
+				,	DESCRIBE_MIN_LENGTH
+				);
 				if ($t) {
 					$src = (strpos($t, ';') ? get_pic_resized_path(get_pic_normal_path($t)) : $t);
 					$task .= '
@@ -931,7 +941,14 @@ NL."$n[0]$s$n[1]	$n[4]$s$n[5]	$rn";
 
 	if ($etc) die('x');
 	foreach ($cfg_dir as $k => $v) unset(${'qd_'.$k});
-	$task = get_template_form(array(ME, $tmp_name_yourself, $tmp_name_hint), USER_NAME_MIN_LENGTH);
+	$task = get_template_form(
+		array(
+			ME
+		,	$tmp_name_yourself
+		,	$tmp_name_hint
+		)
+	,	USER_NAME_MIN_LENGTH
+	);
 }
 
 //* generate page, put content into template ----------------------------------
@@ -997,14 +1014,14 @@ die(get_template_page(array(
 		):('
 <p>'.
 			A.ROOTPRFX.'">'.$s[0].
-			A.ROOTPRFX.'?drawtest">'.$s[5].'
+			A.ROOTPRFX.'?draw_test">'.$s[5].'
 </p>'.(is_dir(DIR_ARCH)?'
 <p class="r">'.
 			A.ROOTPRFX.DIR_ARCH.'">'.$s[3].'
 </p>':'')
 		))
 ,	'anno' => !$is_report_page
-,	'report' => $err_sign == '!'?$err_name:''
+,	'report' => $query['!']
 ,	'data' => $task_data
 ,	'task' => $task?$task:'Err... What?'
 ,	'subtask' => $subtask
@@ -1062,7 +1079,10 @@ if ($ok) {
 		header($h.ME."=$u_key$o$x");
 		if ($add_qk) header($h.$add_qk.$x);
 	}
-} else $l .= '?!='.$p;
+} else {
+	$l .= '?!='.$p;
+	foreach ($query as $k => $v) if (substr($k, 0, 4) == 'draw') $l .= '&'.$k.(strlen($v)?'='.$v:'');
+}
 header('Location: '.$l);
 printf($tmp_post_ok_goto, $msg, $l);
 

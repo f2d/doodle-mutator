@@ -1,15 +1,18 @@
 ﻿<?php
 
 $tmp_announce = array(
-	'anno'	=>	'Global announce'
-,	'stop'	=>	'Global freeze'
-,	'room_anno'	=>	'Room announce'
-,	'room_stop'	=>	'Room freeze'
+	'anno' =>	'Global announce'
+,	'stop' =>	'Global freeze'
+,	'room_anno' =>	'Room announce'
+,	'room_stop' =>	'Room freeze'
 );
 $tmp_archive = 'Archive';
 $tmp_archive_find = 'Find';
-$tmp_archive_find_by =
-$tmp_archive_found_by = array('description', 'file', 'name');
+$tmp_archive_find_by = array(
+	'post' => 'description'
+,	'file' => 'file'
+,	'name' => 'name'
+);
 $tmp_archive_found = 'Search results for';
 $tmp_archive_hint = 'Hidden rooms are not shown.';
 $tmp_arch_count = 'threads';

@@ -550,6 +550,7 @@ e+'</a>';
 				} else {
 					if (g == '|' && ((k = tab[1])[0] != '<') && (k.indexOf('=') > 0)) {
 						k = k.split('=');
+						if (k.length > 2 && k[1].length > 0) k = [k[0], k.slice(1).join('=')];
 						if (k.length > 2) {
 							tab[1] = '<input type="text" name="'+opt+k[0]+'" value="'+k[2]+'" onChange="allowApply()">';
 						} else

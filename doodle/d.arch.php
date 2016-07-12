@@ -146,4 +146,31 @@ function data_archive_rewrite() {
 	return $text_report;
 }
 
+function data_archive_find_by($type, $q) {
+	global $room, $thread_count;
+	if (TIME_PARTS) time_check_point('inb4 search');
+	$n = 0;
+	if (strlen($q) && is_dir($d = DIR_ARCH.$room.'/'))
+	for ($i = (R1?(($i = $thread_count-TRD_PER_PAGE) < 0?0:$i):0); $i <= $thread_count; $i++)
+	if (is_file($f = $d.$i.PAGE_EXT)) {
+		$dn = '';
+		if (preg_match(PAT_CONTENT, $txt = file_get_contents($f), $m)) foreach (explode(NL, $m[1]) as $line) {
+			$tab = explode('	', $line);
+			if ($type == 'name') $t = $tab[1];				//* <- username
+			else if ($type == 'post' && $tab[2][0] != '<') $t = $tab[2];	//* <- text post only
+			else if ($type == 'file' && $tab[2][0] == '<') {
+				$t = $tab[2];
+				$t = substr($t, strrpos($t, '/')+1);			//* <- pic filename
+				$t = substr($t, 0, strrpos($t, '"'));
+			} else $t = '';
+			if (false !== strpos(mb_strtolower($t, ENC), $q)) {
+				$content .= ($dn?'':NL.'	'.$i).NL.$line;
+				$dn .= '='.(++$n);
+			}
+		}
+		if (TIME_PARTS) time_check_point('done '.$i.$dn);
+	}
+	return $content;
+}
+
 ?>

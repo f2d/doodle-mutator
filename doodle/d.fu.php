@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t?$t:T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-07-05 00:42:55'.NL.
+		'To refresh page if broken since 2016-07-12 10:32:03'.NL.
 		'Or user key/options changed: '.$_REQUEST[ME]
 	).'"';
 	header('Etag: '.$q);
@@ -36,7 +36,6 @@ function csv2nl($v, $c = ';', $n = 1) {
 	return $n.implode($c.$n, preg_split("~$d~u", preg_replace("~^$d|$d$~u", '', $v).$c));
 }
 
-function get_req() {return GET_Q ? explode('=', urldecode(end(explode('?', $_SERVER['REQUEST_URI'], 2))), 2) : array();}
 function get_file_name($path, $full = 1, $delim = '/') {return false === ($rr = strrpos($path, $delim)) ? ($full?$path:'') : substr($path, $rr+1);}
 function get_file_ext($path, $full = 0) {return strtolower(get_file_name($path, $full, '.'));}
 function get_room_skip_name($r) {return array(ME.'-skip-'.md5($r = rawurlencode($r)), $r);}
@@ -102,14 +101,12 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 }
 
 function get_draw_app_list() {
-	global $cfg_draw_app, $tmp_draw_app, $tmp_options_input, $u_draw_app;
-	list($n, $res) = get_req();
-	if (!$n || $n == '!') $n = $u_draw_app;
-	if (!in_array($n, $cfg_draw_app)) $n = $cfg_draw_app[0];
-	$a = $tmp_options_input['input']['draw_app'];
+	global $cfg_draw_app, $tmp_draw_app, $tmp_options_input, $u_draw_app, $query;
+	if (!(($n = $query[$da = 'draw_app']) || ($n = $u_draw_app)) || !in_array($n, $cfg_draw_app)) $n = $cfg_draw_app[0];
+	$a = $tmp_options_input['input'][$da];
 	foreach ($cfg_draw_app as $k => $v) $a .= ($k?',':':').NL.($n == $v
 		? $tmp_draw_app[$k]
-		: '<a href="?'.$v.'">'.$tmp_draw_app[$k].'</a>'
+		: '<a href="?'.$da.'='.$v.'">'.$tmp_draw_app[$k].'</a>'
 	);
 	$f = $n;
 	if (false !== ($s = strrpos($n, '.'))) $n = substr($n, 0, $s); else $f .= DRAW_DEFAULT_APP_EXT;	//* <- fix to fit <script src=$a>
@@ -118,7 +115,7 @@ function get_draw_app_list() {
 }
 
 function get_draw_vars($v = '') {
-	global $cfg_draw_vars, $tmp_wh, $tmp_whu, $u_draw_max_undo, $u_opts;
+	global $cfg_draw_vars, $tmp_wh, $tmp_whu, $u_draw_max_undo, $u_opts, $query;
 	$vars = ($v?"$v;":'').DRAW_REST.
 		';keep_prefix='.DRAW_PERSISTENT_PREFIX
 	.($u_opts['save2common']?'':
@@ -127,8 +124,7 @@ function get_draw_vars($v = '') {
 	foreach ($cfg_draw_vars as $k => $v) {
 		if (($i = ${'u_'.$v}) || ($i = get_const(strtoupper($v)))) $vars .= ";$k=$i";
 	}
-	list($n, $res) = get_req();
-	if ($n && $n != '!' && $res && strpos($res, 'x')) $wh = explode('x', $res);
+	if (($res = $query['draw_res']) && strpos($res, 'x')) $wh = explode('x', $res);
 	foreach (array('DEFAULT_', 'LIMIT_') as $i => $j)
 	foreach ($tmp_whu as $k => $l) {
 		$p = $tmp_wh[$k].($i?'l':'');
@@ -199,13 +195,7 @@ function optimize_pic($filepath) {
 	}
 }
 
-
-
-
 //* front end templates -------------------------------------------------------
-
-
-
 
 function indent($t, $n = 0) {
 	return !strlen($t = trim($t)) || (!$n && false === strpos($t, NL))
@@ -229,6 +219,7 @@ function get_template_form($a, $min = 0, $max = 0, $area = 0, $check = 0) {
 		,	0 => ' method="post"'
 		) as $k => $v) if (!$k || $name[0] == $k) {
 			$method = $v;
+			if ($k == '?' && is_array($hint)) $name = implode(',', array_keys($hint)); else
 			if ($k) $name = substr($name, 1);
 			break;
 		}
@@ -240,6 +231,7 @@ function get_template_form($a, $min = 0, $max = 0, $area = 0, $check = 0) {
 		) as $k => $v) $$k = $GLOBALS["tmp_$name$v"];
 		if ($name) $name = ' name="'.$name.'"';
 	}
+	if (is_array($hint)) foreach ($hint as $k => $v) if (is_array($v)) $hint[$k] = reset($v);
 	if ($min||$max) $name .= ' pattern="\s*(\S\s*){'.($min?$min:0).','.($max?$max:'').'}"';
 	if ($name && $plhd) $name .= ' placeholder="'.$plhd.'"';
 	$name .= ($GLOBALS['u_opts']['focus']?'':' autofocus').' required';
@@ -362,6 +354,8 @@ function get_template_page($t, $NOS = 0) {
 .'</body>
 </html>';
 }
+
+//* ---------------------------------------------------------------------------
 
 $tmp_wh = 'wh';
 $tmp_whu = array('WIDTH','HEIGHT');
