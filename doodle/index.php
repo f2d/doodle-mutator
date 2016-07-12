@@ -476,6 +476,8 @@ Target$op$t$ed"
 
 //* archive posts search ------------------------------------------------------
 
+			$search = array();
+			$research = '';
 			foreach ($tmp_archive_find_by as $k => $v) if (array_key_exists($k, $query) && strlen($q = $query[$k])) {
 				if (
 					!mb_check_encoding($q, ENC)
@@ -489,17 +491,22 @@ Target$op$t$ed"
 						break;
 					}
 				}
+				if (strlen($q = mb_strtolower(trim_post($q, FIND_MAX_LENGTH), ENC))) {
+					$search[$k] = $q;
+					$research .= ($research?',
+':' ').(is_array($v)?end($v):$v).': <a data-by="'.$k.'">'.htmlspecialchars($q).'</a>';
+				}
+			}
+			if ($search) {
 				$task .= '
-<p class="hint">'.$tmp_archive_found.' '.(is_array($v)?end($v):$v).': <a id="r">'.$q.'</a></p>';
-				$q = mb_strtolower(trim_post($q, FIND_MAX_LENGTH), ENC);
-				if (strlen($q) && ($q = data_archive_find_by($k, $q))) $content = '|||'.$q;	//* <- to keep JS happy for now
+<p class="hint" id="research">'.indent($tmp_archive_found.$research).'</p>';
+				$content = '|||';	//* <- to keep JS happy for now
+				if ($q = data_archive_find_by($search)) $content .= $q;
 				else $task .= $tmp_empty;
-				break;
-			} else $q = '';
+			} else {
 
 //* archive threads list ------------------------------------------------------
 
-			if (!strlen($q)) {
 				if (($i = (R1?($thread_count-TRD_PER_PAGE):0)) < 0) $i = 0;
 				$content = DIR_THUMB.'|'.$thread_count.'|'.(R1?TRD_PER_PAGE.'|'.$i:$u_per_page).($u_key?'':'
 			<!-- static link for scriptless bots, last in chain -->

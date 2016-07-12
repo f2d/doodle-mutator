@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t?$t:T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-07-12 10:32:03'.NL.
+		'To refresh page if broken since 2016-07-12 14:00:00'.NL.
 		'Or user key/options changed: '.$_REQUEST[ME]
 	).'"';
 	header('Etag: '.$q);

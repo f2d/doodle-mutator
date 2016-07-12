@@ -3,9 +3,19 @@
 function data_get_visible_archives() {
 	global $u_flag;
 	$a = array(0);
+	$h = get_const('ROOM_HIDE');
 	if (is_dir($da = DIR_ARCH))
-	foreach (scandir($da) as $r) if (($u_flag['god'] || !ROOM_HIDE || ROOM_HIDE != $r[0]) && trim($r, '.')
-	&& ($mt = data_get_archive_mtime($r))) {
+	foreach (scandir($da) as $r) if (
+		(
+			GOD
+		||	$u_flag['mod']
+		||	$u_flag['mod_'.$r]
+		||	!$h
+		||	$h != $r[0]
+		)
+	&&	trim($r, '.')
+	&&	($mt = data_get_archive_mtime($r))
+	) {
 		$a[$r] = array(data_get_archive_count($r, 1), $mt);
 		if ($a[0] < $mt) $a[0] = $mt;
 	}
@@ -86,18 +96,25 @@ function data_archive_full_threads($threads) {
 	$c = data_get_archive_count();
 	foreach ($threads as $f) {
 		$th = $b.(++$c).THUMB_EXT;
-		if (is_file($f[2]) && data_put_thumb($f[2], $th, THUMB_MAX_WIDTH, THUMB_MAX_HEIGHT)) {
+		if (
+			is_file($f[2])
+		&&	data_put_thumb($f[2], $th, THUMB_MAX_WIDTH, THUMB_MAX_HEIGHT)
+		) {
 			optimize_pic($th);
 		} else copy(NAMEPRFX.THUMB_EXT, $th);
-		if (file_put_contents($a.$c.PAGE_EXT, data_get_template_page($room, $c, $f[1]))
-	//	&& unlink($f[0])
-		&& data_del_thread($f[0])	//* <- clean up comments, etc
+		if (
+			file_put_contents($a.$c.PAGE_EXT, data_get_template_page($room, $c, $f[1]))
+	//	&&	unlink($f[0])
+		&&	data_del_thread($f[0])	//* <- clean up comments, etc
 		) ++$done_count;
 	}
 	data_put(1, $c);
-	if (R1 && R1_DEL
-	&& ($k = data_get_archive_count(0, 1))	//* <- check number to keep 1 page
-	&& (($k -= TRD_PER_PAGE) > 0)) {
+	if (
+		R1
+	&&	R1_DEL
+	&&	($k = data_get_archive_count(0, 1))	//* <- check number to keep 1 page
+	&&	($k -= TRD_PER_PAGE) > 0
+	) {
 		$c -= TRD_PER_PAGE;
 		while ($k--) {
 			if (is_file($f = $a.$c.PAGE_EXT) && data_del_thread($f, false, 1)) ++$gone_count;
@@ -146,24 +163,40 @@ function data_archive_rewrite() {
 	return $text_report;
 }
 
-function data_archive_find_by($type, $q) {
+function data_archive_find_by($where, $what = '') {
 	global $room, $thread_count;
+
+	if (!is_array($n = $where)) {
+		$n = array();
+		$n[$where] = $what;
+	}
+	if (!count($where = array_filter($n, 'strlen')) || !is_dir($d = DIR_ARCH.$room.'/')) return '';
+
 	if (TIME_PARTS) time_check_point('inb4 search');
 	$n = 0;
-	if (strlen($q) && is_dir($d = DIR_ARCH.$room.'/'))
 	for ($i = (R1?(($i = $thread_count-TRD_PER_PAGE) < 0?0:$i):0); $i <= $thread_count; $i++)
 	if (is_file($f = $d.$i.PAGE_EXT)) {
 		$dn = '';
 		if (preg_match(PAT_CONTENT, $txt = file_get_contents($f), $m)) foreach (explode(NL, $m[1]) as $line) {
+			$found = 0;
 			$tab = explode('	', $line);
-			if ($type == 'name') $t = $tab[1];				//* <- username
-			else if ($type == 'post' && $tab[2][0] != '<') $t = $tab[2];	//* <- text post only
-			else if ($type == 'file' && $tab[2][0] == '<') {
-				$t = $tab[2];
-				$t = substr($t, strrpos($t, '/')+1);			//* <- pic filename
-				$t = substr($t, 0, strrpos($t, '"'));
-			} else $t = '';
-			if (false !== strpos(mb_strtolower($t, ENC), $q)) {
+			foreach ($where as $type => $what) {
+				$t = '';
+				if ($type == 'name') $t = $tab[1];			//* <- username
+				else
+				if ($tab[2][0] != '<') {
+					if ($type == 'post') $t = $tab[2];		//* <- text-only post content
+				} else {
+					if ($type == 'file') {
+						$t = $tab[2];
+						$t = substr($t, strrpos($t, '/')+1);	//* <- pic filename
+						$t = substr($t, 0, strrpos($t, '"'));
+					} else
+					if ($type == 'used') $t = $tab[3];		//* <- what was used to draw
+				}
+				if (!$t || !($found = (false !== strpos(mb_strtolower($t, ENC), $what)))) continue 2;
+			}
+			if ($found) {
 				$content .= ($dn?'':NL.'	'.$i).NL.$line;
 				$dn .= '='.(++$n);
 			}

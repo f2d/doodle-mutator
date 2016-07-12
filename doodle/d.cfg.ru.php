@@ -10,8 +10,9 @@ $tmp_archive = 'Архив';
 $tmp_archive_find = 'Найти';
 $tmp_archive_find_by = array(
 	'post' => array('описание', 'описанию')
-,	'file' => array('файл', 'файлу')
-,	'name' => array('имя', 'имени')
+,	'file' => array('имя файла', 'имени файла')
+,	'used' => array('информация', 'информации')
+,	'name' => array('имя автора', 'имени автора')
 );
 $tmp_archive_found = 'Результаты поиска по';
 $tmp_archive_hint = 'Скрытые комнаты не показаны.';

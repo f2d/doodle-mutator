@@ -9,9 +9,10 @@ $tmp_announce = array(
 $tmp_archive = 'Archive';
 $tmp_archive_find = 'Find';
 $tmp_archive_find_by = array(
-	'post' => 'description'
-,	'file' => 'file'
-,	'name' => 'name'
+	'post' => 'text post'
+,	'file' => 'file name'
+,	'used' => 'file info'
+,	'name' => 'author name'
 );
 $tmp_archive_found = 'Search results for';
 $tmp_archive_hint = 'Hidden rooms are not shown.';

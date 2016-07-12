@@ -9,7 +9,7 @@
 ,	touch = ('ontouchstart' in document.documentElement)
 ,	v = location.href.match(/\/([^\/]+)\/[^\/]*$/)
 ,	lastDir = (v?v[1]:document.title)
-,	laa, lang = document.documentElement.lang || 'en';
+,	laa, lang = document.documentElement.lang || 'en', g = {};
 
 //* UI translation *-----------------------------------------------------------
 
@@ -21,7 +21,7 @@ if (lang == 'ru') laa = {
 
 //* Utility functions *--------------------------------------------------------
 
-function gn(n,d) {return (d?d:document).getElementsByTagName(n);}
+function gn(n,p) {return (p||document).getElementsByTagName(n);}
 function id(i) {return document.getElementById(i);}
 function fit() {v.content = 'width='+(d.maxWidth = w[d.maxWidth != w[1]?1:0]).replace(/\D+$/,'');}
 function meta(b) {
@@ -164,20 +164,27 @@ var	i,j,k,l,m,t = '	', thread = '', thread_num, alt = 1, img = 1, num = 1
 			,	t: p.textContent.split(',')
 			};
 			findBy(j > 0 ? l.slice(0, j) : 0);
-			if (j = id('r')) {
-				j.href='javascript:resetSearch()';
+			if (
+				(j = id('research'))
+			&&	(j = gn('a', j))
+			&&	(i = j.length)
+			) {
+				while (i--) if (a = j[i]) {
+					a.href = 'javascript:;';
+					a.onclick = resetSearch;
+				}
+				g.f.a = a;
 				window.addEventListener('DOMContentLoaded', resetSearch, false);
 			}
 		}
 	}
 }
 
-function resetSearch() {
-var	a = id('r'), i = gn('input');
-	if (a && i) {
-		(i = i[0]).value = a.textContent;
-		if (a = i.onkeyup) a();
-	}
+function resetSearch(e) {
+	if (e && e.target) e = e.target;
+	if (!(e && e.tagName)) e = g.f.a;
+	g.f.i.value = (e.firstElementChild||e).textContent;
+	if (e = e.getAttribute('data-by')) findBy(e);
 }
 
 function page(p) {
