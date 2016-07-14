@@ -12,6 +12,7 @@ $tmp_archive_find_by = array(
 	'post' => 'text post'
 ,	'file' => 'file name'
 ,	'used' => 'file info'
+,	'time' => 'drawn in time'
 ,	'name' => 'author name'
 );
 $tmp_archive_found = 'Search results for';

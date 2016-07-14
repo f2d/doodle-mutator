@@ -494,7 +494,8 @@ Target$op$t$ed"
 				if (strlen($q = mb_strtolower(trim_post($q, FIND_MAX_LENGTH), ENC))) {
 					$search[$k] = $q;
 					$research .= ($research?',
-':' ').(is_array($v)?end($v):$v).': <a data-by="'.$k.'">'.htmlspecialchars($q).'</a>';
+':' ').(is_array($v)?end($v):$v).': <a name="'.$k.'">'.htmlspecialchars($q).'</a>';
+					$js[0]++;
 				}
 			}
 			if ($search) {

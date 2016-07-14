@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t?$t:T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-07-12 14:00:00'.NL.
+		'To refresh page if broken since 2016-07-14 12:40:00'.NL.
 		'Or user key/options changed: '.$_REQUEST[ME]
 	).'"';
 	header('Etag: '.$q);
@@ -23,7 +23,11 @@ function exit_if_not_mod($t = 0) {
 function get_const($name) {return defined($name) ? constant($name) : '';}
 function str_replace_first($f, $to, $s) {return false === ($pos = strpos($s, $f)) ? $s : substr_replace($s, $to, $pos, strlen($f));}
 function abbr($a, $sep = '_') {foreach ((is_array($a)?$a:explode($sep, $a)) as $word) $r .= $word[0]; return $r;}
-function trim_post($p, $len = 456) {return htmlspecialchars(mb_substr(stripslashes(trim(preg_replace('~\s+~us', ' ', $p))),0,$len,ENC));}
+function trim_post($p, $len = 456) {
+	$s = stripslashes(trim(preg_replace('~\s+~us', ' ', $p)));
+	if ($len > 0) $s = mb_substr($s, 0, $len, ENC);
+	return POST ? htmlspecialchars($s) : $s;
+}
 function trim_room($r) {
 	return strtolower(mb_substr(preg_replace('/\.+/', '.', preg_replace(
 '/[^\w\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}.!-]+/u', '_', trim(trim($r), '\\/')	//* <- add more unicode alphabets to complement \w?
@@ -144,6 +148,15 @@ function get_time_html($t = 0) {
 function get_time_elapsed($t = 0) {
 	$t = explode(' ', $t?$t:microtime());
 	return ($t[1]-T0) + ($t[0]-M0);
+}
+
+function get_time_seconds($t) {
+	if (strrpos($t, ':') > 0) {
+		$sec = 0;
+		foreach (explode(':', $t, 3) as $n) $sec = $sec*60 + intval($n);
+		return ($t[0] == '-'?-$sec:$sec);
+	}
+	return intval($t);
 }
 
 function format_time_units($t) {

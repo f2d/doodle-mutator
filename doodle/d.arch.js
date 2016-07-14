@@ -171,20 +171,20 @@ var	i,j,k,l,m,t = '	', thread = '', thread_num, alt = 1, img = 1, num = 1
 			) {
 				while (i--) if (a = j[i]) {
 					a.href = 'javascript:;';
-					a.onclick = resetSearch;
+					a.onclick = setSearch;
+					g.f.a = a;
 				}
-				g.f.a = a;
-				window.addEventListener('DOMContentLoaded', resetSearch, false);
+				window.addEventListener('DOMContentLoaded', setSearch, false);
 			}
 		}
 	}
 }
 
-function resetSearch(e) {
+function setSearch(e,f) {
 	if (e && e.target) e = e.target;
 	if (!(e && e.tagName)) e = g.f.a;
-	g.f.i.value = (e.firstElementChild||e).textContent;
-	if (e = e.getAttribute('data-by')) findBy(e);
+	g.f.i.value = decodeHTMLSpecialChars((e.firstElementChild||e).textContent);
+	if (f?f:f = e.name) findBy(f);
 }
 
 function page(p) {

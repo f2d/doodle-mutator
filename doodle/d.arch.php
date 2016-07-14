@@ -164,24 +164,59 @@ function data_archive_rewrite() {
 }
 
 function data_archive_find_by($where, $what = '') {
-	global $room, $thread_count;
-
-	if (!is_array($n = $where)) {
-		$n = array();
-		$n[$where] = $what;
+	global $room;
+	$where = array_filter(is_array($where) ? $where : array($where => $what), 'strlen');
+	if ($t = $where['time']) {
+		$time_ranges = array();
+		$signs = str_split('<>-');
+		$min = false;
+		while (preg_match('~^(\D*?)(-)?(\d+(:+\d+)*)~', $t, $match)) {
+			$t = substr($t, strlen($match[0]));
+			$prefix = $match[1];
+			$minus = $match[2];
+			if ($minus && !$prefix && false !== $min) {$prefix = '-'; $minus = '';}
+			$v = get_time_seconds($minus.$match[3]);
+			$k = '';
+			foreach ($signs as $sign) if (false !== strpos($prefix, $sign)) {$k = $sign; break;}
+			if ('-' === $k && false !== $min) {
+				array_pop($time_ranges);
+				$time_ranges[] = (
+					$min < $v
+					? array('min' => $min, 'max' => $v)
+					: array('min' => $v, 'max' => $min)
+				);
+				$min = false;
+			} else {
+				if ($k) $min = false;
+				else {
+					$k = '=';
+					$min = $v;
+				}
+				$time_ranges[] = array(
+					'operator' => $k
+				,	'value' => $v
+				);
+			}
+		}
+		if (!count($time_ranges)) unset($where['time']);
 	}
-	if (!count($where = array_filter($n, 'strlen')) || !is_dir($d = DIR_ARCH.$room.'/')) return '';
-
+	if (!count($where) || !is_dir($d = DIR_ARCH.$room.'/')) return '';
 	if (TIME_PARTS) time_check_point('inb4 search');
-	$n = 0;
-	for ($i = (R1?(($i = $thread_count-TRD_PER_PAGE) < 0?0:$i):0); $i <= $thread_count; $i++)
-	if (is_file($f = $d.$i.PAGE_EXT)) {
-		$dn = '';
-		if (preg_match(PAT_CONTENT, $txt = file_get_contents($f), $m)) foreach (explode(NL, $m[1]) as $line) {
-			$found = 0;
+	$n_found = 0;
+	$elen = strlen(PAGE_EXT);
+	foreach (scandir($d) as $f) if (
+		trim($f, '.')
+	&&	substr($f, -$elen) == PAGE_EXT
+	&&	is_file($path = $d.$f)
+	&&	preg_match(PAT_CONTENT, file_get_contents($path), $match)
+	) {
+		$i = intval($f);
+		$n_check = '';
+		foreach (explode(NL, $match[1]) as $line) {
+			$found = $draw_time = '';
 			$tab = explode('	', $line);
 			foreach ($where as $type => $what) {
-				$t = '';
+				$t = $draw_time_check = '';
 				if ($type == 'name') $t = $tab[1];			//* <- username
 				else
 				if ($tab[2][0] != '<') {
@@ -192,16 +227,47 @@ function data_archive_find_by($where, $what = '') {
 						$t = substr($t, strrpos($t, '/')+1);	//* <- pic filename
 						$t = substr($t, 0, strrpos($t, '"'));
 					} else
-					if ($type == 'used') $t = $tab[3];		//* <- what was used to draw
+					if ($type != 'post') {
+						$t = $tab[3];				//* <- what was used to draw
+						if ($type == 'time') {
+							$draw_time_check = 1;
+							if (preg_match('~^[\d:-]+~i', $t, $t)) {
+								$t = $t[0];
+								if (strrpos($t, '-')) {
+									$t1 = $t0 = false;
+									foreach (explode('-', $t) as $n) if (strlen($n)) {
+										if (false === $t0) $t0 = $n;
+										$t1 = $n;
+									}
+									$t = intval(($t1-$t0)/1000);	//* <- msec. from JS
+								} else {
+									$t = get_time_seconds($t);
+								}
+								foreach ($time_ranges as $cond) if (
+									array_key_exists($k = 'operator', $cond)
+									? (
+										($cond[$k] == '=' && $t == $cond['value'])
+									||	($cond[$k] == '<' && $t < $cond['value'])
+									||	($cond[$k] == '>' && $t > $cond['value'])
+									)
+									: ($t >= $cond['min'] && $t <= $cond['max'])
+								) {
+									$draw_time = "(drawn in $t sec.)";
+									break;
+								}
+							}
+						}
+					}
 				}
-				if (!$t || !($found = (false !== strpos(mb_strtolower($t, ENC), $what)))) continue 2;
+				$found = ($draw_time_check ? $draw_time : ($t && false !== strpos(mb_strtolower(html_entity_decode($t), ENC), $what)));
+				if (!$found) continue 2;
 			}
 			if ($found) {
-				$content .= ($dn?'':NL.'	'.$i).NL.$line;
-				$dn .= '='.(++$n);
+				$content .= ($n_check?'':NL.'	'.$i).NL.$line;
+				$n_check .= '='.(++$n_found).$draw_time;
 			}
 		}
-		if (TIME_PARTS) time_check_point('done '.$i.$dn);
+		if (TIME_PARTS) time_check_point('done '.$i.$n_check);
 	}
 	return $content;
 }
