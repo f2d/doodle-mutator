@@ -34,12 +34,13 @@ function trim_room($r) {
 	)), 0, ROOM_NAME_MAX_LENGTH, ENC));
 }
 
-function csv2nl($v, $c = ';', $n = 1) {
-	$d = "\s*[$c]+\s*";
-	$n = NL.($n > 0?str_repeat("\t", $n):'');
-	return $n.implode($c.$n, preg_split("~$d~u", preg_replace("~^$d|$d$~u", '', $v).$c));
+function is_not_dot($path) {return !!trim($path, './\\');}
+function get_dir_contents($path, $num_sort = 0) {
+	$a = (is_dir($path) ? array_filter(scandir($path), 'is_not_dot') : array());
+	if ($a && $num_sort) natcasesort($a);
+	return $a;
 }
-
+function get_file_lines($path) {return is_file($path) ? file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : array();}
 function get_file_name($path, $full = 1, $delim = '/') {return false === ($rr = strrpos($path, $delim)) ? ($full?$path:'') : substr($path, $rr+1);}
 function get_file_ext($path, $full = 0) {return strtolower(get_file_name($path, $full, '.'));}
 function get_room_skip_name($r) {return array(ME.'-skip-'.md5($r = rawurlencode($r)), $r);}
@@ -49,16 +50,15 @@ function get_room_skip_list($k = '') {
 	:	array();
 }
 
-function fln($f) {return file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);}
 function get_dir_top_file_id($d) {
 	$i = 0;
-	if (is_dir($d)) foreach (scandir($d) as $f) if (preg_match('~^\d+~', $f, $m) && $i < ($n = intval($m[0]))) $i = $n;
+	foreach (get_dir_contents($d) as $f) if (($n = intval($f)) && $i < $n) $i = $n;
 	return $i;
 }
 
 function get_dir_top_filemtime($d) {
 	$t = 0;
-	if (is_dir($d)) foreach (scandir($d) as $f) if (trim($f, '.') && $t < ($mt = filemtime("$d/$f"))) $t = $mt;
+	foreach (get_dir_contents($d) as $f) if (($m = filemtime("$d/$f")) && $t < $m) $t = $m;
 	return $t;
 }
 
@@ -156,7 +156,7 @@ function get_time_seconds($t) {
 		foreach (explode(':', $t, 3) as $n) $sec = $sec*60 + intval($n);
 		return ($t[0] == '-'?-$sec:$sec);
 	}
-	return intval($t);
+	return floor($t);	//* <- 32-bit signed integer overflow workaround
 }
 
 function format_time_units($t) {
@@ -218,6 +218,12 @@ function indent($t, $n = 0) {
 		,	NL.str_repeat("\t", $n > 0?$n:1).'$1'
 		,	$t
 		).NL;
+}
+
+function csv2nl($v, $c = ';', $n = 1) {
+	$d = "\s*[$c]+\s*";
+	$n = NL.($n > 0?str_repeat("\t", $n):'');
+	return $n.implode($c.$n, preg_split("~$d~u", preg_replace("~^$d|$d$~u", '', $v).$c));
 }
 
 function get_template_form($a, $min = 0, $max = 0, $area = 0, $check = 0) {

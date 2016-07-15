@@ -113,23 +113,23 @@ if (GET_Q && ($s = substr($_SERVER['REQUEST_URI'], GET_Q+1))) {
 
 if ($qdir) {
 	if ($l = mb_strlen($room = trim_room($room_url = urldecode($_REQUEST['room'])))) define(R1, $l = (mb_strlen(ltrim($room, '.')) <= 1));
-} else if ($u_key) {
-	if (!$u_room_home) $qd_opts = 1;
-
+} else {
+	if ($u_key && !$u_room_home) $qd_opts = 1;
+	if (GOD) {
 //* rewrite htaccess if none/changed, when logged in and viewing root folder:
-	$start_mark = '# 8<-- start mark: '.NAMEPRFX.', version: ';
-	$end_mark = '# 8<-- end mark: '.NAMEPRFX.', placed automatically: ';
-	$new_mark = $start_mark.ROOTPRFX.' 2016-07-11 17:04';	//* <- change tail here to invalidate old version
-	if (
-		!($old = (is_file($f = '.htaccess') ? trim(file_get_contents($f)) : ''))
-	||	false === strpos($old, $new_mark)
-	||	false === strpos($old, $end_mark)
-	) {
-		$n = 'NO_CACHE';
-		$e_cond = " env=$n";
-		$e_set = "E=$n:1";
-		$d = '('.implode('|', $cfg_dir).')(/([^/]+))?';
-		$new = $new_mark.' -- Do not touch these marks. Only delete them along with the whole block.
+		$start_mark = '# 8<-- start mark: '.NAMEPRFX.', version: ';
+		$end_mark = '# 8<-- end mark: '.NAMEPRFX.', placed automatically: ';
+		$new_mark = $start_mark.ROOTPRFX.' 2016-07-11 17:04';	//* <- change tail here to invalidate old version
+		if (
+			!($old = (is_file($f = '.htaccess') ? trim(file_get_contents($f)) : ''))
+		||	false === strpos($old, $new_mark)
+		||	false === strpos($old, $end_mark)
+		) {
+			$n = 'NO_CACHE';
+			$e_cond = " env=$n";
+			$e_set = "E=$n:1";
+			$d = '('.implode('|', $cfg_dir).')(/([^/]+))?';
+			$new = $new_mark.' -- Do not touch these marks. Only delete them along with the whole block.
 <IfModule rewrite_module>
 	RewriteEngine On
 	RewriteBase '.ROOTPRFX.'
@@ -155,23 +155,24 @@ if ($qdir) {
 	Header unset Vary'.$e_cond.'
 </IfModule>
 '.$end_mark.date(TIMESTAMP, T0).' -- Manual changes inside will be lost on the next update.';
-		if ($old) {
-			$b_found = (false !== ($i = strpos($old, $start_mark)));
-			$before = ($b_found ? trim(substr($old, 0, $i)) : '');
+			if ($old) {
+				$b_found = (false !== ($i = strpos($old, $start_mark)));
+				$before = ($b_found ? trim(substr($old, 0, $i)) : '');
 
-			$a_found = (false !== ($i = strpos($old, $end_mark)));
-			$after = ($a_found && false !== ($i = strpos($old, NL, $i)) ? trim(substr($old, $i)) : '');
+				$a_found = (false !== ($i = strpos($old, $end_mark)));
+				$after = ($a_found && false !== ($i = strpos($old, NL, $i)) ? trim(substr($old, $i)) : '');
 
-			if ($b_found || $a_found) $new = ($before?$before.NL.NL:'').$new.($after?NL.NL.$after:'');
-			else $new .= NL.NL.$old;
-		} else $old = 'none';
-		data_log_adm(file_put_contents($f, $new) ? "$f updated, old:
+				if ($b_found || $a_found) $new = ($before?$before.NL.NL:'').$new.($after?NL.NL.$after:'');
+				else $new .= NL.NL.$old;
+			} else $old = 'none';
+			data_log_adm(file_put_contents($f, $new) ? "$f updated, old:
 
 $old
 
 ---- new: ----
 
 $new" : 'Failed to update '.$f);
+		}
 	}
 }
 
@@ -528,15 +529,14 @@ Target$op$t$ed"
 			,	ROOM_NAME_MIN_LENGTH
 			);
 			$task_data['filter'] = 2;
-			if ($vr = data_get_visible_archives()) {
-				$mt = array_shift($vr);
-				exit_if_not_mod($mt);
+			if ($visible = data_get_visible_archives()) {
+				exit_if_not_mod($visible['last']);
 
 				$content = '
 '.$tmp_arch_last.'	'.$tmp_arch_count;
 
-				foreach ($vr as $room => $n) $content .= '
-'.$n[1].'	'.$n[0].'	<a href="'.$rda.$room.'/">'.$room.'</a>';
+				foreach ($visible['list'] as $room => $n) $content .= '
+'.$n['last'].'	'.$n['count'].'	<a href="'.$rda.$room.'/">'.$room.'</a>';
 				$room = '';
 				$js[0]++;
 			}
@@ -712,8 +712,7 @@ preg_replace('~\v+~u', '<br>', NL.htmlspecialchars($a)))));
 						$a = $a[1];
 if (TIME_PARTS) time_check_point('ignore user abort');
 						if ($a == 0) {
-							if (is_dir($d = DIR_PICS))
-							foreach (scandir($d) as $f) if (trim($f, '.') && is_file($old = $d.$f)) {
+							foreach (get_dir_contents($d = DIR_PICS) as $f) if (is_file($old = $d.$f)) {
 								$new = get_pic_subpath($f, 1);
 								$t .=
 NL.(++$a)."	$old => $new	".($old == $new?'same':(rename($old, $new)?'OK':'fail'));
@@ -745,7 +744,7 @@ if (TIME_PARTS && $a) time_check_point("done $a pics");
 					if ($etc == 3) {
 						$js['.mod'] = 0;
 					//	$a = ($u_opts['active']?'a':'').($u_opts['count']?'':'c');
-						$content .= "$tmp_mod_user_info:$tmp_mod_user_hint::ugc
+						if ($t) $content .= "$tmp_mod_user_info:$tmp_mod_user_hint::ugc
 0,u	&nbsp;	 	$u_num.
 
 1,".trim(
@@ -754,7 +753,7 @@ preg_replace('~(\V+)	(\V+)	(\V+)\+\V+(	\V+?)~Uu', '$1	$3$4	$1. $2',//* <- transf
 NL.$t)));
 					} else
 					if ($etc == 4) {
-						$content .= 'ref'.NL.
+						if ($t) $content .= 'ref'.NL.
 preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data fields
 					}
 				}
@@ -779,7 +778,11 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data
 //* active room task and visible content --------------------------------------
 
 		if ($room) {
-			$dont_change = ($y = $query['!']) && ($y != 'trd_arch');
+			foreach ($query as $k => $v) if (substr($k, 0, 4) == 'draw') {
+				$draw_query = 1;
+				break;
+			}
+			$dont_change = ((($y = $query['!']) && ($y != 'trd_arch')) || $draw_query);
 			$skip_list = get_room_skip_list();
 
 if (TIME_PARTS) time_check_point('inb4 aim lock');
@@ -789,25 +792,21 @@ if (TIME_PARTS) time_check_point('inb4 aim lock');
 			,	$skip_list
 			,	$dont_change		//* <- after POST with error
 			);
-			list($thread, $report, $last) = data_get_visible_threads();
+			$visible = data_get_visible_threads();
 			data_unlock();
 if (TIME_PARTS) time_check_point('got visible data, unlocked');
 
-			$t = $target['time'];
-			exit_if_not_mod($t > $last || T0 < $last?$t:$last);
+			exit_if_not_mod(max($t = $target['time'], $visible['last']));
 			$task_time = ($t?$t:T0);	//* <- UTC seconds
 
 			$x = 'trd_max';
-			if (GET_Q && !$target['task'] && (!$y || false === strpos($y, $x))) {
-				foreach ($query as $k => $v) if (substr($k, 0, 4) == 'draw') {
-					if (data_is_thread_cap()) $query['!'] = ($y?$y.'!':'').$x;
-					else $draw_free = 1;
-					break;
-				}
+			if ($draw_query && !$target['task'] && (!$y || false === strpos($y, $x))) {
+				if (data_is_thread_cap()) $query['!'] = ($y?$y.'!':'').$x;
+				else $draw_free = 1;
 			}
 			$desc = ($target['pic'] || !($target['task'] || $draw_free));
 			if (MOD) $js['.mod'] = 0;
-			if ($thread) {
+			if ($visible['threads']) {
 				$content = (MOD
 ? $tmp_mod_post_hint   .':'.$tmp_mod_user_hint : (R1 || $u_flag['nor']?':'
 : $tmp_report_post_hint.':'.$tmp_report_user_hint)).':'.ROOTPRFX.DIR_PICS.':';
@@ -816,11 +815,14 @@ if (TIME_PARTS) time_check_point('got visible data, unlocked');
 					$u_opts['active']
 				,	!$u_opts['count']
 				,	$desc && $u_opts['kbox']
-				,	GOD, MOD, PIC_SUB) as $k => $v) if ($v) $content .= $flag[$k];
+				,	GOD
+				,	MOD
+				,	PIC_SUB
+				) as $k => $v) if ($v) $content .= $flag[$k];
 				$a = array();
 				$b = '<br>';
 if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
-				foreach ($thread as $tid => $post) {
+				foreach ($visible['threads'] as $tid => $post) {
 					$t = '';
 					$k = $post[count($post)][1].'_'.$tid;
 					foreach ($post as $postnum => $tab) {
@@ -847,7 +849,7 @@ if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
 							if (count($tab) > 6) $ta[] = $tab[6];	//* <- user-agent
 						}
 					//	if (MOD)
-						if (is_array($r = $report[$tid][$postnum])) {
+						if (is_array($r = $visible['reports'][$tid][$postnum])) {
 							foreach ($r as $col => $l)
 							foreach ($l as $time => $line)
 							$ta[$col+1] .= "<br>$time: $line";
@@ -860,7 +862,7 @@ if (TIME_PARTS) time_check_point('done trd '.$k);
 				ksort($a);
 				$content .= implode(NL, array_reverse($a));
 if (TIME_PARTS) time_check_point('after sort + join');
-				if (GOD) {$task_data['filter'] = 1;}
+				if (GOD) $task_data['filter'] = 1;
 			} else if (GOD) $content = "$tmp_empty:$tmp_empty::vg
 0,0	0	&mdash;	";
 			$t = $target['task'];
@@ -902,28 +904,28 @@ if (TIME_PARTS) time_check_point('after sort + join');
 
 //* active rooms list ---------------------------------------------------------
 
-			if ($vr = data_get_visible_rooms()) {
-				exit_if_not_mod(array_shift($vr));
+			if ($visible = data_get_visible_rooms()) {
+				exit_if_not_mod($visible['last']);
 
 				$rda = ROOTPRFX.DIR_ARCH;
 				$s = (($c = $u_opts['count'])?' ':', ');
 				$content = "$rda*$s*$cfg_room".($c?'':"
 $tmp_room_count_threads	$tmp_room_count_posts");
-				foreach ($vr as $rn => $n) {
+				foreach ($visible['list'] as $room => $n) {
 					if ($c) {
-						if ($n[7]) foreach ($n[7] as $v) $rn .= $s.($v?'?':0);
+						if ($n[7]) foreach ($n[7] as $v) $room .= $s.($v?'?':0);
 						$content .=
-NL.($n[2]?'*':NB).'	'.NB."	$rn";
+NL.($n[2]?'*':NB).'	'.NB."	$room";
 					} else {
-						if ($n[7]) $rn .= $s.implode($s, $n[7]);	//* <- colored counts of reports, frozen, etc
+						if ($n[7]) $room .= $s.implode($s, $n[7]);	//* <- colored counts of reports, frozen, etc
 						if ($n[2]) $n[1] .= $s.$n[2];
 						if (!$u_opts['times']) {
 							if ($n[2]
-							&&  $n[3]) $n[1] .= $s.$n[3];	//* <- last archived
-							if ($n[6]) $n[5] .= $s.$n[6];	//* <- last active post
+							&&  $n[3]) $n[1] .= $s.$n[3];		//* <- last archived
+							if ($n[6]) $n[5] .= $s.$n[6];		//* <- last active post
 						}
 						$content .=
-NL."$n[0]$s$n[1]	$n[4]$s$n[5]	$rn";
+NL."$n[0]$s$n[1]	$n[4]$s$n[5]	$room";
 					}
 					if ($n[8]) {
 						foreach ($n[8] as $k => $v) if ($k) $n[8][$k] = "$tmp_announce[$k]: $v"; else $content .= '/';
@@ -931,6 +933,7 @@ NL."$n[0]$s$n[1]	$n[4]$s$n[5]	$rn";
 '/'.preg_replace('~\s+~u', ' ', preg_replace('~<[^>]*>~', '', preg_replace('~<br[ /]*>~i', NL, implode(NL, $n[8]))));	//* <- announce/frozen
 					}
 				}
+				$room = '';
 			}
 			$task = get_template_form($qredir, ROOM_NAME_MIN_LENGTH);
 			$task_data['filter'] = 2;

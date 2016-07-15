@@ -2,10 +2,10 @@
 
 function data_get_visible_archives() {
 	global $u_flag;
-	$a = array(0);
+	$last = 0;
+	$a = array();
 	$h = get_const('ROOM_HIDE');
-	if (is_dir($da = DIR_ARCH))
-	foreach (scandir($da) as $r) if (
+	foreach (get_dir_contents($da = DIR_ARCH) as $r) if (
 		(
 			GOD
 		||	$u_flag['mod']
@@ -13,13 +13,18 @@ function data_get_visible_archives() {
 		||	!$h
 		||	$h != $r[0]
 		)
-	&&	trim($r, '.')
 	&&	($mt = data_get_archive_mtime($r))
 	) {
-		$a[$r] = array(data_get_archive_count($r, 1), $mt);
-		if ($a[0] < $mt) $a[0] = $mt;
+		if ($last < $mt) $last = $mt;
+		$a[$r] = array(
+			'last' => $mt
+		,	'count' => data_get_archive_count($r, 1)
+		);
 	}
-	return ($a[0]?$a:0);
+	return $a ? array(
+		'last' => $last
+	,	'list' => $a
+	) : $a;
 }
 
 function data_get_thumb($src, $xMax, $yMax) {
@@ -129,16 +134,15 @@ function data_archive_full_threads($threads) {
 
 function data_archive_rewrite() {
 	$i = '	<img src="';			//* <- uniq for pics in posts
-	if (!is_dir($da = DIR_ARCH)) return;
-	$sd1 = scandir($da);
-	natsort($sd1);
-	foreach ($sd1 as $dn) if (trim($dn, '.') && is_dir($d = "$da$dn/")) {
+	$a = 0;
+	$elen = strlen(PAGE_EXT);
+	foreach (get_dir_contents($da = DIR_ARCH, 1) as $room) {
 		$t = 0;
-		$sd2 = scandir($d);
-		natsort($sd2);
-		foreach ($sd2 as $fn) if (trim($fn, '.')
-		&& strpos($fn, PAGE_EXT) && is_file($f = $d.$fn)
-		&& preg_match(PAT_CONTENT, $old = file_get_contents($f), $m)) {
+		foreach (get_dir_contents($d = "$da$room/", 1) as $f) if (
+			substr($f, -$elen) == PAGE_EXT
+		&&	is_file($path = $d.$f)
+		&&	preg_match(PAT_CONTENT, $old = file_get_contents($path), $m)
+		) {
 			$x = explode($i, $m[1]);
 			$new = array_shift($x);
 			foreach ($x as $y) {
@@ -146,25 +150,26 @@ function data_archive_rewrite() {
 				$n = substr($src, strrpos($src, '/')+1);	//* <- pic filename
 				$new .= $i.get_pic_url($n).substr($y, $q);	//* <- new web path
 			}
-			$new = data_get_template_page($dn, rtrim($fn, PAGE_EXT), $new);
+			$new = data_get_template_page($room, intval($f), $new);
 			if ($old == $new) $x = 'same';
 			else {
-				if (!rename($f, $x = "$f.bak")) $x = 'rename old to bak failed'; else
-				if (!($sz = file_put_contents($f, $new))) $x = 'save new failed'; else
+				if (!rename($path, $x = "$path.bak")) $x = 'rename old to bak failed'; else
+				if (!($sz = file_put_contents($path, $new))) $x = 'save new failed'; else
 				if (!unlink($x)) $x = 'delete old failed'; else
 				$x = strlen($old)." => $sz bytes";
 			}
-			$text_report .= NL."$f	$x";
+			$text_report .= NL."$path	$x";
 			++$t;
 		}
 		++$a;
-		if (TIME_PARTS && $t) time_check_point("done $a: $d, $t threads");
+if (TIME_PARTS && $t) time_check_point("done $a: $d, $t threads");
 	}
 	return $text_report;
 }
 
 function data_archive_find_by($where, $what = '') {
 	global $room;
+if (TIME_PARTS) time_check_point('inb4 archive search prep');
 	$where = array_filter(is_array($where) ? $where : array($where => $what), 'strlen');
 	if ($t = $where['time']) {
 		$time_ranges = array();
@@ -198,15 +203,14 @@ function data_archive_find_by($where, $what = '') {
 				);
 			}
 		}
-		if (!count($time_ranges)) unset($where['time']);
+		if (!$time_ranges) unset($where['time']);
 	}
-	if (!count($where) || !is_dir($d = DIR_ARCH.$room.'/')) return '';
-	if (TIME_PARTS) time_check_point('inb4 search');
+	if (!$where || !($files = get_dir_contents($d = DIR_ARCH.$room.'/', 1))) return false;
 	$n_found = 0;
 	$elen = strlen(PAGE_EXT);
-	foreach (scandir($d) as $f) if (
-		trim($f, '.')
-	&&	substr($f, -$elen) == PAGE_EXT
+if (TIME_PARTS) time_check_point('inb4 archive search iteration'.NL);
+	foreach ($files as $f) if (
+		substr($f, -$elen) == PAGE_EXT
 	&&	is_file($path = $d.$f)
 	&&	preg_match(PAT_CONTENT, file_get_contents($path), $match)
 	) {
@@ -267,7 +271,7 @@ function data_archive_find_by($where, $what = '') {
 				$n_check .= '='.(++$n_found).$draw_time;
 			}
 		}
-		if (TIME_PARTS) time_check_point('done '.$i.$n_check);
+if (TIME_PARTS) time_check_point('done '.$i.$n_check);
 	}
 	return $content;
 }
