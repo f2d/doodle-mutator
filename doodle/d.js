@@ -49,7 +49,6 @@ if (lang == 'ru') la = {
 ,	time: 'Нарисовано за'
 ,	using: 'с помощью'
 ,	resized: 'Размер'	//'\nИзображение уменьшено.\nРазмер'
-,	groups: 'Групп'
 ,	report: 'Жалоб'
 ,	active: 'Активных нитей'
 ,	frozen: 'Замороженные нити'
@@ -70,6 +69,10 @@ if (lang == 'ru') la = {
 	,	self: 'Себя'
 	,	each: 'Всех'
 	,	total: 'Всего'
+	}
+,	groups: {
+		u: 'Групп по дням'
+	,	ref: 'Групп по доменам'
 	}
 }; else la = {
 	arch: 'archive'
@@ -97,7 +100,6 @@ if (lang == 'ru') la = {
 ,	time: 'Drawn in'
 ,	using: 'using'
 ,	resized: 'Full size'	//'\nShown image is resized.\nFull size'
-,	groups: 'Groups'
 ,	report: 'Reports'
 ,	active: 'Active threads'
 ,	frozen: 'Frozen threads'
@@ -117,6 +119,10 @@ if (lang == 'ru') la = {
 	,	self: 'Self'
 	,	each: 'All at once'
 	,	total: 'Total'
+	}
+,	groups: {
+		u: 'Groups by day'
+	,	ref: 'Groups by domain'
 	}
 };
 
@@ -177,10 +183,10 @@ function toggleHide(e,d) {e.style.display = (e.style.display != (d?d:d='')?d:'no
 function getPicSubDir(p) {var s = p.split('.'); return s[1][0]+'/'+s[0][0]+'/';}
 function orz(n) {return parseInt(n||0)||0;}
 function leftPad(n) {n = orz(n); return n > 9 || n < 0?n:'0'+n;}
-function getFormattedTime(t, plain) {
+function getFormattedTime(t, plain, only_ymd) {
 	if (TOS.indexOf(typeof t) > -1) t = parseInt(t)*1000;
 var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
-	t = ['FullYear','Month','Date','Hours','Minutes','Seconds'].map(function(v,i) {
+	t = ('FullYear,Month,Date'+(only_ymd?'':',Hours,Minutes,Seconds')).split(',').map(function(v,i) {
 		v = d['get'+v](); if (i == 1) ++v; return leftPad(v);
 	});
 var	YMD = t.slice(0,3).join('-'), HIS = t.slice(3).join(':');
@@ -458,7 +464,7 @@ var	i,j,k,l,m,n = '\n', o,p = data.ph, opt = 'opt_', q,s = ' ', t = '	'
 			a = [];
 			k.sort();
 			for (i in k) a.push(j[k[i]].join(n));
-		} else if (pre < 0) a = p.split(n), a.reverse(), a = [a.join(n)];
+		}
 	} else
 	for (i in g) if (f.indexOf(g[i]) > -1) {
 		l = (f = f.split(g = g[i])).length;
@@ -466,12 +472,22 @@ var	i,j,k,l,m,n = '\n', o,p = data.ph, opt = 'opt_', q,s = ' ', t = '	'
 		if (g == ':') flag.pixr = f[2];
 		if (l > 3) for (i in f[3]) flag[f[3][i]] = 1;
 		if (flag.u) {
-			l = a.pop().split(n), j = [];
-			while (l.length) {
-				j.push(l.shift());
-				if (!l.length || j.length > 9) a.push(a.length+','+j.join(n).replace(/^\d+,/, '')), j = [];
-			}
+			if (isNaN(pre)) {
+				l = a.pop().split(n), q = '';
+				while (l.length) {
+					k = l.shift().replace(/^\d+,/, '');
+					f = getFormattedTime(k.split(t, 2)[1], 1, 1);
+					if (q != f) q = f, a.push(j = []);
+					j.push(k);
+				}
+				for (i in a) if ((j = a[i]).join) a[i] = i+','+j.join(n);
+			} else p = a.pop();
 		}
+		break;
+	}
+	if (!isNaN(pre)) for (i in la.groups) if (flag[i]) {
+		if (pre < 0) a = p.split(n), a.reverse(), a = [a.join(n)];
+		else a = [p];
 		break;
 	}
 	flag.hell = {burnt: !!mm, frozen: !mm/*, full: !flag.a*/};
@@ -738,16 +754,21 @@ c+'</div>'+b:p);
 			k = h = m = '', l = la.count;
 			if (flag.c) {
 				for (i in a) getThread(a[i], 1);
+				if (flag.u) --count.u, ++count.o;
 				for (i in count) if (count[i]) {
-					k = (flag.ref
-						? '<a href="javascript:showContent('+(l[i]?1:-1)+')">'+(l[i]
+					k = (
+						flag.ref || (flag.u && i[0] != 'u')
+						? '<a href="javascript:showContent('+(l[i]?1:-1)+')">'+(
+							l[i]
 							? l.total
 							: (l.lastr || l.last)
 						)+'</a>'
-						: (l[i]
+						: (
+							l[i]
 							? (flag.u && i == 'u' ? l.self : l[i])
 							: l.last
-					))+': '+count[i];
+						)
+					)+': '+count[i];
 					if (i == 'img') m += '<br>'+k;
 					else h += (l[i]?(h?'<br>':''):', ')+k;
 				}
@@ -756,9 +777,10 @@ c+'</div>'+b:p);
 			for (i in mt) if ((j = mt[i]).length) k += '<br>'+la[i]+': '+j.length+','+j.map(function(v) {
 				return e+'<a href="javascript:showOpen('+v.i+')">'+v.t+'</a>';
 			}).join(',');
+			j = la.active;
+			for (i in la.groups) if (flag[i]) {j = la.groups[i]; break;}
 			p.className += ' task';
-			p.innerHTML =
-d+'<p class="hint"><a href="javascript:showContent()">'+(flag.u||flag.ref?la.groups:la.active)+': '+a.length+'</a>'+k+'</p>'+b;
+			p.innerHTML = '<p class="hint"><a href="javascript:showContent()">'+j+': '+a.length+'</a>'+k+'</p>'+b;
 			cre('div', p.parentNode, p.nextSibling).id = o;
 			if (flag.a) showContent();
 		} else {
