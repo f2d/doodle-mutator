@@ -750,10 +750,11 @@ var	flagVarNames = ['flag', 'flags']
 								j = u.split(sep);
 								u = j.pop();
 								t = j.join(sep);
-								k = t.slice(-1);
-								if (k in reportClass) threadMark = {
+								k = t.match(regNaN);
+								t = t.replace(regNaN, '');
+								if (k && (k = k[0]) in reportClass) threadMark = {
 									class: k
-								,	id: t = t.slice(0, -1)
+								,	id: t
 								};
 								threadNum = t;
 								modEnabled = 1;

@@ -847,15 +847,18 @@ function data_get_visible_rooms() {
 if (TIME_PARTS) time_check_point('done scan, inb4 room iteration'.NL);
 	foreach ($rooms as $r) if (is_dir($d = "$dr$r/")) {
 		$last_time_in_room = 0;
-		if (!(
+		if (
 			is_file($cf = DIR_META_R.$r.'/post.count')
-		&&	is_array($c = (
+		&&	($im = (array)(
 				$import
 				? $import(file_get_contents($cf))
 				: include($cf)
 			))
-		&&	(list($last_time_in_room, $c, $mod) = $c)
-		)) {
+		&&	($last_time_in_room = $im['last modified'])
+		) {
+			$c	= (array)($im['counts']);
+			$mod	= (array)($im['marked']);
+		} else {
 			$last_time_in_room = intval(T0);	//* <- force to now, less problems
 			$last_post_time =
 			$count_thrd =
