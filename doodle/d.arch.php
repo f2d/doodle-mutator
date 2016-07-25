@@ -178,7 +178,7 @@ function data_get_archive_search_terms() {
 	return $terms;
 }
 
-function data_archive_find_by($where, $what = '') {
+function data_archive_find_by($where, $what = '', $caseless = 1) {
 	global $room;
 if (TIME_PARTS) time_check_point('inb4 archive search prep');
 	$where = array_filter(is_array($where) ? $where : array($where => $what), 'strlen');
@@ -231,19 +231,19 @@ if (TIME_PARTS) time_check_point(count($files).' files in '.$d);
 			$i = intval($f);
 			$n_check = '';
 			foreach (explode(NL, $match[1]) as $line) {
-				$found = $draw_time = '';
+				$draw_time = '';
 				$tab = explode('	', $line);
 				foreach ($where as $type => $what) {
-					$t = $draw_time_check = '';
+					$found = $draw_time_check = $t = '';
 					if ($type == 'name') $t = $tab[1];			//* <- username
 					else
 					if ($tab[2][0] != '<') {
 						if ($type == 'post') $t = $tab[2];		//* <- text-only post content
 					} else {
 						if ($type == 'file') {
-							$t = $tab[2];
-							$t = substr($t, strrpos($t, '/')+1);	//* <- pic filename
-							$t = substr($t, 0, strrpos($t, '"'));
+							$t = explode('"', $tab[2]);
+							$t = array_filter($t, 'is_tag_attr');
+							$t = array_map('get_file_name', $t);
 						} else
 						if ($type != 'post') {
 							$t = $tab[3];				//* <- what was used to draw
@@ -270,18 +270,18 @@ if (TIME_PARTS) time_check_point(count($files).' files in '.$d);
 										)
 										: ($t >= $cond['min'] && $t <= $cond['max'])
 									) {
-										$draw_time = "(drawn in $t sec.)";
+										$found = $draw_time = "(drawn in $t sec.)";
 										break;
 									}
 								}
 							}
 						}
 					}
-					$found = (
-						$draw_time_check
-						? $draw_time
-						: ($t && false !== strpos(mb_strtolower(html_entity_decode($t), ENC), $what))
-					);
+					if (!$draw_time_check) foreach ((array)$t as $v) if (strlen($v)) {
+						$v = html_entity_decode($v);
+						if ($caseless) $v = mb_strtolower($v, ENC);
+						if ($found = (false !== strpos($v, $what))) break;
+					}
 					if (!$found) continue 2;
 				}
 				if ($found) {

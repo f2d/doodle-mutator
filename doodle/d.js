@@ -637,6 +637,7 @@ function showContent(sortOrder) {
 var	flagVarNames = ['flag', 'flags']
 ,	hintOnPostTypes = ['left', 'right']
 ,	reportOnPostTypes = ['reports_on_post', 'reports_on_user']
+,	altClass = ' alt'
 ,	optPrefix = 'opt_'
 ,	raws = gn('textarea').concat(gn('pre'))
 	;
@@ -661,7 +662,7 @@ var	flagVarNames = ['flag', 'flags']
 		,	modEnabled = 0
 		,	postNum = 1
 		,	descNum = 0
-		,	alt = 1
+		,	alt = altClass
 		,	tableRow = []
 		,	lines = threads[t_i].split('\n')
 			;
@@ -954,7 +955,7 @@ var	flagVarNames = ['flag', 'flags']
 						//* image post:
 							if (tab.length > 3 && notEmpty(a = tab[3])) {
 								if (flag.c) ++count.img;
-								if (imgPost) alt = (alt?'':' alt');
+								if (imgPost) alt = (alt?'':altClass);
 							var	imgPost = 1
 							,	imgRes = 0
 								;
@@ -1123,9 +1124,9 @@ var	flagVarNames = ['flag', 'flags']
 						+			lineHTML
 						+		'</div>';
 				//* toggle bg color:
-						if (dtp.found ? (threadNum != param.t) : true) {
+						if (dtp.found ? (threadNum != param.t) : !imgPost) {
 							if (dtp.found) threadNum = param.t;
-							if (!imgPost) alt = (alt?'':' alt');
+							alt = (alt?'':altClass);
 						}
 						lineHTML =
 							'<div class="post'
@@ -1148,7 +1149,7 @@ var	flagVarNames = ['flag', 'flags']
 			if (notEmpty(threadHTML)) {
 				if (dtp.found && param.room) {
 					threadHTML =
-						'<div class="post">'
+						'<div class="post alt">'
 					+		'<br>'
 					+		'<b class="anno dust">'
 					+			la.room_arch+': '
@@ -1176,8 +1177,10 @@ var	flagVarNames = ['flag', 'flags']
 						,	k = ' '+j+'" id="'+i.id
 							;
 							if (j != 'full') v =
-								'<div class="post alt anno">'
-							+		'<a href="javascript:void this" onClick="toggleHide(this.parentNode.nextElementSibling)">'
+								'<div class="post'+altClass+' anno">'
+							+		'<a href="javascript:void this'
+							+		'" onClick="toggleHide(this.parentNode.nextElementSibling)'
+							+		'">'
 							+			la.hint[j]+la.hint.show
 							+		'</a>'
 							+	'</div>'
@@ -1228,7 +1231,11 @@ var	flagVarNames = ['flag', 'flags']
 						if (i == 'img') m += '<br>'+k;
 						else j += (l[i]?(j?'<br>':''):', ')+k;
 					}
-					if (j) k = '<span class="r">'+j+'</span>'+(m || (j.indexOf('<br>') > 0?'<br>'+NB:''));
+					k = (
+						j
+						? '<span class="r">'+j+'</span>'+(m || (j.indexOf('<br>') > 0?'<br>'+NB:''))
+						: ''
+					);
 				}
 				if (m = threadsMarks) {
 					j = {};
@@ -1317,13 +1324,18 @@ if (k = id('task')) {
 //* room task:
 	if (taskTop = gn('p',k)[0]) {
 		if (j = k.getAttribute('data-skip')) {
-			taskTop.innerHTML += '<a class="r" href="javascript:skipMyTask('+j+')" title="'+la.skip_hint+'">「X」</a>'
+			taskTop.innerHTML += '<a class="r'
+			+	'" href="javascript:skipMyTask('+j+')'
+			+	'" title="'+la.skip_hint
+			+	'">「X」</a>'
 		}
 		if (j = k.getAttribute('data-unskip')) {
 			j = j.split(/\D+/, 1)[0];
-			taskTop.innerHTML += '<a class="r" href="javascript:void '+j
+			taskTop.innerHTML += '<a class="r'
+			+	'" href="javascript:void '+j
 			+	'" data-room="'+room
-			+	'" id="unskip" title="'+la.unskip_hint
+			+	'" id="unskip'
+			+	'" title="'+la.unskip_hint
 			+	'">「'+la.unskip+'」</a>';
 		}
 	}
@@ -1386,7 +1398,9 @@ if (k = id('task')) {
 				e = cre('p', e.parentNode, e.nextElementSibling);
 				e.className = 'hint r';
 				e.innerHTML =
-					'+ <a href="javascript:void '+max+'" onClick="addSearchTerm(\''+selectId+'\', '+max+')">'
+					'+ <a href="javascript:void '+max
+				+	'" onClick="addSearchTerm(\''+selectId+'\', '+max+')'
+				+	'">'
 				+		la.search_add
 				+	'</a>';
 
@@ -1410,7 +1424,9 @@ if (k = id('task')) {
 		while (n--) if (regWordAnno.test(m[n].className)) {h = 0; break;}
 		while (i--) if (m = j[i].previousElementSibling) {
 			m.innerHTML =
-				'<a href="javascript:void this" onClick="toggleHide(this.parentNode.nextElementSibling)">'
+				'<a href="javascript:void this'
+			+	'" onClick="toggleHide(this.parentNode.nextElementSibling)'
+			+	'">'
 			+		m.innerHTML
 			+	'</a>';
 			if (h) toggleHide(j[i]), allowApply(-1);

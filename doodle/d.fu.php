@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ?: T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-07-25 00:48'.NL.	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-07-26 00:36'.NL.	//* <- change this to invalidate old pages cached in browsers
 		'Or user key/options changed: '.$_REQUEST[ME]
 	).'"';
 	header('Etag: '.$q);
@@ -109,6 +109,7 @@ function trim_room($r) {
 	)), 0, ROOM_NAME_MAX_LENGTH, ENC));
 }
 
+function is_tag_attr($t) {return strpos($t, '<') === strpos($t, '>');}	//* <- if only both === false
 function is_not_dot($path) {return !!trim($path, './\\');}
 function is_not_hidden($room) {
 	global $u_flag;
