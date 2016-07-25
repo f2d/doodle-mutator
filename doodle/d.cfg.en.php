@@ -9,19 +9,49 @@ $tmp_announce = array(
 $tmp_archive = 'Archive';
 $tmp_archive_find = 'Find';
 $tmp_archive_find_by = array(
-	'post' => 'text post'
-,	'file' => 'file name'
-,	'used' => 'file info'
-,	'time' => 'drawn in time'
-,	'name' => 'author name'
+	'post' => array(
+		'select'	=> 'text post'
+	,	'placeholder'	=> 'Enter part of a description here.'
+	)
+,	'file' => array(
+		'select'	=> 'file name'
+	,	'placeholder'	=> 'Enter part of a file name here, e.g.: 0123abcdef.png, jpg, res, etc.'
+	)
+,	'used' => array(
+		'select'	=> 'used to draw'
+	,	'placeholder'	=> 'Enter used feature here, e.g.: app name, undo, read file, text, etc.'
+	)
+,	'time' => array(
+		'select'	=> 'drawn in time'
+	,	'placeholder'	=> 'Enter time in seconds here, e.g.: > 0, < 10:20:30, 40-50, = 60, etc.'
+	)
+,	'name' => array(
+		'select'	=> 'author name'
+	,	'placeholder'	=> 'Enter part of a post author name here.'
+	)
 );
 $tmp_archive_found = 'Search results for';
 $tmp_archive_hint = 'Hidden rooms are not shown.';
+$tmp_archives = 'Archives';
 $tmp_arch_count = 'threads';
 $tmp_arch_last = 'last';
 $tmp_back = 'Return.';
 $tmp_ban = 'Access forbidden.';
-$tmp_describe_hint = 'At least '.DESCRIBE_MIN_LENGTH.' letters.';
+$tmp_check_required = 'Final check';
+$tmp_describe_hint = 'At least '.DESCRIBE_MIN_LENGTH.' letters.'
+.'\\{javascript:void this`toggleClass(this.nextElementSibling,\'hid\')|+ Format options.}'
+.'\\[hid|'
+.'\\	[r poem|'
+.'\\		Like this,
+		or more than once
+		
+		for a blank line.
+	]
+	To write poem blocks, start and end the whole text and each line with a fully spaced slash.
+	[a|/ Like this, / or more than once / / for a blank line. /]
+	Result is shown at the right side. →
+	Not fully spaced slashes will remain as is, including double [a|//] slashes.
+]';
 $tmp_describe_new = 'Describe a picture you would like to see';
 $tmp_describe_this = 'Describe what you see on this picture';
 $tmp_draw_app = array('JS Flat', 'JS Layers');
@@ -31,11 +61,16 @@ $tmp_draw_test = 'Try out.';
 $tmp_draw_this = 'Try to draw';
 $tmp_empty = 'Empty';
 $tmp_foot_notes = array('Project', 'author', 'message board', ' for contact.');
+$tmp_me = 'Name yourself';
+$tmp_me_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters. Also you may enter your old key here.';
 $tmp_mod_files = array(
-	'Pics to subfolders.'
+	'Clear cached post counts for room list.'
+,	'Pics to subfolders.'
 ,	'Rewrite arch with newest template.'
 ,	'Convert old user data.'
 ,	'Convert old report logs.'
+,	'Check .htaccess template for Apache2.'
+,	'Rewrite .htaccess (automatically done for each admin\'s main page visit).'
 );
 $tmp_mod_pages = array(
 1 =>	'Logs'
@@ -48,8 +83,6 @@ $tmp_mod_panel = 'Mod panel';
 $tmp_mod_post_hint = 'Modify this post or thread.';
 $tmp_mod_user_hint = 'Modify this user.';
 $tmp_mod_user_info = 'Check flags of this user.';
-$tmp_name_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters. Also you may enter your old key here.';
-$tmp_name_yourself = 'Name yourself';
 $tmp_no_change = 'No change.';
 $tmp_no_play_hint = 'Game playing turned off for you (no taking targets).';
 $tmp_options = 'Options. About';
@@ -88,11 +121,9 @@ $tmp_options_input = array(
 	)
 );
 $tmp_options_name = 'Your signature';
-$tmp_options_qk = 'Your key to login (displayed partly, hover it for hint)';
+$tmp_options_qk = 'Your key to login';
 $tmp_options_qk_hint = 'Double click to select it all for copying. Use in place of name at login form.';
 $tmp_options_time = 'Time zone';
-$tmp_options_turn_off = 'no';
-$tmp_options_turn_on = 'yes';
 $tmp_post_err = array(
 	'file_dup'	=> 'File denied: copy already exists.'
 ,	'file_part'	=> 'File denied: upload not completed, please try to load in draw app and send again.'
@@ -110,14 +141,15 @@ $tmp_post_err = array(
 ,	'unkn_req'	=> 'Unexpected error: invalid request.'
 ,	'unkn_res'	=> 'Unexpected error: invalid result.'
 );
-$tmp_post_ok_file = 'Image sent.';
-$tmp_post_ok_goto = '%s Go to <a href="%s">next</a>.';
-$tmp_post_ok_skip = 'No more tasks from this thread.';
-$tmp_post_ok_text = 'Text sent.';
-$tmp_post_ok_user_opt = 'Options set.';
-$tmp_post_ok_user_qk = 'Cookie set.';
-$tmp_post_ok_user_quit = 'Log out.';
-$tmp_post_ok_user_reg = 'User registered.';
+$tmp_post_ok = array(
+	'new_post'	=> 'New post added.'
+,	'skip'		=> 'No more tasks from this thread.'
+,	'user_opt'	=> 'Options set.'
+,	'user_qk'	=> 'Cookie set.'
+,	'user_quit'	=> 'Log out.'
+,	'user_reg'	=> 'User registered.'
+);
+$tmp_post_refresh = '%s Go to <a href="%s">next</a>.';
 $tmp_require_js = 'JavaScript support required.';
 $tmp_report = 'Report problem';
 $tmp_report_freeze = 'Freeze the thread until the issue is resolved';
@@ -131,9 +163,10 @@ $tmp_room_count_posts = 'pics, descriptions';
 $tmp_room_default = 'Basement';
 $tmp_rooms = 'Rooms';
 $tmp_rooms_hint =
-'Maximum length — '.ROOM_NAME_MAX_LENGTH.' letters.[r|\Also rooms may be created via address bar, like so: '.$tmp_room_new.'.'.(ROOM_HIDE?'
-Hidden rooms are not shown, start with a dot: '.$tmp_room_new_hide.'.':'').(ROOM_DUMP?'
-Single-thread rooms start with an exclamation: '.$tmp_room_new_dump.' (archived at every '.DUMP_MAX_POSTS.' posts).':'').']
+'[r|\\	Also rooms may be created via address bar, like so: '.$tmp_room_new.'.'.(ROOM_HIDE?'
+	Hidden rooms are not shown, start with a dot: '.$tmp_room_new_hide.'.':'').(ROOM_DUMP?'
+	Single-thread rooms start with an exclamation: '.$tmp_room_new_dump.' (archived at every '.DUMP_MAX_POSTS.' posts).':'')
+.'\\]\\Maximum length — '.ROOM_NAME_MAX_LENGTH.' letters.
 Single-letter rooms have single page in archive and no reports or moderation.';
 $tmp_filter_placeholder =
 $tmp_rooms_placeholder = 'Type here to filter the list.';

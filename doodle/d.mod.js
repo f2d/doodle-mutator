@@ -1,15 +1,58 @@
-﻿mm = function menuInit() {
-	if (!(flag || flag.g || flag.m)) return;	//* <- god|mod
-var	a = gn('p'), i = a.length, p = id('tower');
-	if (!p && (p = id('task'))) while ((p = p.nextSibling) && !DIV.test(p.tagName));
-	if (p && !FORM.test(p.parentNode.tagName)) {
-	var	f = document.createElement('form');
-		p.parentNode.insertBefore(f, p);
-		f.method = 'post';
-		f.innerHTML = '<input type="hidden" name="mod" value="'+(+new Date())+'">';
-		f.appendChild(p);
+﻿mm = function menuInit(i) {
+	if (!i && (k = id('tabs'))) {
+
+		function a(r,t) {return '<a href="'+r+(r == l?(at = y, '" class="at'):'')+'">'+t+'</a>';}
+
+	var	h = ''
+	,	l = location.pathname.split('/').slice(-1)[0]
+	,	n = k.textContent.replace(regTrim, '').split('|')
+		;
+//* task category tabs:
+		for (i in n) h += (h?'\n|\t':'')+a(+i+1, n[i]);
+		k.innerHTML = '[\t'+h+'\t]';
+	var	p = k.parentNode
+	,	r = /^\d+-\d+-\d+(,\d+)*/
+	,	w = /\s.*$/
+		;
+		while ((m = p.lastElementChild) && !((j = m.lastElementChild) && j.id) && r.test(j = m.innerHTML.replace(regTrim, ''))) {
+//* logs, row = month, column = day:
+		var	k,at,c,d
+		,	j = j.split('-')
+		,	f = j[0]
+		,	y = 'year'+f
+		,	n = j.pop().split(',')
+		,	j = j.join('-')
+		,	h = j+':'
+			;
+			for (i in n) h += '\n'+a(j+'-'+n[i].replace(w, ''), n[i]);
+			m.innerHTML = h;
+			if (!d || d.id != y) {
+				(d = cre('div',c?c:c = cre('div',p,k.nextElementSibling))).id = y;
+				if (d.previousElementSibling) {
+					toggleHide(d);
+					cre('div',c,d).innerHTML = '<p><a href="javascript:toggleHide('+y+')">'+f+'</a></p>';
+				}
+			}
+			d.appendChild(m);
+		}
+		if (at && (d = id(at))) d.style.display = '';
 	}
-	while (i--) if ((p = a[i]).id && p.id.slice(0,2) == 'm_') menuOpenOnClick(p);
+//* god|mod:
+	if (flag && (flag.g || flag.m)) {
+	var	a = gn('p')
+	,	i = a.length
+	,	p = id('tower')
+		;
+		if (!p && (p = id('task'))) while ((p = p.nextSibling) && !regTagDiv.test(p.tagName));
+		if (p && !regTagForm.test(p.parentNode.tagName)) {
+		var	f = document.createElement('form');
+			p.parentNode.insertBefore(f, p);
+			f.method = 'post';
+			f.innerHTML = '<input type="hidden" name="mod" value="'+(+new Date())+'">';
+			f.appendChild(p);
+		}
+		while (i--) if ((p = a[i]).id && p.id.slice(0,2) == 'm_') menuOpenOnClick(p);
+	}
 }
 
 function menuOpenOnClick(p) {
@@ -17,11 +60,19 @@ function menuOpenOnClick(p) {
 }
 
 function menuOpen(p) {
-var	n = 'menu_'+p.id, m = id(n);
+var	n = 'menu_'+p.id
+,	m = id(n)
+	;
 	if (!m) {
 		p.removeAttribute('onclick');
-		m = document.createElement('div'), m.className = 'mod-menu', m.id = n;
-	var	leftSide = (n.slice(-1) == 0), d = p.parentNode, g = flag.g, la;
+		m = document.createElement('div');
+		m.className = 'mod-menu';
+		m.id = n;
+	var	leftSide = (n.slice(-1) == 0)
+	,	d = p.parentNode
+	,	g = flag.g
+	,	la
+		;
 		if (lang == 'ru') la = {
 			tip: (
 				leftSide ? [
@@ -182,23 +233,29 @@ var	n = 'menu_'+p.id, m = id(n);
 }
 
 function menuRowCheck(target) {
-var	e = target, k = e.checked;
+var	e = target
+,	k = e.checked
+	;
 	while (!(d = e).id && (e = e.parentNode));
 var	opening = (d == target);
 	if (k) {
 		e = target;
 		if (!e.getAttribute('data-text')) k = 0;
-		do {if (e = e.parentNode) a = e;} while (!DIVP.test(e.tagName));
+		do {if (e = e.parentNode) a = e;} while (!regTagDivP.test(e.tagName));
 		a = gi('checkbox', a), i = a.length;
 		while (i--) if ((e = a[i]) != target) e.checked = 0;
 	} else if (opening) k = 1;
-var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0, req: 0};
+var	count = {checked: 0, text: 0, req: 0}
+,	a = gi('checkbox', d)
+,	i = a.length
+,	j = []
+,	la
+	;
 	if (lang == 'ru') la = {
 		erase: 'Комната будет уничтожена, восстановление невозможно.'
 	,	rename: 'Комната сменит адрес, возможны конфликты.'
 	,	sure: 'Вы уверены?'
-	};
-	else la = {
+	}; else la = {
 		erase: 'The room will be deleted, this cannot be reverted.'
 	,	rename: 'The room will be renamed, this can cause conflicts.'
 	,	sure: 'Are you sure?'
@@ -213,7 +270,10 @@ var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0
 	}
 	if ((a = gi('submit', d)).length && (i = a[0])) i.disabled = !count.checked; else i = 0;
 	if ((a = gn('textarea', d)).length && (e = a[0])) {
-	var	d = d.parentNode, t = count.text || count.req, focus = (k && t);
+	var	d = d.parentNode
+	,	t = count.text || count.req
+	,	focus = (k && t)
+		;
 		e.required = !!count.req;
 		e.style.display = (t?'':'none');
 		if (focus) {
@@ -228,12 +288,15 @@ var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0
 					) || (
 						(i = 'Re: ')+(
 							e.value
-						&&	(v = e.value.replace(TRIM, ''))
+						&&	(v = e.value.replace(regTrim, ''))
 						&&	(
 								v.indexOf(': ') < 0
 							||	v.substr(0, i.length).toLowerCase() == i.toLowerCase()
 							)
-						&&	(v = v.replace(SPACE, ' ').replace(new RegExp('^'+i+'*', 'i'), ''))
+						&&	(v = v
+								.replace(regSpace, ' ')
+								.replace(new RegExp('^'+i+'*', 'i'), '')
+							)
 							? v
 							: (lang == 'ru' ? 'Текст ответа тут.' : 'Reply text here.')
 						)
@@ -244,7 +307,7 @@ var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0
 						leftSide
 						? location.pathname.split('/').slice(-2)[0]
 						: d.firstChild.textContent
-					).replace(TRIM, '')
+					).replace(regTrim, '')
 					|| (
 						leftSide
 						? (lang == 'ru' ? 'Имя комнаты назначения тут.' : 'Target room name here.')
@@ -254,7 +317,9 @@ var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0
 				if ((i = ['announce', 'freeze'].indexOf(v.split(' ').slice(-1)[0])) >= 0) {
 					e.value = (
 						(v = id(v) || id((v.indexOf('room') == 0?'room_':'') + ['anno', 'stop'][i]))
-						? v.textContent.replace(TRIM, '').replace(SPACE, ' ')
+						? v.textContent
+							.replace(regTrim, '')
+							.replace(regSpace, ' ')
 						: (lang == 'ru' ? 'Текст сообщения тут.' : 'Announce text here.')
 					);
 				}
@@ -263,7 +328,7 @@ var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0
 		}
 		menuFixHeight(d);
 	}
-	while (!FORM.test(e.tagName) && (e = e.parentNode));
+	while (!regTagForm.test(e.tagName) && (e = e.parentNode));
 	if (e) {
 		if (j.length) j.push(la.sure), j = j.join('\n');
 		else j = '';
@@ -272,7 +337,11 @@ var	a = gi('checkbox', d), i = a.length, la,j = [], count = {checked: 0, text: 0
 }
 
 function menuFixHeight(p) {
-var	d = p.parentNode, p = gn('p',d), i = p.length, m = 0;
+var	d = p.parentNode
+,	p = gn('p',d)
+,	i = p.length
+,	m = 0
+	;
 	while (i--) m = Math.max(m, p[i].offsetHeight);
 	d.style.minHeight = m+'px';
 }

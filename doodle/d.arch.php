@@ -1,20 +1,9 @@
 <?php
 
 function data_get_visible_archives() {
-	global $u_flag;
 	$last = 0;
 	$a = array();
-	$h = get_const('ROOM_HIDE');
-	foreach (get_dir_contents($da = DIR_ARCH) as $r) if (
-		(
-			GOD
-		||	$u_flag['mod']
-		||	$u_flag['mod_'.$r]
-		||	!$h
-		||	$h != $r[0]
-		)
-	&&	($mt = data_get_archive_mtime($r))
-	) {
+	foreach (get_dir_contents($da = DIR_ARCH, 1, 1) as $r) if ($mt = data_get_archive_mtime($r)) {
 		if ($last < $mt) $last = $mt;
 		$a[$r] = array(
 			'last' => $mt
@@ -74,7 +63,7 @@ function data_put_thumb($src, $dest, $xMax, $yMax) {
 }
 
 function data_line2time($line) {return strtotime(substr($line, 0, strpos($line, '	')));}
-function data_get_template_page($room, $num, $tsv) {
+function data_get_archive_page_html($room, $num, $tsv) {
 	if ($num <= 0) return $num;
 	$p = $num-1;
 	$n = $num+1;
@@ -108,7 +97,7 @@ function data_archive_full_threads($threads) {
 			optimize_pic($th);
 		} else copy(NAMEPRFX.THUMB_EXT, $th);
 		if (
-			file_put_contents($a.$c.PAGE_EXT, data_get_template_page($room, $c, $f[1]))
+			file_put_contents($a.$c.PAGE_EXT, data_get_archive_page_html($room, $c, $f[1]))
 	//	&&	unlink($f[0])
 		&&	data_del_thread($f[0])	//* <- clean up comments, etc
 		) ++$done_count;
@@ -150,7 +139,7 @@ function data_archive_rewrite() {
 				$n = substr($src, strrpos($src, '/')+1);	//* <- pic filename
 				$new .= $i.get_pic_url($n).substr($y, $q);	//* <- new web path
 			}
-			$new = data_get_template_page($room, intval($f), $new);
+			$new = data_get_archive_page_html($room, intval($f), $new);
 			if ($old == $new) $x = 'same';
 			else {
 				if (!rename($path, $x = "$path.bak")) $x = 'rename old to bak failed'; else
@@ -165,6 +154,28 @@ function data_archive_rewrite() {
 if (TIME_PARTS && $t) time_check_point("done $a: $d, $t threads");
 	}
 	return $text_report;
+}
+
+function data_get_archive_search_terms() {
+	global $tmp_archive_find_by, $query;
+	$terms = array();
+	if ($query) {
+		$ef = explode(',', get_const('ENC_FALLBACK'));
+		foreach ($tmp_archive_find_by as $k => $v) if (
+			array_key_exists($k, $query)
+		&&	strlen($q = $query[$k])
+		) {
+			if (!mb_check_encoding($q, ENC)) foreach ($ef as $e) if (
+				strlen($e = trim($e))
+			&&	mb_check_encoding($i = iconv($e, ENC, $q), ENC)
+			) {
+				$q = $i;
+				break;
+			}
+			if (strlen($q = mb_strtolower(trim_post($q, FIND_MAX_LENGTH), ENC))) $terms[$k] = $q;
+		}
+	}
+	return $terms;
 }
 
 function data_archive_find_by($where, $what = '') {
@@ -205,73 +216,83 @@ if (TIME_PARTS) time_check_point('inb4 archive search prep');
 		}
 		if (!$time_ranges) unset($where['time']);
 	}
-	if (!$where || !($files = get_dir_contents($d = DIR_ARCH.$room.'/', 1))) return false;
-	$n_found = 0;
+	if (!$where) return false;
 	$elen = strlen(PAGE_EXT);
 if (TIME_PARTS) time_check_point('inb4 archive search iteration'.NL);
-	foreach ($files as $f) if (
-		substr($f, -$elen) == PAGE_EXT
-	&&	is_file($path = $d.$f)
-	&&	preg_match(PAT_CONTENT, file_get_contents($path), $match)
-	) {
-		$i = intval($f);
-		$n_check = '';
-		foreach (explode(NL, $match[1]) as $line) {
-			$found = $draw_time = '';
-			$tab = explode('	', $line);
-			foreach ($where as $type => $what) {
-				$t = $draw_time_check = '';
-				if ($type == 'name') $t = $tab[1];			//* <- username
-				else
-				if ($tab[2][0] != '<') {
-					if ($type == 'post') $t = $tab[2];		//* <- text-only post content
-				} else {
-					if ($type == 'file') {
-						$t = $tab[2];
-						$t = substr($t, strrpos($t, '/')+1);	//* <- pic filename
-						$t = substr($t, 0, strrpos($t, '"'));
-					} else
-					if ($type != 'post') {
-						$t = $tab[3];				//* <- what was used to draw
-						if ($type == 'time') {
-							$draw_time_check = 1;
-							if (preg_match('~^[\d:-]+~i', $t, $t)) {
-								$t = $t[0];
-								if (strrpos($t, '-')) {
-									$t1 = $t0 = false;
-									foreach (explode('-', $t) as $n) if (strlen($n)) {
-										if (false === $t0) $t0 = $n;
-										$t1 = $n;
+	foreach (($room ? array($room) : get_dir_contents(DIR_ARCH, 1, 1)) as $r) {
+		$n_found = 0;
+		$files = get_dir_contents($d = DIR_ARCH.$r.'/', 1);
+if (TIME_PARTS) time_check_point(count($files).' files in '.$d);
+		foreach ($files as $f) if (
+			substr($f, -$elen) == PAGE_EXT
+		&&	is_file($path = $d.$f)
+		&&	preg_match(PAT_CONTENT, file_get_contents($path), $match)
+		) {
+			$i = intval($f);
+			$n_check = '';
+			foreach (explode(NL, $match[1]) as $line) {
+				$found = $draw_time = '';
+				$tab = explode('	', $line);
+				foreach ($where as $type => $what) {
+					$t = $draw_time_check = '';
+					if ($type == 'name') $t = $tab[1];			//* <- username
+					else
+					if ($tab[2][0] != '<') {
+						if ($type == 'post') $t = $tab[2];		//* <- text-only post content
+					} else {
+						if ($type == 'file') {
+							$t = $tab[2];
+							$t = substr($t, strrpos($t, '/')+1);	//* <- pic filename
+							$t = substr($t, 0, strrpos($t, '"'));
+						} else
+						if ($type != 'post') {
+							$t = $tab[3];				//* <- what was used to draw
+							if ($type == 'time') {
+								$draw_time_check = 1;
+								if (preg_match('~^[\d:-]+~i', $t, $t)) {
+									$t = $t[0];
+									if (strrpos($t, '-')) {
+										$t1 = $t0 = false;
+										foreach (explode('-', $t) as $n) if (strlen($n)) {
+											if (false === $t0) $t0 = $n;
+											$t1 = $n;
+										}
+										$t = intval(($t1-$t0)/1000);	//* <- msec. from JS
+									} else {
+										$t = get_time_seconds($t);
 									}
-									$t = intval(($t1-$t0)/1000);	//* <- msec. from JS
-								} else {
-									$t = get_time_seconds($t);
-								}
-								foreach ($time_ranges as $cond) if (
-									array_key_exists($k = 'operator', $cond)
-									? (
-										($cond[$k] == '=' && $t == $cond['value'])
-									||	($cond[$k] == '<' && $t < $cond['value'])
-									||	($cond[$k] == '>' && $t > $cond['value'])
-									)
-									: ($t >= $cond['min'] && $t <= $cond['max'])
-								) {
-									$draw_time = "(drawn in $t sec.)";
-									break;
+									foreach ($time_ranges as $cond) if (
+										array_key_exists($k = 'operator', $cond)
+										? (
+											($cond[$k] == '=' && $t == $cond['value'])
+										||	($cond[$k] == '<' && $t < $cond['value'])
+										||	($cond[$k] == '>' && $t > $cond['value'])
+										)
+										: ($t >= $cond['min'] && $t <= $cond['max'])
+									) {
+										$draw_time = "(drawn in $t sec.)";
+										break;
+									}
 								}
 							}
 						}
 					}
+					$found = (
+						$draw_time_check
+						? $draw_time
+						: ($t && false !== strpos(mb_strtolower(html_entity_decode($t), ENC), $what))
+					);
+					if (!$found) continue 2;
 				}
-				$found = ($draw_time_check ? $draw_time : ($t && false !== strpos(mb_strtolower(html_entity_decode($t), ENC), $what)));
-				if (!$found) continue 2;
+				if ($found) {
+					$content .= ($n_found || $room?'':($content?NL:'')."
+room = $r").($n_check?'':"
+t = $i").NL.$line;
+					$n_check .= '='.(++$n_found).$draw_time;
+				}
 			}
-			if ($found) {
-				$content .= ($n_check?'':NL.'	'.$i).NL.$line;
-				$n_check .= '='.(++$n_found).$draw_time;
-			}
-		}
 if (TIME_PARTS) time_check_point('done '.$i.$n_check);
+		}
 	}
 	return $content;
 }

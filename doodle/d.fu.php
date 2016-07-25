@@ -1,9 +1,9 @@
 <?php
 
 function exit_if_not_mod($t = 0) {
-	$t = gmdate('r', $t?$t:T0);
+	$t = gmdate('r', $t ?: T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-07-14 12:40:00'.NL.
+		'To refresh page if broken since 2016-07-25 00:48'.NL.	//* <- change this to invalidate old pages cached in browsers
 		'Or user key/options changed: '.$_REQUEST[ME]
 	).'"';
 	header('Etag: '.$q);
@@ -21,13 +21,88 @@ function exit_if_not_mod($t = 0) {
 }
 
 function get_const($name) {return defined($name) ? constant($name) : '';}
+function rewrite_htaccess($read_only = 0) {
+	$start_mark = '# 8<-- start mark: '.NAMEPRFX.', version: ';
+	$end_mark = '# 8<-- end mark: '.NAMEPRFX.', placed automatically: ';
+	$new_mark = $start_mark.ROOTPRFX.' 2016-07-11 17:04';		//* <- change this to invalidate old version
+	if (
+		!($old = (is_file($f = '.htaccess') ? trim(file_get_contents($f)) : ''))
+	||	false === strpos($old, $new_mark)
+	||	false === strpos($old, $end_mark)
+	) {
+		if ($old) {
+			$b_found = (false !== ($i = strpos($old, $start_mark)));
+			$before = ($b_found ? trim(substr($old, 0, $i)) : '');
+
+			$a_found = (false !== ($i = strpos($old, $end_mark)));
+			$after = ($a_found && false !== ($i = strpos($old, NL, $i)) ? trim(substr($old, $i)) : '');
+
+			if ($b_found || $a_found) $new = ($before?$before.NL.NL:'').$new.($after?NL.NL.$after:'');
+			else $new .= NL.NL.$old;
+		} else $old = 'none';
+		$n = 'NO_CACHE';
+		$e_cond = " env=$n";
+		$e_set = "E=$n:1";
+		$d = '('.implode('|', $GLOBALS['cfg_dir']).')(/([^/]+))?';
+		$dd = get_const('DIR_DATA');
+		$new = $new_mark.' -- Do not touch these marks. Only delete them along with the whole block.
+<IfModule rewrite_module>
+	RewriteEngine On
+	RewriteBase '.ROOTPRFX.'
+# variable fix:
+	RewriteCond %{ENV:REDIRECT_'.$n.'} !^$
+	RewriteRule .* - [E='.$n.':%{ENV:REDIRECT_'.$n.'}]
+# virtual folders:'.($dd?'
+	RewriteRule ^'.$dd.'.*$ . [L,R=301]':'').'
+	RewriteRule ^('.DIR_PICS.')(([^/])[^/]+\.([^/])[^/]+)$ $1$4/$3/$2'.'
+	RewriteRule ^'.$d.'$ $0/ [L,R=301]'.'
+	RewriteRule ^'.$d.'(/[-\d]*)$ index.php?dir=$1&room=$3&etc=$4 [L,'.$e_set.']
+# files not found:
+	RewriteCond %{REQUEST_FILENAME} -f [OR]
+	RewriteCond %{REQUEST_FILENAME} -d
+	RewriteRule ^.? - [S=2]
+	RewriteRule ^('.DIR_PICS.'|'.DIR_ARCH.'[^/]+/'.DIR_THUMB.').*$ err.png [L,'.$e_set.']
+	RewriteRule ^('.$d.'/).+$ $1. [L,R,'.$e_set.']
+</IfModule>
+<IfModule headers_module>
+	Header set Cache-Control "max-age=0; must-revalidate; no-cache"'.$e_cond.'
+	Header set Expires "Wed, 27 Jan 2016 00:00:00 GMT"'.$e_cond.'
+	Header set Pragma "no-cache"'.$e_cond.'
+	Header unset Vary'.$e_cond.'
+</IfModule>
+'.$end_mark.date(TIMESTAMP, T0).' -- Manual changes inside will be lost on the next update.';
+		$changed = ($new != $old);
+	} else $new = 'no change';
+	$report = "---- old version: ----
+
+$old
+
+---- new version: ----
+
+$new";
+
+//* rewrite htaccess if none/changed, when logged in and viewing root folder:
+	if (!$read_only && $changed) {
+		$saved = (
+			file_put_contents($f, $new)
+			? 'Succesfully updated'
+			: 'Failed to update'
+		);
+		data_log_adm($report = "$saved $f
+
+$report");
+	}
+	return $report;
+}
+
 function str_replace_first($f, $to, $s) {return false === ($pos = strpos($s, $f)) ? $s : substr_replace($s, $to, $pos, strlen($f));}
 function abbr($a, $sep = '_') {foreach ((is_array($a)?$a:explode($sep, $a)) as $word) $r .= $word[0]; return $r;}
 function trim_post($p, $len = 456) {
-	$s = stripslashes(trim(preg_replace('~\s+~us', ' ', $p)));
+	$s = trim(preg_replace('~\s+~us', ' ', $p));
 	if ($len > 0) $s = mb_substr($s, 0, $len, ENC);
 	return POST ? htmlspecialchars($s) : $s;
 }
+
 function trim_room($r) {
 	return strtolower(mb_substr(preg_replace('/\.+/', '.', preg_replace(
 '/[^\w\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}.!-]+/u', '_', trim(trim($r), '\\/')	//* <- add more unicode alphabets to complement \w?
@@ -35,17 +110,29 @@ function trim_room($r) {
 }
 
 function is_not_dot($path) {return !!trim($path, './\\');}
-function get_dir_contents($path, $num_sort = 0) {
+function is_not_hidden($room) {
+	global $u_flag;
+	return (
+		GOD
+	||	$u_flag['mod']
+	||	$u_flag['mod_'.$room]
+	||	$room[0] != get_const('ROOM_HIDE')
+	);
+}
+
+function get_dir_contents($path, $num_sort = 0, $hiding = 0) {
 	$a = (is_dir($path) ? array_filter(scandir($path), 'is_not_dot') : array());
+	if ($a && $hiding) $a = array_filter($a, 'is_not_hidden');
 	if ($a && $num_sort) natcasesort($a);
 	return $a;
 }
+
 function get_file_lines($path) {return is_file($path) ? file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : array();}
 function get_file_name($path, $full = 1, $delim = '/') {return false === ($rr = strrpos($path, $delim)) ? ($full?$path:'') : substr($path, $rr+1);}
 function get_file_ext($path, $full = 0) {return strtolower(get_file_name($path, $full, '.'));}
 function get_room_skip_name($r) {return array(ME.'-skip-'.md5($r = rawurlencode($r)), $r);}
 function get_room_skip_list($k = '') {
-	return ($v = $_COOKIE[$k?$k:reset(get_room_skip_name($GLOBALS['room']))])
+	return ($v = $_COOKIE[$k ?: reset(get_room_skip_name($GLOBALS['room']))])
 	?	array_slice(explode('/', $v, TRD_MAX_SKIP_PER_ROOM+1), 1, TRD_MAX_SKIP_PER_ROOM-($k?1:0))
 	:	array();
 }
@@ -82,9 +169,9 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 			date($a[1], $t_first)
 		,	date($a[1], $t_last)
 		);
-		$due1 = (count($a) > 2 && $a[2]?$a[2]:false);
-		$due2 = (count($a) > 3 && $a[3]?$a[3]:false);
-		$flag = (count($a) > 4 && $a[4]?$a[4]:2);
+		$due1 = ($a[2] ?: false);
+		$due2 = ($a[3] ?: false);
+		$flag = ($a[4] ?: 2);
 		$wrap = ($due1 !== false && $due2 !== false && $due1 > $due2);	//* <- wrap around new year, etc
 		if (!$flag) $flag = 7;
 		for ($i = 0; $i < 2; $i++) if ($flag & (1<<$i)) {
@@ -108,7 +195,8 @@ function get_draw_app_list() {
 	global $cfg_draw_app, $tmp_draw_app, $tmp_options_input, $u_draw_app, $query;
 	if (!(($n = $query[$da = 'draw_app']) || ($n = $u_draw_app)) || !in_array($n, $cfg_draw_app)) $n = $cfg_draw_app[0];
 	$a = $tmp_options_input['input'][$da];
-	foreach ($cfg_draw_app as $k => $v) $a .= ($k?',':':').NL.($n == $v
+	foreach ($cfg_draw_app as $k => $v) $a .= ($k?',':':').NL.(
+		$n == $v
 		? $tmp_draw_app[$k]
 		: '<a href="?'.$da.'='.$v.'">'.$tmp_draw_app[$k].'</a>'
 	);
@@ -138,7 +226,7 @@ function get_draw_vars($v = '') {
 }
 
 function get_time_html($t = 0) {
-	$f = date(DATE_ATOM, $uint = ($t?$t:T0));
+	$f = date(DATE_ATOM, $uint = ($t ?: T0));
 	$i = strpos($f, 'T');
 	$d = substr($f, 0, $i);
 	$t = substr($f, $i+1, 8);
@@ -146,7 +234,7 @@ function get_time_html($t = 0) {
 }
 
 function get_time_elapsed($t = 0) {
-	$t = explode(' ', $t?$t:microtime());
+	$t = explode(' ', $t ?: microtime());
 	return ($t[1]-T0) + ($t[0]-M0);
 }
 
@@ -160,6 +248,7 @@ function get_time_seconds($t) {
 }
 
 function format_time_units($t) {
+	while (is_array($t)) $t = reset($t);
 	global $tmp_time_units;
 	foreach ($tmp_time_units as $k => $v) if ($t >= $k) {
 		if ($k) {$rem = $t%$k; $t = floor($t/$k);}
@@ -182,7 +271,11 @@ function format_filesize($B, $D = 2) {
 }
 
 function optimize_pic($filepath) {
-	if (function_exists('exec') && ($f = $filepath) && ($e = get_file_ext($f))) {
+	if (
+		function_exists('exec')
+	&&	($f = $filepath)
+	&&	($e = get_file_ext($f))
+	) {
 		global $cfg_optimize_pics;
 		foreach ($cfg_optimize_pics as $format => $tool) if ($e == $format)
 		foreach ($tool as $program => $command) {
@@ -194,9 +287,28 @@ function optimize_pic($filepath) {
 			data_lock('/pic');
 			exec(DIRECTORY_SEPARATOR == '/' ? $e : str_replace('/', DIRECTORY_SEPARATOR, $e), $output, $return);
 			data_unlock('/pic');
-			if (is_file($f .= '.bak') && filesize($f)) {
-				data_log_adm("Optimizing $filepath failed, restoring from $f");
-				if (filesize($filepath) ? rename($filepath, $filepath.'.bad') : unlink($filepath)) rename($f, $filepath);
+			if (
+				is_file($f .= '.bak')
+			&&	filesize($f)
+			) {
+				$del = (
+					($size = filesize($filepath))
+					? (
+						($rest = rename($filepath, $filepath.'.bad'))
+						? 'renamed to *.bad'
+						: 'not renamed'
+					) : (
+						($rest = unlink($filepath))
+						? 'deleted'
+						: 'not deleted'
+					)
+				);
+				if ($rest) $rest = ".\nRestoring from $f ".(
+					rename($f, $filepath)
+					? 'done'
+					: 'failed'
+				);
+				data_log_adm("Optimizing $filepath failed, $size bytes, $del$rest.");
 				if (!$return) $return = 'fallback';
 			}
 			if ($return) {
@@ -211,104 +323,138 @@ function optimize_pic($filepath) {
 //* front end templates -------------------------------------------------------
 
 function indent($t, $n = 0) {
-	return !strlen($t = trim($t)) || (!$n && false === strpos($t, NL))
-	?	$t
-	:	preg_replace(
-			'~(?:^|\v+)(?:(\h*<(pre|textarea)\b.+?)(?=\v+\h*</\2>))?~uis'
-		,	NL.str_repeat("\t", $n > 0?$n:1).'$1'
-		,	$t
-		).NL;
+	return (
+		!strlen($t = trim($t))
+	||	(!$n && false === strpos($t, NL))
+	)
+	? $t
+	: preg_replace(
+		'~(?:^|\v+)(?:(\h*<(pre|textarea)\b.+?)(?=\v+\h*</\2>))?~uis'
+	,	NL.str_repeat("\t", $n > 0?$n:1).'$1'
+	,	$t
+	).NL;
 }
 
 function csv2nl($v, $c = ';', $n = 1) {
 	$d = "\s*[$c]+\s*";
 	$n = NL.($n > 0?str_repeat("\t", $n):'');
-	return $n.implode($c.$n, preg_split("~$d~u", preg_replace("~^$d|$d$~u", '', $v).$c));
+	return $n.implode($c.$n, preg_split("~$d~u", preg_replace("~^$d|$d$~u", '', $v))).$c.NL;
 }
 
-function get_template_form($a, $min = 0, $max = 0, $area = 0, $check = 0) {
-	if (is_array($a)) {
-		list($name, $head, $hint, $butn, $plhd) = $a;
-		$a = 0;
-	} else $name = $a;
-	if ($name) {
-		foreach (array(
-			'?' => ''
-		,	';' => 0
-		,	0 => ' method="post"'
-		) as $k => $v) if (!$k || $name[0] == $k) {
-			$method = $v;
-			if ($k == '?' && is_array($hint)) $name = implode(',', array_keys($hint)); else
-			if ($k) $name = substr($name, 1);
-			break;
+function get_template_attr($a = '', $prefix = 'data-') {
+	foreach ((array)$a as $k => $v) if (strlen($v)) $line .= ' '.$prefix.$k.'="'.$v.'"';
+	return $line ?: '';
+}
+
+function get_template_form($t) {
+	if (is_array($t)) {
+		foreach ($t as $k => $v) $$k = $v ?: '';
+	} else $name = $t;
+	if (is_array($a = $select)) {
+		$n = '';
+		foreach ((array)$a as $k => $v) {
+			if (!$name) $name = $k;
+			$n .= NL."	$k	$v[select]	$v[placeholder]";
 		}
-		if ($a) foreach (array(
-			'head' => ''
-		,	'hint' => '_hint'
-		,	'plhd' => '_placeholder'
-		,	'butn' => '_submit'
-		) as $k => $v) $$k = $GLOBALS["tmp_$name$v"];
-		if ($name) $name = ' name="'.$name.'"';
+		$select = htmlspecialchars($n).NL;
 	}
-	if (is_array($hint)) foreach ($hint as $k => $v) if (is_array($v)) $hint[$k] = reset($v);
-	if ($min||$max) $name .= ' pattern="\s*(\S\s*){'.($min?$min:0).','.($max?$max:'').'}"';
-	if ($name && $plhd) $name .= ' placeholder="'.$plhd.'"';
-	$name .= ($GLOBALS['u_opts']['focus']?'':' autofocus').' required';
-	return ($head?'
-<p>'.$head.':</p>'
-:'').(($name !== false)?(($name === 0 || $method === 0)?'
-<p><b><input type="text'.($butn?'" id="'.$butn:'').'"'.$name.'></b></p>'
-:'
-<form'.$method.'>
-	<b>
-		<b><'.($area?'textarea'.$name.'></textarea':'input type="text"'.$name).'></b>
-		<b><input type="submit" value="'.($butn?$butn:$GLOBALS['tmp_submit']).'"></b>
-	</b>'.($check?'
-	<label class="r">
-		'.$check.':
-		<input type="checkbox" name="check">
-	</label>':'').'
-</form>'
-):'').($hint?'
-<p class="hint'.(is_array($hint)?' r">'.implode(',', $hint):'">'.indent(get_template_hint($hint))).'</p>'
-:'');
+	if ($name) {
+		foreach (
+			explode(',', 'head,hint,placeholder,submit') as $v
+		) if (!$$v) {
+			$$v = $GLOBALS["tmp_$name".($v == 'head'?'':"_$v")] ?: $GLOBALS["tmp_$v"] ?: '';
+		}
+	}
+	if ($a = $method) $method = ' method="'.$a.'"';
+	if ($a = $filter) $attr .= ' id="filter" data-filter="'.$a.'"';
+	if ($a = $placeholder ?: ($a?$GLOBALS['tmp_filter_placeholder']:'')) $attr .= ' placeholder="'.$a.'"';
+	if (!$GLOBALS['u_opts']['focus']) $attr .= ' autofocus';
+	if ($name) {
+		$name = ' name="'.$name.'"'.$attr.' required';
+		if ($min||$max) $name .= ' pattern="\s*(\S\s*){'.($min ?: 0).','.($max ?: '').'}"';
+	}
+	if ($head) {
+		$head = NL
+		.'<p>'
+		.	indent($head.':')
+		.'</p>';
+	}
+	if ($a = $hint) {
+		$hint = '';
+		foreach ((array)$a as $k => $v) $hint .= NL
+		.'<p class="hint'.($k?" $k":'').'">'
+		.	indent(get_template_hint(is_array($v) ? implode(',', array_map(function($a) {return is_array($a)?$a[0]:$a;}, $v)) : $v))
+		.'</p>';
+	}
+	if ($a = $checkbox) {
+		if (!is_array($a)) $a = array('label' => $a);
+		if ($n = $a['name'] ?: 'check') $n = ' name="'.$n.'"';
+		if ($r = $a['required'] ?: '') $r = ' required';
+		$checkbox = NL
+		.	'<label class="r">'
+		.		indent("$a[label]:".NL.'<input type="checkbox"'.$n.$r.'>')
+		.	'</label>';
+	}
+	return $head.NL.(
+		$name || $method
+		? "<form$method>".indent(
+			'<b>'.indent(
+				'<b><'.(
+					$textarea
+					? "textarea$name></textarea"
+					: 'input type="text"'.$name
+				).(
+					$select
+					? ' data-select="'.$select.'"'
+					: ''
+				).'></b>'.(
+					($submit || $method)
+					? NL.'<b><input type="submit" value="'.($submit ?: $GLOBALS['tmp_submit']).'"></b>'
+					: ''
+				)
+			).'</b>'.$checkbox
+		).'</form>'
+		: '<p><b><input type="text"'.$attr.'></b></p>'
+	).$hint;
 }
 
 function get_template_hint($t) {
 	return str_replace(
-		str_split('{|}[]\\')
-	,	array('<a href="', '">', '</a>', '<span class="', '</span>', NL)
+		str_split('{`}[|]\\')
+	,	array('<a href="', '" onClick="', '</a>', '<span class="', '">', '</span>', NL)
 	,	nl2br(htmlspecialchars(preg_replace_callback(
-			'~\b(\d+)s\b~'
-		,	function ($match) {return format_time_units($match[1]);}
+			'~\b\d+s\b~'
+		,	'format_time_units'
 		,	$t
-		)))
+		)), false)
 	);
 }
 
-function get_template_pre($p, $static = 0, $t = 'pre') {
+function get_template_content($p, $static = 0, $tag = '', $attr = '') {
 	global $tmp_require_js, $tmp_result;
-	if (is_array($a = $p)) {
+	if (is_array($p)) {
+		$a = $p;
+		$p = '';
 		foreach ($a as $k => $v) if (!$k) $p = $v; else if ($v) $attr .= " $k=\"$v\"";
 	}
 	if ($p) {
+		$t = $tag ?: 'pre';
 		$p = "
 <$t$attr>$p
-</$t>";
-		if ($t = ($t == 'pre'?'':' task')) $p = "
-<p>$tmp_result</p>$p";
-		else $p .= '
+</$t>".'
 <noscript><p class="hint report">'.($static?'JavaScript support required.':$tmp_require_js).'</p></noscript>';
-		return '<div class="thread'.$t.'">'.indent($p).'</div>';
-	} else return '';
+		return '<div class="'.($static?'thread':'content').'">'.indent($p).'</div>';
+	}
+	return '';
 }
 
 function get_template_page($t, $NOS = 0) {
 	global $tmp_announce, $tmp_post_err;
 	$N = ROOTPRFX.NAMEPRFX;
-	$j = $t['js'];
-	$static = ($NOS || $j === 'arch');
-	$class = (($v = $t['body']) ? (is_array($v)?$v:array($v)) : array());
+	if (!is_array($j = $t['js'])) $j = ($j ? array($j => 1) : array());
+	$R = !!$j['arch'];
+	$static = ($NOS || $R);
+	$class = (($v = $t['body']) ? (array)$v : array());
 	if ($t['anno']) foreach (data_global_announce() as $k => $v) {
 		if (MOD) $v = "<span id=\"$k\">$v</span>";
 		$ano .= NL."<b>$tmp_announce[$k]: $v</b>";
@@ -319,55 +465,67 @@ function get_template_page($t, $NOS = 0) {
 			if (!is_array($a)) $a = preg_split('~\W+~', $a);
 			foreach ($a as $v) if ($v = trim($v)) {
 				$e = $tmp_post_err[$v];
-				$err .= NL.'<p class="anno '.($v == 'trd_arch'?'gloom':'report').'">'.indent($e?$e:$v).'</p>';
+				$err .= NL.'<p class="anno '.($v == 'trd_arch'?'gloom':'report').'">'.indent($e ?: $v).'</p>';
 			}
 		}
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
 		if ($d = get_date_class()) $class = array_merge($class, $d);
 	}
-	if (is_array($a = $t['content'])) {
+	if ($a = $t[$k = 'content']) {
+		$attr = get_template_attr($t['data'][$k]);
 		if ($NOS) {
-			foreach ($a as $k => $v) $pre .= ($pre?NL:'').NL.$k.$NOS.$v;
-			$pre = '<pre>'.$pre.NL.'</pre>';
-		} else foreach ($a as $v) $pre .= get_template_pre($v, $static);
-	} else $pre = get_template_pre($a, $static);
+			foreach ((array)$a as $k => $v) $content .= ($content?NL:'').NL.$k.$NOS.$v;
+			$content = "
+<pre$attr>$content
+</pre>";
+		} else $content = get_template_content($a, $static, '', $attr);
+	}
 
 	$head = '<meta charset="'.ENC.'">'.($NOS?'':'
 <meta name="viewport" content="width=690">
-<link rel="stylesheet" type="text/css" href="'.$N.'.css'.($L?'?'.filemtime(NAMEPRFX.'.css'):'').'">').'
-<link rel="shortcut icon" type="image/png" href="'.($t['icon']?ROOTPRFX.$t['icon']:$N).'.png">'
-.($t['head']?NL.$t['head']:'')
-.($t['title']?NL.'<title>'.$t['title'].'</title>':'');
+<link rel="stylesheet" type="text/css" href="'.$N.($v = '.css').($L?'?'.filemtime(NAMEPRFX.$v):'').'">').'
+<link rel="shortcut icon" type="image/png" href="'.(($v = $t['icon'])?ROOTPRFX.$v:$N).'.png">'
+.($R || $_REQUEST[ME]?'
+<link rel="index" href="http://'.$_SERVER['SERVER_NAME'].ROOTPRFX.'">':'')
+.(($v = $t['head'])?NL.$v:'')
+.(($v = $t['title'])?NL."<title>$v</title>":'');
 
 	if ($ano) $header .= NL.'<p class="anno">'.indent($ano).'</p>';
 	if ($err) $header .= NL.$err;
-	if ($v = $t['header']) $header .= NL.'<div>'.indent($v).'</div>';
+	if ($a = $t['header']) {
+		if (is_array($a)) {
+			foreach ($a as $k => &$v) if ($v) $v = ($k?'<p class="'.$k.'">':'<p>').indent($v).'</p>';
+			$a = implode(NL, $a);
+		}
+		$header .= NL.'<div>'.indent($a).'</div>';
+	}
 	if ($header) $header = '<header id="header">'.indent($header).'</header>';
 
-	if ($v = $t['task']) {
+	if ($v = $t[$txt = 'textarea']) $$txt = htmlspecialchars($v);
+	if ($v = $t[$k = 'task']) {
+		$attr = get_template_attr($t['data'][$k]);
 		if ($sub = $t['subtask']) $v = '<div class="task">'.indent($v).'</div>'.$sub;
-		else if (!$static) $data = ' class="task"';
-		if (is_array($a = $t['data'])) foreach ($a as $k => $d) $data .= ' data-'.$k.'="'.$d.'"';
-		if ($sub = $t[$k = 'textarea']) $v .= "
-<$k>$sub
-</$k>";
-		$task = '<div id="task"'.$data.'>'.indent($v).'</div>';
+		else if (!$static) $attr = ' class="task"'.$attr;
+		if ($sub = $$txt) $v .= "
+<$txt>$sub
+</$txt>";
+		$task = '<div id="task"'.$attr.'>'.indent($v).'</div>';
 	} else
-	if ($v = $t[$k = 'textarea']) $pre .= get_template_pre($v, $static, $k);
+	if ($v = $$txt) $content .= get_template_content($v, $static, $txt);
 	if ($v = $t['footer']) $footer = '<footer>'.indent($v).'</footer>';
 
-	if (is_array($a = $j) || ($j && ($a = array(".$j" => 0)))) foreach ($a as $k => $v) $scripts .= '
-<script src="'.$N.($v = ($v?'':$k).'.js').($L?'?'.filemtime(NAMEPRFX.$v):'').'"></script>';
+	if ($j) foreach ($j as $k => $v) $scripts .= '
+<script src="'.$N.($v = ($k?".$k":'').'.js').($L?'?'.filemtime(NAMEPRFX.$v):'').'"></script>';
 
 	return '<!doctype html>
-<html lang="'.($t['lang']?$t['lang']:'en').'">
+<html lang="'.($t['lang'] ?: 'en').'">
 <head>'
 .indent($head)
 .'</head>
 <body'.($class?' class="'.implode(' ', $class).'"':'').'>'
 .indent($header, 1)
 .indent($task, 1)
-.indent($pre, 1).(($t =
+.indent($content, 1).(($t =
  indent($footer, 1)
 .indent($scripts, 1)) && ($k = get_const('TOOK'))?str_replace($k, get_time_elapsed(), $t):$t)
 .'</body>
@@ -376,10 +534,12 @@ function get_template_page($t, $NOS = 0) {
 
 //* ---------------------------------------------------------------------------
 
+$arch_list_href = ROOTPRFX.DIR_ARCH;
+$room_list_href = ROOTPRFX.DIR_ROOM;
 $tmp_wh = 'wh';
 $tmp_whu = array('WIDTH','HEIGHT');
-$tmp_room_new = '{'.($cfg_room = ROOTPRFX.DIR_ROOM).'new/|new}';
-if ($s = get_const('ROOM_HIDE')) $tmp_room_new_hide = '{'.$cfg_room.($s .= 'test')."/|$s}";
-//if ($s = get_const('ROOM_DUMP')) $tmp_room_new_dump = '{'.$cfg_room.($s .= 'dump')."/|$s}";
+$tmp_room_new = '{'.$room_list_href.'new/|new}';
+if ($s = get_const('ROOM_HIDE')) $tmp_room_new_hide = '{'.$room_list_href.($s .= 'test')."/|$s}";
+if ($s = get_const('ROOM_DUMP')) $tmp_room_new_dump = '{'.$room_list_href.($s .= 'dump')."/|$s}";
 
 ?>

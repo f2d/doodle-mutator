@@ -15,6 +15,12 @@ define(M0, $t[0]);
 define(GET_Q, strpos($_SERVER['REQUEST_URI'], '?'));
 define(ROOTPRFX, substr($s = $_SERVER['PHP_SELF'], 0, strrpos($s, '/')+1));
 
+if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
+	function strip_magic_slashes(&$value, $key) {$value = stripslashes($value);}
+	$gpc = array(&$_GET, &$_POST, &$_COOKIE, &$_REQUEST);
+	array_walk_recursive($gpc, 'strip_magic_slashes');
+}
+
 require(NAMEPRFX.'.cfg.php');
 foreach ($cfg_dir as $k => $v) define('DIR_'.strtoupper($k), $v.'/');
 
@@ -70,16 +76,16 @@ if ($me = $_REQUEST[ME]) {
 		,	'body' => 'burnt-hell'
 		)));
 
-		if (POST) $post_status = OQ.$tmp_post_ok_user_qk;
+		if (POST) $post_status = 'user_qk';
 		foreach ($opt_lvls as $i => $a) if ($p = ${"u_opt$i"})
 		foreach ($cfg_opts_order[$a] as $k => $v) if ($x = intval($p[$k])) $u_opts[$v] = $x;
 	}
 }
-define(GOD, $u_flag['god']?1:0);
+define(GOD, !!$u_flag['god']);
 define(TIME_PARTS, !POST && GOD && !$u_opts['time_check_points']);	//* <- profiling
 if (TIME_PARTS) time_check_point('GOD defined'); else unset($tcp);
 
-if (!($u_per_page = intval($u_per_page))) $u_per_page = TRD_PER_PAGE;
+$u_per_page = intval($u_per_page) ?: TRD_PER_PAGE;
 $etc = trim($_REQUEST['etc'], '/');
 $qdir = strtolower($_REQUEST['dir']);
 $qredir = $qdir.'s';
@@ -90,14 +96,12 @@ if (FROZEN_HELL && !GOD && !($u_key && $qd_opts) && !$qd_arch) {
 	die($etc == '-'?'-':get_template_page(array(
 		'lang' => $lang
 	,	'title' => $tmp_stop_all.' '.$tmp_title.'.'
-	,	'header' => '
-<p>
-	<a href="'.ROOTPRFX.'">'.$tmp_title.'.</a>
-</p>
-<p class="r">
-	<a href="'.ROOTPRFX.DIR_ARCH.'">'.$tmp_archive.'.</a>
-	<a href="'.ROOTPRFX.DIR_OPTS.'">'.$tmp_options.'.</a>
-</p>'
+	,	'header' => array(
+			'<a href="'.ROOTPRFX.'">'.$tmp_title.'.</a>'
+		, 'r' =>
+			'<a href="'.ROOTPRFX.DIR_ARCH.'">'.$tmp_archive.'.</a>'.NL.
+			'<a href="'.ROOTPRFX.DIR_OPTS.'">'.$tmp_options.'.</a>'
+		)
 	,	'task' => $tmp_stop_all
 	)));
 }
@@ -115,68 +119,10 @@ if ($qdir) {
 	if ($l = mb_strlen($room = trim_room($room_url = urldecode($_REQUEST['room'])))) define(R1, $l = (mb_strlen(ltrim($room, '.')) <= 1));
 } else {
 	if ($u_key && !$u_room_home) $qd_opts = 1;
-	if (GOD) {
-//* rewrite htaccess if none/changed, when logged in and viewing root folder:
-		$start_mark = '# 8<-- start mark: '.NAMEPRFX.', version: ';
-		$end_mark = '# 8<-- end mark: '.NAMEPRFX.', placed automatically: ';
-		$new_mark = $start_mark.ROOTPRFX.' 2016-07-11 17:04';	//* <- change tail here to invalidate old version
-		if (
-			!($old = (is_file($f = '.htaccess') ? trim(file_get_contents($f)) : ''))
-		||	false === strpos($old, $new_mark)
-		||	false === strpos($old, $end_mark)
-		) {
-			$n = 'NO_CACHE';
-			$e_cond = " env=$n";
-			$e_set = "E=$n:1";
-			$d = '('.implode('|', $cfg_dir).')(/([^/]+))?';
-			$new = $new_mark.' -- Do not touch these marks. Only delete them along with the whole block.
-<IfModule rewrite_module>
-	RewriteEngine On
-	RewriteBase '.ROOTPRFX.'
-# variable fix:
-	RewriteCond %{ENV:REDIRECT_'.$n.'} !^$
-	RewriteRule .* - [E='.$n.':%{ENV:REDIRECT_'.$n.'}]
-# virtual folders:'.(get_const('DIR_DATA')?'
-	RewriteRule ^'.DIR_DATA.'.*$ . [L,R=301]':'').'
-	RewriteRule ^('.DIR_PICS.')(([^/])[^/]+\.([^/])[^/]+)$ $1$4/$3/$2'.'
-	RewriteRule ^'.$d.'$ $0/ [L,R=301]'.'
-	RewriteRule ^'.$d.'(/[-\d]*)$ index.php?dir=$1&room=$3&etc=$4 [L,'.$e_set.']
-# files not found:
-	RewriteCond %{REQUEST_FILENAME} -f [OR]
-	RewriteCond %{REQUEST_FILENAME} -d
-	RewriteRule ^.? - [S=2]
-	RewriteRule ^('.DIR_PICS.'|'.DIR_ARCH.'[^/]+/'.DIR_THUMB.').*$ err.png [L,'.$e_set.']
-	RewriteRule ^('.$d.'/).+$ $1. [L,R,'.$e_set.']
-</IfModule>
-<IfModule headers_module>
-	Header set Cache-Control "max-age=0; must-revalidate; no-cache"'.$e_cond.'
-	Header set Expires "Wed, 27 Jan 2016 00:00:00 GMT"'.$e_cond.'
-	Header set Pragma "no-cache"'.$e_cond.'
-	Header unset Vary'.$e_cond.'
-</IfModule>
-'.$end_mark.date(TIMESTAMP, T0).' -- Manual changes inside will be lost on the next update.';
-			if ($old) {
-				$b_found = (false !== ($i = strpos($old, $start_mark)));
-				$before = ($b_found ? trim(substr($old, 0, $i)) : '');
-
-				$a_found = (false !== ($i = strpos($old, $end_mark)));
-				$after = ($a_found && false !== ($i = strpos($old, NL, $i)) ? trim(substr($old, $i)) : '');
-
-				if ($b_found || $a_found) $new = ($before?$before.NL.NL:'').$new.($after?NL.NL.$after:'');
-				else $new .= NL.NL.$old;
-			} else $old = 'none';
-			data_log_adm(file_put_contents($f, $new) ? "$f updated, old:
-
-$old
-
----- new: ----
-
-$new" : 'Failed to update '.$f);
-		}
-	}
+	if (GOD) rewrite_htaccess();
 }
 
-define(MOD, (GOD || $u_flag['mod'] || $u_flag['mod_'.$room])?1:0);
+define(MOD, GOD || $u_flag['mod'] || $u_flag['mod_'.$room]);
 if (TIME_PARTS) time_check_point('MOD defined, inb4 action fork');
 
 
@@ -193,11 +139,11 @@ if ($u_key) {
 //* options change ------------------------------------------------------------
 
 	if (isset($_POST[$p = 'quit'])) {
-		$post_status = OQ.$tmp_post_ok_user_quit;
+		$post_status = 'user_quit';
 		$u_key = $p;
 	} else
 	if (isset($_POST[$p = O.'o'])) {	//* <- options work, no matter whatever else
-		$post_status = OQ.$tmp_post_ok_user_opt;
+		$post_status = 'user_opt';
 		if (strlen($_POST[$p]) > 1) $u_opti = 'd';
 		else {
 			foreach ($opt_lvls as $k => $v) {
@@ -223,7 +169,7 @@ if ($u_key) {
 				} else {
 					$post_status = (
 						data_log_report($r, $_POST['freeze'] || $_POST['check']) > 0
-						? OQ.$tmp_post_ok_text
+						? OK
 						: 'unkn_res'
 					);
 					data_unlock();
@@ -244,7 +190,7 @@ if ($u_key) {
 				$i = implode('/', $q);
 			}
 			$add_qk = "$a=$r/$i";
-			$post_status = OQ.$tmp_post_ok_skip;
+			$post_status = 'skip';
 		}
 	} else
 
@@ -253,7 +199,23 @@ if ($u_key) {
 	if (isset($_POST['describe'])) {
 		$post_status = 'text_short';
 		if (mb_strlen($x = $ptx = trim_post($_POST['describe'], DESCRIBE_MAX_LENGTH), ENC) >= DESCRIBE_MIN_LENGTH) {
-			$post_status = (data_lock($room)?'post_ok_text':'no_lock');
+			if (data_lock($room)) {
+				$unlim = trim($_POST['describe']);
+				$n = strlen($delim = '/');
+				if (
+					substr($unlim, 0, $n) == $delim
+				&&	substr($unlim, -$n) == $delim
+				&&	substr_count($x = trim($x, $spaced = " $delim "), $spaced)
+				) {
+					$x = '<i class="poem">'
+					.	str_replace($spaced, '<br>',
+						preg_replace("~\s+($delim\s+){2,}~", '<br><br>',
+							trim($x, $delim.' ')
+						))
+					.'</i>';
+				}
+				$post_status = 'new_post';
+			} else $post_status = 'no_lock';
 		}
 	} else
 
@@ -263,7 +225,7 @@ if ($u_key) {
 		$post_status = 'file_pic';
 		$log = 0;
 		$ppl = strlen($pp = $_POST['pic']);
-		$txt = (($ptx = $_POST['txt']) ? $ptx : '0-0,(?)');
+		$txt = (($ptx = $_POST['txt']) ?: '0-0,(?)');
 	//* metadata, got newline separated tagged format:
 		if (false !== strpos($txt, NL)) {
 			$a = explode(',', 'app,draw_time,open_time,t0,time,used');	//* <- to add to picture mouseover text
@@ -280,15 +242,15 @@ if ($u_key) {
 				$log = "$ppl != $z";
 			} else {
 				if (!$y['time']) {
-					$z = array($target['time'].'000', T0.'000');
+					$t = array($target['time'].'000', T0.'000');
 					$a = ($x = $y['open_time']) ? explode('-', $x) : array();
 					$b = ($x = $y['draw_time']) ? explode('-', $x) : array();
 					if ($b[0] == $b[1]) $b[0] = 0;
-					foreach ($z as $k => $v) if (!$b[$k]) $b[$k] = ($a[$k]?$a[$k]:$v);
-					$y['time'] = "$b[0]-$b[1]";
+					foreach ($t as $k => $v) $t[$k] = $b[$k] ?: $a[$k] ?: $v;
+					$y['time'] = "$t[0]-$t[1]";
 				} else
 				if (!preg_match('~^(\d+:)+\d+$~', $y['time'])) {
-					$t = array(($y['t0']?$y['t0']:$target['time']).'000', T0.'000');
+					$t = array(($y['t0'] ?: $target['time']).'000', T0.'000');
 					if (preg_match('~^(\d+)\D+(\d+)$~', $y['time'], $m)) {
 						if ($m[1] && $m[1] != $m[2]) $t[0] = $m[1];
 						if ($m[2]) $t[1] = $m[2];
@@ -305,9 +267,9 @@ if ($u_key) {
 			if ($t[2]) $txt = $t[2].','.$t[5];
 			else {
 				if (!$t[4]) $t[4] = T0.'000';
-				if (!$t[3] || $t[3] == $t[4]) $t[3] = ($t[1]?$t[1]:$target['time']).'000';
+				if (!$t[3] || $t[3] == $t[4]) $t[3] = ($t[1] ?: $target['time']).'000';
 				if (!$t[3]) $t[3] = $t[4];
-				$txt = $t[3].'-'.$t[4].','.$t[5];
+				$txt = "$t[3]-$t[4],$t[5]";
 			}
 		}
 		if ($log); else
@@ -315,14 +277,14 @@ if ($u_key) {
 		if ((count($a = explode(',', $pp, 2)) < 2)
 			|| !(($png = strpos($a[0], 'png'))
 				||   strpos($a[0], 'jpeg'))
-			|| (false === ($data = base64_decode($a[1])))
-		) $log = 'invalid, '.$ppl.' bytes: '.(($ppl > REPORT_MAX_LENGTH) ? substr($pp, 0, REPORT_MAX_LENGTH).'(...)' : $pp);
+			|| (false === ($raw_data = base64_decode($a[1])))
+		) $log = 'invalid, '.$ppl.' bytes: '.($ppl > REPORT_MAX_LENGTH ? substr($pp, 0, REPORT_MAX_LENGTH).'(...)' : $pp);
 		else
-		if (($x = strlen($data)) > DRAW_MAX_FILESIZE) {
+		if (($x = strlen($raw_data)) > DRAW_MAX_FILESIZE) {
 			$post_status = 'file_size';
 			$log = $x;
 		} else
-		if (is_file($f = get_pic_subpath($fn = ($md5 = md5($data)).($png?'.png':'.jpg'), 1))) {
+		if (is_file($f = get_pic_subpath($fn = ($md5 = md5($raw_data)).($png?'.png':'.jpg'), 1))) {
 			$post_status = 'file_dup';
 			$log = $fn;
 		} else
@@ -330,19 +292,20 @@ if ($u_key) {
 			$post_status = 'no_lock';
 		} else {
 	//* save pic file:
-			if (($log = file_put_contents($f, $data)) != $x) {
+			if (($log = file_put_contents($f, $raw_data)) != $x) {
 				$x = 0;
 				$post_status = 'file_put';
 			} else
 			if ($sz = getImageSize($f)) {
 				foreach ($tmp_whu as $k => $v)
-				if (
-					($a = get_const('DRAW_LIMIT_'.$v))
-				||	($a = get_const('DRAW_DEFAULT_'.$v))
-				) {
-					$a = preg_split('~\D+~', $a);
-					$z = $$tmp_wh[$k] = $sz[$k];
-					if (($a[0] && $z < $a[0]) || (($a[1]?$a[1]:$a[1]=$a[0]) && $z > $a[1])) {
+				if ($a = (
+					get_const('DRAW_LIMIT_'.$v)
+				?:	get_const('DRAW_DEFAULT_'.$v)
+				)) {
+					list($a, $b) = preg_split('~\D+~', $a);
+					$y = ($b ?: $a);
+					$z = ${$tmp_wh[$k]} = $sz[$k];
+					if (($a && $z < $a) || ($y && $z > $y)) {
 						$x = 0;
 						$post_status = 'pic_size';
 						$log = "$sz[0]x$sz[1]";
@@ -385,7 +348,7 @@ if ($u_key) {
 	//* gather post data fields to store:
 				$x = array($fn, trim_post($txt));
 				if (LOG_UA) $x[] = trim_post($_SERVER['HTTP_USER_AGENT']);
-				$post_status = 'post_ok_file';
+				$post_status = 'new_post';
 			} else if (is_file($f)) unlink($f);
 		}
 	} else
@@ -413,9 +376,9 @@ if ($u_key) {
 		}
 	}
 
-//* write user post -----------------------------------------------------------
+//* write new post to a thread ------------------------------------------------
 
-	if (substr($post_status,0,7) == 'post_ok') {
+	if ($post_status == 'new_post') {
 		data_aim();
 		$x = data_log_post($x);
 		data_unlock();
@@ -424,7 +387,7 @@ if ($u_key) {
 		if ($log = $x['cap']) $t[] = 'trd_max'; else
 		if (!$x['post']) $t[] = 'unkn_res';
 		if (is_array($x = $x['arch']) && $x['done']) $t[] = 'trd_arch';
-		$post_status = (count($t) ? implode('!', $t) : OQ.${'tmp_'.$post_status});
+		if (count($t)) $post_status = implode('!', $t);
 	}
 
 //* after user posting --------------------------------------------------------
@@ -447,7 +410,7 @@ Target$op$t$ed"
 
 //* register new user ---------------------------------------------------------
 
-	$post_status = (data_log_user($u_key = md5($me.T0.substr(M0,2,3)), $me)?OQ.$tmp_post_ok_user_reg:'unkn_res');
+	$post_status = (data_log_user($u_key = md5($me.T0.substr(M0,2,3)), $me)?'user_reg':'unkn_res');
 }
 
 
@@ -460,86 +423,82 @@ Target$op$t$ed"
 
 	if ($qd_arch) {
 		require_once(NAMEPRFX.'.arch.php');
-		$rda = ROOTPRFX.DIR_ARCH;
-		if ($room && ($thread_count = data_get_archive_count())) {
-			exit_if_not_mod(data_get_archive_mtime());
-
-			$js['.arch'] = 0;
-			$task = get_template_form(
-				array(
-					'?'
-				,	$tmp_archive
-				,	$tmp_archive_find_by
-				,	$tmp_archive_find
-				)
-			,	FIND_MIN_LENGTH
-			);
-
-//* archive posts search ------------------------------------------------------
-
-			$search = array();
-			$research = '';
-			foreach ($tmp_archive_find_by as $k => $v) if (array_key_exists($k, $query) && strlen($q = $query[$k])) {
-				if (
-					!mb_check_encoding($q, ENC)
-				&&	($f = get_const('ENC_FALLBACK'))
-				) {
-					foreach (explode(',', $f) as $e) if (
-						($e = trim($e))
-					&&	mb_check_encoding($i = iconv($e, ENC, $q), ENC)
-					) {
-						$q = $i;
-						break;
-					}
-				}
-				if (strlen($q = mb_strtolower(trim_post($q, FIND_MAX_LENGTH), ENC))) {
-					$search[$k] = $q;
-					$research .= ($research?',
-':' ').(is_array($v)?end($v):$v).': <a name="'.$k.'">'.htmlspecialchars($q).'</a>';
-					$js[0]++;
-				}
-			}
-			if ($search) {
-				$task .= '
-<p class="hint" id="research">'.indent($tmp_archive_found.$research).'</p>';
-				$content = '|||';	//* <- to keep JS happy for now
-				if ($q = data_archive_find_by($search)) $content .= $q;
-				else $task .= $tmp_empty;
-			} else {
+		$search = data_get_archive_search_terms();
 
 //* archive threads list ------------------------------------------------------
 
-				if (($i = (R1?($thread_count-TRD_PER_PAGE):0)) < 0) $i = 0;
-				$content = DIR_THUMB.'|'.$thread_count.'|'.(R1?TRD_PER_PAGE.'|'.$i:$u_per_page).($u_key?'':'
-			<!-- static link for scriptless bots, last in chain -->
-			<a href="'.$thread_count.'.htm">'.$thread_count.'</a>');
+		if ($room && ($thread_count = data_get_archive_count())) {
+			exit_if_not_mod(data_get_archive_mtime());
+
+			if (!$search) {
+				$content = '
+images = '.DIR_THUMB.'
+image_ext = '.THUMB_EXT.'
+page_ext = '.PAGE_EXT.'
+on_page = '.(R1 ? TRD_PER_PAGE.'
+start = '.max(0, $thread_count - TRD_PER_PAGE) : $u_per_page).'
+total = '.$thread_count.($u_key?'':'
+<!-- static link for scriptless bots, last in chain -->
+<a href="'.$thread_count.'.htm">'.$thread_count.'</a>');
+				$data_attr['content']['type'] = 'archive threads';
 			}
-		} else {
+		} else
 
 //* archive rooms list --------------------------------------------------------
 
+		if ($visible = data_get_visible_archives()) {
+			exit_if_not_mod($visible['last']);
+
+			if (!$search) {
+				if ($c = !$u_opts['count']) $content = "
+$tmp_arch_last	$tmp_arch_count";
+				foreach ($visible['list'] as $room => $n) $content .= ($c ? "
+$n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
+				$room = '';
+				$data_attr['content']['type'] = 'archive rooms';
+			}
+		} else $search = 0;
+
+//* archive posts search ------------------------------------------------------
+
+		if (is_array($search)) {
 			$task = get_template_form(
 				array(
-					$qredir
-				,	$tmp_archive
-				,	$tmp_archive_hint
-				,	$tmp_rooms_submit
-				,	$tmp_rooms_placeholder
-				)
-			,	ROOM_NAME_MIN_LENGTH
+					'head' =>	$tmp_archive
+				,	'select' =>	$tmp_archive_find_by
+				,	'submit' =>	$tmp_archive_find
+				,	'hint' =>	$search || $room ? '' : $tmp_archive_hint
+				,	'min' =>	FIND_MIN_LENGTH
+			/*	,	'checkbox' =>	array(
+						'hint' => $tmp_regex_hint
+					,	'each' => '_regex'
+					)
+			*/	)
 			);
-			$task_data['filter'] = 2;
-			if ($visible = data_get_visible_archives()) {
-				exit_if_not_mod($visible['last']);
-
-				$content = '
-'.$tmp_arch_last.'	'.$tmp_arch_count;
-
-				foreach ($visible['list'] as $room => $n) $content .= '
-'.$n['last'].'	'.$n['count'].'	<a href="'.$rda.$room.'/">'.$room.'</a>';
-				$room = '';
-				$js[0]++;
+			if ($search) {
+				$research = '';
+				foreach ($search as $k => $v) {
+					$t = $tmp_archive_find_by[$k];
+					$t = $t['found by'] ?: $t['select'];
+					$research .=
+						($research?',':'')
+					.	NL
+					.	'<a name="'.$k.'">'
+					.	($t ? "$t: " : '')
+					.		'<span>'
+					.			htmlspecialchars($v)
+					.		'</span>'
+					.	'</a>';
+				}
+				$task .= '
+<p class="hint" id="research">'.indent($tmp_archive_found.$research).'</p>';
+				if ($found = data_archive_find_by($search)) {
+					$content = '
+page_ext = '.PAGE_EXT.NL.$found;
+					$data_attr['content']['type'] = 'archive found';
+				}
 			}
+			$js[0]++;
 		}
 		if (!$content) $task .= $tmp_empty;
 	} else
@@ -564,33 +523,35 @@ if ($u_key) {
 //* options -------------------------------------------------------------------
 
 	if ($qd_opts) {
-		$nst = '
- 	 	';
-		$draw_app = (($s = array_search($u_draw_app, $cfg_draw_app))?$s:0)
-.':'.implode('|', $cfg_draw_app).':'.implode('|', $tmp_draw_app).':?draw_app=*:'
-//':'.ROOTPRFX.'*.htm:'
-.$tmp_draw_test;
+		$data_attr['content']['type'] = 'options';
+		$draw_app = (array_search($u_draw_app, $cfg_draw_app) ?: 0)
+.';'.implode(',', $cfg_draw_app)
+.';'.implode(',', $tmp_draw_app)
+.';?draw_app=*';
 		foreach ($cfg_draw_vars as $v) if (!${$i = 'u_'.$v}) $$i = get_const(strtoupper($v));
 		if (!$u_room_home) {
 			$u_room_home = ROOM_DEFAULT;
-			if (!$qdir) $o1 = "$nst<br>$nst<b class=\"anno\">$tmp_options_first</b>$nst<br>";
+			if (!$qdir) $content = '
+||<b class="anno">'.$tmp_options_first.'</b>';
 		}
 		$s = ':	';
 		$a = $b = $c = $d = '';
 		if (GOD)
 		foreach ($cfg_opts_order[$i = 'admin'] as $k => $v) $a .= NL.$tmp_options_input[$i][$v].$s.abbr($v).'='.($u_opta[$k]?1:'');
-		foreach ($cfg_opts_order[$i = 'input'] as $k => $v) $b .= NL.$tmp_options_input[$i][$v].$s.abbr($v).'='.($$v?$$v:'='.${'u_'.$v});
+		foreach ($cfg_opts_order[$i = 'input'] as $k => $v) $b .= NL.$tmp_options_input[$i][$v].$s.abbr($v).'='.($$v ?: '='.${'u_'.$v});
 		foreach ($cfg_opts_order[$i = 'check'] as $k => $v) $c .= NL.$tmp_options_input[$i][$v].$s.abbr($v).'='.($u_opti[$k]?1:'');
 		$i = '
 |<input type="submit" value="';
+		$j = '
+|<input type="button" value="';
 		foreach (array(
-			'out'	=> 'name="quit'
-		,	'save'	=> 'id="unsave" data-keep="'.DRAW_PERSISTENT_PREFIX
-		,	'skip'	=> 'id="unskip'
-		,	'pref'	=> 'name="'.O.'o'
-		) as $k => $v) $d .= $i.$tmp_options_drop[$k].'" '.$v.'">';
+			'out'	=> array($i, 'name="quit')
+		,	'save'	=> array($j, 'id="unsave" data-keep="'.DRAW_PERSISTENT_PREFIX)
+		,	'skip'	=> array($j, 'id="unskip')
+		,	'pref'	=> array($i, 'name="'.O.'o')
+		) as $k => $v) $d .= $v[0].$tmp_options_drop[$k].'" '.$v[1].'">';
 
-		$content = $tmp_options_turn_on.'|'.$tmp_options_turn_off.$o1.'
+		$content .= '
 <form method="post">'.$d.'
 </form><form method="post">'
 .NL.$tmp_options_name.$s.$usernames[$u_num]
@@ -602,14 +563,10 @@ if ($u_key) {
 		foreach ($tmp_rules as $head => $hint) {
 			if (is_array($hint)) {
 				$s = '';
-				foreach ($hint as $i) $s .= '
-<li>'.indent(get_template_hint($i)).'</li>';
-				$s = '
-<ul>'.indent($s).'</ul>';
-			} else	$s = '
-<p class="hint">'.indent(get_template_hint($hint)).'</p>';
-			$task .= "
-<p>$head</p>$s";
+				foreach ($hint as $i) $s .= NL.'<li>'.indent(get_template_hint($i)).'</li>';
+				$s = NL.'<ul>'.indent($s).'</ul>';
+			} else	$s = NL.'<p class="hint">'.indent(get_template_hint($hint)).'</p>';
+			$task .= NL."<p>$head</p>$s";
 		}
 		$js[0]++;
 	} else
@@ -617,7 +574,7 @@ if ($u_key) {
 	if ($qd_room) {
 		if ($room != $room_url) {
 			header('HTTP/1.1 303 Fixed room name');
-			header('Location: '.$cfg_room.$room.$_REQUEST['etc']);
+			header('Location: '.$room_list_href.$room.$_REQUEST['etc']);
 			exit;
 		}
 
@@ -660,7 +617,7 @@ if ($u_key) {
 					$t = implode('/', $q);
 				}
 				$add_qk = "$a=$r/$t";
-				$post_status = OQ.$tmp_post_ok_skip;
+				$post_status = 'skip';
 				goto post_refresh;
 			}
 
@@ -683,16 +640,20 @@ if ($u_key) {
 				}
 				$lnk = $t = '';
 				$ymd = preg_match(PAT_DATE, $etc, $m);		//* <- Y-m-d
-				if (!($mod_page = $tmp_mod_pages[intval($etc)])) $mod_page = $tmp_empty;
+				$mod_page = $tmp_mod_pages[intval($etc)] ?: $tmp_empty;
 				if ($ymd || $etc == 1) {
 					if ($l = data_get_mod_log()) {
 						if ($ymd) {
 							exit_if_not_mod(data_get_mod_log($etc, 1));
-							if ($a = data_get_mod_log($mod_page = $etc)) $content = 'rep'.NL.ROOTPRFX.DIR_PICS.	//* <- meh
+							if ($a = data_get_mod_log($mod_page = $etc)) {
+								$content = '
+images = '.ROOTPRFX.DIR_PICS.NL.
 preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',			//* <- transform data fields
 preg_replace('~\h+~u', ' ',
 preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1	',			//* <- keep multiline entries atomic
 preg_replace('~\v+~u', '<br>', NL.htmlspecialchars($a)))));
+								$data_attr['content']['type'] = 'reports';
+							}
 						}
 
 						$last = end(end($l));
@@ -709,9 +670,12 @@ preg_replace('~\v+~u', '<br>', NL.htmlspecialchars($a)))));
 <p>'.$k.': <a href="2-'.$k.'">'.str_replace_first(' ', '</a> ', $v).'</p>';
 					if (count($a = explode('-', $etc, 2)) > 1) {
 						ignore_user_abort(true);
-						$a = $a[1];
+						$a = intval($a[1]);
 if (TIME_PARTS) time_check_point('ignore user abort');
 						if ($a == 0) {
+							$t = data_post_refresh(true);
+						} else
+						if ($a == 1) {
 							foreach (get_dir_contents($d = DIR_PICS) as $f) if (is_file($old = $d.$f)) {
 								$new = get_pic_subpath($f, 1);
 								$t .=
@@ -719,58 +683,71 @@ NL.(++$a)."	$old => $new	".($old == $new?'same':(rename($old, $new)?'OK':'fail')
 							}
 if (TIME_PARTS && $a) time_check_point("done $a pics");
 						} else
-						if ($a == 1) {
+						if ($a == 2) {
 							require_once(NAMEPRFX.'.arch.php');
 							$t = data_archive_rewrite();
 						} else
-						if ($a == 2) $t = data_fix('users'); else
-						if ($a == 3) $t = data_fix('reports');
+						if ($a == 3) $t = data_fix('users'); else
+						if ($a == 4) $t = data_fix('reports'); else
+						if ($a == 5 || $a == 6) $t = rewrite_htaccess($a == 5);
 						if (!$t) $t = $tmp_no_change;
 					}
 				} else
 				if ($etc > 2) {
 					if ($etc == 5) {
-						exit_if_not_mod();		//* <- never exits, just to check if HTTP_IF_MODIFIED_SINCE is sent
-						$t = print_r($_SERVER, true)
-.NL.'DATE_RFC822 = '.gmdate(DATE_RFC822, T0)
-.NL.'DATE_RFC2822 = '.gmdate('r', T0);
+						exit_if_not_mod();		//* <- never exits, to check HTTP_IF_MODIFIED_SINCE, etc
+						$t = '_SERVER = '		.print_r($_SERVER, true)
+						.NL.'strip magic slashes = '	.print_r($gpc ?: 'off'.NL, true)
+						.NL.'DATE_RFC822 = '		.gmdate(DATE_RFC822, T0)
+						.NL.'DATE_RFC2822 = '		.gmdate('r', T0);
 					} else {
 						exit_if_not_mod(data_get_mod_log($etc, 1));
-						$t = data_get_mod_log($etc);
-					}
-					if ($etc < 5) {
-						$lnk .= get_template_form(';filter', $task_data['filter'] = 1);
-					}
-					if ($etc == 3) {
-						$js['.mod'] = 0;
-					//	$a = ($u_opts['active']?'a':'').($u_opts['count']?'':'c');
-						if ($t) $content .= "$tmp_mod_user_info:$tmp_mod_user_hint::ugc
-0,u	&nbsp;	 	$u_num.
+						if ($t = data_get_mod_log($etc)) {
+							if ($etc == 3) {
+								$content .= "
+left = $tmp_mod_user_info
+right = $tmp_mod_user_hint
+flags = cgu
 
-1,".trim(
-str_replace(NL."$u_num	", NL.'u	',					//* <- mark self
-preg_replace('~(\V+)	(\V+)	(\V+)\+\V+(	\V+?)~Uu', '$1	$3$4	$1. $2',//* <- transform data fields; TODO: move this to db.php?
+$u_num,u	v	 v
+
+".trim(
+str_replace(NL."$u_num	", NL."$u_num,u	",					//* <- mark self
+preg_replace('~(\V+)	(\V+)	(\V+)\+\V+(	\V+?)~Uu', '$1	$3$4	$2',	//* <- transform data fields; TODO: move this to db.php?
 NL.$t)));
-					} else
-					if ($etc == 4) {
-						if ($t) $content .= 'ref'.NL.
+								$data_attr['content']['type'] = 'users';
+							} else
+							if ($etc == 4) {
+								$content .= '
+flags = c'.NL.
 preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data fields
+								$data_attr['content']['type'] = 'reflinks';
+							}
+							$lnk .= get_template_form(array('filter' => 1));
+						}
 					}
 				}
-				if (!$content) $textarea = $t;
+				if (!$content) $textarea = $t;			//* <- dump plain text as is
 				$task = '
 <p id="tabs">'.implode('|', $tmp_mod_pages).'</p>'.($lnk || $content || $textarea ? $lnk : $tmp_empty);
+				$js['mod']++;
 				$js[0]++;
 			} else {
 
 //* report form ---------------------------------------------------------------
 
 				$task = get_template_form(
-					'report'
-				,	REPORT_MIN_LENGTH
-				,	REPORT_MAX_LENGTH
-				,	$is_report_page = 1
-				,	$tmp_report_freeze
+					array(
+						'method' =>	'post'
+					,	'name' =>	'report'
+					,	'min' =>	REPORT_MIN_LENGTH
+					,	'max' =>	REPORT_MAX_LENGTH
+					,	'textarea' =>	($is_report_page = 1)
+					,	'checkbox' =>	array(
+							'name' => 'freeze'
+						,	'label' => $tmp_report_freeze
+						)
+					)
 				);
 			}
 		} else
@@ -782,7 +759,8 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data
 				$draw_query = 1;
 				break;
 			}
-			$dont_change = ((($y = $query['!']) && ($y != 'trd_arch')) || $draw_query);
+			$y = $query['!'];
+			$dont_change = ($draw_query || trim(str_replace(array('trd_arch', 'trd_miss'), '', $y), '&'));
 			$skip_list = get_room_skip_list();
 
 if (TIME_PARTS) time_check_point('inb4 aim lock');
@@ -797,85 +775,121 @@ if (TIME_PARTS) time_check_point('inb4 aim lock');
 if (TIME_PARTS) time_check_point('got visible data, unlocked');
 
 			exit_if_not_mod(max($t = $target['time'], $visible['last']));
-			$task_time = ($t?$t:T0);	//* <- UTC seconds
-
+			$task_time = ($t ?: T0);	//* <- UTC seconds
 			$x = 'trd_max';
 			if ($draw_query && !$target['task'] && (!$y || false === strpos($y, $x))) {
 				if (data_is_thread_cap()) $query['!'] = ($y?$y.'!':'').$x;
 				else $draw_free = 1;
 			}
 			$desc = ($target['pic'] || !($target['task'] || $draw_free));
-			if (MOD) $js['.mod'] = 0;
-			if ($visible['threads']) {
-				$content = (MOD
-? $tmp_mod_post_hint   .':'.$tmp_mod_user_hint : (R1 || $u_flag['nor']?':'
-: $tmp_report_post_hint.':'.$tmp_report_user_hint)).':'.ROOTPRFX.DIR_PICS.':';
-				$flag = 'ackgmp';
+			if (MOD) $js['mod']++;
+			if ($vts = $visible['threads']) {
+				$flags = '';
+				$flag = 'acgmp';
 				foreach (array(
 					$u_opts['active']
 				,	!$u_opts['count']
-				,	$desc && $u_opts['kbox']
 				,	GOD
 				,	MOD
 				,	PIC_SUB
-				) as $k => $v) if ($v) $content .= $flag[$k];
+				) as $k => $v) if ($v) $flags .= $flag[$k];
+				$images = ROOTPRFX.DIR_PICS;
+				$content = (
+					MOD ? "
+left = $tmp_mod_post_hint
+right = $tmp_mod_user_hint"
+					: (R1 || $u_flag['nor'] ? '' : "
+left = $tmp_report_post_hint
+right = $tmp_report_user_hint"
+					)
+				)."
+images = $images
+flags = $flags
+";
 				$a = array();
 				$b = '<br>';
 if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
-				foreach ($visible['threads'] as $tid => $post) {
-					$t = '';
-					$k = $post[count($post)][1].'_'.$tid;
-					foreach ($post as $postnum => $tab) {
-						if ($u_opts['times'] && $tab[1]) {
-							$l = explode($b, $tab[1], 2);
-							$l[0] = NB;
-							$l = implode($b, $l);
-						} else $l = $tab[1];
-						if ($tab[2]) {
-							$r = explode($b, $tab[2], 2);
+				foreach ($vts as $tid => $posts) {
+					$tsv = '';
+					foreach ($posts as $postnum => $post) {
+						if ($t = $post['time']) {
+							if ($u_opts['times']) {
+								$l = explode($b, $t, 2);
+								$l[0] = NB;
+								$l = implode($b, $l);
+							} else $l = $t;
+						} else $l = NB;
+						if ($t = $post['user']) {
+							$r = explode($b, $t, 2);
 							$uid = $r[0];
-							$r[0] = (!$u_opts['names'] && array_key_exists($uid, $usernames)?$usernames[$uid]:NB);
+							$r[0] = (
+								!$u_opts['names']
+							&&	array_key_exists($uid, $usernames)
+								? $usernames[$uid]
+								: NB
+							);
 							$r = implode($b, $r);
 						} else $r = NB;
-						$ta = array(
-							$u_opts['own']?0:$tab[0]	//* <- trd.num, userbar color code
-						,	$l				//* <- time: format in JS
-						,	$r				//* <- username
-						,	$tab[4]				//* <- post content
+						$tabs = array(
+							'color' => $u_opts['own']?0:$post['flag']
+						,	'time' => $l
+						,	'user' => $r
+						,	'content' => $post['post']
 						);
-						if (count($tab) > 5) $ta[] = $tab[5];	//* <- pic comment
+						if ($t = $post['used']) $tabs['used'] = $t;
 						if (GOD) {
-							$ta[0] .= '#'.$uid;			//* <- user ID
-							if (count($tab) > 6) $ta[] = $tab[6];	//* <- user-agent
+							$tabs['color'] .= '#'.$uid;
+							if ($t = $post['browser']) $tabs['browser'] = $t;
 						}
 					//	if (MOD)
 						if (is_array($r = $visible['reports'][$tid][$postnum])) {
-							foreach ($r as $col => $l)
-							foreach ($l as $time => $line)
-							$ta[$col+1] .= "<br>$time: $line";
+							foreach ($r as $k => $lines) {
+								$k = 'reports_on_'.($k > 0?'user':'post');
+								$v = '';
+								foreach ($lines as $time => $line) $v .= ($v?'<br>':'').$time.': '.$line;
+								if ($v) $tsv .= NL.$k.' = '.$v;
+							}
 						}
-						$t .= (($postnum != 1)||$u_flag['nor']||(R1&&!MOD)?NL:NL.$tid.',').implode('	', $ta);
+						$tsv .= NL.(
+							$postnum > 0
+						||	$u_flag['nor']
+						||	(R1 && !MOD)
+							? ''
+							: end(explode('/', $tid)).','
+						).implode('	', $tabs);
 					}
-					$a[$k] = $t;
-if (TIME_PARTS) time_check_point('done trd '.$k);
+					$a[$tid] = $tsv;
+if (TIME_PARTS) time_check_point('done trd '.$tid);
 				}
 				ksort($a);
 				$content .= implode(NL, array_reverse($a));
 if (TIME_PARTS) time_check_point('after sort + join');
-				if (GOD) $task_data['filter'] = 1;
-			} else if (GOD) $content = "$tmp_empty:$tmp_empty::vg
-0,0	0	&mdash;	";
+				if (GOD) $filter = 1;
+			} else if (GOD) $content = "
+left = $tmp_empty
+right = $tmp_empty
+flags = vg
+
+0,0	v	v	&mdash;";	//* <- dummy thread for JS drop-down menus
 			$t = $target['task'];
 			if ($desc) {
 				$task = get_template_form(
 					array(
-						'describe'
-					,	$t?$tmp_describe_this:$tmp_describe_new
-					,	$tmp_describe_hint.($u_flag['nop']?' '.$tmp_no_play_hint:'')
-					,	''
-					,	GOD?$tmp_filter_placeholder:''
+						'method' =>	'post'
+					,	'name' =>	'describe'
+					,	'min' =>	DESCRIBE_MIN_LENGTH
+					,	'head' =>	$t ? $tmp_describe_this : $tmp_describe_new
+					,	'hint' =>	$tmp_describe_hint.($u_flag['nop'] ? '\\'.$tmp_no_play_hint : '')
+					,	'filter' =>	$filter
+					,	'checkbox' => (
+							$u_opts['kbox']
+							?  array(
+								'label' => $tmp_check_required
+							,	'required' => 1
+							)
+							: ''
+						)
 					)
-				,	DESCRIBE_MIN_LENGTH
 				);
 				if ($t) {
 					$src = (strpos($t, ';') ? get_pic_resized_path(get_pic_normal_path($t)) : $t);
@@ -885,7 +899,7 @@ if (TIME_PARTS) time_check_point('after sort + join');
 					$task_time = '-';
 					$s = count($skip_list);
 					$n = $target['count_free_tasks'];
-					if ($s && !$n) $task_data['unskip'] = "$s/$n/$target[count_free_unknown]";
+					if ($s && !$n) $data_attr['task']['unskip'] = "$s/$n/$target[count_free_unknown]";
 				}
 			} else {
 				$task = '
@@ -897,8 +911,9 @@ if (TIME_PARTS) time_check_point('after sort + join');
 <script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.get_draw_vars(DRAW_SEND).'"></script>
 <div class="task">'.indent('<p class="hint">'.indent($n['list']).'</p>').'</div>';
 			}
-			if ($t || $desc) $task_data['t'] = $task_time;
-			if ($t) $task_data['skip'] = intval($target['thread']);
+			if ($t || $desc) $data_attr['task']['t'] = $task_time;
+			if ($t) $data_attr['task']['skip'] = intval($target['thread']);
+			$data_attr['content']['type'] = 'threads';
 			$js[0]++;
 		} else {
 
@@ -907,43 +922,54 @@ if (TIME_PARTS) time_check_point('after sort + join');
 			if ($visible = data_get_visible_rooms()) {
 				exit_if_not_mod($visible['last']);
 
-				$rda = ROOTPRFX.DIR_ARCH;
-				$s = (($c = $u_opts['count'])?' ':', ');
-				$content = "$rda*$s*$cfg_room".($c?'':"
-$tmp_room_count_threads	$tmp_room_count_posts");
+				$t = !$u_opts['times'];
+				$c = !$u_opts['count'];
+				$s = ', ';
+				$content = "
+archives = $arch_list_href
+separator = \"$s\"
+".($c?"
+$tmp_room_count_threads	$tmp_room_count_posts":'');
 				foreach ($visible['list'] as $room => $n) {
+					if ($a = $n['marked']) foreach ($a as $k => $v) $room .= "$s$v$k[0]";
 					if ($c) {
-						if ($n[7]) foreach ($n[7] as $v) $room .= $s.($v?'?':0);
-						$content .=
-NL.($n[2]?'*':NB).'	'.NB."	$room";
+						$left = $n['threads now'].$s.$n['threads ever'];
+						if ($v = $n['threads arch']) $left .= $s.$v.($t ? $s.$n['last arch'] : '');
+						$right = $n['pics'].$s.$n['desc'].($t ? $s.$n['last post'] : '');
 					} else {
-						if ($n[7]) $room .= $s.implode($s, $n[7]);	//* <- colored counts of reports, frozen, etc
-						if ($n[2]) $n[1] .= $s.$n[2];
-						if (!$u_opts['times']) {
-							if ($n[2]
-							&&  $n[3]) $n[1] .= $s.$n[3];		//* <- last archived
-							if ($n[6]) $n[5] .= $s.$n[6];		//* <- last active post
-						}
-						$content .=
-NL."$n[0]$s$n[1]	$n[4]$s$n[5]	$room";
+						$left = ($n['threads arch']?'*':NB);
+						$right = NB;
 					}
-					if ($n[8]) {
-						foreach ($n[8] as $k => $v) if ($k) $n[8][$k] = "$tmp_announce[$k]: $v"; else $content .= '/';
-						$content .=
-'/'.preg_replace('~\s+~u', ' ', preg_replace('~<[^>]*>~', '', preg_replace('~<br[ /]*>~i', NL, implode(NL, $n[8]))));	//* <- announce/frozen
+					$content .= "
+$left	$right	$room";
+				//* announce/frozen:
+					if ($a = $n['anno']) {
+						if (!$a['room_anno']) $content .= '	';
+						foreach ($a as $k => $v) $content .= "	$tmp_announce[$k]: ".trim(
+							preg_replace('~\s+~u', ' ',
+							preg_replace('~<[^>]*>~', '',
+							preg_replace('~<br[ /]*>~i', NL,
+						$v))));
 					}
 				}
 				$room = '';
 			}
-			$task = get_template_form($qredir, ROOM_NAME_MIN_LENGTH);
-			$task_data['filter'] = 2;
+			$task = get_template_form(
+				array(
+					'method' =>	'post'
+				,	'name' =>	$qredir
+				,	'min' =>	ROOM_NAME_MIN_LENGTH
+				,	'filter' =>	2
+				)
+			);
+			$data_attr['content']['type'] = 'rooms';
 			$js[0]++;
 		}
 	} else
 
 	if (!$room) {
 		header('HTTP/1.1 303 To home room');
-		header('Location: '.$cfg_room.($u_room_home?$u_room_home.'/':''));
+		header('Location: '.$room_list_href.($u_room_home?$u_room_home.'/':''));
 		exit;
 	}
 } else {
@@ -954,33 +980,43 @@ NL."$n[0]$s$n[1]	$n[4]$s$n[5]	$room";
 	foreach ($cfg_dir as $k => $v) unset(${'qd_'.$k});
 	$task = get_template_form(
 		array(
-			ME
-		,	$tmp_name_yourself
-		,	$tmp_name_hint
+			'method' =>	'post'
+		,	'name' =>	ME
+		,	'min' =>	USER_NAME_MIN_LENGTH
 		)
-	,	USER_NAME_MIN_LENGTH
 	);
 }
 
 //* generate page, put content into template ----------------------------------
 
 define(S, '. ');
-define(A, '
-	<a href="');
+define(A, NL.'<a href="');
 $s = array();
+$short = !!$u_opts['head'];
 $room_title = ($room == ROOM_DEFAULT ? $tmp_room_default : $tmp_room.' '.$room);
 foreach (
-	($short = $u_opts['head'])
-	? array('/','..','.','a','?','?','#')
-	: array($tmp_title, $tmp_rooms, $room_title, $tmp_archive, $tmp_options, $tmp_draw_test, $tmp_mod_panel)
-as $v) {
-	$s[] = $v.($short||(substr($v, -1) == '.')?'':'.').'</a>';
+	array(
+		'/' => $tmp_title
+	,	'..' => $tmp_rooms
+	,	'.' => $room_title
+	,	'a' => $tmp_archive
+	,	'*' => $tmp_archives
+	,	'?' => $tmp_options
+	,	'~' => $tmp_draw_test
+	,	'#' => $tmp_mod_panel
+	) as $k => $v
+) {
+	$s[$k] = '">'.(
+		$short
+		? $k
+		: $v.(substr($v, -1) == '.'?'':'.')
+	).'</a>';
 }
-$current_room_link = A.($qd_room ? ($room?'..':'.') : $cfg_room).'">'.$s[1];
+$header = $footer = $links = $took = '';
 
 if (!$u_opts['names'] && defined('FOOT_NOTE')) {
 	$links = vsprintf(FOOT_NOTE, $tmp_foot_notes);
-} else $links = '';
+}
 
 if ($u_key && !$u_opts['times']) {
 	define(TOOK, $took = '<!--?-->');
@@ -996,53 +1032,101 @@ if ($u_key && !$u_opts['times']) {
 		}
 	}
 	$took = get_time_html().sprintf($tmp_took, $took);
-} else $took = '';
+}
+
+if (!$is_report_page) {
+	$this_href = ($room?'..':'.');
+	$room_list_link = A.($qd_room ? $this_href : $room_list_href).$s['..'];
+	$arch_list_link = (
+		$qd_arch || is_dir(DIR_ARCH)
+		? A.($qd_arch ? $this_href : $arch_list_href).$s['*']
+		: ''
+	);
+	if ($room) {
+		$room_link = A.($qd_room ? '.' : "$room_list_href$room/").$s['.'];
+		$arch_link = (
+			$qd_arch || is_dir(DIR_ARCH.$room)
+			? A.($qd_arch ? '.' : "$arch_list_href$room/").$s['a']
+			: ''
+		);
+	}
+	$header = (
+		$u_key
+		? array(
+			A.ROOTPRFX.$s['/']
+		.	($short?$room_list_link:'')
+		.	$room_link
+		.	($short?'':$arch_link)
+		, 'r' => (
+				GOD
+				? A.$room_list_href.($room ?: ROOM_DEFAULT).'/1'.$s['#']
+				: ''
+			)
+		.	($short?$arch_link:'')
+		.	$arch_list_link
+		.	($short?'':$room_list_link)
+		.	A.($qdir && $qd_opts?'.':ROOTPRFX.DIR_OPTS.($room?$room.'/':'')).$s['?']
+		)
+		: array(
+			A.ROOTPRFX.$s['/']
+		.	A.ROOTPRFX.'?draw_test'.$s['~']
+		, 'r' => (
+				is_dir(DIR_ARCH)
+				? A.ROOTPRFX.DIR_ARCH.$s['*']
+				: ''
+			)
+		)
+	);
+	if ($took)	$footer .= NL.'<p class="l hint">'.indent($took).'</p>';
+	if ($links)	$footer .= NL.'<p class="r hint">'.indent($links).'</p>';
+	if ($took_list)	$footer .= NL.'<table id="took" style="display:none">'.indent($took_list).'</table>';
+}
 
 die(get_template_page(array(
 	'icon' => $icon
 ,	'lang' => $lang
-,	'title' =>
-		($qd_opts == 1 ? $tmp_options.S :
-		($qd_arch ? ($room ? $room_title.S : '').$tmp_archive.S :
-		($qd_room ? ($room ? (
-			$etc ? (GOD?$tmp_mod_panel.' - '.$mod_page:$tmp_report).S : ''
-		).$room_title.S : $tmp_rooms.S) : ''))).$tmp_title.
-		($qd_opts == 2 ? S.$tmp_options_input['input']['draw_app'] : '')
-,	'header' => $is_report_page?'':
-		($u_key?('
-<p>'.
-			A.ROOTPRFX.'">'.$s[0].($short?$current_room_link:'').
-				($room ?
-			A.($qd_room ? '.' : $cfg_room.$room.'/').'">'.$s[2].
-				($qd_arch || is_dir($arch = DIR_ARCH.$room) ?
-			A.($qd_arch ? '.' : ROOTPRFX.$arch.'/').'">'.$s[3]
-				: '') : '').'
-</p>
-<p class="r">'.(GOD?
-			A.$cfg_room.($room?$room:ROOM_DEFAULT).'/1">'.$s[6]:'').($short?'':$current_room_link).
-			A.($qdir && $qd_opts?'.':ROOTPRFX.DIR_OPTS.($room?$room.'/':'')).'">'.$s[4].'
-</p>'
-		):('
-<p>'.
-			A.ROOTPRFX.'">'.$s[0].
-			A.ROOTPRFX.'?draw_test">'.$s[5].'
-</p>'.(is_dir(DIR_ARCH)?'
-<p class="r">'.
-			A.ROOTPRFX.DIR_ARCH.'">'.$s[3].'
-</p>':'')
-		))
+,	'title' => (
+		$qd_opts == 1
+		? $tmp_options.S
+		: (
+			$qd_arch
+			? (
+				$room
+				? $room_title.S
+				: ''
+			).$tmp_archive.S
+			: (
+				$qd_room
+				? (
+					$room
+					? (
+						$etc
+						? (
+							GOD
+							? $tmp_mod_panel.' - '.$mod_page
+							: $tmp_report
+						).S
+						: ''
+					).$room_title.S
+					: $tmp_rooms.S
+				)
+				: ''
+			)
+		)
+	).$tmp_title.(
+		$qd_opts == 2
+		? S.$tmp_options_input['input']['draw_app']
+		: ''
+	)
+,	'header' => $header
 ,	'anno' => !$is_report_page
 ,	'report' => $query['!']
-,	'data' => $task_data
-,	'task' => $task?$task:'Err... What?'
+,	'data' => $data_attr
+,	'task' => $task ?: 'Err... What?'
 ,	'subtask' => $subtask
 ,	'textarea' => $textarea
 ,	'content' => $content
-,	'footer' => $is_report_page?'':($took?'
-<p class="l hint">'.indent($took).'</p>':'').($links?'
-<p class="r hint">'.indent($links).'</p>':'').($took_list?'
-<br clear="all">
-<table id="took" style="display:none">'.indent($took_list).'</table>':'')
+,	'footer' => $footer
 ,	'js' => $js
 )));
 
@@ -1055,19 +1139,22 @@ die(get_template_page(array(
 
 post_refresh:
 
-if ($o = ob_get_clean()) data_log_adm('POST buffer dump: '.$o);
+if ($o = trim(ob_get_clean())) data_log_adm('POST buffer dump: '.$o);
 
-$ek = array_key_exists($p = $post_status, $tmp_post_err);
-$ok = (!$p || OK == substr($p, 0, strlen(OK)));
-$msg = ($ok || !$ek?$p:$tmp_post_err[$p]);
-
-if ($ok && isset($_POST['report'])) die(get_template_page(array(
+if ($p = $post_status) foreach (array(
+	'OK' => $tmp_post_ok
+,	'NO' => $tmp_post_err
+) as $k => $v) {
+	if ($$k = array_key_exists($p, $v)) $msg = $v[$p];
+	else $$k = ($p == (get_const($k) ?: $k));
+}
+if ($OK && isset($_POST['report'])) die(get_template_page(array(
 	'head' => '<script>window.close();</script>'
 ,	'title' => $msg
 ,	'task' => $p
 )));
 
-header('HTTP/1.1 303 Refresh after POST. '.($ek?$p:$p = rawurlencode($p)));
+header('HTTP/1.1 303 Refresh after POST: '.$p);
 
 $up = ($room?'../':'');
 $l = ((
@@ -1077,7 +1164,7 @@ $l = ((
 	? $up.rawurlencode($room).'/'
 	: ($etc && $etc[0] != '-'?$etc:'.')
 );
-if ($ok) {
+if ($OK) {
 	if ($u_key) {
 		$o = '';
 		if (!($q = ($u_key[0] == 'q')) && $u_opti[0] != 'd') {
@@ -1094,7 +1181,9 @@ if ($ok) {
 	$l .= '?!='.$p;
 	foreach ($query as $k => $v) if (substr($k, 0, 4) == 'draw') $l .= '&'.$k.(strlen($v)?'='.$v:'');
 }
+if (false === strpos('.,;:?!', substr($msg, -1))) $msg .= '.';
+
 header('Location: '.$l);
-printf($tmp_post_ok_goto, $msg, $l);
+printf($tmp_post_refresh, '<meta charset="'.ENC.'">'.$msg, $l);
 
 ?>

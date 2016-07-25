@@ -95,12 +95,10 @@ define(THUMB_MAX_HEIGHT, 90);
 
 define(ENC, 'utf-8');
 define(ENC_FALLBACK, 'windows-1251, Shift_JIS');	//* <- comma-separated list, to convert search requests from weird browsers into ENC
-define(NB, '&nbsp;');
+define(NB, '&#8203;');	//&nbsp;
 define(NL, '
 ');
 define(O, 'opt_');
-define(OK, 'OK');
-define(OQ, 'OK. ');
 define(TIMESTAMP, 'Y-m-d H:i:s');
 define(PAT_DATE, '~((\d+)-(\d+))-(\d+)~');
 define(PAT_CONTENT, '~<pre>(.*\S)\s*</pre>~uis');
