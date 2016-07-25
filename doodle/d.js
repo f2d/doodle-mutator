@@ -1174,7 +1174,8 @@ var	flagVarNames = ['flag', 'flags']
 						var	j = reportClass[i.class]
 						,	k = ' '+j+'" id="'+i.id
 							;
-							v =	'<div class="post alt anno">'
+							if (j != 'full') v =
+								'<div class="post alt anno">'
 							+		'<a href="javascript:void this" onClick="toggleHide(this.parentNode.nextElementSibling)">'
 							+			la.hint[j]+la.hint.show
 							+		'</a>'
@@ -1203,14 +1204,12 @@ var	flagVarNames = ['flag', 'flags']
 				+'</div>';
 		//* top bar:
 			var	b = cre('div', p, e)
-			,	h = ''
 			,	j = ''
 			,	k = ''
 			,	l = la.count
 			,	m = ''
 				;
 				if (flag.c) {
-				//	if (flag.u) --count.u, ++count.o;
 					for (i in count) if (k = count[i]) {
 						k = (
 							dtp.reflinks || (dtp.users && i[0] != 'u')
@@ -1226,20 +1225,16 @@ var	flagVarNames = ['flag', 'flags']
 							)
 						)+': '+k;
 						if (i == 'img') m += '<br>'+k;
-						else h += (l[i]?(h?'<br>':''):', ')+k;
+						else j += (l[i]?(j?'<br>':''):', ')+k;
 					}
-					k = (
-						h
-						? '<span class="r">'+h+'</span>'+(m || (h.indexOf('<br>') > 0?'<br>'+NB:''))
-						: ''
-					);
+					if (j) k = '<span class="r">'+j+'</span>'+(m || (j.indexOf('<br>') > 0?'<br>'+NB:''));
 				}
 				if (m = threadsMarks) {
 					j = {};
 					for (i in reportClass) j[i] = [];
-					for (i in m) if (h = m[i]) j[h.class].push(h);
+					for (i in m) if (a = m[i]) j[a.class].push(a);
 					for (i in j) if ((m = j[i]).length) {
-						m.sort(function(a,b) {return a.t == b.t?0:(a.t > b.t?1:-1);});
+						m.sort(function(a,b) {return a.t == b.t?0:(a.t > b.t?1:-1);}).reverse();
 						k += '<br>'
 						+	la[reportClass[i]]+': '
 						+	m.length+','
@@ -1261,7 +1256,7 @@ var	flagVarNames = ['flag', 'flags']
 				+		k
 				+	'</p>';
 		//* show threads from start only if option set:
-				if (flag.a) e.innerHTML = h;
+				if (dtp.found || flag.a) e.innerHTML = h;
 			} else {
 				e.className = 'thread';
 				e.innerHTML = threadsHTML.join('');
