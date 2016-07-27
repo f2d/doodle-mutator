@@ -52,7 +52,7 @@ var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1, split_sec = 60
 ,	line = p.innerHTML.split('\n');
 
 	for (i in line) if (line[i].indexOf(t) > 0) {
-	var	tab = line[i].split(t), post = '<br>', m = tab[0];
+	var	tab = line[i].split(t), post = '<br>', m = tab[0], res = 0;
 		if (!timeRange) timeRange = [m,m];
 		else {
 			if (timeRange[0] > m) timeRange[0] = m;
@@ -79,6 +79,7 @@ var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1, split_sec = 60
 					tab[3] = m[1]+', '+m[4];
 				}
 				post = tab[2];
+				res = (post.indexOf(', ') > 0);
 				j = '">';
 				k = post.split(j);
 				for (i in k) if (l = k[i]) {
@@ -87,7 +88,7 @@ var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1, split_sec = 60
 					if (m == 'img') k[i] += '" alt="'+l.substr(l.lastIndexOf('/')+1)+', '+tab[3]+'" title="'+tab[3];
 				}
 				post = k.join(j);
-				if (post.indexOf(', ') > 0) {
+				if (res) {
 					j = post.split(l = '>');
 					k = j.pop()
 						.replace(regTrim, '')
@@ -95,8 +96,7 @@ var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1, split_sec = 60
 						.replace(regNaN, 'x');
 					post = j.join(l).replace(regImgTitle, ' $1, '+k+'"')+l;
 					tab[0] += '<br>'+post.replace(regImgTag, k);
-					l = 1;
-				} else l = 0;
+				}
 			}
 			if (img) alt = (alt?'':' alt');
 			img = 1;
@@ -113,7 +113,7 @@ var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1, split_sec = 60
 		+	'</p>'+post;
 
 		thread += '<div class="post'
-		+	(num?' p'+(l?' res':''):'')
+		+	(num?' p'+(res?' res':''):'')
 		+	alt
 		+	'">'
 		+		post
