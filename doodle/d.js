@@ -26,11 +26,11 @@
 ,	drawQuery = '?draw'
 ,	checking, flag = {}, param = {}, inputHints = {}
 ,	count = {
-		img: 0
-	,	u: 0
+		u: 0
 	,	uLast: ''
 	,	o: 0
 	,	oLast: ''
+	,	img: 0
 	}
 ,	userClass = {
 		0: 'born'
@@ -1282,8 +1282,11 @@ var	flagVarNames = ['flag', 'flags']
 					for (i in reportClass) j[i] = [];
 					for (i in m) if (a = m[i]) j[a.class || 0].push(a);
 					for (i in j) if ((m = j[i]).length) {
-						m.sort(function(a,b) {return a.t == b.t?0:(a.t > b.t?1:-1);}).reverse();
-						a = (i == 0 ? '' : la.marks[reportClass[i]]+': '+m.length+sep);
+						if (i == 0) a = '';
+						else {
+							m.sort(function(a,b) {return a.t == b.t?0:(a.t > b.t?1:-1);}).reverse();
+							a = la.marks[reportClass[i]]+': '+m.length+sep;
+						}
 						o.marks.push(
 							a
 						+	m.map(
