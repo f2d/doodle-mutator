@@ -95,8 +95,8 @@ var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1, split_sec = 60
 						.replace(regNaN, 'x');
 					post = j.join(l).replace(regImgTitle, ' $1, '+k+'"')+l;
 					tab[0] += '<br>'+post.replace(regImgTag, k);
-					l = ' res';
-				} else l = '';
+					l = 1;
+				} else l = 0;
 			}
 			if (img) alt = (alt?'':' alt');
 			img = 1;
@@ -113,7 +113,7 @@ var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1, split_sec = 60
 		+	'</p>'+post;
 
 		thread += '<div class="post'
-		+	(num?' p'+l:'')
+		+	(num?' p'+(l?' res':''):'')
 		+	alt
 		+	'">'
 		+		post

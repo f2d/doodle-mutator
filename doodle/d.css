@@ -3,7 +3,7 @@ body.cirno-day	{	background-image: url("d.9.png");}
 body.leap-year	{	background-image: url("d.ly.png");}
 body.new-year	{	background-image: url("d.ny.png");}
 body, body>* {
-	margin: 8px auto;			/* <- centered */
+	margin: 8px auto;	/* <- centered */
 	min-width: 656px;
 	max-width: 1000px;
 	text-align: center;
@@ -41,10 +41,8 @@ body>header.a>*>* {
 	width: 25%;
 	text-align: center;
 }
-body>header a, .post.p p, .post p.ref, .room-title::after {
+body>header a {
 	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;	/* <- requires max-width */
 }
 body>footer p {
 	line-height: normal;
@@ -52,20 +50,21 @@ body>footer p {
 }
 .mod-link {
 	position: relative;
-}
-.mod-link:not(:hover) .mod-list {
-	display: none;
+	display: inline-block;
 }
 .mod-list {
-	display: inline-block;
 	position: absolute;
+	display: none;
 	left: 0;
 	top: 22px;
 	padding: 4px;
 	border: 1px solid #aaa;
 	border-top: none;
-	background-color: #eee;
+	background-color: rgba(85, 85, 85, 0.8);
 	text-align: left;
+}
+.mod-list:hover, .mod-link:hover .mod-list {
+	display: block;
 }
 a, .a {
 	color: #888;
@@ -73,10 +72,10 @@ a, .a {
 a:hover	{
 	color: #000;
 }
-.task a, .task .a, .task label {
+.task a, .task .a, .task label, .mod-list a {
 	color: #bbb;
 }
-.task a:hover, .task label:hover {
+.task a:hover, .task label:hover, .mod-list a:hover {
 	color: #fff;
 }
 .touch a, .touch ~ .task a, .touch ~ * .task a {
@@ -382,6 +381,14 @@ a:hover	{
 .post.p {
 	padding-bottom: 8px;
 }
+.post.p p {
+	padding: 0 2px;
+}
+.post.p p, .post p.ref, .room-title::after {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;	/* <- requires max-width */
+}
 .post.p p[onclick], button:not(:disabled), input:not(:disabled):not([type="text"]), label {
 	cursor: pointer;
 }
@@ -395,9 +402,6 @@ a:hover	{
 }
 .post.p p, .post .date-out>* {
 	width: 169px;
-}
-.post.p p {
-	padding: 0 2px;
 }
 .post.p p .report {
 	display: block;
@@ -506,7 +510,7 @@ a:hover	{
 }
 .al {	text-align: left;}
 .ar {	text-align: right;}
-.task::after, .thread::after, p.hint::after {
+.task::after, .thread::after, .post::after, p.hint::after {
 	content: "";
 	display: block;
 	clear: both;
