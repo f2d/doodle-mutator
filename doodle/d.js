@@ -117,7 +117,7 @@ if (lang == 'ru') la = {
 	}
 ,	count: {
 		img: 'Рисунков'
-	,	posts: 'Постов'
+	,	posts: 'постов'
 	,	u: 'Своих постов'
 	,	o: 'Прочих'
 	,	last: 'последний'
@@ -185,7 +185,7 @@ if (lang == 'ru') la = {
 	}
 ,	count: {
 		img: 'Pictures'
-	,	posts: 'Posts'
+	,	posts: 'posts'
 	,	u: 'Own posts'
 	,	o: 'Others'
 	,	last: 'last'
@@ -763,7 +763,7 @@ var	flagVarNames = ['flag', 'flags']
 					,	roomCount = (dtp.rooms && sep && tab.length > 2)
 						;
 						if (dtp.found) {
-							if (!threadMark && param.room) threadMark = {id: param.room+'/'};
+							if (!threadMark && param.room) threadMark = {id: param.room+'/', posts: 0};
 							if (threadNum != param.t) {
 								threadNum = param.t;
 								alter = 1;
@@ -860,6 +860,7 @@ var	flagVarNames = ['flag', 'flags']
 									if (threadMark) {
 										if (!threadMark.s || threadMark.s > time) threadMark.s = time;
 										if (!threadMark.t || threadMark.t < time) threadMark.t = time;
+										if (dtp.found) ++threadMark.posts;
 									}
 								}
 							}
@@ -1268,7 +1269,7 @@ var	flagVarNames = ['flag', 'flags']
 						: (
 							l[i] ? (
 								dtp.users && i == 'u' ? l.self : (
-								dtp.found && i == 'o' ? l.posts : l[i]
+								dtp.found && i == 'o' ? l.total+' '+l.posts : l[i]
 							)) : l.last
 						)
 					)+': '+k;
@@ -1282,15 +1283,16 @@ var	flagVarNames = ['flag', 'flags']
 					for (i in m) if (a = m[i]) j[a.class || 0].push(a);
 					for (i in j) if ((m = j[i]).length) {
 						m.sort(function(a,b) {return a.t == b.t?0:(a.t > b.t?1:-1);}).reverse();
+						a = (i == 0 ? '' : la.marks[reportClass[i]]+': '+m.length+sep);
 						o.marks.push(
-							la.marks[reportClass[i]]+': '
-						+	m.length+sep
+							a
 						+	m.map(
 								function(v) {
 								var	i = v.id;
 									if (regNaN.test(i)) i = "'"+i+"'";
 									return (v.t && !v.class
 									?	v.id.replace('/', ': ')
+									+	v.posts+' '+l.posts+sep
 									+	'<a href="javascript:showOpen('+i+',true)">'
 									+		(v.s || '?')
 									+	'</a> &mdash; '
@@ -1299,22 +1301,16 @@ var	flagVarNames = ['flag', 'flags']
 									+		(v.t || v.id)
 									+	'</a>';
 								}
-							).join(sep)
+							).join(a?sep:n)
 						);
 					}
 				}
 				for (i in o) o[i] = o[i].join(n);
 				if (j = o.marks) {
-					if (dtp.found) {
-						j = j.split(sep);
-						j.shift();
-						j = j.join(n);
-					}
 					o.left += n+j;
 				}
-				if (o.right) {
-					o.right = '<span class="r">'+o.right+'</span>';
-					o.left += '<br class="after-float">';
+				if (j = o.right) {
+					o.right = '<span class="r">'+j+'</span>';
 				}
 				b = cre('div', p, e);
 				b.className = 'thread task';

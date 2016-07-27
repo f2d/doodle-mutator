@@ -3,7 +3,7 @@ body.cirno-day	{	background-image: url("d.9.png");}
 body.leap-year	{	background-image: url("d.ly.png");}
 body.new-year	{	background-image: url("d.ny.png");}
 body, body>* {
-	margin: 0 auto;			/* <- centered */
+	margin: 8px auto;			/* <- centered */
 	min-width: 656px;
 	max-width: 1000px;
 	text-align: center;
@@ -23,6 +23,7 @@ body>header>*>* {
 	display: table-row;
 	padding: 0 22px;
 	float: none;
+	vertical-align: top;
 }
 body>header>*>u {
 	display: table-cell;
@@ -39,6 +40,11 @@ body>header u {
 body>header.a>*>* {
 	width: 25%;
 	text-align: center;
+}
+body>header a, .post.p p, .post p.ref, .room-title::after {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;	/* <- requires max-width */
 }
 body>footer p {
 	line-height: normal;
@@ -376,11 +382,6 @@ a:hover	{
 .post.p {
 	padding-bottom: 8px;
 }
-.post.p p, .post p.ref, .room-title::after {
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;	/* <- requires max-width */
-}
 .post.p p[onclick], button:not(:disabled), input:not(:disabled):not([type="text"]), label {
 	cursor: pointer;
 }
@@ -505,7 +506,9 @@ a:hover	{
 }
 .al {	text-align: left;}
 .ar {	text-align: right;}
-.after-float {
+.task::after, .thread::after, p.hint::after {
+	content: "";
+	display: block;
 	clear: both;
 }
 time small {

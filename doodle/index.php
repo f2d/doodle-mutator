@@ -438,8 +438,7 @@ page_ext = '.PAGE_EXT.'
 on_page = '.(R1 ? TRD_PER_PAGE.'
 start = '.max(0, $thread_count - TRD_PER_PAGE) : $u_per_page).'
 total = '.$thread_count.($u_key?'':'
-<!-- static link for scriptless bots, last in chain -->
-<a href="'.$thread_count.'.htm">'.$thread_count.'</a>');
+last = <a href="'.$thread_count.'.htm">'.$thread_count.'</a><!-- static link for scriptless bots -->');
 				$data_attr['content']['type'] = 'archive threads';
 			}
 		} else
