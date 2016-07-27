@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ?: T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-07-26 00:36'.NL.	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-07-26 23:18'.NL.	//* <- change this to invalidate old pages cached in browsers
 		'Or user key/options changed: '.$_REQUEST[ME]
 	).'"';
 	header('Etag: '.$q);
@@ -466,7 +466,7 @@ function get_template_page($t, $NOS = 0) {
 			if (!is_array($a)) $a = preg_split('~\W+~', $a);
 			foreach ($a as $v) if ($v = trim($v)) {
 				$e = $tmp_post_err[$v];
-				$err .= NL.'<p class="anno '.($v == 'trd_arch'?'gloom':'report').'">'.indent($e ?: $v).'</p>';
+				$err .= NL.'<p class="anno '.($v == 'trd_arch'?'gloom':'report').'"><b>'.indent($e ?: $v).'</b></p>';
 			}
 		}
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
@@ -495,10 +495,10 @@ function get_template_page($t, $NOS = 0) {
 	if ($err) $header .= NL.$err;
 	if ($a = $t['header']) {
 		if (is_array($a)) {
-			foreach ($a as $k => &$v) if ($v) $v = ($k?'<p class="'.$k.'">':'<p>').indent($v).'</p>';
+			foreach ($a as $k => &$v) if ($v) $v = ($k?'<u class="'.$k.'">':'<u>').indent($v).'</u>';
 			$a = implode(NL, $a);
 		}
-		$header .= NL.'<div>'.indent($a).'</div>';
+		$header .= NL.'<p>'.indent($a).'</p>';
 	}
 	if ($header) $header = '<header id="header">'.indent($header).'</header>';
 

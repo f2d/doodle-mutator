@@ -1,6 +1,8 @@
-﻿var	regNaN = /\D+/
+﻿var	regLNaN = /^\D+/
+,	regNaN = /\D+/
 ,	regSpace = /\s+/g
 ,	regTrim = /^\s+|\s+$/g
+,	regImgTitle = /\s+(title="[^"]+)"/i
 
 ,	touch = ('ontouchstart' in document.documentElement)
 ,	d = document.body.style
@@ -85,13 +87,16 @@ var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1, split_sec = 60
 					if (m == 'img') k[i] += '" alt="'+l.substr(l.lastIndexOf('/')+1)+', '+tab[3]+'" title="'+tab[3];
 				}
 				post = k.join(j);
-				if (post.indexOf(k = '>;') > 0) {
-					j = post.split(k);
-					l = j.shift();
-					k = j.join(k).replace(regTrim, '').replace(regNaN, 'x');
-					post = l.replace(/\s+(title="[^"]+)"/i, ' $1, '+k+'"')+'>';
+				if (post.indexOf(', ') > 0) {
+					j = post.split(l = '>');
+					k = j.pop()
+						.replace(regTrim, '')
+						.replace(regLNaN, '')
+						.replace(regNaN, 'x');
+					post = j.join(l).replace(regImgTitle, ' $1, '+k+'"')+l;
 					tab[0] += '<br>'+post.replace(regImgTag, k);
-				} else l = 0;
+					l = ' res';
+				} else l = '';
 			}
 			if (img) alt = (alt?'':' alt');
 			img = 1;
@@ -108,7 +113,7 @@ var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1, split_sec = 60
 		+	'</p>'+post;
 
 		thread += '<div class="post'
-		+	(num?' p'+(l?' res':''):'')
+		+	(num?' p'+l:'')
 		+	alt
 		+	'">'
 		+		post

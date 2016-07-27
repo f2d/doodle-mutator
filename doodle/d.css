@@ -13,27 +13,53 @@ body, .task input:not([type="checkbox"]), .task select {
 	line-height: 28px;
 	font-size: 21px;
 }
-body>header, .post.p p, .post p.ref, .room-title::after {
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;	/* <- requires max-width */
+body>header>* {
+	display: table;
+	width: 100%;
+	margin: 8px 0;
+	text-align: left;
+}
+body>header>*>* {
+	display: table-row;
+	padding: 0 22px;
+	float: none;
+}
+body>header>*>u {
+	display: table-cell;
+}
+body>header>*>u:not(:first-child) {
+	padding-left: 4px;
+}
+body>header>*>u:not(:last-child) {
+	padding-right: 4px;
+}
+body>header u {
+	text-decoration: none;
 }
 body>header.a>*>* {
 	width: 25%;
 	text-align: center;
 }
-body>header>* {
-	margin: 8px 0;
-}
-body>header div p {
-	margin: 0;
-	padding: 0 22px 8px 22px;
-	text-align: left;
-	float: left;
-}
 body>footer p {
 	line-height: normal;
 	border: 5px solid transparent;
+}
+.mod-link {
+	position: relative;
+}
+.mod-link:not(:hover) .mod-list {
+	display: none;
+}
+.mod-list {
+	display: inline-block;
+	position: absolute;
+	left: 0;
+	top: 22px;
+	padding: 4px;
+	border: 1px solid #aaa;
+	border-top: none;
+	background-color: #eee;
+	text-align: left;
 }
 a, .a {
 	color: #888;
@@ -52,16 +78,26 @@ a:hover	{
 	line-height: 56pt;
 	text-decoration: none;
 }
+.thread .anno {
+	font-weight: normal;
+	padding: 8px 22px;
+}
 .anno {
 	white-space: normal;
 	text-align: center;
-	padding: 8px 22px;
 	background-color: #ace;
 	color: #fff;
 }
-.anno>b {
-	display: block;
+.anno b {
 	font-weight: normal;
+	display: block;
+	margin: 0 22px;
+}
+.anno b:first-child {
+	margin-top: 8px;
+}
+.anno b:last-child {
+	margin-bottom: 8px;
 }
 .at, a.at {
 	background-color: #999;
@@ -191,11 +227,11 @@ a:hover	{
 	color: #fff;
 	background-color: #555;
 }
-.task form>*:not(label), header.a>* {
+.task form>*:not(label) {
 	display: table;
 	width: 100%;
 }
-.task form>*:not(label)>*, header.a>*>* {
+.task form>*:not(label)>* {
 	display: table-cell;
 }
 .task form>*:not(label)>*:not(:first-child) {
@@ -340,6 +376,11 @@ a:hover	{
 .post.p {
 	padding-bottom: 8px;
 }
+.post.p p, .post p.ref, .room-title::after {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;	/* <- requires max-width */
+}
 .post.p p[onclick], button:not(:disabled), input:not(:disabled):not([type="text"]), label {
 	cursor: pointer;
 }
@@ -422,6 +463,10 @@ a:hover	{
 	padding: 0;
 	vertical-align: top;
 }
+.post .image-num {
+	display: block;
+	margin-bottom: 4px;
+}
 .post .res {
 	color: #a9c;
 }
@@ -459,10 +504,13 @@ a:hover	{
 	width: 40px;
 }
 .al {	text-align: left;}
+.ar {	text-align: right;}
+.after-float {
+	clear: both;
+}
 time small {
 	line-height: 50%;
 }
-
 *[data-type], .hid, .thread>pre, .hide-p .post p {
 	display: none;
 }

@@ -844,20 +844,26 @@ function data_get_visible_rooms() {
 	if (!function_exists($export = get_const('DATA_SERIALIZE'))) $export = 0;
 	if (!function_exists($import = get_const('DATA_UNSERIALIZE'))) $import = 0;
 	$rooms = get_dir_contents($dr = DIR_ROOM, 1, 1);
+	ob_start();
 if (TIME_PARTS) time_check_point('done scan, inb4 room iteration'.NL);
 	foreach ($rooms as $r) if (is_dir($d = "$dr$r/")) {
 		$last_time_in_room = 0;
 		if (
 			is_file($cf = DIR_META_R.$r.'/post.count')
-		&&	($im = (array)(
+		&&	($im = (
 				$import
-				? $import(file_get_contents($cf))
-				: include($cf)
+			&&	($cfc = file_get_contents($cf))
+				? (
+					$import == 'json_decode'
+					? $import($cfc, true)
+					: $import($cfc)
+				) : include($cf)
 			))
+		&&	is_array($im)
 		&&	($last_time_in_room = $im['last modified'])
 		) {
-			$c	= (array)($im['counts']);
-			$mod	= (array)($im['marked']);
+			$c	= $im['counts'];
+			$mod	= $im['marked'];
 		} else {
 			$last_time_in_room = intval(T0);	//* <- force to now, less problems
 			$last_post_time =
@@ -922,6 +928,7 @@ if (TIME_PARTS) time_check_point('done scan, inb4 room iteration'.NL);
 		if ($last < $last_time_in_room) $last = $last_time_in_room;
 if (TIME_PARTS) time_check_point('done room '.$r);
 	}
+	if ($o = trim(ob_get_clean())) data_log_adm('include(post.count) buffer dump: '.$o);
 	return $a ? array(
 		'last' => $last
 	,	'list' => $a

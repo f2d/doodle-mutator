@@ -7,10 +7,12 @@
 ,	regTagForm = /^form$/i
 ,	regTagPre = /^pre$/i
 ,	regImgTag = /<img [^>]+>/i
+,	regImgTitle = /\s+(title="[^"]+)"/i
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
 ,	regTimeDrawn = /^((\d+)-(\d+)|[\d:]+),(.*)$/m
 ,	regTimeBreak = /^\d+(<|>|$)/
 ,	regLineBreak = /^(\r\n|\r|\n)/gm
+,	regLNaN = /^\D+/
 ,	regNaN = /\D+/
 ,	regSpace = /\s+/g
 ,	regTrim = /^\s+|\s+$/g
@@ -23,7 +25,13 @@
 ,	CM = 'checkMistype'
 ,	drawQuery = '?draw'
 ,	checking, flag = {}, param = {}, inputHints = {}
-,	count = {u:0, uLast:'', o:0, oLast:'', img:0}
+,	count = {
+		img: 0
+	,	u: 0
+	,	uLast: ''
+	,	o: 0
+	,	oLast: ''
+	}
 ,	userClass = {
 		0: 'born'
 	,	b: 'burn'
@@ -33,12 +41,12 @@
 	,	u: 'me'
 	}
 ,	reportClass = {
-		r: 'report'
+		0: 'rooms'
+	,	r: 'report'
 	,	s: 'frozen'
 	,	d: 'burnt'
 	,	f: 'full'
 	}
-,	reported = {}
 ,	mm
 ,	room = location.pathname.split('/').slice(-2)[0] || 'room'
 ,	rootPath = gn('link').reduce(function(r,e) {
@@ -53,6 +61,8 @@
 
 //* UI translation *-----------------------------------------------------------
 
+if (LS && !(LS.lang && LS.lang == lang)) LS.lang = lang;
+
 if (lang == 'ru') la = {
 	toggle: ['да', 'нет']
 ,	room_arch: 'Архив комнаты'
@@ -66,7 +76,6 @@ if (lang == 'ru') la = {
 	,	thread: 'Перейти к той нити, в которой был найден этот пост.'
 	,	name: 'Искать этого автора.'
 	}
-,	rooms_found: 'Найдено комнат'
 ,	draw_test: 'Попробовать'
 ,	draw: 'Рисовать'
 ,	check: 'Нажмите, чтобы проверить и продлить задание.'
@@ -92,11 +101,14 @@ if (lang == 'ru') la = {
 ,	using: 'с помощью'
 ,	resized: 'Размер'	//'\nИзображение уменьшено.\nРазмер'
 ,	resized_hint: 'Кликните для просмотра изображения в полном размере.'
-,	report: 'Жалоб'
-,	active: 'Активных нитей'
-,	frozen: 'Замороженные нити'
-,	burnt: 'Выжженные нити'
-,	full: 'Полные нити'
+,	marks: {
+		rooms: 'Комнаты'
+	,	report: 'Жалоб'
+	,	active: 'Активных нитей'
+	,	frozen: 'Замороженные нити'
+	,	burnt: 'Выжженные нити'
+	,	full: 'Полные нити'
+	}
 ,	hint: {
 		show: 'Кликните, чтобы показать/спрятать.'
 	,	frozen: 'Замороженная нить.\n'
@@ -105,6 +117,7 @@ if (lang == 'ru') la = {
 	}
 ,	count: {
 		img: 'Рисунков'
+	,	posts: 'Постов'
 	,	u: 'Своих постов'
 	,	o: 'Прочих'
 	,	last: 'последний'
@@ -114,7 +127,8 @@ if (lang == 'ru') la = {
 	,	total: 'Всего'
 	}
 ,	groups: {
-		users: 'Групп по дням'
+		found: 'Комнат'
+	,	users: 'Групп по дням'
 	,	reflinks: 'Групп по доменам'
 	}
 }; else la = {
@@ -130,7 +144,6 @@ if (lang == 'ru') la = {
 	,	thread: 'Go to the thread, where this post is from.'
 	,	name: 'Search this name.'
 	}
-,	rooms_found: 'Rooms found'
 ,	draw_test: 'Try drawing'
 ,	draw: 'Draw'
 ,	check: 'Click this to verify and prolong your task.'
@@ -156,11 +169,14 @@ if (lang == 'ru') la = {
 ,	using: 'using'
 ,	resized: 'Full size'	//'\nShown image is resized.\nFull size'
 ,	resized_hint: 'Click to view full size image.'
-,	report: 'Reports'
-,	active: 'Active threads'
-,	frozen: 'Frozen threads'
-,	burnt: 'Burnt threads'
-,	full: 'Full threads'
+,	marks: {
+		rooms: 'Rooms'
+	,	report: 'Reports'
+	,	active: 'Active threads'
+	,	frozen: 'Frozen threads'
+	,	burnt: 'Burnt threads'
+	,	full: 'Full threads'
+	}
 ,	hint: {
 		show: 'Click here to show/hide.'
 	,	frozen: 'Frozen thread.\n'
@@ -169,6 +185,7 @@ if (lang == 'ru') la = {
 	}
 ,	count: {
 		img: 'Pictures'
+	,	posts: 'Posts'
 	,	u: 'Own posts'
 	,	o: 'Others'
 	,	last: 'last'
@@ -177,7 +194,8 @@ if (lang == 'ru') la = {
 	,	total: 'Total'
 	}
 ,	groups: {
-		users: 'Groups by day'
+		found: 'Rooms'
+	,	users: 'Groups by day'
 	,	reflinks: 'Groups by domain'
 	}
 };
@@ -444,10 +462,10 @@ var	r = '_res';
 	);
 }
 
-function showOpen(i) {
+function showOpen(i,top) {
 var	t = id(i) || (showContent(), id(i)), d = t.firstElementChild;
 	if (d && (i = d.firstElementChild) && i.href) d.nextElementSibling.style.display = '';
-	t.scrollIntoView(false);
+	t.scrollIntoView(!!top);
 }
 
 //* Options-specific functions *-----------------------------------------------
@@ -474,6 +492,7 @@ var	keep = (e?e.getAttribute('data-keep'):0) || ''
 	if (v == 'unsave' && LS && (i = LS.length)) {
 		while (i--) if (
 			(m = LS.key(i))
+		&&	(m !== 'lang')
 		&&	(!keep || keep !== m.substr(0,l))
 		) {
 			k.push(m);
@@ -635,9 +654,9 @@ var	i = param.on_page
 
 function showContent(sortOrder) {
 var	flagVarNames = ['flag', 'flags']
+,	dontCollapse = ['full', 'rooms']
 ,	hintOnPostTypes = ['left', 'right']
 ,	reportOnPostTypes = ['reports_on_post', 'reports_on_user']
-,	altClass = ' alt'
 ,	optPrefix = 'opt_'
 ,	raws = gn('textarea').concat(gn('pre'))
 	;
@@ -662,7 +681,8 @@ var	flagVarNames = ['flag', 'flags']
 		,	modEnabled = 0
 		,	postNum = 1
 		,	descNum = 0
-		,	alt = altClass
+		,	imgPost = 0
+		,	alt = 1
 		,	tableRow = []
 		,	lines = threads[t_i].split('\n')
 			;
@@ -671,6 +691,8 @@ var	flagVarNames = ['flag', 'flags']
 				function getLineHTML(line) {
 				var	lineHTML = ''
 				,	postAttr = ''
+				,	imgRes = 0
+				,	alter = 0
 					;
 					if (line.indexOf('\t') < 0) {
 				//* as is:
@@ -740,6 +762,13 @@ var	flagVarNames = ['flag', 'flags']
 					,	roomDates = {}
 					,	roomCount = (dtp.rooms && sep && tab.length > 2)
 						;
+						if (dtp.found) {
+							if (!threadMark && param.room) threadMark = {id: param.room+'/'};
+							if (threadNum != param.t) {
+								threadNum = param.t;
+								alter = 1;
+							}
+						} else
 						if (dtp.threads) {
 							u = tab.shift();
 							if (u.indexOf(sep = '#') >= 0) {
@@ -753,10 +782,7 @@ var	flagVarNames = ['flag', 'flags']
 								t = j.join(sep);
 								k = t.match(regNaN);
 								t = t.replace(regNaN, '');
-								if (k && (k = k[0]) in reportClass) threadMark = {
-									class: k
-								,	id: t
-								};
+								if (k && (k = k[0]) in reportClass) threadMark = {id: t, class: k};
 								threadNum = t;
 								modEnabled = 1;
 							}
@@ -800,11 +826,14 @@ var	flagVarNames = ['flag', 'flags']
 					//* left:
 						if (tab.length > 0 && notEmpty(t = tab[0])) {
 							if (dtp.found) {
+							var	time = t.replace(regSpace, ' <small>')+'</small>';
 								t =	'<a href="'+(param.room?param.room+'/':'')+param.t+param.page_ext
 								+	'" title="'+la.search_hint.thread
 								+	'">'
-								+		t
-								+	'</a>';
+								+		time
+								+	'</a>'
+								+		(alter?' → '+threadNum:'')
+								;
 							} else
 							if (dtp.rooms && sep) {
 								if (roomCount && t.indexOf(sep) >= 0) {
@@ -822,11 +851,16 @@ var	flagVarNames = ['flag', 'flags']
 									t = k.join(sep);
 								} else if (tab[2] && t != NB) t = '<a href="'+param.archives+tab[2]+'/">'+t+'</a>';
 							} else {
-								t = getFTimeIfTime(t);
-								if (dtp.threads && flag.c) {
-									++count[k = (u == 'u'?u:'o')];
-									if (count[k += 'Last'] < t) count[k] = t;
-									if (threadMark && (!threadMark.t || threadMark.t < t)) threadMark.t = t;
+								time = t = getFTimeIfTime(t);
+							}
+							if (flag.c) {
+								++count[k = (u == 'u'?u:'o')];
+								if (time) {
+									if (count[k += 'Last'] < time) count[k] = time;
+									if (threadMark) {
+										if (!threadMark.s || threadMark.s > time) threadMark.s = time;
+										if (!threadMark.t || threadMark.t < time) threadMark.t = time;
+									}
 								}
 							}
 							tab[0] = t;
@@ -954,16 +988,13 @@ var	flagVarNames = ['flag', 'flags']
 							} else
 						//* image post:
 							if (tab.length > 3 && notEmpty(a = tab[3])) {
+								imgRes = (t.indexOf(', ') > 0);
 								if (flag.c) ++count.img;
-								if (imgPost) alt = (alt?'':altClass);
-							var	imgPost = 1
-							,	imgRes = 0
-								;
-								if (a[0] == '?') t =
-									'<span title="'+t+'">'
-								+		a.slice(1)
-								+	'</span>';
-								else {
+								if (a[0] == '?') {
+									t =	'<span title="'+t+'">'
+									+		a.slice(1)
+									+	'</span>';
+								} else {
 									if (m = a.match(regTimeDrawn)) {
 										if (m[2]) {
 										var	j = +m[3]-m[2]
@@ -994,23 +1025,24 @@ var	flagVarNames = ['flag', 'flags']
 											+	'" title="'+a;
 										}
 										t = k.join(sep);
-										if (t.indexOf(k = '>;') > 0) {
-											j = t.split(k);
-											l = j.shift();
-											k = j.join(k).replace(regTrim, '').replace(regNaN, 'x');
-											t = l.replace(/\s+(title="[^"]+)"/i
-											,	' $1, '+k+'. '+la.resized_hint
-											+	'"')
-											+'>';
+										if (imgRes) {
+											j = t.split(l = '>');
+											k = j.pop()
+												.replace(regTrim, '')
+												.replace(regLNaN, '')
+												.replace(regNaN, 'x');
+											t = j.join(l).replace(
+													regImgTitle
+												,	' $1, '+k+'. '+la.resized_hint+'"'
+												)+l;
 											tab[0] += '<br>'+t
 												.replace(regImgTag, k)
 												.split(sep)
 												.join('" title="'+la.resized_hint+sep);
-											imgRes = 1;
 										}
 									} else {
-										if (t.indexOf(j = ';') > 0) {
-											j = t.split(j);
+										if (imgRes) {
+											j = t.split(';');
 											t = j[0].replace(/(\.[^.]+)$/, '_res$1');
 											k = j[1].replace(regNaN, 'x');
 											tab[0] +=
@@ -1020,7 +1052,6 @@ var	flagVarNames = ['flag', 'flags']
 											+		('\n'+la.resized).replace(regLineBreak, '<br>')
 											+		': '+k
 											+	'</span>';
-											imgRes = 1;
 										} else j = '';
 										t = '<img src="'
 										+	(param.images || '')
@@ -1038,21 +1069,23 @@ var	flagVarNames = ['flag', 'flags']
 										+	'</a>';
 									}
 								}
-							} else
+								if (!dtp.found && imgPost) alter = 1;
+								imgPost = 1;
+							} else {
 						//* text post:
-							if (dtp.threads) {
-								t = ++descNum+'. '+t;
+								if (dtp.threads) t = ++descNum+'. '+t;
 								imgPost = 0;
 							}
 							if (dtp.found) {
-							var	i = (param.room?param.room+'/':'')+ ++postNum;
+							var	i = (param.room?param.room+'/':'')+postNum;
 								postAttr += '" id="'+i;
 								t =	'<a href="#'+i
 								+	'" title="'+la.search_hint.anchor
+								+	(imgPost?'" class="image-num':'')
 								+	'">'
 								+		postNum
 								+	'.</a>'
-								+	(imgPost?'<br>':' ')
+								+	(imgPost?'':' ')
 								+	t;
 							}
 							if (!imgRes && u == 'u') t = '<span class="u">'+t+'</span>';
@@ -1124,16 +1157,14 @@ var	flagVarNames = ['flag', 'flags']
 						+			lineHTML
 						+		'</div>';
 				//* toggle bg color:
-						if (dtp.found ? (threadNum != param.t) : !imgPost) {
-							if (dtp.found) threadNum = param.t;
-							alt = (alt?'':altClass);
-						}
+						if (!dtp.found && !imgPost) alter = 1;
+						if (alter) alt = !alt;
 						lineHTML =
 							'<div class="post'
 						+		(dtp.found || dtp.threads?' p':'')
 						+		(dtp.users?' al p':'')
 						+		(modEnabled?' '+userClass[isNaN(u)?u:0]:'')
-						+		alt
+						+		(alt?' alt':'')
 						+		(imgRes?' res':'')
 						+		postAttr
 						+	'">'
@@ -1147,13 +1178,13 @@ var	flagVarNames = ['flag', 'flags']
 			)(line);
 
 			if (notEmpty(threadHTML)) {
-				if (dtp.found && param.room) {
+				if (dtp.found && (m = param.room)) {
 					threadHTML =
 						'<div class="post alt">'
 					+		'<br>'
 					+		'<b class="anno dust">'
 					+			la.room_arch+': '
-					+			'<a href="'+param.room+'/">'+param.room+'</a>'
+					+			'<a href="'+m+'/">'+m+'</a>'
 					+		'</b>'
 					+		'<br>'+NB
 					+	'</div>'
@@ -1173,11 +1204,11 @@ var	flagVarNames = ['flag', 'flags']
 				e.threadsHTML = h = threadsHTML.map(
 					function(v,i) {
 						if (i = threadsMarks[i]) {
-						var	j = reportClass[i.class]
+						var	j = reportClass[i.class || 0]
 						,	k = ' '+j+'" id="'+i.id
 							;
-							if (j != 'full') v =
-								'<div class="post'+altClass+' anno">'
+							if (dontCollapse.indexOf(j) < 0) v =
+								'<div class="post alt anno">'
 							+		'<a href="javascript:void this'
 							+		'" onClick="toggleHide(this.parentNode.nextElementSibling)'
 							+		'">'
@@ -1207,64 +1238,93 @@ var	flagVarNames = ['flag', 'flags']
 				+	'</p>'
 				+'</div>';
 		//* top bar:
-			var	b = cre('div', p, e)
+			var	o = {
+					left: []
+				,	right: []
+				,	marks: []
+				}
+			,	a = la.marks.active
 			,	j = ''
 			,	k = ''
 			,	l = la.count
 			,	m = ''
+			,	n = '<br>'
+			,	sep = ', '
 				;
-				if (flag.c) {
-					for (i in count) if (k = count[i]) {
-						k = (
-							dtp.reflinks || (dtp.users && i[0] != 'u')
-							? '<a href="javascript:showContent('+(l[i]?1:-1)+')">'+(
-								l[i]
-								? l.total
-								: (l.lastr || l.last)
-							)+'</a>'
-							: (
-								l[i]
-								? (dtp.users && i == 'u' ? l.self : l[i])
-								: l.last
-							)
-						)+': '+k;
-						if (i == 'img') m += '<br>'+k;
-						else j += (l[i]?(j?'<br>':''):', ')+k;
-					}
+				for (i in la.groups) if (dtp[i]) {a = la.groups[i]; break;}
+				o.left.push(
+					'<a href="javascript:showContent()">'
+				+		a+': '+threadsHTML.length
+				+	'</a>'
+				);
+				if (flag.c) for (i in count) if (k = count[i]) {
 					k = (
-						j
-						? '<span class="r">'+j+'</span>'+(m || (j.indexOf('<br>') > 0?'<br>'+NB:''))
-						: ''
-					);
+						dtp.reflinks || (dtp.users && i[0] != 'u')
+						? '<a href="javascript:showContent('+(l[i]?1:-1)+')">'+(
+							l[i]
+							? l.total
+							: (l.lastr || l.last)
+						)+'</a>'
+						: (
+							l[i] ? (
+								dtp.users && i == 'u' ? l.self : (
+								dtp.found && i == 'o' ? l.posts : l[i]
+							)) : l.last
+						)
+					)+': '+k;
+					if (i == 'img') o[dtp.found?'right':'left'].push(k);
+					else if (l[i]) o.right.push(k);
+					else o.right[o.right.length-1] += sep+k;
 				}
 				if (m = threadsMarks) {
 					j = {};
 					for (i in reportClass) j[i] = [];
-					for (i in m) if (a = m[i]) j[a.class].push(a);
+					for (i in m) if (a = m[i]) j[a.class || 0].push(a);
 					for (i in j) if ((m = j[i]).length) {
 						m.sort(function(a,b) {return a.t == b.t?0:(a.t > b.t?1:-1);}).reverse();
-						k += '<br>'
-						+	la[reportClass[i]]+': '
-						+	m.length+','
+						o.marks.push(
+							la.marks[reportClass[i]]+': '
+						+	m.length+sep
 						+	m.map(
 								function(v) {
-									return ' <a href="javascript:showOpen('+v.id+')">'+v.t+'</a>';
+								var	i = v.id;
+									if (regNaN.test(i)) i = "'"+i+"'";
+									return (v.t && !v.class
+									?	v.id.replace('/', ': ')
+									+	'<a href="javascript:showOpen('+i+',true)">'
+									+		(v.s || '?')
+									+	'</a> &mdash; '
+									: '')
+									+	'<a href="javascript:showOpen('+i+(v.t?'':',true')+')">'
+									+		(v.t || v.id)
+									+	'</a>';
 								}
-							).join(',');
+							).join(sep)
+						);
 					}
 				}
-				j = (dtp.found ? la.rooms_found : la.active);
-				for (i in la.groups) if (flag[i]) {j = la.groups[i]; break;}
+				for (i in o) o[i] = o[i].join(n);
+				if (j = o.marks) {
+					if (dtp.found) {
+						j = j.split(sep);
+						j.shift();
+						j = j.join(n);
+					}
+					o.left += n+j;
+				}
+				if (o.right) {
+					o.right = '<span class="r">'+o.right+'</span>';
+					o.left += '<br class="after-float">';
+				}
+				b = cre('div', p, e);
 				b.className = 'thread task';
 				b.innerHTML =
 					'<p class="hint">'
-				+		'<a href="javascript:showContent()">'
-				+			j+': '+threadsHTML.length
-				+		'</a>'
-				+		k
+				+		o.right
+				+		o.left
 				+	'</p>';
-		//* show threads from start only if option set:
-				if (dtp.found || flag.a) e.innerHTML = h;
+		//* show open threads on page load only if option set:
+				if (flag.a) e.innerHTML = h;
 			} else {
 				e.className = 'thread';
 				e.innerHTML = threadsHTML.join('');

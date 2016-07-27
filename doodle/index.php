@@ -493,8 +493,12 @@ $n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
 				$task .= '
 <p class="hint" id="research">'.indent($tmp_archive_found.$research).'</p>';
 				if ($found = data_archive_find_by($search)) {
+					$flags = 'a';
+					if (!$u_opts['count']) $flags .= 'c';
 					$content = '
-page_ext = '.PAGE_EXT.NL.$found;
+page_ext = '.PAGE_EXT."
+flags = $flags
+".$found;
 					$data_attr['content']['type'] = 'archive found';
 				}
 			}
@@ -1034,6 +1038,21 @@ if ($u_key && !$u_opts['times']) {
 	$took = get_time_html().sprintf($tmp_took, $took);
 }
 
+if (GOD) {
+	$r = '<a href="'.($qd_room && $room ? '' : $room_list_href.($room ?: ROOM_DEFAULT).'/');
+	foreach ($tmp_mod_pages as $k => $v)
+	$mod_list .= $r.$k.'">'.$k.'. '.$v.'</a><br>'.NL;
+	$mod_link =
+		'<u class="mod-link">'
+	.		indent(
+				$r.'1'.$s['#'].NL
+			.	'<u class="mod-list">'
+			.		indent($mod_list)
+			.	'</u>'
+			)
+	.	'</u>';
+}
+
 if (!$is_report_page) {
 	$this_href = ($room?'..':'.');
 	$room_list_link = A.($qd_room ? $this_href : $room_list_href).$s['..'];
@@ -1057,11 +1076,8 @@ if (!$is_report_page) {
 		.	($short?$room_list_link:'')
 		.	$room_link
 		.	($short?'':$arch_link)
-		, 'r' => (
-				GOD
-				? A.$room_list_href.($room ?: ROOM_DEFAULT).'/1'.$s['#']
-				: ''
-			)
+		, 'r' =>
+			$mod_link
 		.	($short?$arch_link:'')
 		.	$arch_list_link
 		.	($short?'':$room_list_link)
