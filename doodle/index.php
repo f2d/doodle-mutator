@@ -439,7 +439,7 @@ on_page = '.(R1 ? TRD_PER_PAGE.'
 start = '.max(0, $thread_count - TRD_PER_PAGE) : $u_per_page).'
 total = '.$thread_count.($u_key?'':'
 last = <a href="'.$thread_count.'.htm">'.$thread_count.'</a><!-- static link for scriptless bots -->');
-				$data_attr['content']['type'] = 'archive threads';
+				$data_attr['content']['type'] = 'archive pages';
 			}
 		} else
 

@@ -2,7 +2,7 @@ body.april-fools {	background-image: url("d.41.png");}
 body.cirno-day	{	background-image: url("d.9.png");}
 body.leap-year	{	background-image: url("d.ly.png");}
 body.new-year	{	background-image: url("d.ny.png");}
-body, body>* {
+body, body>*, body>form>*, .content>* {
 	margin: 8px auto;	/* <- centered */
 	min-width: 656px;
 	max-width: 1000px;
@@ -374,9 +374,9 @@ a:hover	{
 	width: 159px;
 }
 .post.p textarea {
-	max-width:161px;
-	min-width:161px;
-	min-height:48px;
+	max-width: 161px;
+	min-width: 161px;
+	min-height: 48px;
 }
 .post.p {
 	padding-bottom: 8px;
@@ -400,7 +400,7 @@ a:hover	{
 .post.p p[onclick].r:hover {
 	background-position: top left;
 }
-.post.p p, .post .date-out>* {
+.post.p p, .post>p, .post .date-out>*, .bar .l, .bar .r {
 	width: 169px;
 }
 .post.p p .report {
@@ -418,6 +418,9 @@ a:hover	{
 }
 .post.p.res, .post.p.res>p {
 	min-height: 56px;
+}
+.post.x3 {
+	padding: 28px 0;
 }
 .post .date-out {
 	display: block;
@@ -510,6 +513,11 @@ a:hover	{
 }
 .al {	text-align: left;}
 .ar {	text-align: right;}
+.center {
+	display: block;
+	text-align: center;
+	float: none;
+}
 .task::after, .thread::after, .post::after, p.hint::after {
 	content: "";
 	display: block;

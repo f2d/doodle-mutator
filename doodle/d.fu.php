@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ?: T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-07-26 23:18'.NL.	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-07-28 23:33'.NL.	//* <- change this to invalidate old pages cached in browsers
 		'Or user key/options changed: '.$_REQUEST[ME]
 	).'"';
 	header('Etag: '.$q);
@@ -444,7 +444,7 @@ function get_template_content($p, $static = 0, $tag = '', $attr = '') {
 <$t$attr>$p
 </$t>".'
 <noscript><p class="hint report">'.($static?'JavaScript support required.':$tmp_require_js).'</p></noscript>';
-		return '<div class="'.($static?'thread':'content').'">'.indent($p).'</div>';
+		return '<div class="'.($static?'thread':'content" id="content').'">'.indent($p).'</div>';
 	}
 	return '';
 }

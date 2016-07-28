@@ -15,12 +15,14 @@
 ,	regLNaN = /^\D+/
 ,	regNaN = /\D+/
 ,	regSpace = /\s+/g
+,	regSpaceHTML = /\s|&nbsp;|&#8203;/gi
 ,	regTrim = /^\s+|\s+$/g
 ,	regTrimWord = /^\W+|\W+$/g
 
 ,	split_sec = 60
 ,	TOS = ['object','string']
-,	NB = '&#8203;'	//'&nbsp;'
+,	NB = '&nbsp;'
+,	NW = '&#8203;'
 ,	CS = 'checkStatus'
 ,	CM = 'checkMistype'
 ,	drawQuery = '?draw'
@@ -56,6 +58,10 @@
 	}) || '/'
 ,	touch = ('ontouchstart' in document.documentElement)
 ,	insideOut = (touch?'':'date-out')
+
+,	d = document.body.style
+,	maxWidth = [d.maxWidth||'1000px', '690px']
+
 ,	la, lang = document.documentElement.lang || 'en'
 	;
 
@@ -84,8 +90,6 @@ if (lang == 'ru') la = {
 ,	send_new_thread: 'Будет создана новая нить.'
 ,	send_anyway: 'Всё равно отправить?'
 ,	canceled: 'Отправка отменена'
-,	close: 'Закрыть'
-,	top: 'Наверх'
 ,	skip: 'Пропустить'
 ,	skip_hint: 'Пропускать задания из этой нити до её завершения.'
 ,	unskip: 'Сбросить пропуски'
@@ -101,6 +105,12 @@ if (lang == 'ru') la = {
 ,	using: 'с помощью'
 ,	resized: 'Размер'	//'\nИзображение уменьшено.\nРазмер'
 ,	resized_hint: 'Кликните для просмотра изображения в полном размере.'
+,	bottom: {
+		close: 'Закрыть.'
+	,	hide: 'Скрыть поля.'
+	,	narrow: 'Сжать поля.'
+	,	top: 'Наверх.'
+	}
 ,	marks: {
 		rooms: 'Комнаты'
 	,	report: 'Жалоб'
@@ -152,8 +162,6 @@ if (lang == 'ru') la = {
 ,	send_new_thread: 'Sending will make a new thread.'
 ,	send_anyway: 'Send anyway?'
 ,	canceled: 'Sending canceled'
-,	close: 'Close'
-,	top: 'Top'
 ,	skip: 'Skip'
 ,	skip_hint: 'Skip any task from this thread from now on.'
 ,	unskip: 'Unskip'
@@ -169,6 +177,12 @@ if (lang == 'ru') la = {
 ,	using: 'using'
 ,	resized: 'Full size'	//'\nShown image is resized.\nFull size'
 ,	resized_hint: 'Click to view full size image.'
+,	bottom: {
+		close: 'Close.'
+	,	hide: 'Hide asides.'
+	,	narrow: 'Narrow asides.'
+	,	top: 'Go to top.'
+	}
 ,	marks: {
 		rooms: 'Rooms'
 	,	report: 'Reports'
@@ -237,15 +251,21 @@ var	o;
 	return null;
 }
 
-function getParentByTagName(e,t) {
-var	p = e, t = t.toLowerCase();
+function getParentByTagName(e, target) {
+var	p = e, t = target.toLowerCase();
 	while (e.tagName.toLowerCase() != t && (p = e.parentNode)) e = p;
 	return e;
 }
 
-function getParentBeforeTagName(e,t) {
-var	p = e, t = t.toLowerCase();
+function getParentBeforeTagName(e, target) {
+var	p = e, t = target.toLowerCase();
 	while ((e = e.parentNode) && e.tagName.toLowerCase() != t) p = e;
+	return p;
+}
+
+function getParentBeforeClass(e, target) {
+var	p = e, t = new RegExp('(^|\s)'+target.toLowerCase()+'(\s|$)', 'i');
+	while ((e = e.parentNode) && !t.test(e.className)) p = e;
 	return p;
 }
 
@@ -292,9 +312,15 @@ var	i = e.className, a = (i?i.split(regSpace):[]), i = a.indexOf(c);
 	e.className = a.join(' ');
 }
 
+function meta() {toggleClass(id('content') || document.body, 'hide-p');}
+function fit() {
+var	e = (id('content') || document.body).style, w = maxWidth;
+	e.maxWidth = w[e.maxWidth != w[1]?1:0];
+}
+
 function orz(n) {return parseInt(n||0)||0;}
 function leftPad(n) {n = orz(n); return n > 9 || n < 0?n:'0'+n;}
-function notEmpty(t) {return String(t).replace(regTrim, '').length;}
+function notEmpty(t) {return String(t).replace(regSpaceHTML, '').length;}
 function getFTimeIfTime(t) {return regTimeBreak.test(t = ''+t) ? getFormattedTime(t) : t;}
 function getFormattedTime(t, plain, only_ymd) {
 	if (TOS.indexOf(typeof t) > -1) t = orz(t)*1000;
@@ -849,7 +875,9 @@ var	flagVarNames = ['flag', 'flags']
 										if (i = k[2]) k[2] = '<a href="'+param.archives+tab[2]+'/">'+i+'</a>';
 									}
 									t = k.join(sep);
-								} else if (tab[2] && t != NB) t = '<a href="'+param.archives+tab[2]+'/">'+t+'</a>';
+								} else if (tab[2] && notEmpty(t)) {
+									t = '<a href="'+param.archives+tab[2]+'/">'+t+'</a>';
+								}
 							} else {
 								time = t = getFTimeIfTime(t);
 							}
@@ -951,7 +979,7 @@ var	flagVarNames = ['flag', 'flags']
 									).join(sep)+']';
 								}
 							}
-							tab[1] = (marks && t == NB ? marks.slice(0, -sep.length) : marks+t);
+							tab[1] = (marks && !notEmpty(t) ? marks.slice(0, -sep.length) : marks+t);
 						}
 					//* center:
 						if (tab.length > 2 && notEmpty(t = tab[2])) {
@@ -1036,7 +1064,7 @@ var	flagVarNames = ['flag', 'flags']
 													regImgTitle
 												,	' $1, '+k+'. '+la.resized_hint+'"'
 												)+l;
-											tab[0] += '<br>'+t
+											if (notEmpty(tab[0])) tab[0] += '<br>'+t
 												.replace(regImgTag, k)
 												.split(sep)
 												.join('" title="'+la.resized_hint+sep);
@@ -1046,7 +1074,7 @@ var	flagVarNames = ['flag', 'flags']
 											j = t.split(';');
 											t = j[0].replace(/(\.[^.]+)$/, '_res$1');
 											k = j[1].replace(regNaN, 'x');
-											tab[0] +=
+											if (notEmpty(tab[0])) tab[0] +=
 												'<span class="'+(u == 'u'?u:'res')
 										//	+	'" title="'+k+'. '+la.resized_hint
 											+	'">'
@@ -1181,13 +1209,11 @@ var	flagVarNames = ['flag', 'flags']
 			if (notEmpty(threadHTML)) {
 				if (dtp.found && (m = param.room)) {
 					threadHTML =
-						'<div class="post alt">'
-					+		'<br>'
+						'<div class="post alt x3">'
 					+		'<b class="anno dust">'
 					+			la.room_arch+': '
 					+			'<a href="'+m+'/">'+m+'</a>'
 					+		'</b>'
-					+		'<br>'+NB
 					+	'</div>'
 					+threadHTML;
 				}
@@ -1196,7 +1222,33 @@ var	flagVarNames = ['flag', 'flags']
 			}
 		}
 
-	var	p = e.parentNode;
+	var	p = e.parentNode
+	,	afterThreadsBar = (
+			'<div class="thread task bar">'
+			+	'<p class="hint">'
+			+		'<span class="l">'
+			+(threadsHTML.length > 1
+					?	'<a href="javascript:showContent(null)">'
+			+				la.bottom.close
+			+			'</a>'
+					: NW)
+			+		'</span>'
+			+		'<span class="r">'
+			+			'<a href="javascript:document.body.firstElementChild.scrollIntoView(false)">'
+			+				la.bottom.top
+			+			'</a>'
+			+		'</span>'
+			+		'<span class="center">'
+			+			'<a href="javascript:meta()">'
+			+				la.bottom.hide
+			+			'</a>'+NB
+			+			'<a href="javascript:fit()">'
+			+				la.bottom.narrow
+			+			'</a>'
+			+		'</span>'
+			+	'</p>'
+			+'</div>'
+		);
 
 		if (threadsHTML.length) {
 		var	e = cre('div', p, e);
@@ -1224,20 +1276,7 @@ var	flagVarNames = ['flag', 'flags']
 						+		v
 						+	'</div>';
 					}
-				).join('')
-		//* bottom bar:
-				+'<div class="thread task">'
-				+	'<p class="hint">'
-				+		'<a href="javascript:showContent(null)">'
-				+			la.close
-				+		'</a>'
-				+		'<span class="r">'
-				+			'<a href="javascript:document.body.firstElementChild.scrollIntoView(false)">'
-				+				la.top
-				+			'</a>'
-				+		'</span>'
-				+	'</p>'
-				+'</div>';
+				).join('')+afterThreadsBar;
 		//* top bar:
 			var	o = {
 					left: []
@@ -1325,6 +1364,7 @@ var	flagVarNames = ['flag', 'flags']
 		//* show open threads on page load only if option set:
 				if (flag.a) e.innerHTML = h;
 			} else {
+				if (dtp.found || dtp.threads) cre('div', p, e.nextElementSibling).outerHTML = afterThreadsBar;
 				e.className = 'thread';
 				e.innerHTML = threadsHTML.join('');
 			}
@@ -1332,7 +1372,7 @@ var	flagVarNames = ['flag', 'flags']
 			for (i in (a = gn('select', e))) if (a[i].onchange) a[i].onchange();
 		} else del(e);
 
-		if (dtp.archive && dtp.threads && param && (e = id('task'))) {
+		if (dtp.pages && param && (e = id('task'))) {
 		var	t = document.title
 		,	h = (e.firstElementChild || e).textContent.replace(regTrimWord, '')
 		,	i = t.lastIndexOf(h)+h.length
