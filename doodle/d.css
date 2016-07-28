@@ -518,6 +518,9 @@ a:hover	{
 	text-align: center;
 	float: none;
 }
+.hide-p .post .res img {
+	border-color: #ddd;
+}
 .task::after, .thread::after, .post::after, p.hint::after {
 	content: "";
 	display: block;

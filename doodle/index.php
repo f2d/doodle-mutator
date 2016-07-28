@@ -1006,7 +1006,7 @@ foreach (
 	,	'*' => $tmp_archives
 	,	'?' => $tmp_options
 	,	'~' => $tmp_draw_test
-	,	'#' => $tmp_mod_panel
+	,	'#' => '&#9662; '.$tmp_mod_panel
 	) as $k => $v
 ) {
 	$s[$k] = '">'.(
