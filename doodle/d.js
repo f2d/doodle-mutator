@@ -1223,28 +1223,34 @@ var	flagVarNames = ['flag', 'flags']
 		}
 
 	var	p = e.parentNode
+	,	barButtons = {
+			close:	'<a href="javascript:showContent(null)">'
+			+		la.bottom.close
+			+	'</a>'
+		,	top:	'<a href="javascript:document.body.firstElementChild.scrollIntoView(false)">'
+			+		la.bottom.top
+			+	'</a>'
+		,	hide:	'<a href="javascript:meta()">'
+			+		la.bottom.hide
+			+	'</a>'
+		,	narrow:	'<a href="javascript:fit()">'
+			+		la.bottom.narrow
+			+	'</a>'
+		}
 	,	afterThreadsBar = (
 			'<div class="thread task bar">'
 			+	'<p class="hint">'
 			+		'<span class="l">'
-			+(threadsHTML.length > 1
-					?	'<a href="javascript:showContent(null)">'
-			+				la.bottom.close
-			+			'</a>'
-					: NW)
+			+			'<span class="r">'
+			+				barButtons.hide
+			+			'</span>'
+			+			(threadsHTML.length > 1 ? barButtons.close : NW)
 			+		'</span>'
 			+		'<span class="r">'
-			+			'<a href="javascript:document.body.firstElementChild.scrollIntoView(false)">'
-			+				la.bottom.top
-			+			'</a>'
-			+		'</span>'
-			+		'<span class="center">'
-			+			'<a href="javascript:meta()">'
-			+				la.bottom.hide
-			+			'</a>'+NB
-			+			'<a href="javascript:fit()">'
-			+				la.bottom.narrow
-			+			'</a>'
+			+			'<span class="l">'
+			+				barButtons.narrow
+			+			'</span>'
+			+			barButtons.top
 			+		'</span>'
 			+	'</p>'
 			+'</div>'
@@ -1348,18 +1354,25 @@ var	flagVarNames = ['flag', 'flags']
 					}
 				}
 				for (i in o) o[i] = o[i].join(n);
-				if (j = o.marks) {
-					o.left += n+j;
-				}
-				if (j = o.right) {
-					o.right = '<span class="r">'+j+'</span>';
-				}
+				o.left = '<span class="l">'
+				+		'<span class="r">'
+				+			barButtons.hide
+				+		'</span>'
+				+		(o.left || NW)
+				+	'</span>';
+				o.right = '<span class="r">'
+				+		'<span class="l">'
+				+			barButtons.narrow
+				+		'</span>'
+				+		(o.right || NW)
+				+	'</span>';
 				b = cre('div', p, e);
-				b.className = 'thread task';
+				b.className = 'thread task bar';
 				b.innerHTML =
 					'<p class="hint">'
 				+		o.right
 				+		o.left
+				+		o.marks
 				+	'</p>';
 		//* show open threads on page load only if option set:
 				if (flag.a) e.innerHTML = h;

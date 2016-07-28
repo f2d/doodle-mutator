@@ -400,7 +400,7 @@ a:hover	{
 .post.p p[onclick].r:hover {
 	background-position: top left;
 }
-.post.p p, .post>p, .post .date-out>*, .bar .l, .bar .r {
+.post.p p, .post>p, .post .date-out>* {
 	width: 169px;
 }
 .post.p p .report {
@@ -517,6 +517,13 @@ a:hover	{
 	display: block;
 	text-align: center;
 	float: none;
+}
+.bar p>.l, .bar p>.r {
+	display: block;
+	width: 50%;
+}
+.bar .l .r, .bar .r .l {
+	margin: 0 4px;
 }
 .hide-p .post .res img {
 	border-color: #ddd;
