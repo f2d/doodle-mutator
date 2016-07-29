@@ -216,6 +216,17 @@ a:hover	{
 #task .rem>* {
 	margin-left: 8px;
 }
+.task {
+	position: relative;
+}
+.task .center {
+	position: absolute;
+	display: block;
+	left: 50%;
+}
+.task .center>* {
+	margin-left: -50%;
+}
 .task form textarea {
 	width: 456px;
 	height: 160px;
@@ -513,18 +524,6 @@ a:hover	{
 }
 .al {	text-align: left;}
 .ar {	text-align: right;}
-.center {
-	display: block;
-	text-align: center;
-	float: none;
-}
-.bar p>.l, .bar p>.r {
-	display: block;
-	width: 50%;
-}
-.bar .l .r, .bar .r .l {
-	margin: 0 4px;
-}
 .hide-p .post .res img {
 	border-color: #ddd;
 }
@@ -533,7 +532,7 @@ a:hover	{
 	display: block;
 	clear: both;
 }
-time small {
+small {
 	line-height: 50%;
 }
 *[data-type], .hid, .thread>pre, .hide-p .post p {

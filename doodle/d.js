@@ -108,7 +108,7 @@ if (lang == 'ru') la = {
 ,	bottom: {
 		close: 'Закрыть.'
 	,	hide: 'Скрыть поля.'
-	,	narrow: 'Сжать поля.'
+	,	narrow: 'Сжать.'
 	,	top: 'Наверх.'
 	}
 ,	marks: {
@@ -180,7 +180,7 @@ if (lang == 'ru') la = {
 ,	bottom: {
 		close: 'Close.'
 	,	hide: 'Hide asides.'
-	,	narrow: 'Narrow asides.'
+	,	narrow: 'Narrow.'
 	,	top: 'Go to top.'
 	}
 ,	marks: {
@@ -1237,21 +1237,22 @@ var	flagVarNames = ['flag', 'flags']
 			+		la.bottom.narrow
 			+	'</a>'
 		}
+	,	centerButtons =
+			'<span class="center">'
+		+		'<span>'
+		+			barButtons.hide
+		+			NB
+		+			barButtons.narrow
+		+		'</span>'
+		+	'</span>'
 	,	afterThreadsBar = (
-			'<div class="thread task bar">'
+			'<div class="thread task">'
 			+	'<p class="hint">'
-			+		'<span class="l">'
-			+			'<span class="r">'
-			+				barButtons.hide
-			+			'</span>'
-			+			(threadsHTML.length > 1 ? barButtons.close : NW)
-			+		'</span>'
+			+		centerButtons
 			+		'<span class="r">'
-			+			'<span class="l">'
-			+				barButtons.narrow
-			+			'</span>'
 			+			barButtons.top
 			+		'</span>'
+			+		(threadsHTML.length > 1 ? barButtons.close : NW)
 			+	'</p>'
 			+'</div>'
 		);
@@ -1318,7 +1319,7 @@ var	flagVarNames = ['flag', 'flags']
 							)) : l.last
 						)
 					)+': '+k;
-					if (i == 'img') o[dtp.found?'right':'left'].push(k);
+					if (i == 'img') o.left.push(k);
 					else if (l[i]) o.right.push(k);
 					else o.right[o.right.length-1] += sep+k;
 				}
@@ -1354,25 +1355,15 @@ var	flagVarNames = ['flag', 'flags']
 					}
 				}
 				for (i in o) o[i] = o[i].join(n);
-				o.left = '<span class="l">'
-				+		'<span class="r">'
-				+			barButtons.hide
-				+		'</span>'
-				+		(o.left || NW)
-				+	'</span>';
-				o.right = '<span class="r">'
-				+		'<span class="l">'
-				+			barButtons.narrow
-				+		'</span>'
-				+		(o.right || NW)
-				+	'</span>';
+				if (j = o.marks) o[dtp.found?'right':'left'] += n+j;
+				if (j = o.right) o.right = '<span class="r">'+j+'</span>';
 				b = cre('div', p, e);
-				b.className = 'thread task bar';
+				b.className = 'thread task';
 				b.innerHTML =
 					'<p class="hint">'
+				+		centerButtons
 				+		o.right
 				+		o.left
-				+		o.marks
 				+	'</p>';
 		//* show open threads on page load only if option set:
 				if (flag.a) e.innerHTML = h;
