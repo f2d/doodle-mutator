@@ -717,6 +717,7 @@ var	flagVarNames = ['flag', 'flags']
 				function getLineHTML(line) {
 				var	lineHTML = ''
 				,	postAttr = ''
+				,	postMenu = 0
 				,	imgRes = 0
 				,	alter = 0
 					;
@@ -1103,6 +1104,9 @@ var	flagVarNames = ['flag', 'flags']
 							} else {
 						//* text post:
 								if (dtp.threads) t = ++descNum+'. '+t;
+								t = t
+									.replace(/\s+(-|&mdash;|—|&ndash;|–|)\s+/gi, '&nbsp;$1 ')
+									.replace(/\s+([^<\s]{1,2})\s+/g, ' $1&nbsp;');
 								imgPost = 0;
 							}
 							if (dtp.found) {
@@ -1154,6 +1158,7 @@ var	flagVarNames = ['flag', 'flags']
 							if (modEnabled) {
 							var	postID = threadNum+'-'+postNum+'-'+i;
 								if (mm) {
+									postMenu = 1;
 									m += ' id="m_'+(
 										dtp.users
 										? userID+'_'+threadNum+'_3'
@@ -1192,6 +1197,7 @@ var	flagVarNames = ['flag', 'flags']
 							'<div class="post'
 						+		(dtp.found || dtp.threads?' p':'')
 						+		(dtp.users?' al p':'')
+						+		(postMenu?' menu':'')
 						+		(modEnabled?' '+userClass[isNaN(u)?u:0]:'')
 						+		(alt?' alt':'')
 						+		(imgRes?' res':'')
@@ -1372,7 +1378,6 @@ var	flagVarNames = ['flag', 'flags']
 				e.className = 'thread';
 				e.innerHTML = threadsHTML.join('');
 			}
-			if (mm) e.className += ' open-mod';
 			for (i in (a = gn('select', e))) if (a[i].onchange) a[i].onchange();
 		} else del(e);
 
