@@ -54,6 +54,7 @@ body>footer p {
 }
 .mod-list {
 	position: absolute;
+	z-index: 1;
 	display: none;
 	left: 0;
 	top: 22px;
@@ -226,6 +227,7 @@ a:hover	{
 }
 .task .center>* {
 	margin-left: -50%;
+	background-color: #555;
 }
 .task form textarea {
 	width: 456px;
