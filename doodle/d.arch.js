@@ -102,7 +102,9 @@ var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1, split_sec = 60
 			img = 1;
 		} else {
 	//* number + text post:
-			if (tab.length > 2) post = (num && img?num++ +'. ':'')+tab[2];
+			if (tab.length > 2) post = ((num && img?num++ +'. ':'')+tab[2])
+				.replace(/\s+(-|&mdash;|—|&ndash;|–|)\s+/gi, '&nbsp;$1 ')
+				.replace(/\s+([^<\s]{1,2})\s+/g, ' $1&nbsp;');
 			alt = (alt?'':' alt');
 			img = 0;
 		}

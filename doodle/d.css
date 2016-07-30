@@ -44,9 +44,8 @@ body>header.a>*>* {
 body>header a {
 	white-space: nowrap;
 }
-body>footer p {
+body>footer .hint {
 	line-height: normal;
-	border: 5px solid transparent;
 }
 .mod-link {
 	position: relative;
@@ -54,7 +53,7 @@ body>footer p {
 }
 .mod-list {
 	position: absolute;
-	z-index: 9;
+	z-index: 999;
 	display: none;
 	left: 0;
 	top: 25px;
@@ -177,7 +176,7 @@ a:hover	{
 #took td:nth-child(2) {
 	text-align: right;
 }
-#took, .task label, #task .rem, p.hint, li {
+#took, .task label, #task .rem, .hint, li {
 	font-size: 13px;
 }
 #task, .thread {
@@ -276,7 +275,7 @@ a:hover	{
 .content .thread:first-child, .task p:first-child, .task label {
 	padding-top: 8px;
 }
-.content .thread:first-child, .thread {
+.content .thread:first-child, body>footer {
 	margin-top: 24px;
 }
 .post, .post.p p .report {
@@ -532,7 +531,7 @@ a:hover	{
 .hide-p .post .res img {
 	border-color: #ddd;
 }
-.task::after, .thread::after, .post::after, p.hint::after {
+#header::after, .task::after, .thread::after, .post::after, .hint::after {
 	content: "";
 	display: block;
 	clear: both;

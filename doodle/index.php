@@ -560,6 +560,7 @@ if ($u_key) {
 .NL.$tmp_options_name.$s.$usernames[$u_num]
 .NL.$tmp_options_qk.$s.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">'.$b.$c
 .NL.$tmp_options_time.$s.date('e, T, P')
+.NL.$tmp_options_time_client.$s.'<time id="time-zone"></time>'
 .($u_flag ? NL.$tmp_options_flags.$s.implode(', ', $u_flag) : '').$a
 .$i.$tmp_options_apply.'" id="apply">
 </form>';
@@ -1022,10 +1023,11 @@ if (!$u_opts['names'] && defined('FOOT_NOTE')) {
 }
 
 if ($u_key && !$u_opts['times']) {
+	$js[0]++;
 	define(TOOK, $took = '<!--?-->');
 	if (TIME_PARTS) {
 		time_check_point('inb4 template');
-		$took = '<a href="javascript:'.(++$js[0]).',toggleHide(took)">'.$took.'</a>';
+		$took = '<a href="javascript:'.$js[0].',toggleHide(took)">'.$took.'</a>';
 		foreach ($tcp as $t => $comment) {
 			$t = get_time_elapsed($t);
 			$t_diff = ltrim(sprintf('%.6f', $t - $t_prev), '0.');
@@ -1092,8 +1094,9 @@ if (!$is_report_page) {
 			)
 		)
 	);
-	if ($took)	$footer .= NL.'<p class="l hint">'.indent($took).'</p>';
-	if ($links)	$footer .= NL.'<p class="r hint">'.indent($links).'</p>';
+	if ($took)	$footer .= NL.'<span class="l">'.indent($took).'</span>';
+	if ($links)	$footer .= NL.'<span class="r">'.indent($links).'</span>';
+	if ($footer)	$footer = NL.'<p class="hint">'.indent($footer).'</p>';
 	if ($took_list)	$footer .= NL.'<table id="took" style="display:none">'.indent($took_list).'</table>';
 }
 

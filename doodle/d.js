@@ -321,6 +321,14 @@ var	e = (id('content') || document.body).style, w = maxWidth;
 function orz(n) {return parseInt(n||0)||0;}
 function leftPad(n) {n = orz(n); return n > 9 || n < 0?n:'0'+n;}
 function notEmpty(t) {return String(t).replace(regSpaceHTML, '').length;}
+function getFormattedTimezoneOffset(t) {
+	return (
+		(t = (t && t.getTimezoneOffset ? t : new Date()).getTimezoneOffset())
+		? (t < 0?(t = -t, '+'):'-')+leftPad(Math.floor(t/60))+':'+leftPad(t%60)
+		: 'Z'
+	);
+}
+
 function getFTimeIfTime(t) {return regTimeBreak.test(t = ''+t) ? getFormattedTime(t) : t;}
 function getFormattedTime(t, plain, only_ymd) {
 	if (TOS.indexOf(typeof t) > -1) t = orz(t)*1000;
@@ -335,11 +343,7 @@ var	YMD = t.slice(0,3).join('-'), HIS = t.slice(3).join(':');
 		plain
 		? YMD+' '+HIS
 		: '<time datetime="'+YMD+'T'+HIS
-		+	(
-				(t = d.getTimezoneOffset())
-				? (t < 0?(t = -t, '+'):'-')+leftPad(Math.floor(t/60))+':'+leftPad(t%60)
-				: 'Z'
-			)
+		+	getFormattedTimezoneOffset(t)
 		+	'" data-t="'+Math.floor(d/1000)
 		+	'">'+YMD+' <small>'+HIS+'</small></time>'
 	);
@@ -1426,7 +1430,8 @@ var	flagVarNames = ['flag', 'flags']
 
 //* Runtime: top panel, etc *--------------------------------------------------
 
-showContent();
+for (i in (a = gn('time'))) if ((e = a[i]) && (t = e.getAttribute('data-t')) && t > 0) e.outerHTML = getFormattedTime(t);
+if (e = id('filter')) e.placeholder = '';//e.onchange = e.onkeyup = filter;
 
 if (k = id('task')) {
 //* room task:
@@ -1541,9 +1546,13 @@ if (k = id('task')) {
 		}
 	}
 }
+
+showContent();
+
+if (e = id('time-zone')) e.innerHTML = getFormattedTimezoneOffset();
+
 for (i in la.clear) if (e = id(i)) {
 	e.onclick = clearSaves;
 	if (!e.href) e.disabled = true, (e.onmouseover = checkSaves)(i);
 }
-if (e = id('filter')) e.placeholder = '';//e.onchange = e.onkeyup = filter;
 if (mm) mm();
