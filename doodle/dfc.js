@@ -3,7 +3,7 @@
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
 ,	INFO_VERSION = 'v0.9.66'
-,	INFO_DATE = '2013-04-01 — 2016-07-03'
+,	INFO_DATE = '2013-04-01 — 2016-07-30'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -2324,7 +2324,7 @@ document.write(
 	+		'#|-debug td {width: 234px;}'
 	+		'#|-draw canvas {vertical-align: bottom;}'
 	+		'#|-draw canvas, #|-bottom > button {box-shadow: 3px 3px rgba(0,0,0, 0.1);}'
-	+		'#|-draw canvas, #|-draw {position: relative; display: inline-block;}'
+	+		'#|-draw canvas, #|-draw {position: relative; display: inline-block; z-index: 99;}'
 	+		'#|-info p {padding-left: 22px; line-height: 22px; margin: 0;}'
 	+		'#|-info p, #|-palette-table table {color: #000; font-size: small;}'
 	+		'#|-load img {position: absolute; top: 1px; left: 1px; margin: 0;}'

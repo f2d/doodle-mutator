@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2016-07-03'
+,	INFO_DATE = '2014-07-16 — 2016-07-30'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -2693,7 +2693,7 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #| aside input[type="text"] {margin: 2px; width: 48px;}\
 #| aside p {line-height: 22px; margin: 0.5em;}\
 #| aside p, #|-info hr, #|-layers hr, #|-colors table {font-size: small;}\
-#| aside {position: absolute; left: 0; top: 0; text-align: left; padding: 2px; border: 2px solid #888; background-color: rgba(234,234,234,0.90);}\
+#| aside {position: absolute; z-index: 100; left: 0; top: 0; text-align: left; padding: 2px; border: 2px solid #888; background-color: rgba(234,234,234,0.90);}\
 #| aside, #|-load canvas {box-shadow: 3px 3px rgba(0,0,0, 0.1);}\
 #| aside:hover {background-color: #eaeaea;}\
 #| canvas {border: 1px solid #ddd; margin: 0; vertical-align: bottom; cursor:\
@@ -2726,7 +2726,7 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #|-layers {max-width: 304px;}\
 #|-lcd {text-align: center; vertical-align: middle; font-size: 40px; color: #aaa; background-color: #f5f5f5;}\
 #|-load img {position: absolute; top: 1px; left: 1px; margin: 0;}\
-#|-load, #|-load canvas {position: relative; display: inline-block;}\
+#|-load, #|-load canvas {position: relative; display: inline-block; z-index: 99;}\
 #|-textStyle textarea {width: 80px; height: 68px;}\
 #|-warn {background-color: #bbb; display: inline-block;}\
 #|-warn.|-red {background-color: #f77;}'
