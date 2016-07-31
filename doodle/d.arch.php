@@ -62,20 +62,34 @@ function data_put_thumb($src, $dest, $xMax, $yMax) {
 */	return imagePNG($gis['imgdata'], $dest);
 }
 
-function data_line2time($line) {return strtotime(substr($line, 0, strpos($line, '	')));}
+function data_get_line_fix_time($line) {
+	global $arch_time_min, $arch_time_max;
+	$before_tab = substr($line, 0, $i = strpos($line, '	'));
+	$t = (
+		preg_match('~\sdata-t=[\'"](\d+)~i', $before_tab, $match)
+		? intval($match[1])
+		: strtotime($before_tab)
+	) ?: intval($before_tab);
+	$arch_time_min = min($arch_time_min ?: $t, $t);
+	$arch_time_max = max($arch_time_max ?: $t, $t);
+	return $t.','.date(DATE_ATOM, $t).substr($line, $i);
+}
+
 function data_get_archive_page_html($room, $num, $tsv) {
+	global $arch_time_min, $arch_time_max;
 	if ($num <= 0) return $num;
 	$p = $num-1;
 	$n = $num+1;
-	$lines = explode(NL, trim($tsv));
+	$lines = array_map('data_get_line_fix_time', explode(NL, trim($tsv)));
+	sort($lines);
 	return get_template_page(
 		array(
 			'title' => $room
 		,	'head' => ($p ? '<link rel="prev" href="'.$p.PAGE_EXT.'">'.NL : '').
 					'<link rel="next" href="'.$n.PAGE_EXT.'">'
-		,	'body' => get_date_class(data_line2time(reset($lines)), data_line2time(end($lines)))
+		,	'body' => get_date_class($arch_time_min, $arch_time_max)
 		,	'task' => ($p ? '<a href="'.$p.PAGE_EXT.'" title="previous">'.$num.'</a>' : $num)
-		,	'content' => $tsv
+		,	'content' => NL.implode(NL, $lines)
 		,	'js' => 'arch'
 		)
 	);
@@ -122,9 +136,12 @@ function data_archive_full_threads($threads) {
 }
 
 function data_archive_rewrite() {
-	$i = '	<img src="';			//* <- uniq for pics in posts
 	$a = 0;
 	$elen = strlen(PAGE_EXT);
+	$img_src = array(
+		'<img src="'
+	,	'<a href="'
+	);
 	foreach (get_dir_contents($da = DIR_ARCH, 1) as $room) {
 		$t = 0;
 		foreach (get_dir_contents($d = "$da$room/", 1) as $f) if (
@@ -132,12 +149,15 @@ function data_archive_rewrite() {
 		&&	is_file($path = $d.$f)
 		&&	preg_match(PAT_CONTENT, $old = file_get_contents($path), $m)
 		) {
-			$x = explode($i, $m[1]);
-			$new = array_shift($x);
-			foreach ($x as $y) {
-				$src = substr($y, 0, $q = strpos($y, '"'));	//* <- web path
-				$n = substr($src, strrpos($src, '/')+1);	//* <- pic filename
-				$new .= $i.get_pic_url($n).substr($y, $q);	//* <- new web path
+			$new = $m[1];
+			foreach ($img_src as $i) {
+				$x = explode($i, $new);
+				$new = array_shift($x);
+				foreach ($x as $y) {
+					$src = substr($y, 0, $q = strpos($y, '"'));	//* <- web path
+					$n = substr($src, strrpos($src, '/')+1);	//* <- pic filename
+					$new .= $i.get_pic_url($n).substr($y, $q);	//* <- new web path
+				}
 			}
 			$new = data_get_archive_page_html($room, intval($f), $new);
 			if ($old == $new) $x = 'same';
@@ -285,6 +305,10 @@ if (TIME_PARTS) time_check_point(count($files).' files in '.$d);
 					if (!$found) continue 2;
 				}
 				if ($found) {
+					if (strpos($tab[0], ',')) {
+						$tab[0] = intval($tab[0]);
+						$line = implode('	', $tab);
+					}
 					$content .= ($n_found || $room?'':($content?NL:'')."
 room = $r").($n_check?'':"
 t = $i").NL.$line;

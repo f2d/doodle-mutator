@@ -2,7 +2,11 @@
 ,	regNaN = /\D+/
 ,	regSpace = /\s+/g
 ,	regTrim = /^\s+|\s+$/g
+,	regTimeBreak = /^\d+(<|>|,|$)/
 ,	regImgTitle = /\s+(title="[^"]+)"/i
+
+,	split_sec = 60
+,	TOS = ['object','string']
 
 ,	touch = ('ontouchstart' in document.documentElement)
 ,	d = document.body.style
@@ -40,10 +44,40 @@ function cre(e,p,b) {
 	return e;
 }
 
+function orz(n) {return parseInt(n||0)||0;}
+function leftPad(n) {n = orz(n); return n > 9 || n < 0?n:'0'+n;}
+function getFormattedTimezoneOffset(t) {
+	return (
+		(t = (t && t.getTimezoneOffset ? t : new Date()).getTimezoneOffset())
+		? (t < 0?(t = -t, '+'):'-')+leftPad(Math.floor(t/60))+':'+leftPad(t%60)
+		: 'Z'
+	);
+}
+
+function getFTimeIfTime(t, plain) {return regTimeBreak.test(t = ''+t) ? getFormattedTime(t, plain) : t;}
+function getFormattedTime(t, plain, only_ymd) {
+	if (TOS.indexOf(typeof t) > -1) t = orz(t)*1000;
+var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
+	t = ('FullYear,Month,Date'+(only_ymd?'':',Hours,Minutes,Seconds')).split(',').map(function(v,i) {
+		v = d['get'+v]();
+		if (i == 1) ++v;
+		return leftPad(v);
+	});
+var	YMD = t.slice(0,3).join('-'), HIS = t.slice(3).join(':');
+	return (
+		plain
+		? YMD+' '+HIS
+		: '<time datetime="'+YMD+'T'+HIS
+		+	getFormattedTimezoneOffset(t)
+		+	'" data-t="'+Math.floor(d/1000)
+		+	'">'+YMD+' <small>'+HIS+'</small></time>'
+	);
+}
+
 //* Specific functions *-------------------------------------------------------
 
 function showArch(p) {
-var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1, split_sec = 60
+var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1
 
 ,	regImgTag = /<img [^>]+>/i
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
@@ -52,7 +86,8 @@ var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1, split_sec = 60
 ,	line = p.innerHTML.split('\n');
 
 	for (i in line) if (line[i].indexOf(t) > 0) {
-	var	tab = line[i].split(t), post = '<br>', m = tab[0], res = 0;
+	var	tab = line[i].split(t), post = '<br>', m = getFTimeIfTime(tab[0], 1), res = 0;
+		tab[0] = getFTimeIfTime(tab[0]);
 		if (!timeRange) timeRange = [m,m];
 		else {
 			if (timeRange[0] > m) timeRange[0] = m;

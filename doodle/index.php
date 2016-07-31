@@ -1036,7 +1036,7 @@ if ($u_key && !$u_opts['times']) {
 			$took_list .= NL."<tr><td>$t +</td><td>$t_diff:</td><td>$comment</td></tr>";
 		}
 	}
-	$took = get_time_html().sprintf($tmp_took, $took);
+	$took = get_time_html().str_replace_first(' ', NL, sprintf($tmp_took, $took));
 }
 
 if (GOD) {

@@ -15,10 +15,10 @@ flag:
 	omit: 2, so archived content is like it was/would be last seen
 example:
 	array('cirno-day', 'Y-m-d', '2009-09-09', '2009-09-09', 2)
-,	array('leap-year', 'nd', 229, 229)
-,	array('april-fools','nd',401, 401)
 */
-	array('new-year', 'nd', 1231, 109)
+	array('leap-year', 'nd', 229, 229)
+,	array('april-fools','nd',401, 401)
+,	array('new-year', 'nd', 1231, 109)
 );
 $cfg_optimize_pics = array(
 	'png' => array(
@@ -105,6 +105,13 @@ define(PAT_CONTENT, '~<pre>(.*\S)\s*</pre>~uis');
 define(FOOT_NOTE, '
 <a href="https://github.com/f2d/doodle-mutator">%s</a> &mdash;
 <a href="https://github.com/f2d">%s</a>, 2013-2016,
-<a href="/board/">%s</a>%s');	//* <- lang specific %s: site engine link, author link, contact board link, plaintext suffix
+<a href="/board/">%s</a>%s');
+/*
+	^ lang-specific %s:
+	1. site engine link
+	2. author link
+	3. guest book/forum/board link
+	4. plain-text tail
+*/
 
 ?>

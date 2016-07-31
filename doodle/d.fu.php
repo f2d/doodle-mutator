@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ?: T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-07-28 23:33'.NL.	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-08-01 00:21'.NL.	//* <- change this to invalidate old pages cached in browsers
 		'Or user key/options changed: '.$_REQUEST[ME]
 	).'"';
 	header('Etag: '.$q);
@@ -231,7 +231,7 @@ function get_time_html($t = 0) {
 	$i = strpos($f, 'T');
 	$d = substr($f, 0, $i);
 	$t = substr($f, $i+1, 8);
-	return '<time datetime="'.$f.'" data-t="'.$uint.'">'.$d.NL.'<small>'.$t.'</small></time>';
+	return '<time datetime="'.$f.'" data-t="'.$uint.'">'.$d.' <small>'.$t.'</small></time>';
 }
 
 function get_time_elapsed($t = 0) {

@@ -10,7 +10,7 @@
 ,	regImgTitle = /\s+(title="[^"]+)"/i
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
 ,	regTimeDrawn = /^((\d+)-(\d+)|[\d:]+),(.*)$/m
-,	regTimeBreak = /^\d+(<|>|$)/
+,	regTimeBreak = /^\d+(<|>|,|$)/
 ,	regLineBreak = /^(\r\n|\r|\n)/gm
 ,	regLNaN = /^\D+/
 ,	regNaN = /\D+/
@@ -329,7 +329,7 @@ function getFormattedTimezoneOffset(t) {
 	);
 }
 
-function getFTimeIfTime(t) {return regTimeBreak.test(t = ''+t) ? getFormattedTime(t) : t;}
+function getFTimeIfTime(t, plain) {return regTimeBreak.test(t = ''+t) ? getFormattedTime(t, plain) : t;}
 function getFormattedTime(t, plain, only_ymd) {
 	if (TOS.indexOf(typeof t) > -1) t = orz(t)*1000;
 var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
@@ -856,16 +856,6 @@ var	flagVarNames = ['flag', 'flags']
 						}
 					//* left:
 						if (tab.length > 0 && notEmpty(t = tab[0])) {
-							if (dtp.found) {
-							var	time = t.replace(regSpace, ' <small>')+'</small>';
-								t =	'<a href="'+(param.room?param.room+'/':'')+param.t+param.page_ext
-								+	'" title="'+la.search_hint.thread
-								+	'">'
-								+		time
-								+	'</a>'
-								+		(alter?' → '+threadNum:'')
-								;
-							} else
 							if (dtp.rooms && sep) {
 								if (roomCount && t.indexOf(sep) >= 0) {
 									k = t.split(sep).map(orz);
@@ -884,7 +874,14 @@ var	flagVarNames = ['flag', 'flags']
 									t = '<a href="'+param.archives+tab[2]+'/">'+t+'</a>';
 								}
 							} else {
-								time = t = getFTimeIfTime(t);
+							var	time = t = getFTimeIfTime(t);
+								if (dtp.found) t =
+									'<a href="'+(param.room?param.room+'/':'')+param.t+param.page_ext
+								+	'" title="'+la.search_hint.thread
+								+	'">'
+								+		t
+								+	'</a>'
+								+	(alter?' → '+threadNum:'');
 							}
 							if (flag.c) {
 								++count[k = (u == 'u'?u:'o')];
