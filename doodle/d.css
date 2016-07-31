@@ -268,15 +268,15 @@ a:hover	{
 	display: block;
 	padding-right: 6px;
 }
-.content .thread {
-	margin: 0;
-	padding-top: 0;
-}
-.content .thread:first-child, .task p:first-child, .task label {
+.thread, .task p:first-child, .task label {
 	padding-top: 8px;
 }
-.content .thread:first-child, body>footer {
+.thread, body>footer {
 	margin-top: 24px;
+}
+.multi-thread .thread:not(:first-child) {
+	margin: 0;
+	padding-top: 0;
 }
 .post, .post.p p .report {
 	overflow-wrap: break-word;
