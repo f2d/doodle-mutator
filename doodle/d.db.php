@@ -151,6 +151,8 @@ if (TIME_PARTS && $a) time_check_point("done $a $t");
 		foreach (get_dir_contents($d = DIR_META_R) as $room) {
 			if ($arr = glob("$d$room/*.report.*", GLOB_NOSORT)) {
 				natcasesort($arr);
+				$a = 0;
+				$t = 'reports';
 				$dest = "$d$room/$t/";
 				foreach ($arr as $f) if (is_file($f)) {
 					$n = data_ensure_filepath_mkdir($dest.intval(get_file_name($f)).$e);

@@ -201,8 +201,13 @@ var	a = gn('p'), i = a.length, r = /\babbrev\b/i, t,b,c,d;
 	for (i in a) if (id(i)) a[i](i);
 
 	if (i = id('postform')) {
-		if (!i.comment.value && (a = location.hash) && a.substr(0, c = 2) == hash) {
-			insert(unescape(a.substr(c)),'');
+		if (!i.comment.value && (a = location.hash) && a.slice(0, c = hash.length) == hash) {
+			c = a.slice(c);
+			try {
+				insert(unescape(c),'');
+			} catch(e) {
+				insert(c,'');
+			}
 		} else c = 0;
 		if (t = id('index-form-header') || id('reply-form-header')) {
 			if (!c) show(i);

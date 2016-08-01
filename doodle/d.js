@@ -390,7 +390,7 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 			,	error = j.match(/\bid=["']*([^"'>\s]*)/i)
 			,	message = (error?status:'')
 			,	img = i.match(/<img[^>]+\balt=["']*([^"'>\s]+)/i)
-			,	task = (img?img[1]:i)	//decodeHTMLSpecialChars(i))
+			,	task = (img?img[1]:decodeHTMLSpecialChars(i))
 				;
 				if (k = id('task')) {
 					i = (e = gn('img', k)).length;
