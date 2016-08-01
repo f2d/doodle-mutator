@@ -390,7 +390,7 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 			,	error = j.match(/\bid=["']*([^"'>\s]*)/i)
 			,	message = (error?status:'')
 			,	img = i.match(/<img[^>]+\balt=["']*([^"'>\s]+)/i)
-			,	task = (img?img[1]:decodeHTMLSpecialChars(i))
+			,	task = (img?img[1]:i)
 				;
 				if (k = id('task')) {
 					i = (e = gn('img', k)).length;
@@ -411,7 +411,7 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 						if (
 							(e = gn('p', k)).length > 1
 						&&	!regTagForm.test((e = e[1]).previousElementSibling.tagName)
-						&&	e.innerHTML != task
+						&&	decodeHTMLSpecialChars(e.innerHTML) != decodeHTMLSpecialChars(task)
 						) e.innerHTML = task, error = 1;
 					} else
 					if (i) {
