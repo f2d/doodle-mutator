@@ -693,17 +693,71 @@ var	flagVarNames = ['flag', 'flags']
 	for (var r_i in raws) if ((e = raws[r_i]) && (t = e.getAttribute('data-type'))) {
 
 		if ((p = e.previousElementSibling) && (h = p.threadsHTML)) {
-			if ((p.innerHTML = (p.innerHTML?'':p.threadsHTML)) && mm) mm(1);
+		var	i = 0;
+			if (typeof sortOrder !== 'undefined') {
+				if (sortOrder > 0) i = 1; else
+				if (sortOrder < 0) i = 2; else h = '';
+			}
+			if (h) {
+				h = (p.threadsLastSortIndex == i && p.innerHTML?'':h[i]);
+				p.threadsLastSortIndex = i;
+			}
+			if ((p.innerHTML = h) && mm) mm(1);
 			continue;
 		}
 
 	var	raw = e.value || e.innerHTML
 	,	dtp = o0(t, regSpace, 1)	//* <- split into object properties
+
+		if (dtp.users) {
+		var	lines = raw.split('\n')
+		,	line
+		,	lastDay = ''
+		,	threadsByDay = []
+			;
+			for (var l_i in lines) {
+				if ((i = (line = lines[l_i]).indexOf('\t')) >= 0) {
+				var	t = getFormattedTime(line.slice(0, i), 1, 1);
+					if (lastDay != t) {
+						lastDay = t;
+						threadsByDay.push('\n');
+					}
+				}
+				threadsByDay.push(line);
+			}
+			raw = threadsByDay.join('\n');
+		}
+		if (dtp.reflinks) {
+		var	lines = raw.split('\n')
+		,	domainNames = []
+		,	threadsByDomain = {}
+			;
+			for (var l_i in lines) {
+			var	d = 0;
+				if ((i = (line = lines[l_i]).lastIndexOf('\t')+1) > 0) {
+				var	m = line.slice(i).match(/^(\w*:\/+)?([^:\/]+)/);
+					if (m) d = m[2].replace(/\W+$/, '').split('.').slice(-2).join('.');
+				}
+				if (domainNames.indexOf(d) < 0) domainNames.push(d), threadsByDomain[d] = [];
+				threadsByDomain[d].push(line);
+			}
+		var	threads = [];
+			for (i in domainNames.sort()) threads.push(threadsByDomain[domainNames[i]].join('\n'));
+		} else {
+			threads = raw.split('\n\n');
+		}
+	var	selfID = ''
+	,	linesToSort = []
 	,	threadsHTML = []
 	,	threadsMarks = []
-	,	threads = raw.split('\n\n')
+	,	thread
 		;
-		for (var t_i in threads) {
+		for (var t_i in threads) if (notEmpty(thread = threads[t_i])) {
+		var	t = getThreadHTML(thread, 1, dtp.users || dtp.reflinks);
+			if (t) threadsHTML.push(t);
+		}
+
+		function getThreadHTML(threadText, addMarks, addToSort) {
 		var	threadHTML = ''
 		,	threadMark = ''
 		,	threadNum = ''
@@ -714,506 +768,519 @@ var	flagVarNames = ['flag', 'flags']
 		,	imgPost = 0
 		,	alt = 1
 		,	tableRow = []
-		,	lines = threads[t_i].split('\n')
+		,	lines = threadText.split('\n')
+		,	line
 			;
-			for (var l_i in lines) if (notEmpty(line = lines[l_i])) threadHTML += (
+			for (var l_i in lines) if (notEmpty(line = lines[l_i])) threadHTML += getLineHTML(line);
 
-				function getLineHTML(line) {
-				var	lineHTML = ''
-				,	postAttr = ''
-				,	postMenu = 0
-				,	imgRes = 0
-				,	alter = 0
-					;
-					if (line.indexOf('\t') < 0) {
-				//* as is:
-						if (line[0] == '<') return line;
-						if (line[0] == '|') {
-				//* announce indent:
-							if (line[1] == '|') return (
-								getLineHTML(t = '\t\t')
-							+	getLineHTML(t+line.slice(2))
-							+	getLineHTML(t)
-							);
-				//* 1 line, any cell count, evenly hor.aligned:
-							tableRow.push(line.slice(1));
-						var	next_i = orz(l_i)+1;
-							if (lines.length <= next_i || lines[next_i][0] != '|') {
-							var	rowHTML = ''
-							,	rowLen = tableRow.length
-							,	align = (rowLen > 1 && rowLen < 4) || ''
-							,	cellWidth = (align?' width="'+Math.floor(100/rowLen)+'%"':'')
-								;
-								for (var td_i in tableRow) {
-									if (align) align = ' align="'+(
-										td_i == 0
-										? 'left'
-										: (
-											td_i == rowLen-1
-											? 'right'
-											: 'center'
-										)
-									)+'"';
-									rowHTML +=
-										'<td'+cellWidth+align+'>'
-									+		tableRow[td_i]
-									+	'</td>';
-								}
-								lineHTML +=
-									'<table width="100%">'
-								+		'<tr>'
-								+			rowHTML
-								+		'</tr>'
-								+	'</table>'
-								tableRow = [];
-							}
-						} else
-				//* save variables, show nothing:
-						if ((i = line.indexOf('=')) > 0) {
-						var	k = line.substr(0,i).replace(regTrim, '')
-						,	v = line.substr(i+1).replace(regTrim, '')
+			function getLineHTML(line) {
+			var	lineHTML = ''
+			,	postAttr = ''
+			,	postMenu = 0
+			,	imgRes = 0
+			,	alter = 0
+				;
+				if (line.indexOf('\t') < 0) {
+			//* as is:
+					if (line[0] == '<') return line;
+					if (line[0] == '|') {
+			//* announce indent:
+						if (line[1] == '|') return (
+							getLineHTML(t = '\t\t')
+						+	getLineHTML(t+line.slice(2))
+						+	getLineHTML(t)
+						);
+			//* 1 line, any cell count, evenly hor.aligned:
+						tableRow.push(line.slice(1));
+					var	next_i = orz(l_i)+1;
+						if (lines.length <= next_i || lines[next_i][0] != '|') {
+						var	rowHTML = ''
+						,	rowLen = tableRow.length
+						,	align = (rowLen > 1 && rowLen < 4) || ''
+						,	cellWidth = (align?' width="'+Math.floor(100/rowLen)+'%"':'')
 							;
-							if (k.length && v.length) {
-								if (v[0] == '"' && v.slice(-1) == '"') v = v.slice(1, -1);
-								if (flagVarNames.indexOf(k) < 0) param[k] = v;
-								else for (var f_i in (v = v.split(''))) i = v[f_i], flag[i] = i;
+							for (var td_i in tableRow) {
+								if (align) align = ' align="'+(
+									td_i == 0
+									? 'left'
+									: (
+										td_i == rowLen-1
+										? 'right'
+										: 'center'
+									)
+								)+'"';
+								rowHTML +=
+									'<td'+cellWidth+align+'>'
+								+		tableRow[td_i]
+								+	'</td>';
 							}
-							return '';
+							lineHTML +=
+								'<table width="100%">'
+							+		'<tr>'
+							+			rowHTML
+							+		'</tr>'
+							+	'</table>'
+							tableRow = [];
 						}
-					} else {
-				//* 3 columns, sort of:
-					var	t,a,b,c,d,i,j,k
-					,	u = ''
-					,	userID = ''
-					,	report = ''
-					,	editPostData = ''
-					,	marks = ''
-					,	tab = line.split('\t')
-					,	sep = param.separator
-					,	roomDates = {}
-					,	roomCount = (dtp.rooms && sep && tab.length > 2)
+					} else
+			//* save variables, show nothing:
+					if ((i = line.indexOf('=')) > 0) {
+					var	k = line.substr(0,i).replace(regTrim, '')
+					,	v = line.substr(i+1).replace(regTrim, '')
 						;
-						if (dtp.found) {
-							if (!threadMark && param.room) threadMark = {id: param.room+'/', posts: 0};
-							if (threadNum != param.t) {
-								threadNum = param.t;
-								alter = 1;
-							}
-						} else
-						if (dtp.threads) {
-							u = tab.shift();
-							if (u.indexOf(sep = '#') >= 0) {
-								j = u.split(sep);
-								userID = j.pop();
-								u = j.join(sep);
-							}
-							if (u.indexOf(sep = ',') >= 0) {
-								j = u.split(sep);
-								u = j.pop();
-								t = j.join(sep);
-								k = t.match(regNaN);
-								t = t.replace(regNaN, '');
-								if (k && (k = k[0]) in reportClass) threadMark = {id: t, class: k};
-								threadNum = t;
-								modEnabled = 1;
-							}
-							if (flag.m) {
-								j = userID ? {
-									user: userID
-								,	time: tab[0]
-								} : {};
-								;
-								if (tab.length > 3) {
-									j.file = tab[2];
-									j.meta = tab[3];
-									if (tab.length > 4) j.browser = tab[4];
-								} else j.text = tab[2];
-								for (k in j) editPostData += (editPostData?'\n':'')+k+': '+j[k];
-							}
-						} else
-						if (dtp.users) {
-							u = tab.shift();
-							if (u.indexOf(j) >= 0) {
-								j = u.split(j);
-								u = j.pop();
-								userID = j.join(j);
-							} else {
-								userID = u;
-								u = '';
-							}
+						if (k.length && v.length) {
+							if (v[0] == '"' && v.slice(-1) == '"') v = v.slice(1, -1);
+							if (flagVarNames.indexOf(k) < 0) param[k] = v;
+							else for (var f_i in (v = v.split(''))) i = v[f_i], flag[i] = i;
+						}
+						return '';
+					}
+				} else {
+			//* 3 columns, sort of:
+				var	t,a,b,c,d,i,j,k
+				,	u = ''
+				,	userID = ''
+				,	report = ''
+				,	editPostData = ''
+				,	marks = ''
+				,	tab = line.split('\t')
+				,	sep = param.separator
+				,	roomDates = {}
+				,	roomCount = (dtp.rooms && sep && tab.length > 2)
+					;
+					if (dtp.found) {
+						if (!threadMark && param.room) threadMark = {id: param.room+'/', posts: 0};
+						if (threadNum != param.t) {
+							threadNum = param.t;
+							alter = 1;
+						}
+					} else
+					if (dtp.threads) {
+						u = tab.shift();
+						if (u.indexOf(sep = '#') >= 0) {
+							j = u.split(sep);
+							userID = j.pop();
+							u = j.join(sep);
+						}
+						if (u.indexOf(sep = ',') >= 0) {
+							j = u.split(sep);
+							u = j.pop();
+							t = j.join(sep);
+							k = t.match(regNaN);
+							t = t.replace(regNaN, '');
+							if (k && (k = k[0]) in reportClass) threadMark = {id: t, class: k};
+							threadNum = t;
 							modEnabled = 1;
-						} else
-						if (roomCount && notEmpty(t = tab[2]) && t.indexOf(sep) >= 0) {
-							k = t.split(sep);
-					//* room name:
-							tab[2] = k.shift();
-					//* colored counters:
-							a = {};
-							for (i in k) if (c = reportClass[b = k[i].slice(-1)]) {
-								a[b] = '<span class="'+c+'" title="'+la[c]+'">'+orz(k[i])+'</span>';
-							}
-							for (i in reportClass) if (a[i]) marks += a[i]+sep;
 						}
-					//* left:
-						if (tab.length > 0 && notEmpty(t = tab[0])) {
-							if (dtp.rooms && sep) {
-								if (roomCount && t.indexOf(sep) >= 0) {
-									k = t.split(sep).map(orz);
-						//* last arch date:
-									if (k.length > 3) {
-										if (i = k[3]) {
-											roomDates['a '+(insideOut?'r':'l')] = i = getFTimeIfTime(i);
-											if (count.uLast < i) count.uLast = i;
-										}
-										if (!count.u.length) count.u = [0,0,0];
-										for (i in (k = k.slice(0,3))) count.u[i] += k[i];
-										if (i = k[2]) k[2] = '<a href="'+param.archives+tab[2]+'/">'+i+'</a>';
-									}
-									t = k.join(sep);
-								} else if (tab[2] && notEmpty(t)) {
-									t = '<a href="'+param.archives+tab[2]+'/">'+t+'</a>';
-								}
-							} else {
-							var	time = t = getFTimeIfTime(t);
-								if (dtp.found) t =
-									'<a href="'+(param.room?param.room+'/':'')+param.t+param.page_ext
-								+	'" title="'+la.search_hint.thread
-								+	'">'
-								+		t
-								+	'</a>'
-								+	(alter?' → '+threadNum:'');
-							}
-							if (flag.c) {
-								++count[k = (u == 'u'?u:'o')];
-								if (time) {
-									if (count[k += 'Last'] < time) count[k] = time;
-									if (threadMark) {
-										if (!threadMark.s || threadMark.s > time) threadMark.s = time;
-										if (!threadMark.t || threadMark.t < time) threadMark.t = time;
-										if (dtp.found) ++threadMark.posts;
-									}
-								}
-							}
-							tab[0] = t;
+						if (flag.m) {
+							j = userID ? {
+								user: userID
+							,	time: tab[0]
+							} : {};
+							;
+							if (tab.length > 3) {
+								j.file = tab[2];
+								j.meta = tab[3];
+								if (tab.length > 4) j.browser = tab[4];
+							} else j.text = tab[2];
+							for (k in j) editPostData += (editPostData?'\n':'')+k+': '+j[k];
 						}
-					//* right:
-						if (tab.length > 1 && notEmpty(t = tab[1])) {
-							if (!regTagPre.test(e.tagName)) {
-								t = encodeHTMLSpecialChars(t);	//* <- fix for textarea source and evil usernames
-							}
-							if (dtp.found) {
-								t =	'<a href="?name='+encodeURIComponent(decodeHTMLSpecialChars(t))
-								+	'" title="'+la.search_hint.name
-								+	'">'
-								+		t
-								+	'</a>';
-							} else
-							if (dtp.reflinks) {
-								try {d = decodeURIComponent(t);} catch (e) {d = t;}
-								t = '<a href="'+t+'">'+d+'</a>';
-							} else
-						//* rooms:
+					} else
+					if (dtp.users) {
+						if ((t = tab[0]).indexOf(sep = ',') >= 0) {
+							j = t.split(sep);
+							u = (j.length > 2 ? j.pop() : '');
+							userID = j.pop();
+							if (u) selfID = userID; else
+							if (selfID === userID) u = 'u';
+							tab[0] = j.join(sep);
+						}
+						threadNum = (tab.length > 2?1:0);
+						modEnabled = 1;
+					} else
+					if (roomCount && notEmpty(t = tab[2]) && t.indexOf(sep) >= 0) {
+						k = t.split(sep);
+				//* room name:
+						tab[2] = k.shift();
+				//* colored counters:
+						a = {};
+						for (i in k) if (c = reportClass[b = k[i].slice(-1)]) {
+							a[b] = '<span class="'+c+'" title="'+la[c]+'">'+orz(k[i])+'</span>';
+						}
+						for (i in reportClass) if (a[i]) marks += a[i]+sep;
+					}
+				//* left:
+					if (tab.length > 0 && notEmpty(t = tab[0])) {
+						if (dtp.rooms && sep) {
 							if (roomCount && t.indexOf(sep) >= 0) {
 								k = t.split(sep).map(orz);
-						//* last post date:
-								if (k.length > 2) {
-									if (i = k[2]) {
-										roomDates[insideOut?'l':'r'] = i = getFTimeIfTime(i);
-										if (count.oLast < i) count.oLast = i;
+					//* last arch date:
+								if (k.length > 3) {
+									if (i = k[3]) {
+										roomDates['a '+(insideOut?'r':'l')] = i = getFTimeIfTime(i);
+										if (count.uLast < i) count.uLast = i;
 									}
-									if (!count.o.length) count.o = [0,0];
-									for (i in (k = k.slice(0,2))) count.o[i] += k[i];
+									if (!count.u.length) count.u = [0,0,0];
+									for (i in (k = k.slice(0,3))) count.u[i] += k[i];
+									if (i = k[2]) k[2] = '<a href="'+param.archives+tab[2]+'/">'+i+'</a>';
 								}
 								t = k.join(sep);
-							} else
-						//* options:
-							if (dtp.options && t[0] != '<' && t.indexOf('=') > 0) {
-							var	k = t.split('=')
-							,	sep = ','
-								;
-								if (k.length > 2 && k[1].length > 0) k = [k[0], k.slice(1).join('=')];
-						//* text field:
-								if (k.length > 2) {
-									t = '<input type="text'
-									+	'" name="'+optPrefix+k[0]
-									+	'" value="'+k[2]
-									+	'" onChange="allowApply()">';
-								} else
-						//* drop-down select:
-								if (k[1].indexOf(sep) > 0) {
-								var	l = k[1].split(';')
-								,	m = orz(l.shift())
-									;
-									t = '<select name="'+optPrefix+k[0]
-									+(
-										l.length > 2
-										? '" onChange="selectLink(this,\''
-										+(l[2] || '*')
-										+(
-											l.length > 3
-											? "','"+l[3]
-											: ''
-										)+"')"
-										: ''
-									)+'">';
-									k = (l[0] || '').split(sep);
-									l = (l[1] || '').split(sep);
-									for (i in k) t +=
-										'<option value="'+k[i]+'"'
-									+		(m == i?' selected':'')
-									+	'>'
-									+		(l[i]?l:k)[i]
-									+	'</option>';
-									t += '</select>';
-								} else {
-						//* toggle box:
-									t = '['+[0,1].map(
-										function(v) {
-											return '<label>'
-											+		'<input type="radio'
-											+			'" name="'+optPrefix+k[0]
-											+			'" value="'+v
-											+			'" onChange="allowApply()"'
-											+			(k[1] == v?' checked':'')
-											+		'>\n<b>'+la.toggle[v]+'</b>\n'
-											+	'</label>';
-										}
-									).join(sep)+']';
-								}
+							} else if (tab[2] && notEmpty(t)) {
+								t = '<a href="'+param.archives+tab[2]+'/">'+t+'</a>';
 							}
-							tab[1] = (marks && !notEmpty(t) ? marks.slice(0, -sep.length) : marks+t);
-						}
-					//* center:
-						if (tab.length > 2 && notEmpty(t = tab[2])) {
-							if (dtp.reports) {
-								t = '<div class="log al">'
-								+	t
-									.replace(/(task:\s*)(\S+)(\s*<br>\s*pic:\s*1)/gi
-									,	'$1<img src="'
-									+	(param.images || '')
-									+	'$2">$3'
-									)
-									.replace(/(<br>)(\s+)/gi, '$1<i></i>')
-								+ '</div>';
-							} else
-							if (dtp.users) {
-								t = userID+'. '+(u == 'u'?t:'<span class="a">'+t+'</span>');
-							} else
-							if (dtp.rooms) {
-							var	k = (t[0] == '.'?'gloom':'')
-							,	a = ''
-								;
-						//* room frozen:
-								if (tab.length > 4) a = tab[4], k = 'frozen';
-						//* room announce:
-								if (tab.length > 3 && (notEmpty(a) || notEmpty(a = tab[3]))) {
-									a = encodeHTMLSpecialChars(
-										a
-										.replace(regTrim, '')
-										.replace(regSpace, ' ')
-									);
-									a =	'" title="'+a
-									+	'" data-title="'+a.substr(a.indexOf(': '));
-								}
-								t = '<a href="'+t+'/'+(a||k?'" class="room-title'+(k?' '+k:'')+a:'')+'">'+t+'</a>';
-							} else
-						//* image post:
-							if (tab.length > 3 && notEmpty(a = tab[3])) {
-								imgRes = (t.indexOf(', ') > 0);
-								if (flag.c) ++count.img;
-								if (a[0] == '?') {
-									t =	'<span title="'+t+'">'
-									+		a.slice(1)
-									+	'</span>';
-								} else {
-									if (m = a.match(regTimeDrawn)) {
-										if (m[2]) {
-										var	j = +m[3]-m[2]
-										,	k = [0, 0, Math.floor(Math.abs(j)/1000)]
-										,	l = k.length
-											;
-											while (--l) {
-												if (k[l] >= split_sec) {
-													k[l-1] = Math.floor(k[l]/split_sec);
-													k[l] %= split_sec;
-												}
-												if (k[l] < 10) k[l] = '0'+k[l];
-											}
-											m[1] = (j < 0?'-':'')+k.join(':');
-										}
-									var	q = m[1]+', '+m[4]
-									,	a = la.time+' '+m[1]+' '+la.using+' '+m[4]
-										;
-									} else q = a = la.hax+' '+a;
-									if (dtp.found) {
-									var	sep = '">';
-										k = t.split(sep);
-										for (i in k) if (l = k[i]) {
-											m = l.split(regSpace, 1)[0].substr(1).toLowerCase();
-											if (m == 'a') k[i] += '" class="res" target="_blank'; else
-											if (m == 'img') k[i] +=
-												'" alt="'+l.substr(l.lastIndexOf('/')+1)+', '+a
-											+	'" title="'+a;
-										}
-										t = k.join(sep);
-										if (imgRes) {
-											j = t.split(l = '>');
-											k = j.pop()
-												.replace(regTrim, '')
-												.replace(regLNaN, '')
-												.replace(regNaN, 'x');
-											t = j.join(l).replace(
-													regImgTitle
-												,	' $1, '+k+'. '+la.resized_hint+'"'
-												)+l;
-											if (notEmpty(tab[0])) tab[0] += '<br>'+t
-												.replace(regImgTag, k)
-												.split(sep)
-												.join('" title="'+la.resized_hint+sep);
-										}
-									} else {
-										if (imgRes) {
-											j = t.split(';');
-											t = j[0].replace(/(\.[^.]+)$/, '_res$1');
-											k = j[1].replace(regNaN, 'x');
-											if (notEmpty(tab[0])) tab[0] +=
-												'<span class="'+(u == 'u'?u:'res')
-										//	+	'" title="'+k+'. '+la.resized_hint
-											+	'">'
-											+		('\n'+la.resized).replace(regLineBreak, '<br>')
-											+		': '+k
-											+	'</span>';
-										} else j = '';
-										t = '<img src="'
-										+	(param.images || '')
-										+	(flag.p?getPicSubDir(t):'')
-										+	t
-										+	'" alt="'+t+', '+q
-										+	'" title="'+(j?a+', '+k+'. '+la.resized_hint:a)
-										+	'">';
-										if (j) t =
-											'<a target="_blank" href="'+(param.images || '')
-										+	(flag.p?getPicSubDir(t):'')
-										+	j[0]
-										+	'" class="res'+(u == 'u'?' u':'')+'">'
-										+		t
-										+	'</a>';
-									}
-								}
-								if (!dtp.found && imgPost) alter = 1;
-								imgPost = 1;
-							} else {
-						//* text post:
-								if (dtp.threads) t = ++descNum+'. '+t;
-								t = t
-									.replace(/\s+(-|&mdash;|—|&ndash;|–|)\s+/gi, '&nbsp;$1 ')
-									.replace(/\s+([^<\s]{1,2})\s+/g, ' $1&nbsp;');
-								imgPost = 0;
-							}
-							if (dtp.found) {
-							var	i = (param.room?param.room+'/':'')+postNum;
-								postAttr += '" id="'+i;
-								t =	'<a href="#'+i
-								+	'" title="'+la.search_hint.anchor
-								+	(imgPost?'" class="image-num':'')
-								+	'">'
-								+		postNum
-								+	'.</a>'
-								+	(imgPost?'':' ')
-								+	t;
-							}
-							if (!imgRes && u == 'u') t = '<span class="u">'+t+'</span>';
-							tab[2] = t;
-						} else tab[2] = (dtp.rooms ? '<br id="total-counts">' : '<br>');
-
-						if (roomDates) {
-						var	k = (insideOut?' class="'+insideOut+'"':'');
-							for (i in roomDates) lineHTML +=
-								'<div'+k+'>'
-							+		'<p class="'+i+'">'
-							+			roomDates[i]
-							+		'</p>'
-							+	'</div>';
-						}
-						i = 2;
-						while (i--) if (notEmpty(t = tab[i])) {
-							if (dtp.threads) {
-								j = '';
-								if (b = param[k = reportOnPostTypes[i]]) {
-									b = b.split('<br>');
-									for (var rep_line_i in b) if (notEmpty(c = b[rep_line_i])) {
-										d = c.indexOf(':');
-										j +=	'<span class="report">'
-										+		getFormattedTime(c.slice(0, d))
-										+		c.slice(d)
-										+	'</span>';
-									}
-									param[k] = '';
-								}
-								if (j) t +=
-									'<span class="date-out '+'rl'[i]+'">'
-								+		j
-								+	'</span>';
-							}
-						var	m = (i > 0 ? ' class="'+(dtp.reflinks?'ref':'r')+'"' : '');
-							if (modEnabled) {
-							var	postID = threadNum+'-'+postNum+'-'+i;
-								if (mm) {
-									postMenu = 1;
-									m += ' id="m_'+(
-										dtp.users
-										? userID+'_'+threadNum+'_3'
-										: postID.replace(/\D+/g, '_')
-									)+'"';
-									if (i == 0 && editPostData) m += ' data-post="'+encodeHTMLSpecialChars(
-										editPostData
-									)+'"';
-								} else {
-									m += ' onClick="window.open(\''+(
-										dtp.users
-										? '3-'+userID+'\',\'Info\',\'width=400,height=400'
-										: postID+'\',\'Report\',\'width=656,height=300'
-									)+'\')"';
-								}
-							}
-							if (b = param[hintOnPostTypes[i]]) {
-								m += ' title="'+b+'"';
-							}
-							tab[i] = '<p'+m+'>'
+						} else {
+						var	time = t = getFTimeIfTime(t);
+							if (dtp.found) t =
+								'<a href="'+(param.room?param.room+'/':'')+param.t+param.page_ext
+							+	'" title="'+la.search_hint.thread
+							+	'">'
 							+		t
-							+	'</p>';
+							+	'</a>'
+							+	(alter?' → '+threadNum:'');
 						}
-						lineHTML += tab.slice(0,3).filter(notEmpty).join('');
+						if (flag.c && (dtp.reflinks || (tab.length > 2 && notEmpty(tab[2])))) {
+							++count[k = (u == 'u'?u:'o')];
+							if (time) {
+								if (count[k += 'Last'] < time) count[k] = time;
+								if (threadMark) {
+									if (!threadMark.s || threadMark.s > time) threadMark.s = time;
+									if (!threadMark.t || threadMark.t < time) threadMark.t = time;
+									if (dtp.found) ++threadMark.posts;
+								}
+							}
+							if (dtp.users && u == 'u') {
+								++count[k = 'o'];
+								if (time && count[k += 'Last'] < time) count[k] = time;
+							}
+						}
+						tab[0] = t;
 					}
-					if (notEmpty(lineHTML)) {
-				//* half width:
-						if (dtp.options || dtp.rooms) lineHTML =
-								'<div class="center">'
-						+			lineHTML
-						+		'</div>';
-				//* toggle bg color:
-						if (!dtp.found && !imgPost) alter = 1;
-						if (alter) alt = !alt;
-						lineHTML =
-							'<div class="post'
-						+		(dtp.found || dtp.threads?' p':'')
-						+		(dtp.users?' al p':'')
-						+		(postMenu?' menu':'')
-						+		(modEnabled?' '+userClass[isNaN(u)?u:0]:'')
-						+		(alt?' alt':'')
-						+		(imgRes?' res':'')
-						+		postAttr
-						+	'">'
-						+		lineHTML
-						+	'</div>';
-						++postNum;
+				//* right:
+					if (tab.length > 1 && notEmpty(t = tab[1])) {
+						if (!regTagPre.test(e.tagName)) {
+							t = encodeHTMLSpecialChars(t);	//* <- fix for textarea source and evil usernames
+						}
+						if (dtp.found) {
+							t =	'<a href="?name='+encodeURIComponent(decodeHTMLSpecialChars(t))
+							+	'" title="'+la.search_hint.name
+							+	'">'
+							+		t
+							+	'</a>';
+						} else
+						if (dtp.reflinks) {
+							try {d = decodeURIComponent(t);} catch (e) {d = t;}
+							t = '<a href="'+t+'">'+d+'</a>';
+						} else
+					//* rooms:
+						if (roomCount && t.indexOf(sep) >= 0) {
+							k = t.split(sep).map(orz);
+					//* last post date:
+							if (k.length > 2) {
+								if (i = k[2]) {
+									roomDates[insideOut?'l':'r'] = i = getFTimeIfTime(i);
+									if (count.oLast < i) count.oLast = i;
+								}
+								if (!count.o.length) count.o = [0,0];
+								for (i in (k = k.slice(0,2))) count.o[i] += k[i];
+							}
+							t = k.join(sep);
+						} else
+					//* options:
+						if (dtp.options && t[0] != '<' && t.indexOf('=') > 0) {
+						var	k = t.split('=')
+						,	sep = ','
+							;
+							if (k.length > 2 && k[1].length > 0) k = [k[0], k.slice(1).join('=')];
+					//* text field:
+							if (k.length > 2) {
+								t = '<input type="text'
+								+	'" name="'+optPrefix+k[0]
+								+	'" value="'+k[2]
+								+	'" onChange="allowApply()">';
+							} else
+					//* drop-down select:
+							if (k[1].indexOf(sep) > 0) {
+							var	l = k[1].split(';')
+							,	m = orz(l.shift())
+								;
+								t = '<select name="'+optPrefix+k[0]
+								+(
+									l.length > 2
+									? '" onChange="selectLink(this,\''
+									+(l[2] || '*')
+									+(
+										l.length > 3
+										? "','"+l[3]
+										: ''
+									)+"')"
+									: ''
+								)+'">';
+								k = (l[0] || '').split(sep);
+								l = (l[1] || '').split(sep);
+								for (i in k) t +=
+									'<option value="'+k[i]+'"'
+								+		(m == i?' selected':'')
+								+	'>'
+								+		(l[i]?l:k)[i]
+								+	'</option>';
+								t += '</select>';
+							} else {
+					//* toggle box:
+								t = '['+[0,1].map(
+									function(v) {
+										return '<label>'
+										+		'<input type="radio'
+										+			'" name="'+optPrefix+k[0]
+										+			'" value="'+v
+										+			'" onChange="allowApply()"'
+										+			(k[1] == v?' checked':'')
+										+		'>\n<b>'+la.toggle[v]+'</b>\n'
+										+	'</label>';
+									}
+								).join(sep)+']';
+							}
+						}
+						tab[1] = (marks && !notEmpty(t) ? marks.slice(0, -sep.length) : marks+t);
 					}
-					return lineHTML;
-				}
+				//* center:
+					if (tab.length > 2 && notEmpty(t = tab[2])) {
+						if (dtp.reports) {
+							t = '<div class="log al">'
+							+	t
+								.replace(/(task:\s*)(\S+)(\s*<br>\s*pic:\s*1)/gi
+								,	'$1<img src="'
+								+	(param.images || '')
+								+	'$2">$3'
+								)
+								.replace(/(<br>)(\s+)/gi, '$1<i></i>')
+							+ '</div>';
+						} else
+						if (dtp.users) {
+							t = userID+'. '+(u == 'u'?t:'<span class="a">'+t+'</span>');
+						} else
+						if (dtp.rooms) {
+						var	k = (t[0] == '.'?'gloom':'')
+						,	a = ''
+							;
+					//* room frozen:
+							if (tab.length > 4) a = tab[4], k = 'frozen';
+					//* room announce:
+							if (tab.length > 3 && (notEmpty(a) || notEmpty(a = tab[3]))) {
+								a = encodeHTMLSpecialChars(
+									a
+									.replace(regTrim, '')
+									.replace(regSpace, ' ')
+								);
+								a =	'" title="'+a
+								+	'" data-title="'+a.substr(a.indexOf(': '));
+							}
+							t = '<a href="'+t+'/'+(a||k?'" class="room-title'+(k?' '+k:'')+a:'')+'">'+t+'</a>';
+						} else
+					//* image post:
+						if (tab.length > 3 && notEmpty(a = tab[3])) {
+							imgRes = (t.indexOf(', ') > 0);
+							if (flag.c) ++count.img;
+							if (a[0] == '?') {
+								t =	'<span title="'+t+'">'
+								+		a.slice(1)
+								+	'</span>';
+							} else {
+								if (m = a.match(regTimeDrawn)) {
+									if (m[2]) {
+									var	j = +m[3]-m[2]
+									,	k = [0, 0, Math.floor(Math.abs(j)/1000)]
+									,	l = k.length
+										;
+										while (--l) {
+											if (k[l] >= split_sec) {
+												k[l-1] = Math.floor(k[l]/split_sec);
+												k[l] %= split_sec;
+											}
+											if (k[l] < 10) k[l] = '0'+k[l];
+										}
+										m[1] = (j < 0?'-':'')+k.join(':');
+									}
+								var	q = m[1]+', '+m[4]
+								,	a = la.time+' '+m[1]+' '+la.using+' '+m[4]
+									;
+								} else q = a = la.hax+' '+a;
+								if (dtp.found) {
+								var	sep = '">';
+									k = t.split(sep);
+									for (i in k) if (l = k[i]) {
+										m = l.split(regSpace, 1)[0].substr(1).toLowerCase();
+										if (m == 'a') k[i] += '" class="res" target="_blank'; else
+										if (m == 'img') k[i] +=
+											'" alt="'+l.substr(l.lastIndexOf('/')+1)+', '+a
+										+	'" title="'+a;
+									}
+									t = k.join(sep);
+									if (imgRes) {
+										j = t.split(l = '>');
+										k = j.pop()
+											.replace(regTrim, '')
+											.replace(regLNaN, '')
+											.replace(regNaN, 'x');
+										t = j.join(l).replace(
+												regImgTitle
+											,	' $1, '+k+'. '+la.resized_hint+'"'
+											)+l;
+										if (notEmpty(tab[0])) tab[0] += '<br>'+t
+											.replace(regImgTag, k)
+											.split(sep)
+											.join('" title="'+la.resized_hint+sep);
+									}
+								} else {
+									if (imgRes) {
+										j = t.split(';');
+										t = j[0].replace(/(\.[^.]+)$/, '_res$1');
+										k = j[1].replace(regNaN, 'x');
+										if (notEmpty(tab[0])) tab[0] +=
+											'<span class="'+(u == 'u'?u:'res')
+									//	+	'" title="'+k+'. '+la.resized_hint
+										+	'">'
+										+		('\n'+la.resized).replace(regLineBreak, '<br>')
+										+		': '+k
+										+	'</span>';
+									} else j = '';
+									t = '<img src="'
+									+	(param.images || '')
+									+	(flag.p?getPicSubDir(t):'')
+									+	t
+									+	'" alt="'+t+', '+q
+									+	'" title="'+(j?a+', '+k+'. '+la.resized_hint:a)
+									+	'">';
+									if (j) t =
+										'<a target="_blank" href="'+(param.images || '')
+									+	(flag.p?getPicSubDir(t):'')
+									+	j[0]
+									+	'" class="res'+(u == 'u'?' u':'')+'">'
+									+		t
+									+	'</a>';
+								}
+							}
+							if (!dtp.found && imgPost) alter = 1;
+							imgPost = 1;
+						} else {
+					//* text post:
+							if (dtp.threads) t = ++descNum+'. '+t;
+							t = t
+								.replace(/\s+(-|&mdash;|—|&ndash;|–|)\s+/gi, '&nbsp;$1 ')
+								.replace(/\s+([^<\s]{1,2})\s+/g, ' $1&nbsp;');
+							imgPost = 0;
+						}
+						if (dtp.found) {
+						var	i = (param.room?param.room+'/':'')+postNum;
+							postAttr += '" id="'+i;
+							t =	'<a href="#'+i
+							+	'" title="'+la.search_hint.anchor
+							+	(imgPost?'" class="image-num':'')
+							+	'">'
+							+		postNum
+							+	'.</a>'
+							+	(imgPost?'':' ')
+							+	t;
+						}
+						if (!imgRes && u == 'u') t = '<span class="u">'+t+'</span>';
+						tab[2] = t;
+					} else tab[2] = (
+						dtp.users
+						? '<span class="u">'+la.count.self+'.</span>'
+						: (
+							dtp.rooms
+							? '<br id="total-counts">'
+							: '<br>'
+						)
+					);
 
-			)(line);
+					if (roomDates) {
+					var	k = (insideOut?' class="'+insideOut+'"':'');
+						for (i in roomDates) lineHTML +=
+							'<div'+k+'>'
+						+		'<p class="'+i+'">'
+						+			roomDates[i]
+						+		'</p>'
+						+	'</div>';
+					}
+					i = 2;
+					while (i--) if (notEmpty(t = tab[i])) {
+						if (dtp.threads) {
+							j = '';
+							if (b = param[k = reportOnPostTypes[i]]) {
+								b = b.split('<br>');
+								for (var rep_line_i in b) if (notEmpty(c = b[rep_line_i])) {
+									d = c.indexOf(':');
+									j +=	'<span class="report">'
+									+		getFormattedTime(c.slice(0, d))
+									+		c.slice(d)
+									+	'</span>';
+								}
+								param[k] = '';
+							}
+							if (j) t +=
+								'<span class="date-out '+'rl'[i]+'">'
+							+		j
+							+	'</span>';
+						}
+					var	m = (i > 0 ? ' class="'+(dtp.reflinks?'ref':'r')+'"' : '');
+						if (modEnabled) {
+						var	postID = threadNum+'-'+postNum+'-'+i;
+							if (mm && (i > 0 || !dtp.users)) {
+								postMenu = 1;
+								m += ' id="m_'+(
+									dtp.users
+									? userID+'_'+threadNum+'_3'
+									: postID.replace(/\D+/g, '_')
+								)+'"';
+								if (i == 0 && editPostData) m += ' data-post="'+encodeHTMLSpecialChars(
+									editPostData
+								)+'"';
+							} else {
+								m += ' onClick="window.open(\''+(
+									dtp.users
+									? '3-'+userID+'\',\'Info\',\'width=400,height=400'
+									: postID+'\',\'Report\',\'width=656,height=300'
+								)+'\')"';
+							}
+						}
+						if (b = param[hintOnPostTypes[i]]) {
+							m += ' title="'+b+'"';
+						}
+						tab[i] = '<p'+m+'>'
+						+		t
+						+	'</p>';
+					}
+					lineHTML += tab.slice(0,3).filter(notEmpty).join('');
+				}
+				if (notEmpty(lineHTML)) {
+					if (addToSort && (!dtp.users || threadNum > 0)) linesToSort.push(line);
+			//* half width:
+					if (dtp.options || dtp.rooms) lineHTML =
+							'<div class="center">'
+					+			lineHTML
+					+		'</div>';
+			//* toggle bg color:
+					if (!dtp.found && !imgPost) alter = 1;
+					if (alter) alt = !alt;
+					lineHTML =
+						'<div class="post'
+					+		(dtp.found || dtp.threads?' p':'')
+					+		(dtp.users?' al p':'')
+					+		(postMenu?' menu':'')
+					+		(modEnabled?' '+userClass[isNaN(u)?u:0]:'')
+					+		(alt?' alt':'')
+					+		(imgRes?' res':'')
+					+		postAttr
+					+	'">'
+					+		lineHTML
+					+	'</div>';
+					++postNum;
+				}
+				return lineHTML;
+			}
 
 			if (notEmpty(threadHTML)) {
+				if (addMarks) threadsMarks.push(threadMark);
 				if (dtp.found && (m = param.room)) {
 					threadHTML =
 						'<div class="post alt x3">'
@@ -1224,9 +1291,9 @@ var	flagVarNames = ['flag', 'flags']
 					+	'</div>'
 					+threadHTML;
 				}
-				threadsHTML.push(threadHTML);
-				threadsMarks.push(threadMark);
+				return threadHTML;
 			}
+			return '';
 		}
 
 	var	p = e.parentNode
@@ -1267,30 +1334,6 @@ var	flagVarNames = ['flag', 'flags']
 		if (threadsHTML.length) {
 		var	e = cre('div', p, e);
 			if (threadsHTML.length > 1) {
-				e.className = 'multi-thread';
-				e.threadsHTML = h = threadsHTML.map(
-					function(v,i) {
-						if (i = threadsMarks[i]) {
-						var	j = reportClass[i.class || 0]
-						,	k = ' '+j+'" id="'+i.id
-							;
-							if (dontCollapse.indexOf(j) < 0) v =
-								'<div class="post alt anno">'
-							+		'<a href="javascript:void this'
-							+		'" onClick="toggleHide(this.parentNode.nextElementSibling)'
-							+		'">'
-							+			la.hint[j]+la.hint.show
-							+		'</a>'
-							+	'</div>'
-							+	'<div style="display:none">'
-							+		v
-							+	'</div>';
-						}
-						return	'<div class="thread'+(k || '')+'">'
-						+		v
-						+	'</div>';
-					}
-				).join('')+afterThreadsBar;
 		//* top bar:
 			var	o = {
 					left: []
@@ -1372,8 +1415,43 @@ var	flagVarNames = ['flag', 'flags']
 				+		o.right
 				+		o.left
 				+	'</p>';
+		//* unsorted content:
+			var	h = [threadsHTML.map(
+					function(v,i) {
+						if (i = threadsMarks[i]) {
+						var	j = reportClass[i.class || 0]
+						,	k = ' '+j+'" id="'+i.id
+							;
+							if (dontCollapse.indexOf(j) < 0) v =
+								'<div class="post alt anno">'
+							+		'<a href="javascript:void this'
+							+		'" onClick="toggleHide(this.parentNode.nextElementSibling)'
+							+		'">'
+							+			la.hint[j]+la.hint.show
+							+		'</a>'
+							+	'</div>'
+							+	'<div style="display:none">'
+							+		v
+							+	'</div>';
+						}
+						return	'<div class="thread'+(k || '')+'">'
+						+		v
+						+	'</div>';
+					}
+				).join('')];
+		//* sorted content:
+				if (linesToSort.length) for (i in (j = ['sort','reverse'])) {
+					h.push(
+						'<div class="thread">'
+					+		getThreadHTML(linesToSort[j[i]]().join('\n'))
+					+	'</div>'
+					);
+				}
+				for (i = 0, j = h.length; i < j; i++) if (h[i]) h[i] += afterThreadsBar;
+				e.className = 'multi-thread';
+				e.threadsHTML = h;
 		//* show open threads on page load only if option set:
-				if (flag.a) e.innerHTML = h;
+				if (flag.a) e.innerHTML = h[0];
 			} else {
 				if (dtp.found || dtp.threads) cre('div', p, e.nextElementSibling).outerHTML = afterThreadsBar;
 				e.className = 'thread';
@@ -1428,6 +1506,7 @@ var	flagVarNames = ['flag', 'flags']
 //* Runtime: top panel, etc *--------------------------------------------------
 
 for (i in (a = gn('time'))) if ((e = a[i]) && (t = e.getAttribute('data-t')) && t > 0) e.outerHTML = getFormattedTime(t);
+if (mm) mm();
 if (e = id('filter')) e.placeholder = '';//e.onchange = e.onkeyup = filter;
 
 if (k = id('task')) {
@@ -1552,4 +1631,3 @@ for (i in la.clear) if (e = id(i)) {
 	e.onclick = clearSaves;
 	if (!e.href) e.disabled = true, (e.onmouseover = checkSaves)(i);
 }
-if (mm) mm();

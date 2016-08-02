@@ -416,7 +416,7 @@ a:hover	{
 	background-repeat: repeat-y;
 	background-position: top;
 }
-.post.p p, .post>p, .post .date-out>* {
+.post.p p, .post>p:not(.ref), .post .date-out>* {
 	width: 169px;
 }
 .post.p p .report {
@@ -538,6 +538,6 @@ a:hover	{
 small {
 	line-height: 50%;
 }
-*[data-type], .hid, .thread>pre, .hide-p .post p {
+*[data-type], .hid, .thread>pre, .hide-p .post p:not(.ref) {
 	display: none;
 }

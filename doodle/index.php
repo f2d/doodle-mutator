@@ -712,13 +712,10 @@ if (TIME_PARTS && $a) time_check_point("done $a pics");
 left = $tmp_mod_user_info
 right = $tmp_mod_user_hint
 flags = cgu
-
-$u_num,u	v	 v
-
+v,$u_num,u	v
 ".trim(
-str_replace(NL."$u_num	", NL."$u_num,u	",					//* <- mark self
-preg_replace('~(\V+)	(\V+)	(\V+)\+\V+(	\V+?)~Uu', '$1	$3$4	$2',	//* <- transform data fields; TODO: move this to db.php?
-NL.$t)));
+preg_replace('~(\V+)(	\V+)	(\V+)\+\V+(	\V+?)~Uu', '$3,$1$4$2',	//* <- transform data fields; TODO: move this to db.php?
+NL.$t));
 								$data_attr['content']['type'] = 'users';
 							} else
 							if ($etc == 4) {
