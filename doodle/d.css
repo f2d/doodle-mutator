@@ -119,8 +119,12 @@ a:hover	{
 	display: inline-block;
 	border: 5px solid transparent;
 }
-.arr>a:hover {border-left-color:	#eee;}
-.arr .r a:hover {border-right-color:	#eee;}
+.arr>a:not(.r):hover {
+	border-left-color:	#eee;
+}
+.arr a.r:hover, .arr .r a:hover {
+	border-right-color:	#eee;
+}
 .task .arr {
 	padding: 0 !important;
 }
@@ -237,6 +241,9 @@ a:hover	{
 .task form:not(:empty), .task p, .task ul, .task ol {
 	text-align: left;
 	padding: 0 22px 8px 22px;
+}
+.task .r {
+	padding-bottom: 0;
 }
 .task form, .task p, .task ul, .task ol {
 	line-height: 26px;

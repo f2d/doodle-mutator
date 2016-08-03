@@ -77,7 +77,7 @@ var	YMD = t.slice(0,3).join('-'), HIS = t.slice(3).join(':');
 //* Specific functions *-------------------------------------------------------
 
 function showArch(p) {
-var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1
+var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 
 ,	regImgTag = /<img [^>]+>/i
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
@@ -149,48 +149,69 @@ var	h,i,j,k,l,m,t = '\t', thread = '', alt = 1, img = 1, num = 1
 		+		tab[k]
 		+	'</p>'+post;
 
-		thread += '<div class="post'
+		threadHTML += '<div class="post'
 		+	(num?' p'+(res?' res':''):'')
 		+	alt
 		+	'">'
 		+		post
 		+	'</div>';
 	}
-	if (thread) {
-		j = '', (p = p.parentNode).innerHTML = thread;
-	//* header, links up:
-		if ((k = gn('header')).length) j = (k = k[0]).innerHTML;		//* <- legacy
-		else {
-			i = (k = gn('link')).length;
-			while (i--) if ((l = k[i]) && (h = l.getAttribute('href'))) {
-				if (l.rel == 'index') {j = h; break;} else		//* <- explicit link given
-				if ((m = h.lastIndexOf('/')) >= 0) j = h.substr(0,m);	//* <- or guess
-			}
-			k = cre('header', m = document.body, m.firstChild);
+	if (threadHTML) {
+	var	thisPage
+	,	nextPage
+	,	prevPage
+	,	rootPath
+	,	lastDir
+	,	pageExt = '.htm'
+	,	a = gn('link')
+	,	i = a.length
+	,	d = document.body
+		;
+		if (k = id('task')) {
+			thisPage = orz(k.textContent);
+			while (e = k.lastChild) k.removeChild(e);
+		} else {
+			k = cre('div', d, d.firstChild);
+			k.id = 'task';
 		}
-
-		l = '', k.className = 'a'+(touch?' touch':'');
-		for (i in (j = {
-			'&#8662;': j || '../..'						//* <- or a hand-wave
+		while (i--) if ((l = a[i]) && (h = l.getAttribute('href'))) {
+			if (l.rel == 'index') rootPath = h; else			//* <- explicit link given
+			if (l.rel == 'next') nextPage = h; else
+			if (l.rel == 'prev') prevPage = h; else
+			if ((l = h.lastIndexOf('/')) >= 0) lastDir = h.substr(0,l);	//* <- or guess
+		}
+		if (!thisPage && nextPage) thisPage = orz(nextPage)-1;
+		if (thisPage) {
+			if (thisPage <= 1) prevPage = '.'; else
+			if (!prevPage) prevPage = (thisPage-1) + pageExt;
+			if (!nextPage) nextPage = (thisPage+1) + pageExt;
+		}
+		document.title = room+' - '+thisPage+(timeRange?', '+timeRange.join(' - '):'');
+	//* header, links up:
+		a = {
+			'&#8662;': rootPath || lastDir || '../..'			//* <- or a hand-wave
 		,	'&#8679;': '.'
 		,	'&#8596;': 'javascript:fit()'
 		,	'&#9636;': 'javascript:meta()'
-		})) l += '<u><a href="'+j[i]+'">'+i+'</a></u>'
-		k.innerHTML = '<u>'+l+'</u>';
-
-		i = parseInt((k = id('task')).textContent);
-		document.title = room+' - '+i+(timeRange?', '+timeRange.join(' - '):''), j = (i--)+1;
+		}, h = '';
+		for (i in a) h += '<u><a href="'+a[i]+'">'+i+'</a></u>'
+		e = gn('header')[0] || cre('header', d, d.firstChild);
+		e.className = 'a'+(touch?' touch':'');
+		e.innerHTML = '<u>'+h+'</u>';
 	//* top/bottom bar, links to prev/next:
-		m = cre('div', p.parentNode, p.nextElementSibling);
-		if (h = p.className) m.className = h;
-		m.innerHTML = k.innerHTML =
-			'<div class="task">'
-		+		'<p class="arr">'
-		+			'<a href="'+(i?i+'.htm':'.')+'">&#8678; '+(i?i:'')+'</a>'
-		+			'<u class="r">'
-		+				'<a href="'+j+'.htm">'+j+' &#8680;</a>'
-		+			'</u>'
-		+		'</p>'
-		+	'</div>';
+		h =	'<p class="arr">'
+		+		'<a href="'+prevPage+'">&#8678; '+(orz(prevPage) || '')+'</a>'
+		+		'<a href="'+nextPage+'" class="r">'+orz(nextPage)+' &#8680;</a>'
+		+	'</p>';
+		p = p.parentNode, a = [k, p], i = a.length;
+		while (i--) {
+			e = cre('div', e = a[i], e.firstChild);
+			e.className = 'task';
+			e.innerHTML = h;
+		}
+	//* posts content:
+		e = cre('div', document.body, p);
+		e.className = 'thread';
+		e.innerHTML = threadHTML;
 	}
 }
