@@ -116,6 +116,7 @@ $tmp_options_input = array(
 		'draw_app'		=> 'Sketcher variant'
 	,	'draw_max_recovery'	=> 'Drawing autosaved recovery slots'
 	,	'draw_max_undo'		=> 'Drawing undo history length'
+	,	'draw_time_idle'	=> 'Drawing idle time minimum, in seconds'
 	,	'per_page'		=> 'Threads per page'
 	,	'room_home'		=> 'Home room (single dot = room list)'
 	)

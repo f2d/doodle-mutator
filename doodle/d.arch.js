@@ -5,7 +5,7 @@
 ,	regTimeBreak = /^\d+(<|>|,|$)/
 ,	regImgTitle = /\s+(title="[^"]+)"/i
 
-,	split_sec = 60
+,	splitSec = 60
 ,	TOS = ['object','string']
 
 ,	touch = ('ontouchstart' in document.documentElement)
@@ -54,6 +54,18 @@ function getFormattedTimezoneOffset(t) {
 	);
 }
 
+function getFormattedHMS(msec) {
+var	t = orz(msec)
+,	a = [0, 0, Math.floor(Math.abs(t)/1000)]
+,	i = a.length
+	;
+	while (--i) {
+		if (a[i] >= splitSec) a[i-1] = Math.floor(a[i]/splitSec), a[i] %= splitSec;
+		if (a[i] < 10) a[i] = '0'+a[i];
+	}
+	return (t < 0?'-':'')+a.join(':');
+}
+
 function getFTimeIfTime(t, plain) {return regTimeBreak.test(t = ''+t) ? getFormattedTime(t, plain) : t;}
 function getFormattedTime(t, plain, only_ymd) {
 	if (TOS.indexOf(typeof t) > -1) t = orz(t)*1000;
@@ -81,7 +93,7 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 
 ,	regImgTag = /<img [^>]+>/i
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
-,	regTimeDrawn = /^((\d+)-(\d+)|[\d:]+),(.*)$/m
+,	regTimeDrawn = /^((\d+)-(\d+)|[\d:]+)(?:=(\d+))?,(.*)$/m
 
 ,	line = p.innerHTML.split('\n');
 
@@ -104,14 +116,15 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 	//* image, meta, link to full size:
 				if (m = tab[3].match(regTimeDrawn)) {
 					if (m[2]) {
-						j = +m[3]-m[2], k = [0, 0, Math.floor(Math.abs(j)/1000)], l = k.length;
-						while (--l) {
-							if (k[l] >= split_sec) k[l-1] = Math.floor(k[l]/split_sec), k[l] %= split_sec;
-							if (k[l] < 10) k[l] = '0'+k[l];
-						}
-						m[1] = (j < 0?'-':'')+k.join(':');
+						k = getFormattedHMS(+m[3]-m[2]);
+						j = m[4];
+						m[1] = (
+							j && (j = getFormattedHMS(j)) != k
+							? j+' ('+k+')'
+							: k
+						);
 					}
-					tab[3] = m[1]+', '+m[4];
+					tab[3] = m[1]+', '+m[5];
 				}
 				post = tab[2];
 				res = (post.indexOf(', ') > 0);

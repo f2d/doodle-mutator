@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.66'
-,	INFO_DATE = '2013-04-01 — 2016-07-30'
+,	INFO_VERSION = 'v0.9.67'
+,	INFO_DATE = '2013-04-01 — 2016-08-03'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -169,16 +169,43 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 ,	interval = {fps:0, timer:0, save:0}, text = {debug:0, timer:0, undo:0}, used = {}, cue = {upd:{}}
 
 ,	draw = {o:{}, cur:{}, prev:{}
-	,	refresh:0, time: [0,0]
+	,	refresh:0
 	,	line: {started:0, back:0, preview:0}
-	,	history: {pos:0, last:0
+	,	time: {
+			activeSum: 0
+		,	all: [0,0]
+		,	act: function(i) {
+			var	a = this.all, t = +new Date, i = (i?t0:t);
+				if (!a[0]) {
+					a[0] = this.activeStart = i;
+					a[1] = t;
+				} else {
+					if (!this.activeStart) this.activeStart = i; else
+					if (t-a[1] > this.idle) {
+						this.activeSum = this.sum(t);
+						this.activeStart = t;
+					}
+				}
+				return t;
+			}
+		,	sum: function(t) {
+				return (
+					this.activeStart
+					? (this.all[1] || t || +new Date) - this.activeStart
+					: 0
+				) + this.activeSum;
+			}
+		}
+	,	history: {
+			pos:0, last:0, max:0, data:[]
 		,	cur: function() {return this.data[this.pos];}
 		,	act: function(i) {
 				lastUsedSaveSlot = 0;
-			var	t = this, s = isNaN(i), z = t.data.length - 1;
+			var	t = this, s = isNaN(i), z = this.max, dt = draw.time;
 				if (i && !s) {
 					if (i < 0 && t.pos > 0) --t.pos; else
 					if (i > 0 && t.pos < z && t.pos < t.last) ++t.pos; else return 0;
+					if ((d = t.data[t.pos]) && d.timeRest && (a = d.time)) for (i in a) dt[i] = a[i];
 					t.reversable = '';
 					draw.screen();
 					cue.autoSave = 1;
@@ -204,9 +231,19 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 							else for (i = 0; i < z; i++) t.data[i] = t.data[i+1];
 						}
 					}
-					t.data[t.pos] = c2d.getImageData(0,0, canvas.width, canvas.height);
+				var	a = ['all', 'activeStart', 'activeSum']
+				,	b,c = {}
+				,	d = c2d.getImageData(0,0, canvas.width, canvas.height)
+					;
+					for (i in a) b = dt[k = a[i]], c[k] = (b ? (b.join ? b.slice(0) : b) : 0);
+					d.time = c;
+					t.data[t.data.length = t.pos] = d;
 				}
 				return text.undo.textContent = t.pos+' / '+t.last+' / '+z, 1;
+			}
+		,	storeTime: function() {
+			var	d = this.cur();
+				if (d) d.timeRest = 1;
 			}
 		}
 	,	screen: function(res) {
@@ -475,7 +512,7 @@ function updateDebugScreen(lsid, refresh) {
 		+			(['f44','5ae','5ea','feb'][d?2:orz(refresh)]||'aaa')
 		+		'">'+t+'</span>'
 				:t)
-		+	(t?' = '+unixDateToHMS(+t.split('-')[1],0,1):'')
+		+	(t?' = '+unixDateToHMS(orz(t.split('-')[1]),0,1):'')
 		+	(r?', pic size: '+getFormattedNum(r.length)
 		+		' ['+p+'0,'+i+g+'save</a>'
 		+		', '+p+'3,'+i+g+'load</a>]':'')
@@ -506,7 +543,8 @@ function updateDebugScreen(lsid, refresh) {
 	var	r = '</td></tr>\n<tr><td>', d = '</td><td>', a = draw.turn, s = draw.step, t = draw.time, i = isMouseIn();
 		text.debug.innerHTML =
 			'<table><tr><td>'
-		+	draw.refresh+d+'1st='+t[0]	+d+'last='+t[1]		+d+'fps='+fps
+		+	draw.refresh+d+'1st='+t.all.join(d+'last=')		+d+'fps='+fps
+		+	r+'Not idle'+d+'last start='+t.activeStart+d+'sum='+t.sum()+d
 		+	r+'Relative'+d+'x='+draw.o.x	+d+'y='+draw.o.y	+d+i+(i?',rgb='+pickColor(1):'')
 		+	r+'DrawOfst'+d+'x='+draw.cur.x	+d+'y='+draw.cur.y	+d+'btn='+draw.btn+',active='+draw.active
 		+	r+'Previous'+d+'x='+draw.prev.x	+d+'y='+draw.prev.y	+d+'chain='+mode.click
@@ -637,13 +675,13 @@ var	sf = select.shapeFlags[select.shape.value];
 //	if (event.shiftKey) mode.click = 1;
 	if ((draw.btn = event.which) != 1 && draw.btn != 3) pickColor();
 	else {
-		draw.active = 1;
-		if (!draw.time[0]) draw.time[0] = draw.time[1] = +new Date;
+		draw.active = draw.time.act();
 		if (!interval.timer) {
 			interval.timer = setInterval(timeElapsed, 1000);
 			interval.save = setInterval(autoSave, 60000);
 		}
-	var	i = (event.which == 1?1:0), t = tools[1-i]
+	var	i = (event.which == 1?1:0)
+	,	t = tools[1-i]
 	,	pf = ((sf & 8) && (mode.shape || !mode.step))
 	,	fig = ((sf & 2) && (mode.shape || pf));
 
@@ -694,7 +732,9 @@ function drawMove(event) {
 	updatePosition(event);
 	if (draw.turn) return updateViewport(draw.turn.pan?1:draw.turn.delta = getCursorRad() - draw.turn.origin);
 
-var	redraw = true, s = select.shape.value, sf = select.shapeFlags[s]
+var	redraw = true
+,	s = select.shape.value
+,	sf = select.shapeFlags[s]
 ,	newLine = (draw.active && !((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8)));
 
 	if (mode.click) mode.click = 1;
@@ -750,7 +790,7 @@ function drawEnd(event) {
 			draw.step = {prev:{x:draw.prev.x, y:draw.prev.y}, cur:{x:draw.cur.x, y:draw.cur.y}};	//* <- normal straight line as base
 			return;
 		}
-		draw.time[1] = +new Date;
+		draw.time.all[1] = +new Date;
 		draw.screen();
 		c2d.fillStyle = c2s.fillStyle;
 		if (draw.text) {
@@ -1258,7 +1298,7 @@ var	i = e.id.slice(-1);
 function updateResize(e) {
 	if (e.value == 'auto crop') {
 		if (d = draw.history.cur()) {
-		var	d,a = d.data, i = a.length, j = i-4, k,x,y = 0, w = d.width, h = 0, b = w*4;
+		var	c = c2d.canvas, d,a = d.data, i = a.length, j = i-4, k,z,x,y = 0, w = d.width, h = 0, b = w*4;
 //* from bottom right:
 		up:	while (--i) if (a[i] != a[i%4 + j]) {
 				h = Math.floor(i/b) + 1;
@@ -1271,16 +1311,16 @@ function updateResize(e) {
 			ltr:	for (x = 0; x < b; x++)
 				for (i = h; i--;) if (a[k = x + (y+i)*b] != a[k%4]) {w -= x = Math.floor(x/4); break ltr;}
 //* draw cut box:
-				if (x || y || w != canvas.width || h != canvas.height) {
+				if (x || y || w != c.width || h != c.height) {
 					c2d.save();
 					for (i in DRAW_HELPER) c2d[i] = DRAW_HELPER[i];
 					i = DRAW_PIXEL_OFFSET;
 					c2d.translate(i,i);
 					c2d.beginPath();
-					c2d.moveTo(x,   0), c2d.lineTo(x, canvas.height);
-					c2d.moveTo(x+w, 0), c2d.lineTo(x+w, canvas.height);
-					c2d.moveTo(0,   y), c2d.lineTo(canvas.width, y);
-					c2d.moveTo(0, y+h), c2d.lineTo(canvas.width, y+h);
+					c2d.moveTo(x, 0), c2d.lineTo(x, c.height), z = x+w;
+					c2d.moveTo(z, 0), c2d.lineTo(z, c.height);
+					c2d.moveTo(0, y), c2d.lineTo(c.width, y), z = y+h;
+					c2d.moveTo(0, z), c2d.lineTo(c.width, z);
 					c2d.stroke();
 					c2d.restore();
 //* save:
@@ -1411,9 +1451,10 @@ function timeElapsed() {text.timer.textContent = unixDateToHMS(timer += 1000, 1)
 function autoSave() {if (mode.autoSave && cue.autoSave && !(cue.autoSave = (draw.active?-1:0))) savePic(2,-1);}
 
 function getSendMeta(sz) {
-var	i,j = ', ', u = [], a = [
-		'open_time: '+t0+'-'+(+new Date)
-	,	'draw_time: '+draw.time.map(orz).join('-')
+var	i,j = ', ', t = +new Date, u = [], a = [
+		'open_time: '+t0+'-'+t
+	,	'draw_time: '+draw.time.all.join('-')
+	,	'active_time: '+draw.time.sum()
 	,	'app: '+NS+' '+INFO_VERSION
 	,	'pixels: '+canvas.width+'x'+canvas.height
 	,	'bytes: '+(
@@ -1485,8 +1526,8 @@ function saveDL(content, suffix) {
 
 function confirmShowTime(la, s) {
 	if (s) {
-	var	a = s.split('-'), i,t,n = ' \r\n', r = la.join(n);
-		for (i = 0; i < 2; i++) t = +a[i], r += n+(t ? unixDateToHMS(t,0,1) : '-');
+	var	a = s.split('-', 2).map(orz), i,k = a.length, t,n = ' \r\n', r = la.join(n);
+		for (i = 0; i < k; i++) r += n+((t = a[i]) ? unixDateToHMS(t,0,1) : '-');
 	} else r = la[0];
 	return confirm(r);
 }
@@ -1505,7 +1546,7 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 			)
 		,	'_'+(t
 				? LS[CR[lsid].T].split('-', 2)
-				: draw.time
+				: draw.time.all
 			).join('-')+(dest?'.jpg':'.png')
 		);
 		break;
@@ -1523,7 +1564,11 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 		}
 
 		if (lsid || confirmShowTime(lang.confirm.save, LS[CR[1].T])) {
-			t = draw.time.join('-')+(used.read?'-'+used.read:'');
+			t = (
+				(dt = draw.time).all.join('-')
+			+	(dt.activeStart ? '='+dt.sum() : '')
+			+	(used.read ? '-'+used.read : '')
+			);
 			d = saveShiftUpTo(i = j-1);
 			while (--j) try {
 				LS[CR[1].R] = c;
@@ -1558,9 +1603,14 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 		if (!i) return alert(lang.no.change);
 
 		if (lsid || confirmShowTime(lang.confirm.load, t)) {
-			t = t.split('-');
-			if (t.length > 2) used.read = 'Read File: '+t.slice(2).join('-').replace(/^[^:]+:\s+/, '');
-			draw.time = t.slice(0,2), a = id('saveTime'), a.textContent = unixDateToHMS(+t[1]), a.title = new Date(+t[1]);
+			draw.history.storeTime();
+		var	dt = draw.time, a = t.split('-'), t = dt.all = a.slice(0,2).map(orz);
+			dt.activeStart = dt.activeSum = 0;
+			if (a.length > 2) used.read = 'Read File: '+a.slice(2).join('-').replace(/^[^:]+:\s+/, '');
+			if (a[1].indexOf('=') >= 0) dt.activeSum = orz(a[1].split('=', 2)[1]);
+			if (!dt.activeSum) dt.activeSum = t[1]-t[0];
+			t = t[1];
+			a = id('saveTime'), a.textContent = unixDateToHMS(t), a.title = new Date(t);
 			readPic(d,i);
 			used.LS = 'Local Storage';
 		}
@@ -1568,6 +1618,7 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 //* load file
 	case 4:	
 		if ((a = lsid) || ((outside.read || (outside.read = id('read'))) && (a = outside.read.value))) {
+			draw.time.act(1);
 			used.read = 'Read File: '+readPic(a);
 		}
 		break;
@@ -1613,8 +1664,7 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 function readPic(s,ls) {
 	if (!s || s == 0 || (!s.data && !s.length)) return;
 	if (!s.data) s = {data: s, name: (0 === s.indexOf('data:') ? s.split(',', 1) : s)};
-var	d = draw.time, e = new Image(), t = +new Date, i,j;
-	for (i in d) if (!d[i]) d[i] = t;
+var	e = new Image();
 
 	e.onload = function () {
 		try {
@@ -1623,10 +1673,10 @@ var	d = draw.time, e = new Image(), t = +new Date, i,j;
 			d.drawImage(e, 0,0, 1,1);
 			d.getImageData(0,0, 1,1);
 	//* actual work:
-			d = canvas;
-			if (i = mode.scale) {
+		var	d = canvas, i = mode.scale;
+			if (i) {
 				if ((i == 'W' || i == 'H') && (d.width != e.width || d.height != e.height)) {
-					j = e.width/e.height, j = {
+				var	j = e.width/e.height, j = {
 						width: (i == 'W' ? d.width : Math.max(1, Math.round(d.height*j)))
 					,	height: (i == 'H' ? d.height : Math.max(1, Math.round(d.width/j)))
 					};
@@ -1638,6 +1688,7 @@ var	d = draw.time, e = new Image(), t = +new Date, i,j;
 				clearFill(d).drawImage(e, 0,0);
 			}
 			historyAct();
+			draw.history.storeTime();
 			cue.autoSave = 0;
 			if (lastUsedSaveSlot = ls) updateDebugScreen(ls,3);
 		} catch (err) {
@@ -1878,7 +1929,6 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	for (i in BOW) setSlider(BOWL[i]);
 	for (i in text) text[i] = id(i);
 	draw.container = id('load');
-	draw.history.data = new Array(o.undo+1);
 
 	a = 'historyAct(', b = 'button', c = 'color', d = 'toggleMode(', e = 'savePic(', f = 'fillScreen(', i = 'toolSwap(', k = 'check'
 ,	a = [
@@ -2050,10 +2100,13 @@ var	o = outside
 		CT = CR[1].T;
 	} else o.save = 0, CR = 'none';
 
+	j = Number.MAX_SAFE_INTEGER || 100200300;
+	i = orz(o.idle), o.idle = draw.time.idle = 1000*(i > 2 && i < j?i:120);
+	i = orz(o.undo), o.undo = draw.history.max =    (i > 2 && i < j?i:123);
+
 	i = ' \r\n';
 	j = shapeHotKey.split('').join(k = ', ');
 
-	if ((o.undo = orz(o.undo)) < 3) o.undo = 123;
 	if (!o.lang) o.lang = document.documentElement.lang || 'en';
 
 	if (o.lang == 'ru') {

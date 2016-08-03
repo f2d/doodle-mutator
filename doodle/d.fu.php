@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ?: T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-08-02 23:15'.NL.	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-08-03 21:15'.NL.	//* <- change this to invalidate old pages cached in browsers
 		'Or user key/options changed: '.$_REQUEST[ME]
 	).'"';
 	header('Etag: '.$q);
@@ -208,14 +208,14 @@ function get_draw_app_list() {
 }
 
 function get_draw_vars($v = '') {
-	global $cfg_draw_vars, $tmp_wh, $tmp_whu, $u_draw_max_undo, $u_opts, $query;
+	global $cfg_draw_vars, $tmp_wh, $tmp_whu, $u_opts, $query;
 	$vars = ($v?"$v;":'').DRAW_REST.
 		';keep_prefix='.DRAW_PERSISTENT_PREFIX
 	.($u_opts['save2common']?'':
 		';save_prefix='.DRAW_BACKUPCOPY_PREFIX.';saveprfx='.NAMEPRFX
 	);
 	foreach ($cfg_draw_vars as $k => $v) {
-		if (($i = ${'u_'.$v}) || ($i = get_const(strtoupper($v)))) $vars .= ";$k=$i";
+		if (($i = $GLOBALS['u_'.$v]) || ($i = get_const(strtoupper($v)))) $vars .= ";$k=$i";
 	}
 	if (($res = $query['draw_res']) && strpos($res, 'x')) $wh = explode('x', $res);
 	foreach (array('DEFAULT_', 'LIMIT_') as $i => $j)

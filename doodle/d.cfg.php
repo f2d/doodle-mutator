@@ -29,11 +29,12 @@ $cfg_draw_app = array('dfc', 'milf');
 $cfg_draw_vars = array(
 	'save' => 'draw_max_recovery'
 ,	'undo' => 'draw_max_undo'
+,	'idle' => 'draw_time_idle'
 );
 $cfg_opts_order = array(
 	'admin' => array('time_check_points')
 ,	'check' => array('head', 'count', 'times', 'names', 'own', 'unknown', 'active', 'save2common', 'kbox', 'focus', 'modtime304')
-,	'input' => array('draw_app', 'draw_max_recovery', 'draw_max_undo', 'per_page', 'room_home')
+,	'input' => array_merge(array('room_home', 'per_page', 'draw_app'), $cfg_draw_vars)
 );
 $cfg_dir = array(
 	'arch' => 'archive'
@@ -73,6 +74,7 @@ define(DRAW_LIMIT_HEIGHT, '100,1280');
 define(DRAW_MAX_FILESIZE, 10020030);	//* <- bytes
 define(DRAW_MAX_RECOVERY, 9);
 define(DRAW_MAX_UNDO, 99);
+define(DRAW_TIME_IDLE, 300);		//* <- seconds, 5min
 define(DRAW_PERSISTENT_PREFIX, NAMEPRFX.'Keep');
 define(DRAW_BACKUPCOPY_PREFIX, NAMEPRFX.'Save');
 define(DRAW_SEND, 'send=layers.json, log.json, pic.png, jpg>1002003; check=checkStatus');

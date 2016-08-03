@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2016-07-30'
+,	INFO_DATE = '2014-07-16 — 2016-08-03'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -130,8 +130,33 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 ,	count = o0('layers,strokes,erases,undo'), used = {}, used_shape = {}
 
 ,	draw = {m:{}, o:{}, cur:{}, prev:{}
-	,	refresh:0, time: [0, 0]
+	,	refresh: 0
 	,	line: o0('started,back,preview')
+	,	time: {
+			activeSum: 0
+		,	all: [0,0]
+		,	act: function(i) {
+			var	a = this.all, t = +new Date, i = (i?t0:t);
+				if (!a[0]) {
+					a[0] = this.activeStart = i;
+					a[1] = t;
+				} else {
+					if (!this.activeStart) this.activeStart = i; else
+					if (t-a[1] > this.idle) {
+						this.activeSum = this.sum(t);
+						this.activeStart = t;
+					}
+				}
+				return t;
+			}
+		,	sum: function(t) {
+				return (
+					this.activeStart
+					? (this.all[1] || t || +new Date) - this.activeStart
+					: 0
+				) + this.activeSum;
+			}
+		}
 	,	history: {layer:0, layers:[{show:1, color:'#f'}]
 		,	cur: function(t) {
 				return ((t || (t = this.layer)) && (t = this.layers[t]) ? t.data[t.pos] : 0);
@@ -154,10 +179,8 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 					else if (t.reversable) return 0;
 					else t.reversable = 1, draw.view();
 					if (i !== 0) {
-						if (t.pos < d) {
-							t.last = ++t.pos;
-							for (i = t.last+1; i < d; i++) delete t.data[i];
-						} else for (i = 0; i < d; i++) t.data[i] = t.data[i+1];
+						if (t.pos < d) t.data.length = t.last = ++t.pos;
+						else for (i = 0; i < d; i++) t.data[i] = t.data[i+1];
 					}
 					(t.data[t.pos] = ctx.draw.getImageData(0, 0, cnv.view.width, cnv.view.height)).date = dt;
 				}
@@ -649,8 +672,7 @@ var	y = draw.history, i = y.layer, s = select.shape.value, fig = select.shapeFig
 
 	if ((draw.btn = event.which) != 1 && draw.btn != 3) pickColor();
 	else {
-		draw.active = 1, y = {draw:0, temp:0};
-		if (!draw.time[0]) draw.time[0] = draw.time[1] = +new Date;
+		draw.active = draw.time.act(), y = {draw:0, temp:0};
 		if (!interval.timer) {
 			interval.timer = setInterval(timeElapsed, 1000);
 			interval.save = setInterval(autoSave, 60000);
@@ -760,7 +782,7 @@ function drawEnd(event) {
 			return;
 		}
 		for (i in DRAW_HELPER) ctx.temp[i] = DRAW_HELPER[i];
-		draw.time[1] = +new Date;
+		draw.time.all[1] = +new Date;
 		draw.preload();
 		if (mode.erase) {
 			if (sf & 8) {
@@ -1509,7 +1531,8 @@ var	d = t ? new Date(t+(t >0?0:new Date())) : new Date(), t = ['Hours','Minutes'
 function getSendMeta(sz) {
 var	a = ['clip', 'mask', 'lighter', 'xor']
 ,	b = ['resize', 'integral']
-,	i,j = ', ', k,m = [], n = [], u = [], s = [];
+,	i,j = ', ', k,m = [], n = [], u = [], s = []
+,	t = +new Date;
 	for (i in count) if ((k = count[i]) > 1 || (i != 'layers' && k > 0)) u.push(k+' '+(k > 1?i:i.replace(/s+$/i, '')));
 	for (i in used_shape) s.push(i);
 	for (i in used) u.push(used[i]);
@@ -1519,8 +1542,9 @@ var	a = ['clip', 'mask', 'lighter', 'xor']
 	});
 	for (i in (a = {Shape:s, Composition:m, Filter:n})) if (a[i].length) u.push(i+': '+a[i].join(j));
 	a = [
-		'open_time: '+t0+'-'+(+new Date)
-	,	'draw_time: '+draw.time.map(orz).join('-')
+		'open_time: '+t0+'-'+t
+	,	'draw_time: '+draw.time.all.join('-')
+	,	'active_time: '+draw.time.sum()
 	,	'app: '+NS+' '+INFO_VERSION
 	,	'pixels: '+cnv.view.width+'x'+cnv.view.height
 	,	'bytes: '+(
@@ -1536,8 +1560,14 @@ var	a = ['clip', 'mask', 'lighter', 'xor']
 
 function getSaveLayers(c) {
 var	skip = ['pos', 'last', 'reversable', 'filtered', 'data']
-,	a = [], d = '-', i
-,	b = {time: draw.time.join(d)+(used.read?d+used.read:'')};
+,	a = [], i,t,d = '-'
+,	b = {
+		time: (
+			(t = draw.time).all.join(d)
+		+	(t.activeStart ? '='+t.sum() : '')
+		+	(used.read ? d+used.read : '')
+		)
+	};
 	if (c) b.meta = getSendMeta();
 	draw.history.layers.map(function(v,k) {
 		c = {};
@@ -1556,20 +1586,33 @@ var	skip = ['pos', 'last', 'reversable', 'filtered', 'data']
 function readSavedLayers(b) {
 	if (!b.time || !b.layers) return false;
 	for (i in count) count[i] = 0;
-var	a = id('saveTime'), d = draw.history, j = '-', i = b.time.split(j);
-	if (i.length > 2) used.read = i.slice(2).join(j);
-	draw.time = i.slice(0,2);
-	a.title = new Date(i = +i[1]);
-	a.textContent = unixDateToHMS(i,0,1).split(' ',2)[1];
+var	d = draw.history
+,	dt = draw.time
+,	i,j = '-'
+,	a = b.time.split(j)
+,	t = dt.all = a.slice(0,2).map(orz)
+	;
+	dt.activeStart = dt.activeSum = 0;
+	if (a.length > 2) used.read = a.slice(2).join(j);
+	if (a[1].indexOf('=') >= 0) dt.activeSum = orz(a[1].split('=', 2)[1]);
+	if (!dt.activeSum) dt.activeSum = t[1]-t[0];
+	t = t[1];
+	a = id('saveTime');
+	a.title = new Date(t);
+	a.textContent = unixDateToHMS(t,0,1).split(' ',2)[1];
 	a = b.layers, i = j = a[d.layer = 0].max = a.length, d.layers = [a[0]];
 	while (--i) d = a[i], d.z = i, readPic(d);
 	return j;
 }
 
+function getSaveFileName(j) {
+	return unixDateToHMS(0,0,2)+'_'+draw.time.all.join('-')+(j || '.json');
+}
+
 function saveDL(content, suffix) {
 	if (DL) {
 		container.appendChild(a = document.createElement('a'));
-		a.href = content, a[DL] = unixDateToHMS(0,0,2)+'_'+draw.time.join('-')+suffix;
+		a.href = content, a[DL] = getSaveFileName(suffix);
 		a.click();
 		setTimeout(function() {container.removeChild(a);}, 5678);
 	} else window.open(content, '_blank');
@@ -1581,8 +1624,8 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 
 	function getTimeToShow(s) {
 		if (!s) return '-';
-	var	a = s.split('-'), i,t,r = '';
-		for (i = 0; i < 2; i++) t = +a[i], r += ' \r\n'+(t ? unixDateToHMS(t,0,1) : '-');
+	var	a = s.split('-', 2).map(orz), i,t,r = '';
+		for (i = 0; i < 2; i++) r += ' \r\n'+((t = a[i]) ? unixDateToHMS(t,0,1) : '-');
 		return r;
 	}
 
@@ -1650,21 +1693,25 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 		}
 //* load flat image to new layer
 		if (dest == 4) {
-			t = t.split('-'), c = unixDateToHMS(i = +t[1],0,1);
-			if (t.length > 2) used.read = t.slice(2).join('-');
-			if (draw.time[0] < parseInt(t[0])) draw.time[0] = t[0];
-			if (draw.time[1] > parseInt(t[1])) {
-				draw.time[1] = t[1];
+		var	dt = draw.time, a = t.split('-'), t = a.slice(0,2).map(orz), i = t[1], c = unixDateToHMS(i,0,1);
+			if (a.length > 2) used.read = a.slice(2).join('-');
+			if (dt.all[0] < t[0]) dt.all[0] = t[0];
+			if (dt.all[1] > t[1]) {
+				dt[1] = t[1];
 				a = id('saveTime');
 				a.title = new Date(i);
 				a.textContent = c.split(' ',2)[1];
 			}
+			draw.time.act(1);
 			readPic({name:c, data:d});
 			used.LS = 'Local Storage';
 		} else
 //* load project
 		if (!LS[i] || (b = JSON.parse(LS[i])).time != t) alert(lang.no_layers); else
-		if (confirm(lang.confirm.load + getTimeToShow(t))) used = {LS:'Local Storage'}, readSavedLayers(b);
+		if (confirm(lang.confirm.load + getTimeToShow(t))) {
+			draw.time.act(1);
+			used = {LS:'Local Storage'}, readSavedLayers(b);
+		}
 		break;
 	case 5:
 	case 6:
@@ -1676,13 +1723,16 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 					if (readSavedLayers(b = JSON.parse(a.data))) a = a.name;
 					else if (confirm(lang.bad_data+' \r\n'+lang.confirm.reprint)) {
 						b = JSON.stringify(b, null, '\t');
-						saveDL('data:text/plain,'+encodeURIComponent(b), '.json');
+						saveDL('data:text/plain,'+encodeURIComponent(b));
 					}
 				} catch(e) {
 					alert(lang.bad_data), a = '';
 				}
 			}
-			if (a.length) used.read = 'Read File: '+a;
+			if (a.length) {
+				draw.time.act(1);
+				used.read = 'Read File: '+a;
+			}
 		}
 		break;
 //* save project text as file
@@ -1692,10 +1742,10 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 		var	bb = new BlobBuilder();
 			bb.append(b);
 		var	blob = bb.getBlob('text/plain');
-			saveAs(blob, draw.time.join('-')+'.json');
+			saveAs(blob, getSaveFileName());
 		} catch(e) {
 			try {
-				saveDL('data:text/plain,'+encodeURIComponent(b), '.json');
+				saveDL('data:text/plain,'+encodeURIComponent(b));
 			} catch(d) {
 				alert(lang.copy_to_save+':\n\n'+b);
 			}
@@ -1743,16 +1793,18 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 function readPic(s) {
 	if (!s || s == 0 || (!s.data && !s.length)) return;
 	if (!s.data) s = {data: s, name: (0 === s.indexOf('data:') ? s.split(',', 1) : s)};
-var	d = draw.time, e = new Image(), t = +new Date, i = 'lcd', lcd = id(i);
+var	e = new Image(), i = 'lcd', lcd = id(i);
 	if (!lcd) setId(lcd = document.createElement('div'), i), container.parentNode.insertBefore(lcd, container);
-	for (i in d) if (!d[i]) d[i] = t;
 	setRemove(e);
+
 	function setLCD() {
 		lcd.textContent = lang.loading+': '+loading;
 		lcd.style.lineHeight = cnv.view.height+'px';
 	}
+
 	e.onload = function () {
 		delete s.data;
+	var	d,t = 1;
 		for (i in select.imgRes) if (s.z || cnv.view[i] < e[i]) {
 			id('img-'+i).value = e[i];
 			for (d in cnv) cnv[d][i] = e[i];
@@ -1763,12 +1815,13 @@ var	d = draw.time, e = new Image(), t = +new Date, i = 'lcd', lcd = id(i);
 		if (j > 0 && !i.layers[j].last && !i.cur()) tweakLayer(s.name,j,1); else newLayer(s);
 		ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
 		ctx.draw.drawImage(e, 0, 0);
-		historyAct(s.z ? draw.time[1] : null);
+		historyAct(s.z ? draw.time.all[1] : null);
 		cue.autoSave = 0;
 		if (d = e.parentNode) d.removeChild(e);
 		if (--loading < 1) loading = 0, container.style.visibility = lcd.textContent = '';
 		else setLCD();
 	}
+
 	if (!(mode.debug || text.debug.innerHTML) && ++loading > 1) container.style.visibility = 'hidden', setLCD();
 	draw.container.appendChild(e);
 	return e.src = s.data, s.name;
@@ -1935,7 +1988,7 @@ var	t = '</td><td>', r = '</td></tr>	<tr><td>', a = draw.turn, b = 'turn: ', c =
 //	if (a) for (i in a) b += i+'='+a[i]+'; ';
 	i = isMouseIn();
 	text.debug.innerHTML = '<table><tr><td>'
-+draw.refresh+t+'1st='+draw.time[0]+t+'last='+draw.time[1]+t+'fps='+fps
++draw.refresh+t+'1st='+draw.time.all.join(d+'last=')+t+'fps='+fps
 +r+'Relative'+t+'x='+draw.o.x+t+'y='+draw.o.y+''+t+i+(i?',rgb='+pickColor(1):'')
 +r+'DrawOfst'+t+'x='+draw.cur.x+t+'y='+draw.cur.y+t+'btn='+draw.btn+',active='+draw.active
 +r+'Previous'+t+'x='+draw.prev.x+t+'y='+draw.prev.y+t+'chain='+mode.click+(c?''
@@ -2376,6 +2429,10 @@ var	o = outside
 	k = 'y2', i = k.length, j = (o.saveprfx?o.saveprfx:NS)+CR, CR = [];
 	while (i) CR[i--] = {R:e = j+k[i], T:e+CT, L:e+CL};
 	CT = CR[1].T, CL = CR[1].L;
+
+	j = Number.MAX_SAFE_INTEGER || 100200300;
+	i = orz(o.idle), o.idle = draw.time.idle = 1000*(i > 2 && i < j?i:120);
+	i = orz(o.undo), o.undo =			(i > 2 && i < j?i:123);
 
 	if (!o.undo || isNaN(o.undo) || o.undo < 3) o.undo = 123; else o.undo = parseInt(o.undo);
 	if (!o.lang) o.lang = document.documentElement.lang || 'en';

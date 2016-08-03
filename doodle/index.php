@@ -48,8 +48,8 @@ ob_end_clean();
 function time_check_point($comment) {global $tcp; $tcp[microtime()][] = $comment;}
 time_check_point('done cfg, inb4 user settings');
 
-$opt_sufx = 'aopru';
-$opt_name = array('opta', 'opti', 'per_page', 'draw_max_recovery', 'draw_max_undo');
+$opt_sufx = 'aoprui';
+$opt_name = array('opta', 'opti', 'per_page', 'draw_max_recovery', 'draw_max_undo', 'draw_time_idle');
 $opt_lvls = array('a' => 'admin', 'i' => 'check');
 
 if ($me = $_REQUEST[ME]) {
@@ -228,8 +228,8 @@ if ($u_key) {
 		$txt = (($ptx = $_POST['txt']) ?: '0-0,(?)');
 	//* metadata, got newline separated tagged format:
 		if (false !== strpos($txt, NL)) {
-			$a = explode(',', 'app,draw_time,open_time,t0,time,used');	//* <- to add to picture mouseover text
-			$b = explode(',', 'bytes,length');				//* <- to validate
+			$a = explode(',', 'app,active_time,draw_time,open_time,t0,time,used');	//* <- to add to picture mouseover text
+			$b = explode(',', 'bytes,length');					//* <- to validate
 			$x = preg_split('~\v+~u', $txt);
 			$y = array();
 			$z = 0;
@@ -257,9 +257,11 @@ if ($u_key) {
 					}
 					$y['time'] = "$t[0]-$t[1]";
 				}
-				if (!$y['app']) $y['app'] = '[?]';
-				if ($y['used']) $y['app'] .= " (used $y[used])";
-				$txt = "$y[time],$y[app]";
+				$t = $y['time'] ?: '0-0';
+				$a = $y['app'] ?: '[?]';
+				if ($x = $y['used']) $a .= " (used $x)";
+				if ($x = $y['active_time']) $t .= "=$x";
+				$txt = "$t,$a";
 			}
 		} else
 	//* metadata, legacy CSV:

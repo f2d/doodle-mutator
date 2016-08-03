@@ -9,7 +9,7 @@
 ,	regImgTag = /<img [^>]+>/i
 ,	regImgTitle = /\s+(title="[^"]+)"/i
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
-,	regTimeDrawn = /^((\d+)-(\d+)|[\d:]+),(.*)$/m
+,	regTimeDrawn = /^((\d+)-(\d+)|[\d:]+)(?:=(\d+))?,(.*)$/m
 ,	regTimeBreak = /^\d+(<|>|,|$)/
 ,	regLineBreak = /^(\r\n|\r|\n)/gm
 ,	regLNaN = /^\D+/
@@ -19,7 +19,7 @@
 ,	regTrim = /^\s+|\s+$/g
 ,	regTrimWord = /^\W+|\W+$/g
 
-,	split_sec = 60
+,	splitSec = 60
 ,	TOS = ['object','string']
 ,	NB = '&nbsp;'
 ,	NW = '&#8203;'
@@ -327,6 +327,18 @@ function getFormattedTimezoneOffset(t) {
 		? (t < 0?(t = -t, '+'):'-')+leftPad(Math.floor(t/60))+':'+leftPad(t%60)
 		: 'Z'
 	);
+}
+
+function getFormattedHMS(msec) {
+var	t = orz(msec)
+,	a = [0, 0, Math.floor(Math.abs(t)/1000)]
+,	i = a.length
+	;
+	while (--i) {
+		if (a[i] >= splitSec) a[i-1] = Math.floor(a[i]/splitSec), a[i] %= splitSec;
+		if (a[i] < 10) a[i] = '0'+a[i];
+	}
+	return (t < 0?'-':'')+a.join(':');
 }
 
 function getFTimeIfTime(t, plain) {return regTimeBreak.test(t = ''+t) ? getFormattedTime(t, plain) : t;}
@@ -1000,21 +1012,17 @@ function showContent(sortOrder) {
 						} else {
 							if (m = a.match(regTimeDrawn)) {
 								if (m[2]) {
-								var	j = +m[3]-m[2]
-								,	k = [0, 0, Math.floor(Math.abs(j)/1000)]
-								,	l = k.length
+								var	k = getFormattedHMS(+m[3]-m[2])
+								,	j = m[4]	//* <- sum of active intervals
 									;
-									while (--l) {
-										if (k[l] >= split_sec) {
-											k[l-1] = Math.floor(k[l]/split_sec);
-											k[l] %= split_sec;
-										}
-										if (k[l] < 10) k[l] = '0'+k[l];
-									}
-									m[1] = (j < 0?'-':'')+k.join(':');
+									m[1] = (
+										j && (j = getFormattedHMS(j)) != k
+										? j+' ('+k+')'
+										: k
+									);
 								}
-							var	q = m[1]+', '+m[4]
-							,	a = la.time+' '+m[1]+' '+la.using+' '+m[4]
+							var	q = m[1]+', '+m[5]
+							,	a = la.time+' '+m[1]+' '+la.using+' '+m[5]
 								;
 							} else q = a = la.hax+' '+a;
 							if (dtp.found) {
