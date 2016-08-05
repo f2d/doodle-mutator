@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2016-08-03'
+,	INFO_DATE = '2014-07-16 — 2016-08-06'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -2398,6 +2398,9 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 //* External config *----------------------------------------------------------
 
 function isTest() {
+
+	function getNumClamped(i,n) {return Math.min(Math.max(orz(i) || n, 3), Number.MAX_SAFE_INTEGER || 100200300);}
+
 	if (CR[0] !== 'C') return !o.send;
 
 var	o = outside
@@ -2430,11 +2433,9 @@ var	o = outside
 	while (i) CR[i--] = {R:e = j+k[i], T:e+CT, L:e+CL};
 	CT = CR[1].T, CL = CR[1].L;
 
-	j = Number.MAX_SAFE_INTEGER || 100200300;
-	i = orz(o.idle), o.idle = draw.time.idle = 1000*(i > 2 && i < j?i:120);
-	i = orz(o.undo), o.undo =			(i > 2 && i < j?i:123);
+	o.undo = draw.history.max = getNumClamped(o.undo, 99);
+	o.idle = draw.time.idle = getNumClamped(o.idle, 60)*1000;
 
-	if (!o.undo || isNaN(o.undo) || o.undo < 3) o.undo = 123; else o.undo = parseInt(o.undo);
 	if (!o.lang) o.lang = document.documentElement.lang || 'en';
 
 //* translation: Russian *-----------------------------------------------------

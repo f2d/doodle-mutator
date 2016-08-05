@@ -3,7 +3,7 @@
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
 ,	INFO_VERSION = 'v0.9.67'
-,	INFO_DATE = '2013-04-01 — 2016-08-03'
+,	INFO_DATE = '2013-04-01 — 2016-08-06'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -2043,6 +2043,7 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 function isTest() {
 
 	function getOldFormat(i,j) {return (i == 1?j:j.slice(0,-1)+i);}
+	function getNumClamped(i,n) {return Math.min(Math.max(orz(i) || n, 3), Number.MAX_SAFE_INTEGER || 100200300);}
 
 	if (!CR[0]) return !o.send;
 
@@ -2080,7 +2081,7 @@ var	o = outside
 		&&	null !== LS.getItem(k = 'lastPalette')
 		) LS[LP] = LS[k];
 
-		i = o.save = Math.max(orz(o.save), 3)
+		i = o.save = getNumClamped(o.save, 9)
 	,	j = (o.save_prefix || o.saveprfx || NS)+CR
 	,	f = (o.saveprfx ? o.saveprfx+CR : '')
 	,	CR = [];
@@ -2100,9 +2101,8 @@ var	o = outside
 		CT = CR[1].T;
 	} else o.save = 0, CR = 'none';
 
-	j = Number.MAX_SAFE_INTEGER || 100200300;
-	i = orz(o.idle), o.idle = draw.time.idle = 1000*(i > 2 && i < j?i:120);
-	i = orz(o.undo), o.undo = draw.history.max =    (i > 2 && i < j?i:123);
+	o.undo = draw.history.max = getNumClamped(o.undo, 99);
+	o.idle = draw.time.idle = getNumClamped(o.idle, 60)*1000;
 
 	i = ' \r\n';
 	j = shapeHotKey.split('').join(k = ', ');

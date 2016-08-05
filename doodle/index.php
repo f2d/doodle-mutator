@@ -1238,12 +1238,13 @@ if ($OK) {
 						}
 					}
 				} else {
-					$v = '';
+					$v = array();
+					$s = '';
 					foreach ($o as $k) if (intval($u_opts[$k])) {
-						if (strlen($k = abbr($k)) > 1) $k .= '.';
-						$v .= $k;
+						$v[] = $k = abbr($k);
+						if (!$s && strlen($k) > 1) $s = '.';
 					}
-					if (strlen($v)) $a[] = "$i:$v";
+					if (strlen($v = implode($s, $v))) $a[] = "$i:$v$s";
 				}
 			}
 			$a = implode('/', $a);
