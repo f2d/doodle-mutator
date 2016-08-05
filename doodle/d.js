@@ -756,7 +756,10 @@ function showContent(sortOrder) {
 					if (k.length && v.length) {
 						if (v[0] == '"' && v.slice(-1) == '"') v = v.slice(1, -1);
 						if (flagVarNames.indexOf(k) < 0) param[k] = v;
-						else for (var f_i in (v = v.split(''))) i = v[f_i], flag[i] = i;
+						else {
+							i = v.length;
+							while (i--) k = v[i], flag[k] = k;
+						}
 					}
 					return '';
 				}
@@ -1251,7 +1254,7 @@ var	flagVarNames = ['flag', 'flags']
 				h = (p.threadsLastSortIndex == i && p.innerHTML?'':h[i]);
 				p.threadsLastSortIndex = i;
 			}
-			if ((p.innerHTML = h) && mm) mm(1);
+			if ((p.innerHTML = h) && mm) mm();
 			continue;
 		}
 
@@ -1515,7 +1518,6 @@ var	flagVarNames = ['flag', 'flags']
 //* Runtime: top panel, etc *--------------------------------------------------
 
 for (i in (a = gn('time'))) if ((e = a[i]) && (t = e.getAttribute('data-t')) && t > 0) e.outerHTML = getFormattedTime(t);
-if (mm) mm();
 if (e = id('filter')) e.placeholder = '';//e.onchange = e.onkeyup = filter;
 
 if (k = id('task')) {
@@ -1635,7 +1637,7 @@ if (k = id('task')) {
 showContent();
 
 if (e = id('time-zone')) e.innerHTML = getFormattedTimezoneOffset();
-
+if (mm) mm(1);
 for (i in la.clear) if (e = id(i)) {
 	e.onclick = clearSaves;
 	if (!e.href) e.disabled = true, (e.onmouseover = checkSaves)(i);

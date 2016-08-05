@@ -113,12 +113,12 @@ $tmp_options_input = array(
 	,	'unknown'	=> 'Prefer tasks from unknown threads'
 	)
 ,	'input' => array(
-		'draw_app'		=> 'Sketcher variant'
+		'draw_app'		=> 'Drawing tool variant'
 	,	'draw_max_recovery'	=> 'Drawing autosaved recovery slots'
 	,	'draw_max_undo'		=> 'Drawing undo history length'
 	,	'draw_time_idle'	=> 'Drawing idle time minimum, in seconds'
-	,	'per_page'		=> 'Threads per page'
-	,	'room_home'		=> 'Home room (single dot = room list)'
+	,	'trd_per_page'		=> 'Threads per page'
+	,	'room_default'		=> 'Home room (single dot = room list)'
 	)
 );
 $tmp_options_name = 'Your signature';

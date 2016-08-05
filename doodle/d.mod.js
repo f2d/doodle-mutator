@@ -1,5 +1,5 @@
 ﻿mm = function menuInit(i) {
-	if (!i && (k = id('tabs'))) {
+	if (i && (k = id('tabs'))) {
 
 		function a(r,t) {return '<a href="'+r+(r == l?(at = y, '" class="at'):'')+'">'+t+'</a>';}
 
@@ -41,17 +41,20 @@
 	if (flag && (flag.g || flag.m)) {
 	var	a = gn('p')
 	,	i = a.length
-	,	p = id('tower')
 		;
-		if (!p && (p = id('task'))) while ((p = p.nextSibling) && !regTagDiv.test(p.tagName));
-		if (p && !regTagForm.test(p.parentNode.tagName)) {
-		var	f = document.createElement('form');
-			p.parentNode.insertBefore(f, p);
-			f.method = 'post';
-			f.innerHTML = '<input type="hidden" name="mod" value="'+(+new Date())+'">';
-			f.appendChild(p);
+		while (i--) if ((p = a[i]).id && p.id.slice(0,2) == 'm_') {
+			menuOpenOnClick(p);
+			if ((p = getParentBeforeClass(p, 'content')) && !regTagForm.test(p.tagName)) {
+			var	n = p.nextElementSibling
+			,	d = +new Date()
+			,	f = cre('form', p.parentNode, p)
+				;
+				f.method = 'post';
+				f.innerHTML = '<input type="hidden" name="mod" value="'+d+'">';
+				f.appendChild(p);
+				if (n && regTagPre.test(n.tagName)) f.appendChild(n);
+			}
 		}
-		while (i--) if ((p = a[i]).id && p.id.slice(0,2) == 'm_') menuOpenOnClick(p);
 	}
 }
 
@@ -65,9 +68,6 @@ var	n = 'menu_'+p.id
 	;
 	if (!m) {
 		p.removeAttribute('onclick');
-		m = document.createElement('div');
-		m.className = 'mod-menu';
-		m.id = n;
 	var	leftSide = (n.slice(-1) == 0)
 	,	d = p.parentNode
 	,	g = flag.g
@@ -210,7 +210,7 @@ var	n = 'menu_'+p.id
 		i = '" title="';
 		v = la.tip.join('\r\n');
 
-		m.innerHTML = '<div title="'+v+'">'
+		i = '<div title="'+v+'">'
 		+(g
 			?	''
 			:	'<div class="block">'
@@ -227,8 +227,11 @@ var	n = 'menu_'+p.id
 		+	b+'&gt;&lt;'+i+la.z+c+')">'
 		+'</div>';
 
-		p.appendChild(m);
-		menuRowCheck(p.lastElementChild);
+		m = cre('div', p);
+		m.className = 'mod-menu';
+		m.id = n;
+		m.innerHTML = i;
+		menuRowCheck(m);
 	}
 }
 

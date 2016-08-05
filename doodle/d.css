@@ -373,7 +373,7 @@ a:hover	{
 .post input[type="text"][readonly] {
 	color: #777;
 }
-.post input[type="text"][readonly]:hover {
+.post .center:hover input[type="text"][readonly] {
 	width: 225px;
 }
 .post input[type="text"], .post select {

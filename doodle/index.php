@@ -48,27 +48,35 @@ ob_end_clean();
 function time_check_point($comment) {global $tcp; $tcp[microtime()][] = $comment;}
 time_check_point('done cfg, inb4 user settings');
 
+//* keep legacy formats until cookies expire in 3 years:
+$u_opts = array();
 $opt_sufx = 'aoprui';
-$opt_name = array('opta', 'opti', 'per_page', 'draw_max_recovery', 'draw_max_undo', 'draw_time_idle');
+$opt_name = array('opta', 'opti', 'trd_per_page', 'draw_max_recovery', 'draw_max_undo', 'draw_time_idle');
 $opt_lvls = array('a' => 'admin', 'i' => 'check');
 
-if ($me = $_REQUEST[ME]) {
+if ($me = URLdecode($_REQUEST[ME])) {
 	if (false === strpos($me, '/')) {
-//* v1, one separator for all is not enough:
-		list($u_qk, $u_opti, $u_per_page, $u_room_home) = explode('_', $me, 4);
-	} else {
-		list($u_qk, $i, $u_room_home, $u_draw_app) = explode('/', $me, 4);
-//* v3 opts, like '01adm_0010opt_30per_page_99undo', or '0a1o2p3u', in any order:
-		if (preg_match_all('~(\d+)([a-z])~', strtolower($i), $m)) {
-			foreach ($m[1] as $k => $v) if (false !== ($i = strpos($opt_sufx, $m[2][$k]))) ${'u_'.$opt_name[$i]} = $v;
+//* v1, one separator for all, like "hash_etc_etc":
+		list($u_qk, $u_opti, $u_trd_per_page, $u_room_default) = explode('_', $me, 4);
+	} else
+	if (false === strpos($me, ':')) {
+//* v2, plain ordered numbers, like "hash/vvv_val_val/etc":
+		list($u_qk, $i, $u_room_default, $u_draw_app) = explode('/', $me, 4);
+		if (!preg_match_all('~(\d+)([a-z])~', strtolower($i), $m)) {
+			list($u_opti, $u_trd_per_page, $u_draw_max_undo) = explode(false !== strpos($i, '_')?'_':'.', $i);
 		} else {
-//* v2, plain ordered numbers, not enough:
-			list($u_opti, $u_per_page, $u_draw_max_undo) = explode(false !== strpos($i, '_')?'_':'.', $i);
+//* v3, abbreviated suffixes for middle part, like "01adm_0010opt_30per_page_99undo", or "0a1o2p3u", in any order:
+			foreach ($m[1] as $k => $v) if (false !== ($i = strpos($opt_sufx, $m[2][$k]))) ${'u_'.$opt_name[$i]} = $v;
 		}
+	} else {
+//* v4, key prefixes for all, like "hash/key:val/key:val/etc:etc", in any order:
+		$a = explode('/', $me);
+		$u_qk = array_shift($a);
+		$key_value_pairs = $a;
 	}
 	if (($q = trim($_POST[ME])) && $u_qk != $q) $u_qk = $q;
 	if ($u_qk && data_check_u($u_qk, $q)) {
-		data_log_ip();
+		if (LOG_IP) data_log_ip();
 		if ($u_flag['ban']) die(get_template_page(array(
 			'lang' => $lang
 		,	'title' => $tmp_ban
@@ -76,16 +84,35 @@ if ($me = $_REQUEST[ME]) {
 		,	'body' => 'burnt-hell'
 		)));
 
+		if (!$u_flag['god']) unset($cfg_opts_order['admin']);
+		if ($key_value_pairs) {
+			$i = 'input';
+			foreach ($a as $key_value_pair) {
+				$b = explode(':', $key_value_pair);
+				$k = reset($b);
+				$v = end($b);
+				if (strlen($v)) {
+					if (count($b > 2) && $b[1] == 'base64') $v = base64_decode($v);
+					if (array_key_exists($k, $cfg_opts_order[$i])) {
+						${'u_'.$cfg_opts_order[$i][$k]} = $v;
+					} else
+					if (array_key_exists($k, $cfg_opts_order) && $k !== $i) {
+						$y = (false !== strpos($v, '.') ? explode('.', $v) : str_split($v));
+						foreach ($cfg_opts_order[$k] as $v) if (in_array(abbr($v), $y)) $u_opts[$v] = 1;
+					}
+				}
+			}
+		} else {
+			foreach ($opt_lvls as $i => $a) if ($p = ${"u_opt$i"})
+			foreach ($cfg_opts_order[$a] as $k => $v) if ($x = intval($p[$k])) $u_opts[$v] = $x;
+		}
 		if (POST) $post_status = 'user_qk';
-		foreach ($opt_lvls as $i => $a) if ($p = ${"u_opt$i"})
-		foreach ($cfg_opts_order[$a] as $k => $v) if ($x = intval($p[$k])) $u_opts[$v] = $x;
 	}
 }
 define(GOD, !!$u_flag['god']);
 define(TIME_PARTS, !POST && GOD && !$u_opts['time_check_points']);	//* <- profiling
 if (TIME_PARTS) time_check_point('GOD defined'); else unset($tcp);
 
-$u_per_page = intval($u_per_page) ?: TRD_PER_PAGE;
 $etc = trim($_REQUEST['etc'], '/');
 $qdir = strtolower($_REQUEST['dir']);
 $qredir = $qdir.'s';
@@ -111,14 +138,14 @@ if (GET_Q && ($s = substr($_SERVER['REQUEST_URI'], GET_Q+1))) {
 	foreach (explode('&', $s) as $chain) {
 		$a = explode('=', $chain);
 		$v = (count($a) > 1 ? array_pop($a) : '');
-		foreach ($a as $k) $query[urldecode($k)] = urldecode($v);
+		foreach ($a as $k) $query[URLdecode($k)] = URLdecode($v);
 	}
 }
 
 if ($qdir) {
-	if ($l = mb_strlen($room = trim_room($room_url = urldecode($_REQUEST['room'])))) define(R1, $l = (mb_strlen(ltrim($room, '.')) <= 1));
+	if ($l = mb_strlen($room = trim_room($room_url = URLdecode($_REQUEST['room'])))) define(R1, $l = (mb_strlen(ltrim($room, '.')) <= 1));
 } else {
-	if ($u_key && !$u_room_home) $qd_opts = 1;
+	if ($u_key && !$u_room_default) $qd_opts = 1;
 	if (GOD) rewrite_htaccess();
 }
 
@@ -142,16 +169,16 @@ if ($u_key) {
 		$post_status = 'user_quit';
 		$u_key = $p;
 	} else
-	if (isset($_POST[$p = O.'o'])) {	//* <- options work, no matter whatever else
+	if (isset($_POST[$p = O.'o'])) {
 		$post_status = 'user_opt';
-		if (strlen($_POST[$p]) > 1) $u_opti = 'd';
+		if (strlen($_POST[$p]) > 1) $u_opts = 'default';
 		else {
-			foreach ($opt_lvls as $k => $v) {
-				$p = '';
-				foreach ($cfg_opts_order[$v] as $o) $p .= ($_POST[O.abbr($o)]?1:0);
-				${'u_opt'.$k} = rtrim($p, 0);
+			foreach ($cfg_opts_order as $i => $o)
+			foreach ($o as $k) {
+				$v = (isset($_POST[$p = O.abbr($k)]) ? $_POST[$p] : '');
+				if ($i === 'input') ${"u_$k"} = $v;
+				else $u_opts[$k] = $v;
 			}
-			foreach ($cfg_opts_order['input'] as $v) if (isset($_POST[$p = O.abbr($v)])) ${'u_'.$v} = $_POST[$p];
 		}
 	} else
 	if (!$qd_room || !$room);		//* <- no posting outside room
@@ -406,7 +433,7 @@ if ($u_key) {
 Post$op$i$ptx$ed
 Target$op$t$ed"
 			);
-		} else if (!$u_room_home) $u_room_home = $room;
+		} else if (!$u_room_default) $u_room_default = $room;
 	}
 } else if (isset($_POST[ME]) && strlen($me = trim_post($_POST[ME], USER_NAME_MAX_LENGTH)) >= USER_NAME_MIN_LENGTH) {
 
@@ -437,8 +464,8 @@ Target$op$t$ed"
 images = '.DIR_THUMB.'
 image_ext = '.THUMB_EXT.'
 page_ext = '.PAGE_EXT.'
-on_page = '.(R1 ? TRD_PER_PAGE.'
-start = '.max(0, $thread_count - TRD_PER_PAGE) : $u_per_page).'
+on_page = '.(!R1 ? ($u_trd_per_page ?: TRD_PER_PAGE) : TRD_PER_PAGE.'
+start = '.max(0, $thread_count - TRD_PER_PAGE)).'
 total = '.$thread_count.($u_key?'':'
 last = <a href="'.$thread_count.'.htm">'.$thread_count.'</a><!-- static link for scriptless bots -->');
 				$data_attr['content']['type'] = 'archive pages';
@@ -529,22 +556,25 @@ if ($u_key) {
 
 	if ($qd_opts) {
 		$data_attr['content']['type'] = 'options';
-		$draw_app = (array_search($u_draw_app, $cfg_draw_app) ?: 0)
-.';'.implode(',', $cfg_draw_app)
-.';'.implode(',', $tmp_draw_app)
-.';?draw_app=*';
-		foreach ($cfg_draw_vars as $v) if (!${$i = 'u_'.$v}) $$i = get_const(strtoupper($v));
-		if (!$u_room_home) {
-			$u_room_home = ROOM_DEFAULT;
-			if (!$qdir) $content = '
-||<b class="anno">'.$tmp_options_first.'</b>';
-		}
+		$draw_app = implode(';', array(
+			(array_search($u_draw_app, $cfg_draw_app) ?: 0)
+		,	implode(',', $cfg_draw_app)
+		,	implode(',', $tmp_draw_app)
+		,	'?draw_app=*'
+		));
 		$s = ':	';
-		$a = $b = $c = $d = '';
-		if (GOD)
-		foreach ($cfg_opts_order[$i = 'admin'] as $k => $v) $a .= NL.$tmp_options_input[$i][$v].$s.abbr($v).'='.($u_opta[$k]?1:'');
-		foreach ($cfg_opts_order[$i = 'input'] as $k => $v) $b .= NL.$tmp_options_input[$i][$v].$s.abbr($v).'='.($$v ?: '='.${'u_'.$v});
-		foreach ($cfg_opts_order[$i = 'check'] as $k => $v) $c .= NL.$tmp_options_input[$i][$v].$s.abbr($v).'='.($u_opti[$k]?1:'');
+		$c = $d = '';
+		foreach ($cfg_opts_order as $i => $o)
+		foreach ($o as $k => $v) {
+			$k = $tmp_options_input[$i][$v];
+			$v = abbr($v).'='.(
+				$i === 'input'
+				? ($$v ?: '='.(${'u_'.$v} ?: get_const(strtoupper($v))))
+				: ($u_opts[$v]?1:'')
+			);
+			if ($i === 'admin') $k = '<span class="gloom">'.$k.'</span>';
+			$c .= NL.$k.$s.$v;
+		}
 		$i = '
 |<input type="submit" value="';
 		$j = '
@@ -556,14 +586,16 @@ if ($u_key) {
 		,	'pref'	=> array($i, 'name="'.O.'o')
 		) as $k => $v) $d .= $v[0].$tmp_options_drop[$k].'" '.$v[1].'">';
 
+		if (!$qdir) $content = '
+||<b class="anno">'.$tmp_options_first.'</b>';
 		$content .= '
 <form method="post">'.$d.'
 </form><form method="post">'
 .NL.$tmp_options_name.$s.$usernames[$u_num]
-.NL.$tmp_options_qk.$s.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">'.$b.$c
+.NL.$tmp_options_qk.$s.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">'.$c
 .NL.$tmp_options_time.$s.date('e, T, P')
 .NL.$tmp_options_time_client.$s.'<time id="time-zone"></time>'
-.($u_flag ? NL.$tmp_options_flags.$s.implode(', ', $u_flag) : '').$a
+.($u_flag ? NL.$tmp_options_flags.$s.implode(', ', $u_flag) : '')
 .$i.$tmp_options_apply.'" id="apply">
 </form>';
 		foreach ($tmp_rules as $head => $hint) {
@@ -972,7 +1004,7 @@ $left	$right	$room";
 
 	if (!$room) {
 		header('HTTP/1.1 303 To home room');
-		header('Location: '.$room_list_href.($u_room_home?$u_room_home.'/':''));
+		header('Location: '.$room_list_href.($u_room_default?$u_room_default.'/':''));
 		exit;
 	}
 } else {
@@ -1176,23 +1208,52 @@ header('HTTP/1.1 303 Refresh after POST: '.$p);
 $up = ($room?'../':'');
 $l = ((
 	($room && $room != $_REQUEST['room'])					//* <- move after rename
-	|| (($room = $_POST[$qredir]) && ($room = trim_room(urldecode($room))))	//* <- create new room
+	|| (($room = $_POST[$qredir]) && ($room = trim_room(URLdecode($room))))	//* <- create new room
 	)
-	? $up.rawurlencode($room).'/'
+	? $up.URLencode($room).'/'
 	: ($etc && $etc[0] != '-'?$etc:'.')
 );
 if ($OK) {
 	if ($u_key) {
-		$o = '';
-		if (!($q = ($u_key[0] == 'q')) && $u_opti[0] != 'd') {
-			foreach ($opt_name as $k => $v) if (${$n = "u_$v"}) $o .= $$n.$opt_sufx[$k];
-			$r = trim_room($u_room_home);
-			$o = "/$o/$r/$u_draw_app";
+		if ($u_key === 'quit') {
+			$a = '';
+			$t = 0;
+		} else {
+			$a = array($u_key);
+			if ($u_opts !== 'default') {
+				foreach ($cfg_opts_order as $i => $o) if ($i === 'input') {
+					foreach ($o as $k => $u) if (isset(${$n = "u_$u"})) {
+						if (!in_array($k, $cfg_opts_text)) {
+							if ($v = intval($$n)) $a[] = "$k:$v";
+						} else
+						if (strlen($raw = trim_room($$n))) {	//* <- OK for any text setting
+							$enc = URLencode($raw);
+							$v = (
+								$enc === $raw
+								? $raw
+							//	: $enc			//* <- full URLencode is OK, but longer
+								: 'base64:'.URLencode(base64_encode($raw))
+							);
+							$a[] = "$k:$v";
+						}
+					}
+				} else {
+					$v = '';
+					foreach ($o as $k) if (intval($u_opts[$k])) {
+						if (strlen($k = abbr($k)) > 1) $k .= '.';
+						$v .= $k;
+					}
+					if (strlen($v)) $a[] = "$i:$v";
+				}
+			}
+			$a = implode('/', $a);
+			$t = T0 + QK_EXPIRES;
 		}
 		$h = 'Set-Cookie: ';
-		$x = '; expires='.gmdate(DATE_COOKIE, T0 + ($q?-1234:QK_EXPIRES)).'; Path='.ROOTPRFX;
-		header($h.ME."=$u_key$o$x");
-		if ($add_qk) header($h.$add_qk.$x);
+		$a = ME.'='.$a;
+		$x = '; expires='.gmdate(DATE_COOKIE, $t).'; Path='.ROOTPRFX;
+		header("$h$a$x");
+		if ($add_qk) header("$h$add_qk$x");
 	}
 } else {
 	$l .= '?!='.$p;

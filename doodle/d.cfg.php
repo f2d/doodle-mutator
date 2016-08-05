@@ -26,15 +26,24 @@ $cfg_optimize_pics = array(
 	)
 );
 $cfg_draw_app = array('dfc', 'milf');
-$cfg_draw_vars = array(
-	'save' => 'draw_max_recovery'
-,	'undo' => 'draw_max_undo'
-,	'idle' => 'draw_time_idle'
-);
+$cfg_opts_text = array('draw', 'room');
 $cfg_opts_order = array(
-	'admin' => array('time_check_points')
+	'input' => array_merge(
+		array(
+			'draw' => 'draw_app'
+		)
+	,	$cfg_draw_vars = array(
+			'save' => 'draw_max_recovery'
+		,	'undo' => 'draw_max_undo'
+		,	'idle' => 'draw_time_idle'
+	)
+	,	array(
+			'page' => 'trd_per_page'
+		,	'room' => 'room_default'
+		)
+	)
 ,	'check' => array('head', 'count', 'times', 'names', 'own', 'unknown', 'active', 'save2common', 'kbox', 'focus', 'modtime304')
-,	'input' => array_merge(array('room_home', 'per_page', 'draw_app'), $cfg_draw_vars)
+,	'admin' => array('time_check_points')
 );
 $cfg_dir = array(
 	'arch' => 'archive'

@@ -213,7 +213,7 @@ function data_collect($f, $uniq) {
 
 function data_log_ip() {
 	global $u_num;
-	if (LOG_IP) data_collect(DIR_META_U."/$u_num.ip", $_SERVER['REMOTE_ADDR']);
+	data_collect(DIR_META_U."/$u_num.ip", $_SERVER['REMOTE_ADDR']);
 }
 
 function data_log_ref() {
