@@ -39,7 +39,7 @@ $tmp_back = 'Return.';
 $tmp_ban = 'Access forbidden.';
 $tmp_check_required = 'Final check';
 $tmp_describe_hint = 'At least '.DESCRIBE_MIN_LENGTH.' letters.'
-.'\\{javascript:void this`toggleClass(this.nextElementSibling,\'hid\')|+ Format options.}'
+.'\\{+|+ Format options.}'
 .'\\[hid|'
 .'\\	[r poem|'
 .'\\		Like this,

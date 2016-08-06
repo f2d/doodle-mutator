@@ -44,7 +44,7 @@ $tmp_back = 'Назад.';
 $tmp_ban = 'Доступ запрещён.';
 $tmp_check_required = 'Дополнительная проверка';
 $tmp_describe_hint = 'Не менее '.DESCRIBE_MIN_LENGTH.' букв.'
-.'\\{javascript:void this`toggleClass(this.nextElementSibling,\'hid\')|+ Возможности формата.}'
+.'\\{+|+ Возможности формата.}'
 .'\\[hid|'
 .'\\	[r poem|'
 .'\\		Например так,

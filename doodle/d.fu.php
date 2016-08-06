@@ -1,9 +1,9 @@
 <?php
 
 function exit_if_not_mod($t = 0) {
-	$t = gmdate('r', $t ?: T0);
+	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-08-03 21:15'.NL.	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-08-06 17:06'.NL.	//* <- change this to invalidate old pages cached in browsers
 		'Or user key/options changed: '.$_REQUEST[ME]
 	).'"';
 	header('Etag: '.$q);
@@ -421,13 +421,22 @@ function get_template_form($t) {
 
 function get_template_hint($t) {
 	return str_replace(
-		str_split('{`}[|]\\')
-	,	array('<a href="', '" onClick="', '</a>', '<span class="', '">', '</span>', NL)
-	,	nl2br(htmlspecialchars(preg_replace_callback(
-			'~\b\d+s\b~'
-		,	'format_time_units'
-		,	$t
-		)), false)
+		'href="+"'
+	,	'href="javascript:void this" onClick="toggleClass(this.nextElementSibling,\'hid\')"'
+	,	str_replace(
+			str_split('{`}[|]\\')
+		,	array('<a href="', '" onClick="', '</a>', '<span class="', '">', '</span>', NL)
+		,	nl2br(
+				htmlspecialchars(
+					preg_replace_callback(
+						'~\b\d+s\b~'
+					,	'format_time_units'
+					,	$t
+					)
+				)
+			,	false
+			)
+		)
 	);
 }
 
@@ -456,7 +465,7 @@ function get_template_page($t, $NOS = 0) {
 	$R = !!$j['arch'];
 	$static = ($NOS || $R);
 	$class = (($v = $t['body']) ? (array)$v : array());
-	if ($t['anno']) foreach (data_global_announce() as $k => $v) {
+	if ($t['anno']) foreach (data_global_announce('all') as $k => $v) {
 		if (MOD) $v = "<span id=\"$k\">$v</span>";
 		$ano .= NL."<b>$tmp_announce[$k]: $v</b>";
 	}

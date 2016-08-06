@@ -63,21 +63,32 @@ function data_log($file_path, $line, $n = BOM, $report = 1) {
 	return $written;
 }
 
-function data_global_announce($a = 0) {
-	$room = DIR_ROOM.($rtrim = $_REQUEST['room']).'/';
-	$t = '.txt';
-	if ($a) return (
-		is_file($f = DIR_DATA.$a.$t) || ($rtrim
-	&&	is_file($f = DIR_DATA.$room.$a.$t)
-	)?1:0);
-	$g = array();
-	foreach (array('anno', 'stop') as $a)
-	foreach (array('', $room) as $r) if (
-		(!$r || $rtrim)
-	&&	is_file($f = DIR_DATA.$r.$a.$t)
-	&&	trim($f = file_get_contents($f))
-	) $g[($r?'room_':'').$a] = $f;
-	return $g;
+function data_global_announce($type = 'all') {
+	$d = (($room = $_REQUEST['room']) ? DIR_ROOM.$room.'/' : '');
+	$x = '.txt';
+//* check single presence:
+	global $tmp_announce;
+	if (array_key_exists($type, $tmp_announce)) return (
+		is_file(DIR_DATA.($f = $type.$x))
+	||	($d && is_file(DIR_DATA.$d.$f))
+	);
+//* get all contents, or last mod.date:
+	switch ($type) {
+		case 'all': $a = array(); break;
+		case 'last': $a = 0; break;
+		default: return false;
+	}
+	foreach ($tmp_announce as $k => $v) {
+		if ($i = strrpos($k, '_')) {
+			if (!$d) continue;
+			$f = $d.substr($k, $i+1);
+		} else $f = $k;
+		if (is_file($f = DIR_DATA.$f.$x)) switch ($type) {
+			case 'all': if (trim_bom($v = file_get_contents($f))) $a[$k] = $v; break;
+			case 'last': if (($v = filemtime($f)) && $a < $v) $a = $v; break;
+		}
+	}
+	return $a;
 }
 
 function data_lock($path) {
