@@ -1,7 +1,9 @@
 ﻿var	LS = window.localStorage || localStorage
 
-,	regWordAnno = /\banno\b/i
-,	regWordPost = /\bpost\b/i
+,	regClassAlt = /(^|\s)(alt|ok)(\s|$)/i
+,	regClassAnno = /(^|\s)anno(\s|$)/i
+,	regClassPost = /(^|\s)post(\s|$)/i
+,	regClassThread = /(^|\s)thread(\s|$)/i
 ,	regTagDiv = /^div$/i
 ,	regTagDivP = /^(div|p)$/i
 ,	regTagForm = /^form$/i
@@ -308,7 +310,11 @@ function deleteCookie(c) {document.cookie = c+'=; expires='+(new Date(0).toUTCSt
 function toggleHide(e,d) {e.style.display = (e.style.display != (d?d:d='')?d:'none');}
 function toggleClass(e,c,keep) {
 var	i = e.className, a = (i?i.split(regSpace):[]), i = a.indexOf(c);
-	if (i < 0) a.push(c); else if (!keep) a.splice(i, 1);
+	if (i < 0) {
+		if (!(keep < 0)) a.push(c);
+	} else {
+		if (!(keep > 0)) a.splice(i, 1);
+	}
 	e.className = a.join(' ');
 }
 
@@ -502,6 +508,63 @@ var	r = '_res';
 		? e.src.replace(r, '')
 		: e.src.replace(/(\.[^.\/]+$)/, r+'$1')
 	);
+}
+
+function filter(event) {
+var	e = eventStop(event).target
+,	f = Math.max(0, orz(e.getAttribute('data-filter')))
+,	v = (e.value || '').replace(regTrim, '').toLowerCase()
+,	k = 'lastFilterValue'
+,	i = e[k]
+	;
+	if (i && i == v) return;
+	e[k] = v;
+var	containers = showContent('last')
+	;
+	for (var c_i = 0, c_len = containers.length; c_i < c_len; c_i++) {
+	var	container = e = containers[c_i]
+	,	threads = gn('div', e).filter(function(e) {return regClassThread.test(e.className);})
+	,	foundThreads = 0
+		;
+		if (!threads.length) threads = [e];
+		for (var t_i = 0, t_len = threads.length; t_i < t_len; t_i++) {
+		var	thread = e = threads[t_i]
+		,	posts = gn('div', e).filter(function(e) {return regClassPost.test(e.className) && !regClassAnno.test(e.className);})
+		,	foundPosts = 0
+		,	eqAlt = 0
+		,	alt = 0
+			;
+			if (!posts.length) continue;
+			for (var p_i = 0, p_len = posts.length; p_i < p_len; p_i++) {
+			var	post = e = posts[p_i]
+			,	found = 1
+			,	c = 0
+				;
+				if (v.length) {
+					while (e && e.firstElementChild == (c = e.lastElementChild)) e = c;
+					if (e && c) {
+						if (f === 2) e = c; else
+						if (f === 1) e = gn('p', e).filter(function(p) {return p.parentNode == e;}).slice(-1)[0];
+					}
+					c = '';
+					if (e
+					&&	(c = (e.firstChild || e).textContent)
+					&&	(c = c.replace(regTrim, '')).length
+					&&	(c = c.toLowerCase()).indexOf(v) < 0
+					) found = 0;
+					else eqAlt = ((c = (c === v)) ? !eqAlt : 0);
+				}
+				if (found) {
+					alt = !alt;
+					toggleClass(post, 'alt', (c ? eqAlt : alt)?-1:1);
+					toggleClass(post, 'ok', c?1:-1);
+				}
+				post.style.display = (found?(++foundPosts, ''):'none');
+			}
+			thread.style.display = (foundPosts?(++foundThreads, ''):'none');
+		}
+		container.style.display = (foundThreads?'':'none');
+	}
 }
 
 function showOpen(i,top) {
@@ -1241,20 +1304,28 @@ var	flagVarNames = ['flag', 'flags']
 ,	reportOnPostTypes = ['reports_on_post', 'reports_on_user']
 ,	optPrefix = 'opt_'
 ,	raws = gn('textarea').concat(gn('pre'))
+,	rawr = []
 	;
 	for (var r_i in raws) if ((e = raws[r_i]) && (t = e.getAttribute('data-type'))) {
 
 		if ((p = e.previousElementSibling) && (h = p.threadsHTML)) {
-		var	i = 0;
-			if (typeof sortOrder !== 'undefined') {
-				if (sortOrder > 0) i = 1; else
-				if (sortOrder < 0) i = 2; else h = '';
+		var	i = p.threadsLastSortIndex || 0;
+			if (sortOrder === 'last') {
+				if (!p.innerHTML) p.innerHTML = h[i];
+				rawr.push(p);
+			} else {
+			var	n = 0;
+				if (typeof sortOrder !== 'undefined') {
+					if (sortOrder > 0) n = 1; else
+					if (sortOrder < 0) n = 2; else h = '';
+				}
+				if (h) {
+					h = (i == n && p.innerHTML?'':h[n]);
+					p.threadsLastSortIndex = n;
+				}
+				p.innerHTML = h;
 			}
-			if (h) {
-				h = (p.threadsLastSortIndex == i && p.innerHTML?'':h[i]);
-				p.threadsLastSortIndex = i;
-			}
-			if ((p.innerHTML = h) && mm) mm();
+			if (p.innerHTML && mm) mm();
 			continue;
 		}
 
@@ -1467,7 +1538,7 @@ var	flagVarNames = ['flag', 'flags']
 			} else {
 				if (dtp.found || dtp.threads) cre('div', p, e.nextElementSibling).outerHTML = afterThreadsBar;
 				e.className = 'thread';
-				e.innerHTML = threadsHTML.join('');
+				e.threadsHTML = e.innerHTML = threadsHTML.join('');
 			}
 			for (i in (a = gn('select', e))) if (a[i].onchange) a[i].onchange();
 		} else del(e);
@@ -1513,12 +1584,13 @@ var	flagVarNames = ['flag', 'flags']
 			if (touch) toggleClass(p, 'wider', 1);
 		} else del(p);
 	}
+	if (rawr.length) return rawr;
 }
 
 //* Runtime: top panel, etc *--------------------------------------------------
 
 for (i in (a = gn('time'))) if ((e = a[i]) && (t = e.getAttribute('data-t')) && t > 0) e.outerHTML = getFormattedTime(t);
-if (e = id('filter')) e.placeholder = '';//e.onchange = e.onkeyup = filter;
+if (e = id('filter')) e.onchange = e.onkeyup = filter;
 
 if (k = id('task')) {
 //* room task:
@@ -1621,7 +1693,7 @@ if (k = id('task')) {
 //* show/hide rules:
 	if (i = (j = gn('ul',k)).length) {
 		n = (m = gn('b')).length, h = 1;
-		while (n--) if (regWordAnno.test(m[n].className)) {h = 0; break;}
+		while (n--) if (regClassAnno.test(m[n].className)) {h = 0; break;}
 		while (i--) if (m = j[i].previousElementSibling) {
 			m.innerHTML =
 				'<a href="javascript:void this'

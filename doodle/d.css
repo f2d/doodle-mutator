@@ -275,13 +275,16 @@ a:hover	{
 	display: block;
 	padding-right: 6px;
 }
-.thread, .task p:first-child, .task label {
+.multi-thread {
+	background-color: #aaa;
+}
+.multi-thread:not(:empty), .thread, .task p:first-child, .task label {
 	padding-top: 8px;
 }
-.thread, body>footer {
+.multi-thread, .thread, body>footer {
 	margin-top: 24px;
 }
-.multi-thread .thread:not(:first-child) {
+.multi-thread .thread {
 	margin: 0;
 	padding-top: 0;
 }
@@ -293,7 +296,7 @@ a:hover	{
 .alt {	background-color: #eee;} .burnt-hell,
 .burnt .post {	background-color: #fdd;} .post .burnt, .hot,
 .burnt .alt {	background-color: #ecc;} .post:target, .ok,
-.full .post {	background-color: #dfd;} .post .full, .green,
+.full .post {	background-color: #dfd;} .post .full, .ok.alt, .green,
 .full .alt {	background-color: #cec;} .frozen-hell,
 .frozen .post {	background-color: #def;} .post .frozen, .cold,
 .frozen .alt {	background-color: #cde;} .mod,
