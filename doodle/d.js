@@ -1,9 +1,9 @@
 ﻿var	LS = window.localStorage || localStorage
 
-,	regClassAlt = /(^|\s)(alt|ok)(\s|$)/i
-,	regClassAnno = /(^|\s)anno(\s|$)/i
-,	regClassPost = /(^|\s)post(\s|$)/i
-,	regClassThread = /(^|\s)thread(\s|$)/i
+,	regClassAlt = clr('alt|ok')
+,	regClassAnno = clr('anno')
+,	regClassPost = clr('post')
+,	regClassThread = clr('thread')
 ,	regTagDiv = /^div$/i
 ,	regTagDivP = /^(div|p)$/i
 ,	regTagForm = /^form$/i
@@ -265,9 +265,9 @@ var	p = e, t = target.toLowerCase();
 	return p;
 }
 
-function getParentBeforeClass(e, target) {
-var	p = e, t = new RegExp('(^|\s)'+target.toLowerCase()+'(\s|$)', 'i');
-	while ((e = e.parentNode) && !t.test(e.className)) p = e;
+function getParentBeforeClass(e, c) {
+var	p = e, r = clr(c);
+	while ((e = e.parentNode) && !r.test(e.className)) p = e;
 	return p;
 }
 
@@ -277,6 +277,7 @@ var	i,t = '';
 	return alert(t), o;
 }
 
+function clr(c) {return new RegExp('(^|\\s)('+c+')($|\\s)', 'i');}
 function o0(line, split, value) {
 var	a = line.split(split || ','), i,o = {};
 	for (i in a) o[a[i]] = value || 0;
@@ -1311,7 +1312,7 @@ var	flagVarNames = ['flag', 'flags']
 		if ((p = e.previousElementSibling) && (h = p.threadsHTML)) {
 		var	i = p.threadsLastSortIndex || 0;
 			if (sortOrder === 'last') {
-				if (!p.innerHTML) p.innerHTML = h[i];
+				if (!p.innerHTML && (p.innerHTML = h[i]) && mm) mm();
 				rawr.push(p);
 			} else {
 			var	n = 0;
@@ -1323,9 +1324,8 @@ var	flagVarNames = ['flag', 'flags']
 					h = (i == n && p.innerHTML?'':h[n]);
 					p.threadsLastSortIndex = n;
 				}
-				p.innerHTML = h;
+				if ((p.innerHTML = h) && mm) mm();
 			}
-			if (p.innerHTML && mm) mm();
 			continue;
 		}
 
