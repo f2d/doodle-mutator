@@ -6,12 +6,12 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2016-08-06'
+,	INFO_DATE = '2014-07-16 — 2016-08-09'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
 ,	LS = this.LS = window.localStorage || localStorage
-,	DRAW_PIXEL_OFFSET = -0.5
+,	DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
 ,	DRAW_HELPER = {lineWidth: 1, shadowBlur: 0, shadowColor: A0, strokeStyle: 'rgba(123,123,123,0.5)', globalCompositeOperation: SO}
 
 ,	mode = {debug:	false	//* <- safe to define here
@@ -59,7 +59,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 		,	filter	: ['scale', 'integral']
 		,	font	: ['normal', 'compact', 'monospace']
 		,	compose	: [SO, 'destination-over', 'source-atop', 'destination-atop', 'lighter', 'xor', DO]
-		,	palette	: ['history', 'auto', 'legacy', 'Touhou', 'gradient']
+		,	palette	: ['history', 'auto', 'legacy', 'Touhou', 'gradient', 'wheel']
 	}}
 
 ,	PALETTE_COL_COUNT = 16	//* <- used if no '\n' found, for example - unformatted history
@@ -106,11 +106,12 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 	,	'Reisen', '#dcc3ff', '#2e228c', '#e94b6d'
 	, '\n', 'etc'
 
-	], '\rg']
+	], '\rg', '\rw']
 
 //* Set up (don't change) *----------------------------------------------------
 
 ,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)	//* <- broken forever, sadly
+,	noBorderRadius = /^Opera.* Version\D*1\d\.\d+$/i.test(navigator.userAgent)
 ,	abc = 'abc'.split('')
 ,	regLastNum = /^.*\D(\d+)$/
 ,	regHex = /^#*[0-9a-f]{6}$/i
@@ -124,7 +125,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 ,	t0 = +new Date
 ,	self = this, outside = this.o = {}, lang, container
 ,	fps = 0, ticks = 0, timer = 0, loading = 0
-,	interval = o0('fps,timer,save'), cue = {upd:{}}
+,	interval = o0('fps,timer,save'), cue = {upd:{}}, hue
 ,	text = o0('debug,timer')
 ,	cnv = o0('view,draw,lower,current,upper,filter,temp'), ctx = {}
 ,	count = o0('layers,strokes,erases,undo'), used = {}, used_shape = {}
@@ -595,7 +596,7 @@ var	c = ii.context, d = ii.imageData, p = ii.pixels;
 function drawCursor() {
 var	c = ctx[mode.brushView?'draw':'view'], g = tool.grid;
 	if (g > 1) {
-	var	m, n = Math.floor(tool.width/g), o = draw.o, v = (n < 1?(n = 1):n)*g, p = DRAW_PIXEL_OFFSET, w = v+p, v = v-p;
+	var	m, n = Math.floor(tool.width/g), o = draw.o, v = (n < 1?(n = 1):n)*g, p = DRAW_PIXEL_OFFSET-CANVAS_BORDER, w = v+p, v = v-p;
 		for (i in DRAW_HELPER) c[i] = DRAW_HELPER[i];
 		c.beginPath();
 		for (i = -n; i <= n; i++) if (i) {
@@ -631,9 +632,7 @@ function drawStart(event) {
 	if (isMouseIn() <= 0) return false;
 
 	cnv.view.focus();
-	event.preventDefault();
-	event.stopPropagation();
-	event.cancelBubble = true;
+	eventStop(event).preventDefault();
 
 //* Special actions:
 	if (draw.btn && (draw.btn != event.which)) return drawEnd();
@@ -764,7 +763,6 @@ function drawEnd(event) {
 	if (mode.click == 1 && event.shiftKey) return drawMove(event);
 	if (draw.active) {
 		if (draw.target != cnv.view) return;
-		draw.target = 0;
 	var	s = select.shape.value, fig = select.shapeFig[s], sf = select.shapeFlags[s]
 	,	m = ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8));
 	//* 2pt line, base for 4pt curve:
@@ -820,6 +818,7 @@ function drawEnd(event) {
 		if (cue.autoSave < 0) autoSave(); else cue.autoSave = 1;
 		if (mode.click && event.shiftKey) return mode.click = 0, drawStart(event);
 	}
+	draw.target = 0;
 	updateDebugScreen();
 }
 
@@ -1133,22 +1132,49 @@ function fillScreen(i,t) {
 	historyAct(t);
 }
 
-function pickColor(keep, c, event) {
-	if (c) {
-//* gradient palette:
-	var	d = c.ctx.getImageData(0, 0, c.width, c.height), o = getOffsetXY(c);
-		c = (event.pageX - o.x
-		+   (event.pageY - o.y)*c.width)*4;
-	} else {
-		c = (Math.floor(draw.o.x) + Math.floor(draw.o.y)*cnv.view.width)*4;
-//* current layer:
-		d = draw.history.cur();
-//* whole image:
-		if (!d) draw.view(1), d = ctx.view.getImageData(0, 0, cnv.view.width, cnv.view.height);
+function pickColor(event, e, keep) {
+	if (e && e.ctx) c = e; else
+	if (event) {
+		if (e && e.length) d = e; else
+		if (event === 1) keep = 1; else
+		if (event.ctx) c = event; else
+		if ((e = event.target) && e.ctx) c = e;
 	}
-	d = d.data, c = (d[c]*65536 + d[c+1]*256 + d[c+2]).toString(16);
-	while (c.length < 6) c = '0'+c; c = '#'+c;
-	return keep ? c : updateColor(c, event);
+//* from gradient palette:
+	if (c) {
+		eventStop(event);
+	var	d = getOffsetXY(c)
+	,	x = event.pageX - CANVAS_BORDER - d.x
+	,	y = event.pageY - CANVAS_BORDER - d.y
+	,	w = c.width
+	,	h = c.height
+		;
+		if (d = c.offsetShift) x -= d;
+		if (x < 0) x = 0; else if (x >= w) x = w-1;
+		if (y < 0) y = 0; else if (y >= h) y = h-1;
+		d = c.ctx.getImageData(x,y, 1,1).data;
+		c = 0;
+	} else
+//* from drawing container:
+	if (!d) {
+	var	c = 0
+	,	x = Math.floor(draw.o.x)
+	,	y = Math.floor(draw.o.y)
+		;
+//* current layer:
+		if (d = draw.history.cur()) c = (x + y*cnv.view.width)*4;
+//* whole image:
+		else draw.view(1), d = ctx.view.getImageData(x,y, 1,1);
+		d = d.data;
+	}
+	if (d) {
+		c = rgb2hex(d, c);
+		if ((e = keep) && e.tagName) {
+			e.style.backgroundColor = c;
+			e.rgbArray = hue = c = d;
+		}
+		return keep ? c : updateColor(c, event);
+	}
 }
 
 //* Color conversions *--------------------------------------------------------
@@ -1177,7 +1203,16 @@ function hex2rgb(v) {
 	+', '+ parseInt(v.substr(4,2), 16);
 }
 
-function rgb2hex(v) {
+function rgb2hex(v, i) {
+	if (v && !v.split) {
+		if (k = v.length) {
+		var	c = 0, i = orz(i), k = Math.min(k, i+3);
+			for (; i < k; i++) c = c*256 + v[i];
+			c = c.toString(16);
+		} else c = '';
+		while (c.length < 6) c = '0'+c;
+		return '#'+c;
+	}
 	if (!reg255.test(v)) return false;
 	v = v.split(reg255split);
 var	h = '#', i, j;
@@ -1189,6 +1224,31 @@ function isRgbDark(v) {
 var	a = v.split(reg255split), v = 0, i;
 	for (i in a) v += parseInt(a[i]);
 	return v < 380;
+}
+
+function setToolHue(redraw) {
+var	a = tool.color.split(reg255split).map(orz)
+,	i = a.length
+	;
+	while (--i) if (a[i] != a[0]) {
+	var	i = a.length
+	,	j = Math.min.apply(null, a)
+	,	k = Math.max.apply(null, a)-j
+		;
+		while (i--) a[i] -= j;
+		if (k < 255) {
+			i = a.length;
+			j = 255/k;
+			while (i--) if (a[i] > 0) a[i] = Math.floor(a[i]*j);
+		}
+		i = a.length;
+		while (i--) if (!hue || a[i] != hue[i]) {
+			hue = a;
+			if (redraw && (i = id('color-wheel-box'))) i.redrawBoxGradient(hue);
+			return;
+		}
+		return;
+	}
 }
 
 //* Layout changes *-----------------------------------------------------------
@@ -1206,7 +1266,7 @@ var	t = tools[(!i || (isNaN(i) && i.which != 3))?0:1]
 		if (value != '') t.color = hex2rgb(v);
 	} else return c.style.backgroundColor = 'red';
 
-	if (t == tool) c.value = v, c.style.backgroundColor = '';
+	if (t == tool) c.value = v, c.style.backgroundColor = '', setToolHue(1);
 
 //* put on top of history palette:
 var	p = palette[0], found = p.length;
@@ -1227,60 +1287,199 @@ var	p = palette[0], found = p.length;
 }
 
 function updatePalette() {
-var	pt = id('colors'), c = select.palette.value, p = palette[c];
+
+	function drawGradient(cnv, fun, etc) {
+	var	ctx = cnv.ctx = cnv.getContext('2d')
+	,	w = cnv.width
+	,	h = cnv.height
+	,	d = ctx.createImageData(w,h)
+	,	b,x,y = h
+		;
+		while (y--) {
+			x = w;
+			while (x--) {
+				b = fun(x,y, w,h, etc);
+				i = (x + y*w)*4;
+				d.data[i  ] = b[0];
+				d.data[i+1] = b[1];
+				d.data[i+2] = b[2];
+				d.data[i+3] = 255;
+			}
+		}
+		ctx.putImageData(d, 0,0);
+	}
+
+	function linearBlend(from, to, frac, max) {
+		if (frac <= 0) return from;
+		if (frac >= max) return to;
+	var	i = to.length
+	,	j = frac/max
+	,	k = 1-j
+	,	r = []
+		;
+		while (i--) r[i] = Math.round(from[i]*k + to[i]*j);
+		return r;
+	}
+
+	function getBoxGradientPixel(x,y, w,h, hue) {
+		return linearBlend(
+			linearBlend(hue, gray[2], x,w)
+		,	linearBlend(gray[0], gray[1], x,w)
+		,	y,h
+		);
+	}
+
+	function getRainbowWheelGradientPixel(x,y, w,h) {
+	var	m = Math.PI*2
+	,	a = Math.atan2(y - h/2, x - w/2) + m/3
+	,	i = 0
+	,	d = m/l
+		;
+		if (a < 0) a += m;
+		while (a > d) a -= d, ++i;
+		return linearBlend(rgb[i], rgb[++i < l?i:0], a,d);
+	}
+
+	function getRainbowBoxGradientPixel(x,y, w,h, sat) {
+	var	i = 0
+	,	d = w/l
+		;
+		while (x > d) x -= d, ++i;
+	var	c = linearBlend(rgb[i], rgb[++i < l?i:0], x,d);
+		if (d = sat[1]) c = linearBlend(gray[1], c, sat[0], d);
+		if (y == y2) return c;
+		return linearBlend(c, gray[y < y2?0:2], Math.abs(y-y2), y2);
+	}
+
+	function pickHue(event) {
+		eventStop(event).preventDefault();
+		if (!draw.target) {
+			if (event.type === 'mousemove') return;
+			draw.target = id('color-wheel-round');
+		}
+	var	hue = pickColor(event, draw.target, id('color-wheel-hue'));
+		drawGradient(id('color-wheel-box'), getBoxGradientPixel, hue);
+	}
+
+	function pickCorner(event) {
+		pickColor(event, event.target.rgbArray);
+	}
+
+	function redrawBoxGradient(hue) {
+	var	e = id('color-wheel-hue');
+		e.style.backgroundColor = rgb2hex(hue);
+		e.rgbArray = hue;
+		drawGradient(id('color-wheel-box'), getBoxGradientPixel, hue);
+	}
+
+var	pt = id('colors')
+,	c = select.palette.value
+,	p = palette[c]
+	;
 	if (LS) LS.lastPalette = c;
 	clearContent(pt);
 
 	if (p[0] == '\r') {
-		c = p[1];
+	var	c = p[1]
+	,	rgb = [
+			[255,  0,  0]
+		,	[255,255,  0]
+		,	[  0,255,  0]
+		,	[  0,255,255]
+		,	[  0,  0,255]
+		,	[255,  0,255]
+		]
+	,	gray = [
+			[  0,  0,  0]
+		,	[127,127,127]
+		,	[255,255,255]
+		]
+	,	l = rgb.length
+	,	f = 'return false;'
+		;
 		if (c == 'g') {
-			c = document.createElement('canvas'), c.ctx = c.getContext('2d'), c.width = 300, c.height = 133;
-		var	hues = [[255,  0,  0]
-			,	[255,255,  0]
-			,	[  0,255,  0]
-			,	[  0,255,255]
-			,	[  0,  0,255]
-			,	[255,  0,255]
-		],	bw = [	[  0,  0,  0]
-			,	[127,127,127]
-			,	[255,255,255]
-		],	l = hues.length, f = 'return false;';
-
-			function linearBlend(from, to, frac, max) {
-				if (frac <= 0) return from;
-				if (frac >= max) return to;
-			var	i = to.length, j = frac/max, k = 1-j, r = [];
-				while (i--) r[i] = Math.round(from[i]*k + to[i]*j);
-				return r;
-			}
+			setContent(pt, getSlider('S')+'<br>');
+			setSlider('S');
+			setId(c = cre('canvas', pt), 'gradient');
+		var	x = c.width = 300
+		,	y = c.height = 133
+		,	y2 = Math.floor(y/2)
+			;
 
 			(c.updateSat = function (sat) {
-			var	x = c.width, y = c.height, y2 = Math.floor(y/2), h, i, j, k = Math.ceil(c.width/l)
-			,	d = c.ctx.createImageData(x, y);
-				while (x--) {
-					h = linearBlend(hues[y = Math.floor(x/k)], hues[(y+1)%l], x%k, k);
-					if (!isNaN(sat)) h = linearBlend(bw[1], h, sat, RANGE.S.max);
-					y = c.height;
-					while (y--) {
-						j = linearBlend(h, bw[y < y2?0:2], Math.abs(y-y2), y2);
-						i = (x+y*c.width)*4;
-						d.data[i  ] = j[0];
-						d.data[i+1] = j[1];
-						d.data[i+2] = j[2];
-						d.data[i+3] = 255;
-					}
-				}
-				c.ctx.putImageData(d, 0, 0);
+				drawGradient(c, getRainbowBoxGradientPixel, [sat, isNaN(sat) ? 0 : RANGE.S.max]);
 			})();
 
 			c.setAttribute('onscroll', f);
 			c.setAttribute('oncontextmenu', f);
-			c.addEventListener('mousedown', function (event) {pickColor(0, c, event || window.event);}, false);
-			setId(c, 'gradient');
-			setContent(pt, getSlider('S')+'<br>');
-			setSlider('S');
+			c.onmousedown = pickColor;
+		} else
+		if (c == 'w') {
+		var	border = CANVAS_BORDER
+		,	pad = 0
+		,	p = (pad + border)*2
+		,	outerWidth = 300 - p
+		,	outerHeight = 178 - p
+		,	outerDiam = Math.min(outerWidth, outerHeight)
+		,	innerDiam = Math.floor((outerDiam - border*2) * 0.75)
+		,	innerBoxWidth = Math.floor((w = innerDiam - border*2) / Math.sqrt(2))
+		,	p = 'color-wheel'
+		,	b = setId(cre('div'	, clearContent(pt)), p)
+		,	c = setId(cre('canvas'	, b), p+'-round')
+		,	d = setId(cre('div'	, b), p+'-inner')
+		,	e = setId(cre('canvas'	, d), p+'-box')
+		,	w = Math.round(w/2)
+			;
+			b.style.width = b.style.height = outerDiam+'px';
+			d.style.width = d.style.height = innerDiam+'px';
+			d.style.top = d.style.left = (Math.floor((outerDiam - innerDiam)/2 - border) + pad)+'px';
+			e.style.top = e.style.left = (Math.floor((innerDiam - innerBoxWidth)/2 - border))+'px';
+			e.width = e.height = innerBoxWidth;
+			c.width = c.height = outerDiam - border*2;
+
+			setToolHue();
+			if (!hue) hue = rgb[0];
+
+			drawGradient(c, getRainbowWheelGradientPixel);
+			drawGradient(e, getBoxGradientPixel, hue);
+
+			b.onmousemove =
+			c.onmousedown = pickHue;
+			d.onmousedown = pickCorner;
+			e.onmousedown = pickColor;
+			e.redrawBoxGradient = redrawBoxGradient;
+
+		var	a = [b,c,d,e]
+		,	i = a.length
+		,	j = Math.round(outerWidth/2)
+			;
+			while (i--) {
+				q = a[i];
+				q.setAttribute('onscroll', f);
+				q.setAttribute('oncontextmenu', f);
+				if (noBorderRadius) q.offsetShift = j;
+			}
+		var	a = [
+				['bottom', 'left']
+			,	['bottom', 'right']
+			,	['top', 'right']
+			,	['top', 'left']
+			]
+		,	i = a.length
+			;
+			while (i--) {
+			var	q = a[i]
+			,	b = cre('div', d, e)
+			,	k = q.length
+				;
+				for (var j = 0; j < k; j++) b.style[q[j]] = 0;
+				if (i < gray.length) q = gray[i];
+				else q = hue, setId(b, p+'-hue');
+				b.style.backgroundColor = rgb2hex(b.rgbArray = q);
+				b.style.width = b.style.height = w+'px';
+			}
 		} else c = 'TODO';
-		pt.appendChild(c.tagName ? c : document.createTextNode(c));
+		if (!c.tagName) setContent(pt, c);
 	} else {
 	var	tbl = document.createElement('table'), tr, td, fill, t = '', colCount = 0, autoRows = true;
 		for (i in p) if (p[i][0] == '\n') {autoRows = false; break;}
@@ -2000,7 +2199,7 @@ function updatePosition(event) {
 var	i = select.shape.value, g = tool.grid, o = (
 		(!mode.step && mode.shape && (select.shapeFlags[i] & 2))
 	||	(select.shapeFig[i] && !((draw.active ? ctx.draw.lineWidth : tool.width) % 2))
-	? 0 : DRAW_PIXEL_OFFSET);	//* <- maybe not a 100% fix yet
+	? 0 : DRAW_PIXEL_OFFSET) - CANVAS_BORDER;	//* <- maybe not a 100% fix yet
 
 	draw.o.x = (draw.m.x = event.pageX) - draw.container.offsetLeft;
 	draw.o.y = (draw.m.y = event.pageY) - draw.container.offsetTop;
@@ -2095,8 +2294,7 @@ var	d = event.dataTransfer.getData('text/plain'), e;
 }
 
 function dragOver(event) {
-	event.stopPropagation();
-	event.preventDefault();
+	eventStop(event).preventDefault();
 
 var	d = event.dataTransfer.files, e = d && d.length;
 	event.dataTransfer.dropEffect = e?'copy':'move';
@@ -2104,8 +2302,7 @@ var	d = event.dataTransfer.files, e = d && d.length;
 }
 
 function drop(event) {
-	event.stopPropagation();
-	event.preventDefault();
+	eventStop(event).preventDefault();
 
 //* Move windows: you can actually drop simple text strings like "NS-info,0,0"
 	if (dragMove(event));
@@ -2448,7 +2645,7 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 ,	lineJoin: ['круг -x-', 'срез \\_/', 'угол V']
 ,	filter	: ['масштаб', 'интеграл']
 ,	compose	: ['поверх', 'под', 'в пределах', 'предел (маска)', 'свет', 'исключение', 'стёрка']
-,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент']
+,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент', 'круг']
 }, lang = {
 	lang: ['язык', 'Русский']
 ,	bad_data:	'Неправильный формат данных.'
@@ -2754,13 +2951,20 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #| aside {position: absolute; z-index: 100; left: 0; top: 0; text-align: left; padding: 2px; border: 2px solid #888; background-color: rgba(234,234,234,0.90);}\
 #| aside, #|-load canvas {box-shadow: 3px 3px rgba(0,0,0, 0.1);}\
 #| aside:hover {background-color: #eaeaea;}\
-#| canvas {border: 1px solid #ddd; margin: 0; vertical-align: bottom; cursor:\
+#| canvas {border: '+CANVAS_BORDER+'px solid #ddd; margin: 0; vertical-align: bottom; cursor:\
 	url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC\'),\
 	auto;}\
-#| canvas:hover {border-color: #aaa;}\
+#| canvas:hover, #| canvas:hover + #|-color-wheel-inner, #|-color-wheel-inner div:hover {border-color: #aaa;}\
 #| hr {border: 1px solid #aaa; border-top: none;}\
 #| {text-align: center; padding: 12px; background-color: #f8f8f8;}\
 #|, #| button, #| input, #| select, #|-lcd {color: #111; font-family: "Arial"; font-size: 19px; line-height: normal;}\
+#|-color-wheel * {position: absolute;}\
+#|-color-wheel {position: relative; margin: 0 auto; padding: 0;}\
+#|-color-wheel, #|-color-wheel-inner, #|-color-wheel-inner div {border: '+CANVAS_BORDER+'px solid #ddd; overflow: hidden; background-color: white;}'
++(noBorderRadius?'':'\
+#|-color-wheel-inner div {cursor: pointer; border-radius: 25%;}\
+#|-color-wheel-inner, #|-color-wheel-mark, #|-color-wheel-round {border-radius: 50%;}'
+)+'\
 #|-colors .|-text {padding: 0 4px;}\
 #|-colors table {margin: 2px 0 0 0; border-collapse: collapse;}\
 #|-colors td {margin: 0; padding: 0; height: 16px;}\
@@ -2827,6 +3031,14 @@ function cut_period(x,y,z) {if (!y) y = -Math.PI; if (!z) z = Math.PI; return (x
 function ang_btw(x,y) {return cut_period(y-x);}
 function o0(line,delim) {var a=line.split(delim||','),i,o={}; for(i in a) o[a[i]]=0; return o;}
 function showProps(o,r,z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; if(r)return t; alert(t); return o;}
+
+function eventStop(e) {
+	if (e && e.eventPhase?e:e = window.event) {
+		if (e.stopPropagation) e.stopPropagation();
+		if (e.cancelBubble != null) e.cancelBubble = true;
+	}
+	return e;
+}
 
 //* To get started *-----------------------------------------------------------
 

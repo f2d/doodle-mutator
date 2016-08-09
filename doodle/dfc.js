@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.67'
-,	INFO_DATE = '2013-04-01 — 2016-08-06'
+,	INFO_VERSION = 'v0.9.68'
+,	INFO_DATE = '2013-04-01 — 2016-08-09'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -83,7 +83,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 		,	lineCap	: ['round', 'butt', 'square']
 		,	lineJoin: ['round', 'bevel', 'miter']
 		,	textStyle:['...', 'default font', 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'modern', 'narrow', 'comic', 'gothic', 'script']
-		,	palette	: ['history', 'auto', 'legacy', 'Touhou', 'gradient']
+		,	palette	: ['history', 'auto', 'legacy', 'Touhou', 'gradient', 'wheel']
 		}
 	}
 ,	PALETTE_COL_COUNT = 16	//* <- used if no '\n' found
@@ -144,10 +144,12 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 		, '\n', 'etc'
 		]
 	,	'\rg'
+	,	'\rw'
 	]
 
 ,	noTransformByProp = /^Opera.* Version\D*11\.\d+$/i.test(navigator.userAgent)
 ,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)
+,	noBorderRadius	= noTransformByProp || noShadowBlurCurve
 ,	regA0		= /^[rgba(]+[\d,\s]+[.0)]+$/i
 ,	regCommaSpace	= /\s*(,)[\s,]*/g
 ,	regCommaSplit	= /,\s*/
@@ -164,7 +166,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 ,	MODE_LABELS = 'abc'.split('')
 
 ,	t0 = +new Date
-,	self = this, outside = this.o = {}, container, canvas, c2d, cnvHid, c2s, lang, i,DL,HP,LP,LS = window.localStorage || localStorage
+,	self = this, outside = this.o = {}, container, canvas, c2d, cnvHid, c2s, hue, lang, i,DL,HP,LP,LS = window.localStorage || localStorage
 ,	fps = 0, ticks = 0, timer = 0, lastUsedSaveSlot = 0
 ,	interval = {fps:0, timer:0, save:0}, text = {debug:0, timer:0, undo:0}, used = {}, cue = {upd:{}}
 
@@ -280,8 +282,16 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 		}
 	};
 
+function eventStop(e) {
+	if (e && e.eventPhase?e:e = window.event) {
+		if (e.stopPropagation) e.stopPropagation();
+		if (e.cancelBubble != null) e.cancelBubble = true;
+	}
+	return e;
+}
+
 function clearFill(c) {
-var	d = c.c2d || (c.c2d = c.getContext('2d'));
+var	d = c.ctx || (c.ctx = c.getContext('2d'));
 	d.fillStyle = 'white';
 	d.fillRect(0,0, c.width, c.height);
 	return d;
@@ -393,58 +403,222 @@ var	d = getSaveLSDict(i);
 	};
 }
 
+function setToolHue(redraw) {
+var	a = tool.color.split(regCommaSplit).map(orz)
+,	i = a.length
+	;
+	while (--i) if (a[i] != a[0]) {
+	var	i = a.length
+	,	j = Math.min.apply(null, a)
+	,	k = Math.max.apply(null, a)-j
+		;
+		while (i--) a[i] -= j;
+		if (k < 255) {
+			i = a.length;
+			j = 255/k;
+			while (i--) if (a[i] > 0) a[i] = Math.floor(a[i]*j);
+		}
+		i = a.length;
+		while (i--) if (!hue || a[i] != hue[i]) {
+			hue = a;
+			if (redraw && (i = id('color-wheel-box'))) i.redrawBoxGradient(hue);
+			return;
+		}
+		return;
+	}
+}
+
 function updatePalette() {
-var	pt = id('palette-table'), c = select.palette.value, p = palette[c];
+
+	function drawGradient(cnv, fun, etc) {
+	var	ctx = cnv.ctx = cnv.getContext('2d')
+	,	w = cnv.width
+	,	h = cnv.height
+	,	d = ctx.createImageData(w,h)
+	,	b,x,y = h
+		;
+		while (y--) {
+			x = w;
+			while (x--) {
+				b = fun(x,y, w,h, etc);
+				i = (x + y*w)*4;
+				d.data[i  ] = b[0];
+				d.data[i+1] = b[1];
+				d.data[i+2] = b[2];
+				d.data[i+3] = 255;
+			}
+		}
+		ctx.putImageData(d, 0,0);
+	}
+
+	function linearBlend(from, to, frac, max) {
+		if (frac <= 0) return from;
+		if (frac >= max) return to;
+	var	i = to.length
+	,	j = frac/max
+	,	k = 1-j
+	,	r = []
+		;
+		while (i--) r[i] = Math.round(from[i]*k + to[i]*j);
+		return r;
+	}
+
+	function getBoxGradientPixel(x,y, w,h, hue) {
+		return linearBlend(
+			linearBlend(hue, gray[2], x,w)
+		,	linearBlend(gray[0], gray[1], x,w)
+		,	y,h
+		);
+	}
+
+	function getRainbowWheelGradientPixel(x,y, w,h) {
+	var	m = Math.PI*2
+	,	a = Math.atan2(y - h/2, x - w/2) + m/3
+	,	i = 0
+	,	d = m/l
+		;
+		if (a < 0) a += m;
+		while (a > d) a -= d, ++i;
+		return linearBlend(rgb[i], rgb[++i < l?i:0], a,d);
+	}
+
+	function getRainbowBoxGradientPixel(x,y, w,h, sat) {
+	var	i = 0
+	,	d = w/l
+		;
+		while (x > d) x -= d, ++i;
+	var	c = linearBlend(rgb[i], rgb[++i < l?i:0], x,d);
+		if (d = sat[1]) c = linearBlend(gray[1], c, sat[0], d);
+		if (y == y2) return c;
+		return linearBlend(c, gray[y < y2?0:2], Math.abs(y-y2), y2);
+	}
+
+	function pickHue(event) {
+		eventStop(event).preventDefault();
+		if (!draw.target) {
+			if (event.type === 'mousemove') return;
+			draw.target = id('color-wheel-round');
+		}
+	var	hue = pickColor(event, draw.target, id('color-wheel-hue'));
+		drawGradient(id('color-wheel-box'), getBoxGradientPixel, hue);
+	}
+
+	function pickCorner(event) {
+		pickColor(event, event.target.rgbArray);
+	}
+
+	function redrawBoxGradient(hue) {
+	var	e = id('color-wheel-hue');
+		e.style.backgroundColor = rgb2hex(hue);
+		e.rgbArray = hue;
+		drawGradient(id('color-wheel-box'), getBoxGradientPixel, hue);
+	}
+
+var	pt = id('palette-table')
+,	c = select.palette.value
+,	p = palette[c]
+	;
 	if (LS) LS[LP] = c;
 	if (p[0] == '\r') {
-		c = p[1];
+	var	c = p[1]
+	,	rgb = [
+			[255,  0,  0]
+		,	[255,255,  0]
+		,	[  0,255,  0]
+		,	[  0,255,255]
+		,	[  0,  0,255]
+		,	[255,  0,255]
+		]
+	,	gray = [
+			[  0,  0,  0]
+		,	[127,127,127]
+		,	[255,255,255]
+		]
+	,	l = rgb.length
+	,	f = 'return false;'
+		;
 		if (c == 'g') {
 			setContent(pt, getSlider('S', -1));
 			setSlider('S'), updateSliders(id('rangeS'));
-			setId(c = cre('canvas', pt), 'gradient').c2d = c.getContext('2d'), c.width = 300, c.height = 133;
-		var	hues = [[255,  0,  0]
-			,	[255,255,  0]
-			,	[  0,255,  0]
-			,	[  0,255,255]
-			,	[  0,  0,255]
-			,	[255,  0,255]
-			]
-		,	bw = [	[  0,  0,  0]
-			,	[127,127,127]
-			,	[255,255,255]
-			]
-		,	l = hues.length, f = 'return false;';
-
-			function linearBlend(from, to, frac, max) {
-				if (frac <= 0) return from;
-				if (frac >= max) return to;
-			var	i = to.length, j = frac/max, k = 1-j, r = [];
-				while (i--) r[i] = Math.round(from[i]*k + to[i]*j);
-				return r;
-			}
+			setId(c = cre('canvas', pt), 'gradient');
+		var	x = c.width = 300
+		,	y = c.height = 133
+		,	y2 = Math.floor(y/2)
+			;
 
 			(c.updateSat = function (sat) {
-			var	x = c.width, y = c.height, y2 = Math.floor(y/2), h,i,j,k = Math.ceil(c.width/l)
-			,	d = c.c2d.createImageData(x, y);
-				while (x--) {
-					h = linearBlend(hues[y = Math.floor(x/k)], hues[(y+1)%l], x%k, k);
-					if (!isNaN(sat)) h = linearBlend(bw[1], h, sat, RANGE[0].max);
-					y = c.height;
-					while (y--) {
-						j = linearBlend(h, bw[y < y2?0:2], Math.abs(y-y2), y2);
-						i = (x+y*c.width)*4;
-						d.data[i  ] = j[0];
-						d.data[i+1] = j[1];
-						d.data[i+2] = j[2];
-						d.data[i+3] = 255;
-					}
-				}
-				c.c2d.putImageData(d, 0,0);
+				drawGradient(c, getRainbowBoxGradientPixel, [sat, isNaN(sat) ? 0 : RANGE[0].max]);
 			})();
 
 			c.setAttribute('onscroll', f);
 			c.setAttribute('oncontextmenu', f);
-			c.addEventListener('mousedown', function (event) {pickColor(0, c, event || window.event);}, false);
+			c.onmousedown = pickColor;
+		} else
+		if (c == 'w') {
+		var	border = CANVAS_BORDER
+		,	pad = 0
+		,	p = (pad + border)*2
+	//	,	outerDiam = Math.min(pt.offsetWidth, pt.offsetHeight) - p
+		,	outerWidth = 300 - p
+		,	outerHeight = 178 - p
+		,	outerDiam = Math.min(outerWidth, outerHeight)
+		,	innerDiam = Math.floor((outerDiam - border*2) * 0.75)
+		,	innerBoxWidth = Math.floor((w = innerDiam - border*2) / Math.sqrt(2))
+		,	p = 'color-wheel'
+		,	b = setId(cre('div'	, clearContent(pt)), p)
+		,	c = setId(cre('canvas'	, b), p+'-round')
+		,	d = setId(cre('div'	, b), p+'-inner')
+		,	e = setId(cre('canvas'	, d), p+'-box')
+		,	w = Math.round(w/2)
+			;
+			b.style.width = b.style.height = outerDiam+'px';
+			d.style.width = d.style.height = innerDiam+'px';
+			d.style.top = d.style.left = (Math.floor((outerDiam - innerDiam)/2 - border) + pad)+'px';
+			e.style.top = e.style.left = (Math.floor((innerDiam - innerBoxWidth)/2 - border))+'px';
+			e.width = e.height = innerBoxWidth;
+			c.width = c.height = outerDiam - border*2;
+
+			setToolHue();
+			if (!hue) hue = rgb[0];
+
+			drawGradient(c, getRainbowWheelGradientPixel);
+			drawGradient(e, getBoxGradientPixel, hue);
+
+			b.onmousemove =
+			c.onmousedown = pickHue;
+			d.onmousedown = pickCorner;
+			e.onmousedown = pickColor;
+			e.redrawBoxGradient = redrawBoxGradient;
+
+		var	a = [b,c,d,e]
+		,	i = a.length
+		,	j = Math.round(outerWidth/2)
+			;
+			while (i--) {
+				q = a[i];
+				q.setAttribute('onscroll', f);
+				q.setAttribute('oncontextmenu', f);
+				if (noBorderRadius) q.offsetShift = j;
+			}
+		var	a = [
+				['bottom', 'left']
+			,	['bottom', 'right']
+			,	['top', 'right']
+			,	['top', 'left']
+			]
+		,	i = a.length
+			;
+			while (i--) {
+			var	q = a[i]
+			,	b = cre('div', d, e)
+			,	k = q.length
+				;
+				for (var j = 0; j < k; j++) b.style[q[j]] = 0;
+				if (i < gray.length) q = gray[i];
+				else q = hue, setId(b, p+'-hue');
+				b.style.backgroundColor = rgb2hex(b.rgbArray = q);
+				b.style.width = b.style.height = w+'px';
+			}
 		} else c = 'TODO';
 		if (!c.tagName) setContent(pt, c);
 	} else {
@@ -630,7 +804,7 @@ function drawCursor() {
 var	sf = select.shapeFlags[select.shape.value];
 	if (sf & 16) {
 		for (i in DRAW_HELPER) c2d[i] = DRAW_HELPER[i];
-	var	i,o = draw.o, p = -DRAW_PIXEL_OFFSET;
+	var	i,o = draw.o, p = DRAW_PIXEL_OFFSET - CANVAS_BORDER;
 		c2d.beginPath();
 		c2d.moveTo(o.x+p, p), c2d.lineTo(o.x+p, canvas.height+p);
 		c2d.moveTo(p, o.y+p), c2d.lineTo(canvas.width+p, o.y+p);
@@ -652,9 +826,7 @@ var	sf = select.shapeFlags[select.shape.value];
 function drawStart(event) {
 	if (!isMouseIn()) return false;
 //	canvas.focus();
-	event.preventDefault();
-	event.stopPropagation();
-	event.cancelBubble = true;
+	eventStop(event).preventDefault();
 
 	if (draw.btn && (draw.btn != event.which)) return drawEnd();
 	if (mode.click) return ++mode.click, drawEnd(event);
@@ -782,6 +954,7 @@ var	redraw = true
 }
 
 function drawEnd(event) {
+	draw.target = 0;
 	if (!event || draw.turn) return draw.active = draw.btn = draw.step = draw.turn = 0, draw.screen();
 	if (mode.click == 1 && event.shiftKey) return drawMove(event);
 	if (draw.active) {
@@ -1122,33 +1295,52 @@ function fillScreen(i) {
 	historyAct();
 }
 
-function pickColor(keep, c, event) {
-	if (c) {
+function pickColor(event, e, keep) {
+	if (e && e.ctx) c = e; else
+	if (event) {
+		if (e && e.length) d = e; else
+		if (event === 1) keep = 1; else
+		if (event.ctx) c = event; else
+		if ((e = event.target) && e.ctx) c = e;
+	}
 //* from gradient palette:
+	if (c) {
+		eventStop(event);
 	var	d = getOffsetXY(c)
 	,	x = event.pageX - CANVAS_BORDER - d.x
-	,	y = event.pageY - CANVAS_BORDER - d.y;
-		if (y < 0 || y >= c.height) {
-			c = (y < 0?'0':'f');
-			d = 0;
-		} else {
-			d = c.c2d.getImageData(0,0, c.width, c.height);
-			if (x < 0) x = 0; else
-			if (x >= c.width) x = c.width;
-			c = (x + y*c.width)*4;
-		}
-	} else {
+	,	y = event.pageY - CANVAS_BORDER - d.y
+	,	w = c.width
+	,	h = c.height
+		;
+		if (d = c.offsetShift) x -= d;
+		if (x < 0) x = 0; else if (x >= w) x = w-1;
+		if (y < 0) y = 0; else if (y >= h) y = h-1;
+		d = c.ctx.getImageData(x,y, 1,1).data;
+		c = 0;
+	} else
 //* from drawing container:
-		c = (Math.floor(draw.o.x) + Math.floor(draw.o.y)*canvas.width)*4;
-		d = draw.history.cur();
+	if (!d) {
+	var	c = (Math.floor(draw.o.x) + Math.floor(draw.o.y)*canvas.width)*4;
+		d = draw.history.cur().data;
 	}
 	if (d) {
-		d = d.data;
-		c = (d[c]*65536 + d[c+1]*256 + d[c+2]).toString(16);
-		while (c.length < 6) c = '0'+c;
-		c = '#'+c;
+		c = rgb2hex(d, c);
+		if ((e = keep) && e.tagName) {
+			e.style.backgroundColor = c;
+			e.rgbArray = hue = c = d;
+		}
+		return keep ? c : updateColor(c, (!event || event.which != 3)?0:1);
 	}
-	return keep ? c : updateColor(c, (!event || event.which != 3)?0:1);
+}
+
+function rgb2hex(a, i) {
+	if (a && (k = a.length)) {
+	var	c = 0, i = orz(i), k = Math.min(k, i+3);
+		for (; i < k; i++) c = c*256 + a[i];
+		c = c.toString(16);
+	} else c = '';
+	while (c.length < 6) c = '0'+c;
+	return '#'+c;
 }
 
 function hex2fix(v) {
@@ -1173,7 +1365,7 @@ var	t = tools[i || 0]
 			parseInt(v.substr(3,2), 16)+', '+
 			parseInt(v.substr(5,2), 16);
 	} else return c.style.backgroundColor = 'red';
-	if (t == tool) c.value = v, c.style.backgroundColor = '';
+	if (t == tool) c.value = v, c.style.backgroundColor = '', setToolHue(1);
 
 //* put on top of history palette:
 var	p = palette[i = c = 0], k = p.length;
@@ -1703,16 +1895,14 @@ var	e = new Image();
 }
 
 function dragOver(event) {
-	event.stopPropagation();
-	event.preventDefault();
+	eventStop(event).preventDefault();
 
 var	d = event.dataTransfer.files, e = d && d.length;
 	event.dataTransfer.dropEffect = e?'copy':'move';
 }
 
 function drop(event) {
-	event.stopPropagation();
-	event.preventDefault();
+	eventStop(event).preventDefault();
 
 var	d = event.dataTransfer.files, i = (d?d.length:0), f, r;
 	if (!window.FileReader || !i) return;
@@ -2231,7 +2421,7 @@ var	o = outside
 		,	lineCap	: ['круг', 'срез', 'квадрат']
 		,	lineJoin: ['круг', 'срез', 'угол']
 		,	textStyle:['...', 'шрифт по умолчанию', 'без засечек', 'с засечками', 'моноширинный', 'курсив', 'фантастика', 'модерн', 'узкий', 'комикс', 'готика', 'рукопись']
-		,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент']
+		,	palette	: ['история', 'авто', 'разное', 'Тохо', 'градиент', 'круг']
 		};
 	} else {
 		r = ' your browser memory (keeps a maximum of '+o.save+' slots in a queue).'
@@ -2363,7 +2553,7 @@ document.write(
 	+		'#| a:hover {color: #000;}'
 	+		'#| abbr {border-bottom: 1px dotted #111;}'
 	+		'#| canvas {border: '+CANVAS_BORDER+'px solid #ddd; margin: 0; cursor: url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC\'), auto;}'
-	+		'#| canvas:hover {border-color: #aaa;}'
+	+		'#| canvas:hover, #| canvas:hover + #|-color-wheel-inner, #|-color-wheel-inner div:hover {border-color: #aaa;}'
 	+		'#| hr {border: none; border-top: 1px solid #aaa; margin: 8px 0;}'
 	+		'#| input[type="range"] {width: 156px; height: 16px; margin: 0; padding: 0;}'
 	+		'#| input[type="text"] {width: 48px; height: 22px;}'
@@ -2373,7 +2563,14 @@ document.write(
 	+		'#|, #| input, #| select {font-family: "Arial"; font-size: 19px; line-height: normal;}'
 	+		'#|-bottom > button {border: 1px solid #000; width: 38px; height: 38px; margin: 2px; padding: 2px; font-size: 15px; line-height: 7px; text-align: center; vertical-align: top; cursor: pointer;}'
 	+		'#|-bottom {margin: 10px 0 -2px;}'
-	+		'#|-bottom, #|-debug {white-space: initial;}'
+	+		'#|-bottom, #|-debug {white-space: normal;}'
+	+		'#|-color-wheel * {position: absolute;}'
+	+		'#|-color-wheel {position: relative; margin: 0 auto; padding: 0;}'
+	+		'#|-color-wheel, #|-color-wheel-inner, #|-color-wheel-inner div {border: '+CANVAS_BORDER+'px solid #ddd; overflow: hidden; background-color: white;}'
+	+		(noBorderRadius?'':
+			'#|-color-wheel-inner div {cursor: pointer; border-radius: 25%;}'
+	+		'#|-color-wheel-inner, #|-color-wheel-mark, #|-color-wheel-round {border-radius: 50%;}'
+			)
 	+		'#|-debug td {width: 234px;}'
 	+		'#|-draw canvas {vertical-align: bottom;}'
 	+		'#|-draw canvas, #|-bottom > button {box-shadow: 3px 3px rgba(0,0,0, 0.1);}'
