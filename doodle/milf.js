@@ -1414,10 +1414,7 @@ var	pt = id('colors')
 		if (c == 'w') {
 		var	border = CANVAS_BORDER
 		,	pad = 0
-		,	p = (pad + border)*2
-		,	outerWidth = 300 - p
-		,	outerHeight = 178 - p
-		,	outerDiam = Math.min(outerWidth, outerHeight)
+		,	outerDiam = 304 - (pad + border)*2
 		,	innerDiam = Math.floor((outerDiam - border*2) * 0.75)
 		,	innerBoxWidth = Math.floor((w = innerDiam - border*2) / Math.sqrt(2))
 		,	p = 'color-wheel'
