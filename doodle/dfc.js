@@ -3,7 +3,7 @@
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
 ,	INFO_VERSION = 'v0.9.68'
-,	INFO_DATE = '2013-04-01 — 2016-08-09'
+,	INFO_DATE = '2013-04-01 — 2016-08-10'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -495,10 +495,8 @@ function updatePalette() {
 
 	function pickHue(event) {
 		eventStop(event).preventDefault();
-		if (!draw.target) {
-			if (event.type === 'mousemove') return;
-			draw.target = id('color-wheel-round');
-		}
+		if (event.type === 'mousemove' && (!draw.target || draw.target != event.target)) return;
+		if (!draw.target) draw.target = id('color-wheel-round');
 	var	hue = pickColor(event, draw.target, id('color-wheel-hue'));
 		drawGradient(id('color-wheel-box'), getBoxGradientPixel, hue);
 	}
@@ -558,7 +556,6 @@ var	pt = id('palette-table')
 		var	border = CANVAS_BORDER
 		,	pad = 0
 		,	p = (pad + border)*2
-	//	,	outerDiam = Math.min(pt.offsetWidth, pt.offsetHeight) - p
 		,	outerWidth = 300 - p
 		,	outerHeight = 178 - p
 		,	outerDiam = Math.min(outerWidth, outerHeight)
@@ -598,7 +595,7 @@ var	pt = id('palette-table')
 				q = a[i];
 				q.setAttribute('onscroll', f);
 				q.setAttribute('oncontextmenu', f);
-				if (noBorderRadius) q.offsetShift = j;
+				if (noBorderRadius && q.ctx) q.offsetShift = j;
 			}
 		var	a = [
 				['bottom', 'left']

@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2016-08-09'
+,	INFO_DATE = '2014-07-16 — 2016-08-10'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -1149,7 +1149,6 @@ function pickColor(event, e, keep) {
 	,	w = c.width
 	,	h = c.height
 		;
-		if (d = c.offsetShift) x -= d;
 		if (x < 0) x = 0; else if (x >= w) x = w-1;
 		if (y < 0) y = 0; else if (y >= h) y = h-1;
 		d = c.ctx.getImageData(x,y, 1,1).data;
@@ -1353,10 +1352,8 @@ function updatePalette() {
 
 	function pickHue(event) {
 		eventStop(event).preventDefault();
-		if (!draw.target) {
-			if (event.type === 'mousemove') return;
-			draw.target = id('color-wheel-round');
-		}
+		if (event.type === 'mousemove' && (!draw.target || draw.target != event.target)) return;
+		if (!draw.target) draw.target = id('color-wheel-round');
 	var	hue = pickColor(event, draw.target, id('color-wheel-hue'));
 		drawGradient(id('color-wheel-box'), getBoxGradientPixel, hue);
 	}
@@ -1451,13 +1448,11 @@ var	pt = id('colors')
 
 		var	a = [b,c,d,e]
 		,	i = a.length
-		,	j = Math.round(outerWidth/2)
 			;
 			while (i--) {
 				q = a[i];
 				q.setAttribute('onscroll', f);
 				q.setAttribute('oncontextmenu', f);
-				if (noBorderRadius) q.offsetShift = j;
 			}
 		var	a = [
 				['bottom', 'left']
