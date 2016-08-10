@@ -821,6 +821,12 @@ var	sf = select.shapeFlags[select.shape.value];
 }
 
 function drawStart(event) {
+	try {
+		showProps(event,1,1);	//* <- check if permission denied to read some property
+	} catch (err) {
+		return;			//* <- against FireFox catching clicks on page scrollbar
+	}
+	drawEnd(event);
 	if (!isMouseIn()) return false;
 //	canvas.focus();
 	eventStop(event).preventDefault();
@@ -2022,6 +2028,9 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	c2s = clearFill(cnvHid);
 	c2d = clearFill(canvas);
 
+//* listen on all page to prevent dead zones:
+//* still fails to catch events outside of document block height less than of browser window.
+	e = window;	//document.body;
 	for (i in {onscroll:0, oncontextmenu:0}) canvas.setAttribute(i, 'return false;');
 	for (i in (a = {
 		dragover:	dragOver
@@ -2031,11 +2040,10 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	,	mouseup:	drawEnd
 	,	keypress:	browserHotKeyPrevent
 	,	keydown:	hotKeys
-	,	mousewheel:	e = hotWheel
-	,	wheel:		e
-	,	scroll:		e
-	})) document.addEventListener(i, a[i], false);	//* <- using "document" to prevent negative clipping.
-		//* still fails to catch events outside of document block height less than of browser window.
+	,	mousewheel:	f = hotWheel
+	,	wheel:		f
+	,	scroll:		f
+	})) e.addEventListener(i, a[i], false);
 
 	a = {left:'←</label>', center:'<label>→', right:'</label>'}, b = '<label>', k = 'text-align';
 

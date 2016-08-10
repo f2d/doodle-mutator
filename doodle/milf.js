@@ -628,10 +628,15 @@ var	c = ctx[mode.brushView?'draw':'view'], g = tool.grid;
 }
 
 function drawStart(event) {
+	try {
+		showProps(event,1,1);	//* <- check if permission denied to read some property
+	} catch (err) {
+		return;			//* <- against FireFox catching clicks on page scrollbar
+	}
+	drawEnd(event);
 	draw.target = event.target;
 	if (isMouseIn() <= 0) return false;
-
-	cnv.view.focus();
+//	cnv.view.focus();
 	eventStop(event).preventDefault();
 
 //* Special actions:
@@ -2559,18 +2564,22 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 
 	for (i in modes) if (mode[modes[i]]) toggleMode(i, 1);		//* <- only after select lists are defined
 
-	document.addEventListener('dragover'	, dragOver	, f = false);
-	document.addEventListener('drop'	, drop		, f);
-	document.addEventListener('mousedown'	, drawStart	, f);
-	document.addEventListener('mousemove'	, drawMove	, f);	//* <- using 'document' to prevent negative clipping
-	document.addEventListener('mouseup'	, drawEnd	, f);
-	document.addEventListener('keypress'	, browserHotKeyPrevent, f);
-	document.addEventListener('keydown'	, hotKeys	, f);
-	document.addEventListener('mousewheel'	, e = hotWheel	, f);
-	document.addEventListener('wheel'	, e, f);
-	document.addEventListener('scroll'	, e, f);
-	cnv.view.setAttribute('onscroll'	, f = 'return false;');
-	cnv.view.setAttribute('oncontextmenu'	, f);
+//* listen on all page to prevent dead zones:
+//* still fails to catch events outside of document block height less than of browser window.
+	e = window;	//document.body;
+	for (i in {onscroll:0, oncontextmenu:0}) cnv.view.setAttribute(i, 'return false;');
+	for (i in (a = {
+		dragover:	dragOver
+	,	drop:		drop
+	,	mousedown:	drawStart
+	,	mousemove:	drawMove
+	,	mouseup:	drawEnd
+	,	keypress:	browserHotKeyPrevent
+	,	keydown:	hotKeys
+	,	mousewheel:	f = hotWheel
+	,	wheel:		f
+	,	scroll:		f
+	})) e.addEventListener(i, a[i], false);
 
 //* Get ready to work *--------------------------------------------------------
 
