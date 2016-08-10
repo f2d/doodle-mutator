@@ -1083,7 +1083,7 @@ function showContent(sortOrder) {
 								,	j = m[4]	//* <- sum of active intervals
 									;
 									m[1] = (
-										orz(j > 0) && (j = getFormattedHMS(j)) != k
+										orz(j) > 0 && (j = getFormattedHMS(j)) != k
 										? j+' ('+k+')'
 										: k
 									);

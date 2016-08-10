@@ -119,7 +119,7 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 						k = getFormattedHMS(+m[3]-m[2]);
 						j = m[4];
 						m[1] = (
-							orz(j > 0) && (j = getFormattedHMS(j)) != k
+							orz(j) > 0 && (j = getFormattedHMS(j)) != k
 							? j+' ('+k+')'
 							: k
 						);
