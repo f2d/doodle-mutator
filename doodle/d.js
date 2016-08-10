@@ -11,7 +11,7 @@
 ,	regImgTag = /<img [^>]+>/i
 ,	regImgTitle = /\s+(title="[^"]+)"/i
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
-,	regTimeDrawn = /^((\d+)-(\d+)|[\d:]+)(?:=(\d+))?,(.*)$/m
+,	regTimeDrawn = /^((\d+)-(\d+)|[\d:]+)(?:=(-?\d+))?,(.*)$/m
 ,	regTimeBreak = /^\d+(<|>|,|$)/
 ,	regLineBreak = /^(\r\n|\r|\n)/gm
 ,	regLNaN = /^\D+/
@@ -1083,7 +1083,7 @@ function showContent(sortOrder) {
 								,	j = m[4]	//* <- sum of active intervals
 									;
 									m[1] = (
-										j && (j = getFormattedHMS(j)) != k
+										orz(j > 0) && (j = getFormattedHMS(j)) != k
 										? j+' ('+k+')'
 										: k
 									);

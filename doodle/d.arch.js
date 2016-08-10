@@ -1,9 +1,7 @@
-﻿var	regLNaN = /^\D+/
-,	regNaN = /\D+/
+﻿var	regNaN = /\D+/
 ,	regSpace = /\s+/g
 ,	regTrim = /^\s+|\s+$/g
 ,	regTimeBreak = /^\d+(<|>|,|$)/
-,	regImgTitle = /\s+(title="[^"]+)"/i
 
 ,	splitSec = 60
 ,	TOS = ['object','string']
@@ -91,9 +89,11 @@ var	YMD = t.slice(0,3).join('-'), HIS = t.slice(3).join(':');
 function showArch(p) {
 var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 
+,	regLNaN = /^\D+/
 ,	regImgTag = /<img [^>]+>/i
+,	regImgTitle = /\s+(title="[^"]+)"/i
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
-,	regTimeDrawn = /^((\d+)-(\d+)|[\d:]+)(?:=(\d+))?,(.*)$/m
+,	regTimeDrawn = /^((\d+)-(\d+)|[\d:]+)(?:=(-?\d+))?,(.*)$/m
 
 ,	line = p.innerHTML.split('\n');
 
@@ -119,7 +119,7 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 						k = getFormattedHMS(+m[3]-m[2]);
 						j = m[4];
 						m[1] = (
-							j && (j = getFormattedHMS(j)) != k
+							orz(j > 0) && (j = getFormattedHMS(j)) != k
 							? j+' ('+k+')'
 							: k
 						);
