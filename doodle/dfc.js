@@ -3,7 +3,7 @@
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
 ,	INFO_VERSION = 'v0.9.68'
-,	INFO_DATE = '2013-04-01 — 2016-08-10'
+,	INFO_DATE = '2013-04-01 — 2016-08-11'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -589,13 +589,11 @@ var	pt = id('palette-table')
 
 		var	a = [b,c,d,e]
 		,	i = a.length
-		,	j = Math.round(outerWidth/2)
 			;
 			while (i--) {
 				q = a[i];
 				q.setAttribute('onscroll', f);
 				q.setAttribute('oncontextmenu', f);
-				if (noBorderRadius && q.ctx) q.offsetShift = j;
 			}
 		var	a = [
 				['bottom', 'left']
@@ -1309,13 +1307,25 @@ function pickColor(event, e, keep) {
 //* from gradient palette:
 	if (c) {
 		eventStop(event);
-	var	d = getOffsetXY(c)
-	,	x = event.pageX - CANVAS_BORDER - d.x
-	,	y = event.pageY - CANVAS_BORDER - d.y
-	,	w = c.width
+		if (noBorderRadius) {
+		var	d = event
+		,	e = d.target
+		,	x = orz(d.x)
+		,	y = orz(d.y)
+			;
+			do {
+				x -= CANVAS_BORDER + orz(e.style.left);	//* <- left margins fix for o11-12
+				y -= CANVAS_BORDER + orz(e.style.top);
+				e = e.parentNode;
+			} while (e && e.style.left);
+		} else {
+			d = getOffsetXY(c);
+			x = event.pageX - CANVAS_BORDER - d.x;
+			y = event.pageY - CANVAS_BORDER - d.y;
+		}
+	var	w = c.width
 	,	h = c.height
 		;
-		if (d = c.offsetShift) x -= d;
 		if (x < 0) x = 0; else if (x >= w) x = w-1;
 		if (y < 0) y = 0; else if (y >= h) y = h-1;
 		d = c.ctx.getImageData(x,y, 1,1).data;
