@@ -63,8 +63,8 @@ function data_log($file_path, $line, $n = BOM, $report = 1) {
 	return $written;
 }
 
-function data_global_announce($type = 'all') {
-	$d = (($room = $_REQUEST['room']) ? DIR_ROOM.$room.'/' : '');
+function data_global_announce($type = 'all', $room = '') {
+	if ($d = ($room ?: $_REQUEST['room'] ?: '')) $d = DIR_ROOM.$d.'/';
 	$x = '.txt';
 //* check single presence:
 	global $tmp_announce;
@@ -82,7 +82,10 @@ function data_global_announce($type = 'all') {
 		if ($i = strrpos($k, '_')) {
 			if (!$d) continue;
 			$f = $d.substr($k, $i+1);
-		} else $f = $k;
+		} else {
+			if ($room) continue;
+			$f = $k;
+		}
 		if (is_file($f = DIR_DATA.$f.$x)) switch ($type) {
 			case 'all': if (trim_bom($v = file_get_contents($f))) $a[$k] = $v; break;
 			case 'last': if (($v = filemtime($f)) && $a < $v) $a = $v; break;
@@ -268,11 +271,9 @@ function data_get_mod_log($t = 0, $mt = 0) {	//* <- Y-m-d|int, 1|0
 	global $room;
 	$d = DIR_META_R."$room/actions";
 	if ($t) {
-		if (is_file($f = (
-			strpos($t, '-')
-			? "$d/$t"
-			: ($t-3 ? DIR_DATA.'ref' : DIR_META_U)
-		).'.log')) return ($mt ? filemtime($f) : trim_bom(file_get_contents($f)));
+		if ($t === 'reflinks') $t = DIR_DATA.'ref'; else
+		if ($t === 'users') $t = DIR_META_U; else $t = "$d/$t";
+		if (is_file($f = "$t.log")) return ($mt ? filemtime($f) : trim_bom(file_get_contents($f)));
 	} else {
 		$t = array();
 		foreach (get_dir_contents($d) as $f) if (preg_match(PAT_DATE, $f, $m)) $t[$m[1]][] = $m[4];
@@ -877,6 +878,8 @@ if (TIME_PARTS) time_check_point('done scan, inb4 room iteration'.NL);
 		) {
 			$c	= $im['counts'];
 			$mod	= $im['marked'];
+			$t = data_global_announce('last', $r);
+			if ($last_time_in_room < $t) $last_time_in_room = $t;
 		} else {
 			$last_time_in_room = intval(T0);	//* <- force to now, less problems
 			$last_post_time =
@@ -934,9 +937,7 @@ if (TIME_PARTS) time_check_point('done scan, inb4 room iteration'.NL);
 			||	$u_flag['mod_'.$r]
 			) $c['marked'] = $mod;
 		}
-		foreach (array('anno', 'stop') as $t) if (is_file($f = DIR_META_R."$r/$t.txt")) {
-			$c['anno']['room_'.$t] = file_get_contents($f);
-		}
+		if ($t = data_global_announce('all', $r)) $c['anno'] = $t;
 		$a[$r] = array_filter($c);
 		if ($last < $last_time_in_room) $last = $last_time_in_room;
 if (TIME_PARTS) time_check_point('done room '.$r);
