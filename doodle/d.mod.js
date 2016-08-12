@@ -1,20 +1,26 @@
 ﻿mm = function menuInit(i) {
 	if (i && (k = id('tabs'))) {
 
-		function a(r,t) {return '<a href="'+r+(r == l?(at = y, '" class="at'):'')+'">'+t+'</a>';}
-
-	var	h = ''
-	,	l = location.pathname.split('/').slice(-1)[0]
+	var	a = function (i,t,d) {return '<a href="'+(d || '')+i+(i == day?(at = y, '" class="at'):'')+'">'+t+'</a>';}
+	,	h = ''
 	,	n = k.textContent.replace(regTrim, '').split('|')
+	,	day = location.search.split('=').slice(-1)[0] || location.pathname.split('/').slice(-1)[0]
+	,	prefix = k.getAttribute('data-var') || ''
 		;
 //* task category tabs:
-		for (i in n) h += (h?'\n|\t':'')+a(+i+1, n[i]);
-		k.innerHTML = '[\t'+h+'\t]';
+		if (n.length > 1) {
+			for (i in n) h += (h?'\n|\t':'')+a(+i+1, n[i]);
+			k.innerHTML = '[\t'+h+'\t]';
+		}
 	var	p = k.parentNode
 	,	r = /^\d+-\d+-\d+(,\d+)*/
 	,	w = /\s.*$/
 		;
-		while ((m = p.lastElementChild) && !((j = m.lastElementChild) && j.id) && r.test(j = m.innerHTML.replace(regTrim, ''))) {
+		while (
+			(m = p.lastElementChild)
+		&&	!((j = m.lastElementChild) && j.id)
+		&&	r.test(j = m.innerHTML.replace(regTrim, ''))
+		) {
 //* logs, row = month, column = day:
 		var	k,at,c,d
 		,	j = j.split('-')
@@ -24,7 +30,7 @@
 		,	j = j.join('-')
 		,	h = j+':'
 			;
-			for (i in n) h += '\n'+a(j+'-'+n[i].replace(w, ''), n[i]);
+			for (i in n) h += '\n'+a(j+'-'+n[i].replace(w, ''), n[i], prefix);
 			m.innerHTML = h;
 			if (!d || d.id != y) {
 				(d = cre('div',c?c:c = cre('div',p,k.nextElementSibling))).id = y;

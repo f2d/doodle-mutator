@@ -161,7 +161,7 @@ function data_fix($t) {
 		}
 if (TIME_PARTS && $a) time_check_point("done $a $t");
 	} else
-	if ($t == 'reports') {
+	if ($t == 'logs') {
 		foreach (get_dir_contents($d = DIR_META_R) as $room) {
 			if ($arr = glob("$d$room/*.report.*", GLOB_NOSORT)) {
 				natcasesort($arr);
@@ -505,8 +505,12 @@ function data_del_thread($f, $del_pics = 0) {
 	$count = array();
 	if (is_file($f)) {
 		if ($del_pics && preg_match_all('~(<img src="[^>]*/|'.IMG.')([^/">	]+)[	"]~is', file_get_contents($f), $m)) {
-			$to_trash = (1 == $del_pics);
-			foreach ($m[2] as $p) if (data_del_pic(get_pic_subpath($p), $to_trash)) $count['pics']++;
+			$k = (
+				($to_trash = (1 == $del_pics))
+				? 'pics moved to trash'
+				: 'pics erased'
+			);
+			foreach ($m[2] as $p) if (data_del_pic(get_pic_subpath($p), $to_trash)) $count[$k]++;
 		}
 		if (unlink($f)) {
 			$count['files']++;

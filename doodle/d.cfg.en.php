@@ -64,20 +64,20 @@ $tmp_foot_notes = array('Project', 'author', 'message board', ' for contact.');
 $tmp_me = 'Name yourself';
 $tmp_me_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters. Also you may enter your old key here.';
 $tmp_mod_files = array(
-	'Clear cached post counts for room list.'
-,	'Pics to subfolders.'
-,	'Rewrite arch with newest template.'
-,	'Convert old user data.'
-,	'Convert old report logs.'
-,	'Check .htaccess template for Apache2.'
-,	'Rewrite .htaccess (automatically done for each admin\'s main page visit).'
+	'arch' =>	'Rewrite arch with newest template.'
+,	'hta_check' =>	'Check .htaccess template for Apache2.'
+,	'hta_write' =>	'Rewrite .htaccess (automatically done for each admin\'s main page visit).'
+,	'img2subdir' =>	'Pics to subfolders.'
+,	'users' =>	'Convert old user data.'
+,	'logs' =>	'Convert old report logs.'
+,	'post_count' =>	'Clear cached post counts for room list.'
 );
 $tmp_mod_pages = array(
-1 =>	'Logs'
-,	'Files'
-,	'Users'
-,	'Ref.links'
-,	'Vars'
+	'logs' =>	'Logs'
+,	'files' =>	'Files'
+,	'users' =>	'Users'
+,	'reflinks' =>	'Ref.links'
+,	'vars' =>	'Vars'
 );
 $tmp_mod_panel = 'Mod panel';
 $tmp_mod_post_hint = 'Modify this post or thread.';

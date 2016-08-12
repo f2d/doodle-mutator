@@ -181,14 +181,36 @@ if ($u_key) {
 			}
 		}
 	} else
-	if (!$qd_room || !$room);		//* <- no posting outside room
-	else
+
+//* admin/mod actions ---------------------------------------------------------
+
+	if (isset($_POST['mod']) && MOD && (($qd_room && $room) || (GOD && ($query['users'] || $etc === '3')))) {
+		$d = 'abcdefg';
+		$k = array();
+		foreach ($_POST as $i => $a) if (preg_match('~^m\d+_(\d+)_(\d+)_(\d+)$~i', $i, $m)) {
+			$m[0] = $a;
+			$act[$k[] = str_replace_first('_', $d[substr_count($a, '+')], $i)] = $m;
+		}
+		if ($act) {
+			natsort($k);
+			if (!data_lock($room)) {
+				$post_status = 'no_lock';
+			} else {
+				foreach (array_reverse($k) as $i) {
+					$m = data_mod_action($act[$i]);	//* <- act = array(option name, thread, row, column)
+					if ($post_status != 'unkn_res') $post_status = ($m?OK:'unkn_res');
+				}
+				data_unlock();
+			}
+		}
+	} else
+	if (!$qd_room || !$room); else	//* <- no posting outside room
 
 //* report problem in active room ---------------------------------------------
 
-	if (isset($_POST['report']) && $etc && (MOD || !(R1 || $u_flag['nor']))) {
+	if (isset($_POST['report']) && ($postID = $query['report_post'] ?: $etc) && (MOD || !(R1 || $u_flag['nor']))) {
 		$post_status = 'no_path';
-		if (preg_match(PAT_DATE, $etc, $r) && ($etc == $r[0])) {	//* <- r = array(t-r-c, t-r, thread, row, column)
+		if (preg_match(PAT_DATE, $postID, $r) && ($postID == $r[0])) {	//* <- r = array(t-r-c, t-r, thread, row, column)
 			$post_status = 'text_short';
 			if (mb_strlen($r[1] = trim_post($_POST['report'], REPORT_MAX_LENGTH), ENC) >= REPORT_MIN_LENGTH) {
 				if (!data_lock($room)) {
@@ -204,7 +226,7 @@ if ($u_key) {
 			}
 		}
 	} else
-	if ($etc && !(MOD && $etc == 3)); else	//* <- no "etc" posting without report
+	if ($etc); else			//* <- no "etc" posting without report
 
 //* skip current task ---------------------------------------------------------
 
@@ -380,29 +402,6 @@ if ($u_key) {
 				$post_status = 'new_post';
 			} else if (is_file($f)) unlink($f);
 		}
-	} else
-
-//* admin/mod actions ---------------------------------------------------------
-
-	if (isset($_POST['mod']) && MOD) {
-		$d = 'abcdefg';
-		$k = array();
-		foreach ($_POST as $i => $a) if (preg_match('~^m\d+_(\d+)_(\d+)_(\d+)$~i', $i, $m)) {
-			$m[0] = $a;
-			$act[$k[] = str_replace_first('_', $d[substr_count($a, '+')], $i)] = $m;
-		}
-		if ($act) {
-			natsort($k);
-			if (!data_lock($room)) {
-				$post_status = 'no_lock';
-			} else {
-				foreach (array_reverse($k) as $i) {
-					$m = data_mod_action($act[$i]);	//* <- act = array(option name, thread, row, column)
-					if ($post_status != 'unkn_res') $post_status = ($m?OK:'unkn_res');
-				}
-				data_unlock();
-			}
-		}
 	}
 
 //* write new post to a thread ------------------------------------------------
@@ -435,10 +434,11 @@ Target$op$t$ed"
 			);
 		} else if (!$u_room_default) $u_room_default = $room;
 	}
-} else if (isset($_POST[ME]) && strlen($me = trim_post($_POST[ME], USER_NAME_MAX_LENGTH)) >= USER_NAME_MIN_LENGTH) {
+} else
 
 //* register new user ---------------------------------------------------------
 
+if (isset($_POST[ME]) && strlen($me = trim_post($_POST[ME], USER_NAME_MAX_LENGTH)) >= USER_NAME_MIN_LENGTH) {
 	$post_status = (data_log_user($u_key = md5($me.T0.substr(M0,2,3)), $me)?'user_reg':'unkn_res');
 }
 
@@ -449,6 +449,133 @@ Target$op$t$ed"
 
 
 
+
+
+//* mod panel -----------------------------------------------------------------
+
+	if (GOD && (($q = isset($query['mod'])) || ($etc && strlen(trim($etc, '-'))))) {
+		$a = array_keys($tmp_mod_pages);
+		if ($q) {
+			$q = $query['mod'] ?: reset($a);
+			$do = $query['do'];
+			$i = intval($query['id']);
+		} else {
+			$q = $a[intval($etc)-1];
+			if ($i = strpos($etc, '-')) {
+				$i = intval(substr($etc, $i+1));
+				$a = array_keys($tmp_mod_files);
+				$do = $a[$i-1];
+			}
+		}
+		if ($q == 'users' && $i) {
+			die(get_template_page(array(
+				'title' => $tmp_mod_pages[3].': #'.$i
+			,	'content' => (
+					($a = data_get_user_info($i))
+					? array_merge(array(
+						'Current date' => date(TIMESTAMP, T0)
+					,	'User ID' => $i
+					), $a)
+					: $tmp_empty
+				)
+			), ':'.NL));
+		}
+		$lnk = $t = '';
+		$mod_page = $mod_p = $tmp_mod_pages[$q] ?: $tmp_empty;
+
+		if ($q == 'logs') {
+			$day = $query['day'] ?: $etc;
+			$ymd = preg_match(PAT_DATE, $day, $m);
+			if ($l = data_get_mod_log()) {
+				if ($ymd) {
+					exit_if_not_mod(data_get_mod_log($day, 1));
+					if ($a = data_get_mod_log($mod_page = $day)) {
+						$content = '
+images = '.ROOTPRFX.DIR_PICS.NL.
+preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',		//* <- transform data fields
+preg_replace('~\h+~u', ' ',
+preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1	',		//* <- keep multiline entries atomic
+preg_replace('~\v+~u', '<br>', NL.htmlspecialchars($a)))));
+						$data_attr['content']['type'] = 'reports';
+					}
+				}
+
+				$last = end(end($l));
+				$last = data_get_mod_log(key($l).'-'.$last, 1);
+				if (!$ymd) exit_if_not_mod($last);
+
+				foreach ($l as $ym => $d) $lnk .= ($lnk?'</p>':'').'
+<p>'.$ym.'-'.implode(',', $d);
+				$lnk .= ' <small>'.date('H:i:s', $last).'</small></p>';
+			}
+		} else
+		if ($q == 'files') {
+			foreach ($tmp_mod_files as $k => $v) $lnk .= '
+<p><a href="?mod='.$q.'&do='.$k.'">'.str_replace_first(' ', '</a> ', $v).'</p>';
+			if ($do) {
+				ignore_user_abort(true);
+				$a = intval($a[1]);
+if (TIME_PARTS) time_check_point('ignore user abort');
+				if ($do == 'arch') {
+					require_once(NAMEPRFX.'.arch.php');
+					$t = data_archive_rewrite();
+				} else
+				if ($do == 'post_count') {
+					$t = data_post_refresh(true);
+				} else
+				if ($do == 'img2subdir') {
+					foreach (get_dir_contents($d = DIR_PICS) as $f) if (is_file($old = $d.$f)) {
+						$new = get_pic_subpath($f, 1);
+						$t .=
+NL.(++$a)."	$old => $new	".($old == $new?'same':(rename($old, $new)?'OK':'fail'));
+					}
+if (TIME_PARTS && $a) time_check_point("done $a pics");
+				} else
+				if (substr($do, 0,3) == 'hta') {
+					$t = rewrite_htaccess(substr($do, -5) == 'write');
+				} else {
+					$t = data_fix($do);
+				}
+				if (!$t) $t = $tmp_no_change;
+			}
+		} else
+		if ($q == 'vars') {
+			exit_if_not_mod();				//* <- never exits, to check HTTP_IF_MODIFIED_SINCE, etc
+			$t = '_SERVER = '		.print_r($_SERVER, true)
+			.NL.'strip magic slashes = '	.print_r($gpc ?: 'off'.NL, true)
+			.NL.'DATE_RFC822 = '		.gmdate(DATE_RFC822, T0)
+			.NL.'DATE_RFC2822 = '		.gmdate('r', T0);
+		} else
+		if ($q) {
+			exit_if_not_mod(data_get_mod_log($q, 1));
+			if ($t = data_get_mod_log($q)) {
+				if ($q == 'users') {
+					$content .= "
+left = $tmp_mod_user_info
+right = $tmp_mod_user_hint
+flags = cgu
+v,$u_num,u	v
+".trim(
+preg_replace('~(\V+)(	\V+)	(\V+)\+\V+(	\V+?)~Uu', '$3,$1$4$2',	//* <- transform data fields; TODO: move this to db.php?
+NL.$t));
+				} else
+				if ($q == 'reflinks') {
+					$content .= '
+flags = c'.NL.
+preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);	//* <- transform data fields
+				}
+				$data_attr['content']['type'] = $q;
+				$lnk .= get_template_form(array('filter' => 1));
+			}
+		}
+		if (!$content) $textarea = $t;				//* <- dump plain text as is
+		$task = '
+<p'.($q == 'logs'?' id="tabs" data-var="?mod=logs&day="':'').'>'.$mod_p.'</p>'.($lnk || $content || $textarea ? $lnk : $tmp_empty);
+		$js['mod']++;
+		$js[0]++;
+	} else
+
+//* archived threads ----------------------------------------------------------
 
 	if ($qd_arch) {
 		require_once(NAMEPRFX.'.arch.php');
@@ -618,6 +745,12 @@ if ($u_key) {
 
 //* task manipulation ---------------------------------------------------------
 
+		if (strlen($v = $query['report_post'])) $etc = $v; else
+		if (strlen($v = $query['skip_thread'])) $etc = '-'.abs(intval($v)); else
+		if (strlen($v = $query['check_task'])) {
+			if ($v == 'keep' || $v == 'prolong') $etc = '-'; else
+			if ($v == 'post' || $v == 'sending') $etc = '--';
+		}
 		if ($etc) {
 			if ($etc[0] == '-') {
 		//* show current task:
@@ -647,7 +780,7 @@ if ($u_key) {
 					)
 					: $tmp_post_err['no_lock']
 				);
-		//* skip current task (obsolete way):
+		//* skip current task, obsolete way by GET:
 				$t = substr($etc, 1);
 				list($a, $r) = get_room_skip_name($room);
 				if ($q = get_room_skip_list($a)) {
@@ -659,132 +792,21 @@ if ($u_key) {
 				goto post_refresh;
 			}
 
-//* mod panel -----------------------------------------------------------------
-
-			if (GOD) {
-				if ($etc == 3 && ($i = strpos($etc, '-'))) {
-					$i = intval(substr($etc, $i+1));
-					die(get_template_page(array(
-						'title' => $tmp_mod_pages[3].': #'.$i
-					,	'content' => (
-							($a = data_get_user_info($i))
-							? array_merge(array(
-								'Current date' => date(TIMESTAMP, T0)
-							,	'User ID' => $i
-							), $a)
-							: $tmp_empty
-						)
-					), ':'.NL));
-				}
-				$lnk = $t = '';
-				$ymd = preg_match(PAT_DATE, $etc, $m);		//* <- Y-m-d
-				$mod_page = $tmp_mod_pages[intval($etc)] ?: $tmp_empty;
-				if ($ymd || $etc == 1) {
-					if ($l = data_get_mod_log()) {
-						if ($ymd) {
-							exit_if_not_mod(data_get_mod_log($etc, 1));
-							if ($a = data_get_mod_log($mod_page = $etc)) {
-								$content = '
-images = '.ROOTPRFX.DIR_PICS.NL.
-preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',			//* <- transform data fields
-preg_replace('~\h+~u', ' ',
-preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1	',			//* <- keep multiline entries atomic
-preg_replace('~\v+~u', '<br>', NL.htmlspecialchars($a)))));
-								$data_attr['content']['type'] = 'reports';
-							}
-						}
-
-						$last = end(end($l));
-						$last = data_get_mod_log(key($l).'-'.$last, 1);
-						if (!$ymd) exit_if_not_mod($last);
-
-						foreach ($l as $ym => $d) $lnk .= ($lnk?'</p>':'').'
-<p>'.$ym.'-'.implode(',', $d);
-						$lnk .= ' <small>'.date('H:i:s', $last).'</small></p>';
-					}
-				} else
-				if ($etc == 2) {
-					foreach ($tmp_mod_files as $k => $v) $lnk .= '
-<p>'.$k.': <a href="2-'.$k.'">'.str_replace_first(' ', '</a> ', $v).'</p>';
-					if (count($a = explode('-', $etc, 2)) > 1) {
-						ignore_user_abort(true);
-						$a = intval($a[1]);
-if (TIME_PARTS) time_check_point('ignore user abort');
-						if ($a == 0) {
-							$t = data_post_refresh(true);
-						} else
-						if ($a == 1) {
-							foreach (get_dir_contents($d = DIR_PICS) as $f) if (is_file($old = $d.$f)) {
-								$new = get_pic_subpath($f, 1);
-								$t .=
-NL.(++$a)."	$old => $new	".($old == $new?'same':(rename($old, $new)?'OK':'fail'));
-							}
-if (TIME_PARTS && $a) time_check_point("done $a pics");
-						} else
-						if ($a == 2) {
-							require_once(NAMEPRFX.'.arch.php');
-							$t = data_archive_rewrite();
-						} else
-						if ($a == 3) $t = data_fix('users'); else
-						if ($a == 4) $t = data_fix('reports'); else
-						if ($a == 5 || $a == 6) $t = rewrite_htaccess($a == 5);
-						if (!$t) $t = $tmp_no_change;
-					}
-				} else
-				if ($etc > 2) {
-					if ($etc == 5) {
-						exit_if_not_mod();		//* <- never exits, to check HTTP_IF_MODIFIED_SINCE, etc
-						$t = '_SERVER = '		.print_r($_SERVER, true)
-						.NL.'strip magic slashes = '	.print_r($gpc ?: 'off'.NL, true)
-						.NL.'DATE_RFC822 = '		.gmdate(DATE_RFC822, T0)
-						.NL.'DATE_RFC2822 = '		.gmdate('r', T0);
-					} else {
-						exit_if_not_mod(data_get_mod_log($etc, 1));
-						if ($t = data_get_mod_log($etc)) {
-							if ($etc == 3) {
-								$content .= "
-left = $tmp_mod_user_info
-right = $tmp_mod_user_hint
-flags = cgu
-v,$u_num,u	v
-".trim(
-preg_replace('~(\V+)(	\V+)	(\V+)\+\V+(	\V+?)~Uu', '$3,$1$4$2',	//* <- transform data fields; TODO: move this to db.php?
-NL.$t));
-								$data_attr['content']['type'] = 'users';
-							} else
-							if ($etc == 4) {
-								$content .= '
-flags = c'.NL.
-preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);		//* <- transform data fields
-								$data_attr['content']['type'] = 'reflinks';
-							}
-							$lnk .= get_template_form(array('filter' => 1));
-						}
-					}
-				}
-				if (!$content) $textarea = $t;			//* <- dump plain text as is
-				$task = '
-<p id="tabs">'.implode('|', $tmp_mod_pages).'</p>'.($lnk || $content || $textarea ? $lnk : $tmp_empty);
-				$js['mod']++;
-				$js[0]++;
-			} else {
-
 //* report form ---------------------------------------------------------------
 
-				$task = get_template_form(
-					array(
-						'method' =>	'post'
-					,	'name' =>	'report'
-					,	'min' =>	REPORT_MIN_LENGTH
-					,	'max' =>	REPORT_MAX_LENGTH
-					,	'textarea' =>	($is_report_page = 1)
-					,	'checkbox' =>	array(
-							'name' => 'freeze'
-						,	'label' => $tmp_report_freeze
-						)
+			$task = get_template_form(
+				array(
+					'method' =>	'post'
+				,	'name' =>	'report'
+				,	'min' =>	REPORT_MIN_LENGTH
+				,	'max' =>	REPORT_MAX_LENGTH
+				,	'textarea' =>	($is_report_page = 1)
+				,	'checkbox' =>	array(
+						'name' => 'freeze'
+					,	'label' => $tmp_report_freeze
 					)
-				);
-			}
+				)
+			);
 		} else
 
 //* active room task and visible content --------------------------------------
@@ -1071,13 +1093,12 @@ if ($u_key && !$u_opts['times']) {
 }
 
 if (GOD) {
-	$r = '<a href="'.($qd_room && $room ? '' : $room_list_href.($room ?: ROOM_DEFAULT).'/');
-	foreach ($tmp_mod_pages as $k => $v)
-	$mod_list .= $r.$k.'">'.$k.'. '.$v.'</a><br>'.NL;
+	$r = '<a href="?mod';
+	foreach ($tmp_mod_pages as $k => $v) $mod_list .= $r.'='.$k.'">'.$v.'</a><br>'.NL;
 	$mod_link =
 		'<u class="mod-link">'
 	.		indent(
-				$r.'1'.$s['#'].NL
+				$r.$s['#'].NL
 			.	'<u class="mod-list">'
 			.		indent($mod_list)
 			.	'</u>'
@@ -1135,6 +1156,10 @@ die(get_template_page(array(
 	'icon' => $icon
 ,	'lang' => $lang
 ,	'title' => (
+		$mod_page
+		? $tmp_mod_panel.' - '.$mod_page.S
+		: ''
+	).(
 		$qd_opts == 1
 		? $tmp_options.S
 		: (
@@ -1149,12 +1174,8 @@ die(get_template_page(array(
 				? (
 					$room
 					? (
-						$etc
-						? (
-							GOD
-							? $tmp_mod_panel.' - '.$mod_page
-							: $tmp_report
-						).S
+						$is_report_page
+						? $tmp_report.S
 						: ''
 					).$room_title.S
 					: $tmp_rooms.S
