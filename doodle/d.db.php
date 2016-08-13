@@ -293,7 +293,7 @@ function data_get_mod_log($t = 0, $mt = 0) {	//* <- Y-m-d|int, 1|0
 			if (preg_match(PAT_DATE, $f, $m)) $t[$m[1]][$m[4]] = $m[4];
 		}
 		ksort($t);
-		array_map('natsort', $t);
+		foreach ($t as $k => $v) natsort($t[$k]);
 		return $t;
 	}
 }
