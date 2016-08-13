@@ -1,11 +1,16 @@
 ﻿mm = function menuInit(i) {
-	if (i && (k = id('tabs'))) {
-
+	if (i) {
+	var	k = id('tabs')
+	,	d = param.day_link || ''
+		;
+		if (d && !k && (k = id('task'))) k = k.firstElementChild;
+	}
+	if (k) {
 	var	a = function (i,t,d) {return '<a href="'+(d || '')+i+(i == day?(at = y, '" class="at'):'')+'">'+t+'</a>';}
 	,	h = ''
 	,	n = k.textContent.replace(regTrim, '').split('|')
 	,	day = location.search.split('=').slice(-1)[0] || location.pathname.split('/').slice(-1)[0]
-	,	prefix = k.getAttribute('data-var') || ''
+	,	prefix = d || k.getAttribute('data-var') || ''
 		;
 //* task category tabs:
 		if (n.length > 1) {

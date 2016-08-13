@@ -140,6 +140,7 @@ if (lang == 'ru') la = {
 	}
 ,	groups: {
 		found: 'Комнат'
+	,	reports: 'Комнат'
 	,	users: 'Групп по дням'
 	,	reflinks: 'Групп по доменам'
 	}
@@ -211,6 +212,7 @@ if (lang == 'ru') la = {
 	}
 ,	groups: {
 		found: 'Rooms'
+	,	reports: 'Rooms'
 	,	users: 'Groups by day'
 	,	reflinks: 'Groups by domain'
 	}
@@ -511,14 +513,15 @@ var	r = '_res';
 	);
 }
 
-function filter(event) {
-var	e = eventStop(event).target
-,	f = Math.max(0, orz(e.getAttribute('data-filter')))
+function filter(event, e) {
+	if (event) e = eventStop(event).target;
+	if (!e) return;
+var	f = Math.max(0, orz(e.getAttribute('data-filter')))
 ,	v = (e.value || '').replace(regTrim, '').toLowerCase()
 ,	k = 'lastFilterValue'
 ,	i = e[k]
 	;
-	if (i && i == v) return;
+	if (event && (i ? (i === v) : !v)) return;
 	e[k] = v;
 var	containers = showContent('last')
 	;
@@ -544,8 +547,8 @@ var	containers = showContent('last')
 				if (v.length) {
 					while (e && e.firstElementChild == (c = e.lastElementChild)) e = c;
 					if (e && c) {
-						if (f === 2) e = c; else
-						if (f === 1) e = gn('p', e).filter(function(p) {return p.parentNode == e;}).slice(-1)[0];
+						if (f > 1) e = c; else
+						if (f > 0) e = gn('p', e).filter(function(p) {return p.parentNode == e;}).slice(-1)[0];
 					}
 					c = '';
 					if (e
@@ -760,7 +763,7 @@ var	i = param.on_page
 
 function showContent(sortOrder) {
 
-	function getThreadHTML(threadText, addMarks, addToSort) {
+	function getThreadHTML(threadText, addMarks) {
 
 		function getLineHTML(line) {
 		var	lineHTML = ''
@@ -949,7 +952,7 @@ function showContent(sortOrder) {
 				}
 			//* right:
 				if (tab.length > 1 && notEmpty(t = tab[1])) {
-					if (!regTagPre.test(e.tagName)) {
+					if (!regTagPre.test(pre.tagName)) {
 						t = encodeHTMLSpecialChars(t);	//* <- fix for textarea source and evil usernames
 					}
 					if (dtp.found) {
@@ -1226,7 +1229,7 @@ function showContent(sortOrder) {
 						} else {
 							m += ' onClick="window.open(\''+(
 								dtp.users
-								? '3-'+userID+'\',\'Info\',\'width=400,height=400'
+								? (param.left_link || '')+userID+'\',\'Info\',\'width=400,height=400'
 								: postID+'\',\'Report\',\'width=656,height=300'
 							)+'\')"';
 						}
@@ -1241,7 +1244,6 @@ function showContent(sortOrder) {
 				lineHTML += tab.slice(0,3).filter(notEmpty).join('');
 			}
 			if (notEmpty(lineHTML)) {
-				if (addToSort && (!dtp.users || threadNum > 0)) linesToSort.push(line);
 		//* half width:
 				if (dtp.options || dtp.rooms) lineHTML =
 						'<div class="center">'
@@ -1306,8 +1308,9 @@ var	flagVarNames = ['flag', 'flags']
 ,	optPrefix = 'opt_'
 ,	raws = gn('textarea').concat(gn('pre'))
 ,	rawr = []
+,	pre
 	;
-	for (var r_i in raws) if ((e = raws[r_i]) && (t = e.getAttribute('data-type'))) {
+	for (var r_i in raws) if ((pre = e = raws[r_i]) && (t = e.getAttribute('data-type'))) {
 
 		if ((p = e.previousElementSibling) && (h = p.threadsHTML)) {
 		var	i = p.threadsLastSortIndex || 0;
@@ -1324,7 +1327,10 @@ var	flagVarNames = ['flag', 'flags']
 					h = (i == n && p.innerHTML?'':h[n]);
 					p.threadsLastSortIndex = n;
 				}
-				if ((p.innerHTML = h) && mm) mm();
+				if (p.innerHTML = h) {
+					if (mm) mm();
+					if (i = id('filter')) i.onchange(null, i);
+				}
 			}
 			continue;
 		}
@@ -1340,17 +1346,20 @@ var	flagVarNames = ['flag', 'flags']
 		;
 		if (dtp.users) {
 		var	lines = raw.split('\n')
-		,	line
 		,	lastDay = ''
 		,	threadsByDay = []
 			;
 			for (var l_i in lines) {
-				if ((i = (line = lines[l_i]).indexOf('\t')) >= 0) {
+			var	line = lines[l_i]
+			,	i = line.indexOf('\t')
+				;
+				if (i >= 0) {
 				var	t = getFormattedTime(line.slice(0, i), 1, 1);
 					if (lastDay != t) {
 						lastDay = t;
 						threadsByDay.push('\n');
 					}
+					if (line.lastIndexOf('\t') != i) linesToSort.push(line);
 				}
 				threadsByDay.push(line);
 			}
@@ -1375,7 +1384,7 @@ var	flagVarNames = ['flag', 'flags']
 			threads = raw.split('\n\n');
 		}
 		for (var t_i in threads) if (notEmpty(thread = threads[t_i])) {
-		var	t = getThreadHTML(thread, 1, dtp.users);
+		var	t = getThreadHTML(thread, 1);
 			if (t) threadsHTML.push(t);
 		}
 

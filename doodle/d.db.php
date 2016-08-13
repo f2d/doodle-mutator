@@ -6,7 +6,8 @@ define(DIR_DATA, 'l/');				//* <- all data except the threads content
 define(DIR_USER, 'u');				//* <- userlist filename
 define(DIR_META_R, DIR_DATA.DIR_ROOM);		//* <- room names inside, separate from any reserved file/dirnames
 define(DIR_META_U, DIR_DATA.DIR_USER);		//* <- per user files
-define(BOM, pack('CCC', 239, 187, 191).NL);	//* <- UTF-8 Byte Order Mark
+define(BOM, pack('CCC', 239, 187, 191));	//* <- UTF-8 Byte Order Mark
+define(UTF, BOM.NL);
 define(NOR, '&mdash;');				//* <- no-request placeholder
 define(TXT, '		');
 define(IMG, '	<	');
@@ -44,7 +45,7 @@ function data_put($file_path, $content = '', $r = '') {
 	return file_put_contents(data_ensure_filepath_mkdir($file_path), $content);
 }
 
-function data_log($file_path, $line, $n = BOM, $report = 1) {
+function data_log($file_path, $line, $n = UTF, $report = 1) {
 	$old = is_file($file_path);
 	$line = ($old?NL:$n).$line;
 	$written = file_put_contents(data_ensure_filepath_mkdir($file_path), $line, FILE_APPEND);
@@ -243,7 +244,7 @@ function data_log_adm($a) {			//* <- keep logs of administrative actions by date
 	$d = date('Y-m-d', T0);
 	$u = (GOD?'g':(MOD?'m':'r'));
 	$r = ($room?DIR_META_R.$room:DIR_DATA);
-	return data_log("$r/actions/$d.log", T0.'+'.M0."	$u$u_num	$a", BOM, 0);
+	return data_log("$r/actions/$d.log", T0.'+'.M0."	$u$u_num	$a", UTF, 0);
 }
 
 function data_log_report($r, $freeze = 0) {	//* <- r = array(t-r-c, reason, thread, row, column)
@@ -267,16 +268,32 @@ function data_log_report($r, $freeze = 0) {	//* <- r = array(t-r-c, reason, thre
 	return 0;
 }
 
+function data_get_mod_log_file($t = 0, $mt = 0) {	//* <- Y-m-d|int, 1|0
+	if (is_file($f = "$t.log")) return ($mt ? filemtime($f) : trim_bom(file_get_contents($f)));
+}
+
 function data_get_mod_log($t = 0, $mt = 0) {	//* <- Y-m-d|int, 1|0
+	if ($t === 'reflinks') return data_get_mod_log_file(DIR_DATA.'ref', $mt);
+	if ($t === 'users') return data_get_mod_log_file(DIR_META_U, $mt);
+
 	global $room;
-	$d = DIR_META_R."$room/actions";
+	$d = DIR_META_R;
+	$rooms = ($room ? array($room) : get_dir_contents($d));
 	if ($t) {
-		if ($t === 'reflinks') $t = DIR_DATA.'ref'; else
-		if ($t === 'users') $t = DIR_META_U; else $t = "$d/$t";
-		if (is_file($f = "$t.log")) return ($mt ? filemtime($f) : trim_bom(file_get_contents($f)));
+		$result = ($mt ? 0 : array());
+		foreach ($rooms as $r) if ($v = data_get_mod_log_file("$d$r/actions/$t", $mt)) {
+			if (!$mt) $result[$r] = $v; else
+			if ($result < $v) $result = $v;
+		}
+		return $result;
 	} else {
 		$t = array();
-		foreach (get_dir_contents($d) as $f) if (preg_match(PAT_DATE, $f, $m)) $t[$m[1]][] = $m[4];
+		foreach ($rooms as $r)
+		foreach (get_dir_contents("$d$r/actions") as $f) {
+			if (preg_match(PAT_DATE, $f, $m)) $t[$m[1]][$m[4]] = $m[4];
+		}
+		ksort($t);
+		array_map('natsort', $t);
 		return $t;
 	}
 }
@@ -642,7 +659,7 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 			} else if (is_array($merge) && count($merge)) {
 				$n = array_unique(explode(NL, trim_bom($old = file_get_contents($f = $d.$f)).NL.implode(NL, $merge)));
 				natsort($n);
-				if ($old != ($new = BOM.trim_bom(implode(NL, $n)))) {
+				if ($old != ($new = UTF.trim_bom(implode(NL, $n)))) {
 					file_put_contents($f, $new);
 					$ok = $m[2].'<-'.implode(',', array_keys($merge));
 				} else $ok = 'no change';
@@ -659,7 +676,7 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 			&&	count($p = array_slice($old, 0, $ok))
 			&&	count($q = array_slice($old, $ok))
 			) {
-				$lst = BOM;
+				$lst = UTF;
 				if ($fst = strpos($old[$ok], IMG)) $lst .= substr($old[$ok], 0, $fst).TXT.NOR.NL;	//* <- add placeholder if pic first
 				$p = substr_count($fst = implode(NL, $p), IMG);
 				$q = substr_count($lst .= implode(NL, $q), IMG);
@@ -1067,7 +1084,7 @@ function data_check_my_task($aim = 0) {
 		$t = T0+$td;
 		$t = "$m[1].u$u_num.t$t$m[6]";
 		rename($v, $d.$t);
-		data_put($u_t_f, BOM."$target[time]	$room	$t	$target[post]".NL.implode(NL, $u_task));
+		data_put($u_t_f, UTF."$target[time]	$room	$t	$target[post]".NL.implode(NL, $u_task));
 		return array($k, $td);
 	}
 	return 'task_let_go';
@@ -1148,7 +1165,7 @@ function data_aim($unknown_1st = 0, $skip_list = 0, $dont_change = 0) {
 			}
 
 //* save new target to personal list
-			if ($t .= ($t?NL:'').implode(NL, $u_task)) data_put($u_t_f, BOM.$t); else unlink($u_t_f);
+			if ($t .= ($t?NL:'').implode(NL, $u_task)) data_put($u_t_f, UTF.$t); else unlink($u_t_f);
 
 //* rename old target as unlocked
 			if (is_array($u_own)) foreach ($u_own as $f => $n) rename($d.$f, $d.$n);

@@ -487,16 +487,23 @@ if (isset($_POST[ME]) && strlen($me = trim_post($_POST[ME], USER_NAME_MAX_LENGTH
 			$day = $query['day'] ?: $etc;
 			$ymd = preg_match(PAT_DATE, $day, $m);
 			if ($l = data_get_mod_log()) {
+				$data_attr['content']['type'] = 'reports';
+				$content = '
+day_link = ?mod=logs&day=';
 				if ($ymd) {
 					exit_if_not_mod(data_get_mod_log($day, 1));
 					if ($a = data_get_mod_log($mod_page = $day)) {
-						$content = '
-images = '.ROOTPRFX.DIR_PICS.NL.
-preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',		//* <- transform data fields
-preg_replace('~\h+~u', ' ',
-preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1	',		//* <- keep multiline entries atomic
-preg_replace('~\v+~u', '<br>', NL.htmlspecialchars($a)))));
-						$data_attr['content']['type'] = 'reports';
+						$content .= '
+images = '.ROOTPRFX.DIR_PICS.'
+flags = a
+'.implode(NL, array_map(function($k, $v) {
+	return NL.'		'.$k.
+	preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',	//* <- transform data fields
+	preg_replace('~\h+~u', ' ',
+	preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1	',	//* <- keep multiline entries atomic
+	preg_replace('~\v+~u', '<br>',
+	NL.htmlspecialchars($v)))));
+}, array_keys($a), $a));
 					}
 				}
 
@@ -551,12 +558,13 @@ if (TIME_PARTS && $a) time_check_point("done $a pics");
 			if ($t = data_get_mod_log($q)) {
 				if ($q == 'users') {
 					$content .= "
+left_link = ?mod=users&id=
 left = $tmp_mod_user_info
 right = $tmp_mod_user_hint
 flags = cgu
 v,$u_num,u	v
 ".trim(
-preg_replace('~(\V+)(	\V+)	(\V+)\+\V+(	\V+?)~Uu', '$3,$1$4$2',	//* <- transform data fields; TODO: move this to db.php?
+preg_replace('~(\V+)(	\V+)	(\V+)\+\V+(	\V+?)~Uu', '$3,$1$4$2',	//* <- transform data fields
 NL.$t));
 				} else
 				if ($q == 'reflinks') {
@@ -570,7 +578,7 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);	//* <- transform data 
 		}
 		if (!$content) $textarea = $t;				//* <- dump plain text as is
 		$task = '
-<p'.($q == 'logs'?' id="tabs" data-var="?mod=logs&day="':'').'>'.$mod_p.'</p>'.($lnk || $content || $textarea ? $lnk : $tmp_empty);
+<p>'.$mod_p.'</p>'.($lnk || $content || $textarea ? $lnk : $tmp_empty);
 		$js['mod']++;
 		$js[0]++;
 	} else
