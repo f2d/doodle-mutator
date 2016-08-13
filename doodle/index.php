@@ -497,7 +497,8 @@ day_link = ?mod=logs&day=';
 images = '.ROOTPRFX.DIR_PICS.'
 flags = a
 '.implode(NL, array_map(function($k, $v) {
-	return NL.'		'.$k.
+	return "
+room = $k".
 	preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',	//* <- transform data fields
 	preg_replace('~\h+~u', ' ',
 	preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1	',	//* <- keep multiline entries atomic

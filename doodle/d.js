@@ -74,6 +74,7 @@ if (LS && !(LS.lang && LS.lang == lang)) LS.lang = lang;
 if (lang == 'ru') la = {
 	toggle: ['да', 'нет']
 ,	room_arch: 'Архив комнаты'
+,	room_logs: 'Записи комнаты'
 ,	arch: 'архив'
 ,	page: 'Страница'
 ,	search_add: 'Добавить предмет поиска'
@@ -147,6 +148,7 @@ if (lang == 'ru') la = {
 }; else la = {
 	toggle: ['yes', 'no']
 ,	room_arch: 'Room archive'
+,	room_logs: 'Room logs'
 ,	arch: 'archive'
 ,	page: 'Page'
 ,	search_add: 'Add search term'
@@ -1286,12 +1288,15 @@ function showContent(sortOrder) {
 
 		if (notEmpty(threadHTML)) {
 			if (addMarks) threadsMarks.push(threadMark);
-			if (dtp.found && (m = param.room)) {
+			if ((dtp.found || dtp.reports) && (m = param.room)) {
 				threadHTML =
 					'<div class="post alt x3">'
 				+		'<b class="anno dust">'
-				+			la.room_arch+': '
-				+			'<a href="'+m+'/">'+m+'</a>'
+				+		(
+							dtp.found
+							? la.room_arch+': <a href="'+m+'/">'+m+'</a>'
+							: la.room_logs+': '+m
+						)
 				+		'</b>'
 				+	'</div>'
 				+threadHTML;
