@@ -537,6 +537,7 @@ var	containers = showContent('last')
 		var	thread = e = threads[t_i]
 		,	posts = gn('div', e).filter(function(e) {return regClassPost.test(e.className) && !regClassAnno.test(e.className);})
 		,	foundPosts = 0
+		,	imgPost = 0
 		,	eqAlt = 0
 		,	alt = 0
 			;
@@ -561,10 +562,12 @@ var	containers = showContent('last')
 					else eqAlt = ((c = (c === v)) ? !eqAlt : 0);
 				}
 				if (found) {
-					alt = !alt;
+					i = gn('img', post).length;
+					if (!foundPosts || !i || (!i == !imgPost)) alt = !alt;
+					imgPost = i;
 					toggleClass(post, 'alt', (c ? eqAlt : alt)?-1:1);
 					toggleClass(post, 'ok', c?1:-1);
-				}
+				} else imgPost = 1;
 				post.style.display = (found?(++foundPosts, ''):'none');
 			}
 			thread.style.display = (foundPosts?(++foundThreads, ''):'none');
@@ -1292,11 +1295,8 @@ function showContent(sortOrder) {
 				threadHTML =
 					'<div class="post alt x3">'
 				+		'<b class="anno dust">'
-				+		(
-							dtp.found
-							? la.room_arch+': <a href="'+m+'/">'+m+'</a>'
-							: la.room_logs+': '+m
-						)
+				+			(dtp.found ? la.room_arch : la.room_logs)+': '
+				+			'<a href="'+(dtp.reports ? param.rooms : '')+m+'/">'+m+'</a>'
 				+		'</b>'
 				+	'</div>'
 				+threadHTML;
@@ -1320,7 +1320,10 @@ var	flagVarNames = ['flag', 'flags']
 		if ((p = e.previousElementSibling) && (h = p.threadsHTML)) {
 		var	i = p.threadsLastSortIndex || 0;
 			if (sortOrder === 'last') {
-				if (!p.innerHTML && (p.innerHTML = h[i]) && mm) mm();
+				if (!p.innerHTML && (p.innerHTML = h[i])) {
+					if (mm) mm();
+					if (i = id('filter')) i.onchange(null, i);
+				}
 				rawr.push(p);
 			} else {
 			var	n = 0;
@@ -1332,10 +1335,7 @@ var	flagVarNames = ['flag', 'flags']
 					h = (i == n && p.innerHTML?'':h[n]);
 					p.threadsLastSortIndex = n;
 				}
-				if (p.innerHTML = h) {
-					if (mm) mm();
-					if (i = id('filter')) i.onchange(null, i);
-				}
+				if ((p.innerHTML = h) && mm) mm();
 			}
 			continue;
 		}

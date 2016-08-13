@@ -495,6 +495,7 @@ day_link = ?mod=logs&day=';
 					if ($a = data_get_mod_log($mod_page = $day)) {
 						$content .= '
 images = '.ROOTPRFX.DIR_PICS.'
+rooms = '.ROOTPRFX.DIR_ROOM.'
 flags = a
 '.implode(NL, array_map(function($k, $v) {
 	return "
