@@ -3,7 +3,7 @@
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
 ,	INFO_VERSION = 'v0.9.68'
-,	INFO_DATE = '2013-04-01 — 2016-08-11'
+,	INFO_DATE = '2013-04-01 — 2016-08-15'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -494,8 +494,8 @@ function updatePalette() {
 	}
 
 	function pickHue(event) {
-		eventStop(event).preventDefault();
 		if (event.type === 'mousemove' && (!draw.target || draw.target != event.target)) return;
+		eventStop(event).preventDefault();
 		if (!draw.target) draw.target = id('color-wheel-round');
 	var	hue = pickColor(event, draw.target, id('color-wheel-hue'));
 		drawGradient(id('color-wheel-box'), getBoxGradientPixel, hue);
@@ -759,15 +759,16 @@ var	i,p = ['-moz-','-webkit-','-o-',''], s = '', t = '', target = draw.container
 }
 
 function updatePosition(event) {
-var	i = select.shapeFlags[select.shape.value], r = getOffsetXY(draw.container)
+var	i = select.shapeFlags[select.shape.value]
+,	r = getOffsetXY(draw.container)
 ,	o = (
 	!	((i & 2) && mode.shape && !mode.step)
 	&&	((i & 4) || ((draw.active ? c2d.lineWidth : tool.width) % 2))
 	? DRAW_PIXEL_OFFSET
-	: 0) - CANVAS_BORDER;
-
-	draw.o.x = event.pageX - r.x;
-	draw.o.y = event.pageY - r.y;
+	: 0)
+	;
+	draw.o.x = event.pageX - CANVAS_BORDER - r.x;
+	draw.o.y = event.pageY - CANVAS_BORDER - r.y;
 
 	if (draw.pan && !(draw.turn && draw.turn.pan)) for (i in draw.o) draw.o[i] -= draw.pan[i];
 	if (!draw.turn && (draw.angle || draw.zoom != 1)) {
@@ -799,10 +800,10 @@ function drawCursor() {
 var	sf = select.shapeFlags[select.shape.value];
 	if (sf & 16) {
 		for (i in DRAW_HELPER) c2d[i] = DRAW_HELPER[i];
-	var	i,o = draw.o, p = DRAW_PIXEL_OFFSET - CANVAS_BORDER;
+	var	i,o = draw.o, p = DRAW_PIXEL_OFFSET;
 		c2d.beginPath();
-		c2d.moveTo(o.x+p, p), c2d.lineTo(o.x+p, canvas.height+p);
-		c2d.moveTo(p, o.y+p), c2d.lineTo(canvas.width+p, o.y+p);
+		c2d.moveTo(o.x+p, 0), c2d.lineTo(o.x+p, canvas.height);
+		c2d.moveTo(0, o.y+p), c2d.lineTo(canvas.width, o.y+p);
 		c2d.stroke();
 	}
 	if (!(sf & 128)) {
@@ -824,8 +825,9 @@ function drawStart(event) {
 	} catch (err) {
 		return;			//* <- against FireFox catching clicks on page scrollbar
 	}
-	drawEnd(event);
+	if (!draw.step || (draw.target && draw.target !== event.target)) drawEnd(event);
 	if (!isMouseIn()) return false;
+	draw.target = event.target;
 //	canvas.focus();
 	eventStop(event).preventDefault();
 
@@ -2592,7 +2594,7 @@ document.write(
 	+		'#|-draw canvas, #|-draw {position: relative; display: inline-block; z-index: 99;}'
 	+		'#|-info p {padding-left: 22px; line-height: 22px; margin: 0;}'
 	+		'#|-info p, #|-palette-table table {color: #000; font-size: small;}'
-	+		'#|-load img {position: absolute; top: 1px; left: 1px; margin: 0;}'
+	+		'#|-load img {position: absolute; top: '+CANVAS_BORDER+'px; left: '+CANVAS_BORDER+'px; margin: 0;}'
 	+		'#|-palette-table .|-t {padding: 0 4px;}'
 	+		'#|-palette-table table {margin: 0;}'
 	+		'#|-palette-table tr td {margin: 0; padding: 0; height: 16px;}'

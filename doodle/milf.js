@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2016-08-10'
+,	INFO_DATE = '2014-07-16 — 2016-08-15'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -596,7 +596,7 @@ var	c = ii.context, d = ii.imageData, p = ii.pixels;
 function drawCursor() {
 var	c = ctx[mode.brushView?'draw':'view'], g = tool.grid;
 	if (g > 1) {
-	var	m, n = Math.floor(tool.width/g), o = draw.o, v = (n < 1?(n = 1):n)*g, p = DRAW_PIXEL_OFFSET-CANVAS_BORDER, w = v+p, v = v-p;
+	var	m, n = Math.floor(tool.width/g), o = draw.o, v = (n < 1?(n = 1):n)*g, p = DRAW_PIXEL_OFFSET, w = v+p, v = v-p;
 		for (i in DRAW_HELPER) c[i] = DRAW_HELPER[i];
 		c.beginPath();
 		for (i = -n; i <= n; i++) if (i) {
@@ -606,8 +606,8 @@ var	c = ctx[mode.brushView?'draw':'view'], g = tool.grid;
 			c.moveTo(o.x-v, o.y+m);
 			c.lineTo(o.x+w, o.y+m);
 		} else {
-			c.moveTo(o.x+p, p), c.lineTo(o.x+p, cnv.draw.height+p);
-			c.moveTo(p, o.y+p), c.lineTo(cnv.draw.width+p, o.y+p);
+			c.moveTo(o.x+p, 0), c.lineTo(o.x+p, cnv.draw.height);
+			c.moveTo(0, o.y+p), c.lineTo(cnv.draw.width, o.y+p);
 		}
 		c.stroke();
 	}
@@ -633,9 +633,9 @@ function drawStart(event) {
 	} catch (err) {
 		return;			//* <- against FireFox catching clicks on page scrollbar
 	}
-	drawEnd(event);
-	draw.target = event.target;
+	if (!draw.step || (draw.target && draw.target !== event.target)) drawEnd(event);
 	if (isMouseIn() <= 0) return false;
+	draw.target = event.target;
 //	cnv.view.focus();
 	eventStop(event).preventDefault();
 
@@ -1356,8 +1356,8 @@ function updatePalette() {
 	}
 
 	function pickHue(event) {
-		eventStop(event).preventDefault();
 		if (event.type === 'mousemove' && (!draw.target || draw.target != event.target)) return;
+		eventStop(event).preventDefault();
 		if (!draw.target) draw.target = id('color-wheel-round');
 	var	hue = pickColor(event, draw.target, id('color-wheel-hue'));
 		drawGradient(id('color-wheel-box'), getBoxGradientPixel, hue);
@@ -2196,10 +2196,10 @@ function updatePosition(event) {
 var	i = select.shape.value, g = tool.grid, o = (
 		(!mode.step && mode.shape && (select.shapeFlags[i] & 2))
 	||	(select.shapeFig[i] && !((draw.active ? ctx.draw.lineWidth : tool.width) % 2))
-	? 0 : DRAW_PIXEL_OFFSET) - CANVAS_BORDER;	//* <- maybe not a 100% fix yet
+	? 0 : DRAW_PIXEL_OFFSET);	//* <- maybe not a 100% fix yet
 
-	draw.o.x = (draw.m.x = event.pageX) - draw.container.offsetLeft;
-	draw.o.y = (draw.m.y = event.pageY) - draw.container.offsetTop;
+	draw.o.x = (draw.m.x = event.pageX) - CANVAS_BORDER - draw.container.offsetLeft;
+	draw.o.y = (draw.m.y = event.pageY) - CANVAS_BORDER - draw.container.offsetTop;
 	if (draw.pan && !(draw.turn && draw.turn.pan)) for (i in draw.o) draw.o[i] -= draw.pan[i];
 	if (!draw.turn && (draw.angle || draw.zoom != 1)) {
 	var	r = getCursorRad(2, draw.o.x, draw.o.y);
@@ -2988,7 +2988,7 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #|-layers p.|-button input[type="text"] {background-color: #f5f5f5; border-color: #ddd;}\
 #|-layers {max-width: 304px;}\
 #|-lcd {text-align: center; vertical-align: middle; font-size: 40px; color: #aaa; background-color: #f5f5f5;}\
-#|-load img {position: absolute; top: 1px; left: 1px; margin: 0;}\
+#|-load img {position: absolute; top: '+CANVAS_BORDER+'px; left: '+CANVAS_BORDER+'px; margin: 0;}\
 #|-load, #|-load canvas {position: relative; display: inline-block; z-index: 99;}\
 #|-textStyle textarea {width: 80px; height: 68px;}\
 #|-warn {background-color: #bbb; display: inline-block;}\
