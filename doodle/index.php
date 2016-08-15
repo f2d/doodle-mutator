@@ -1106,14 +1106,14 @@ if (GOD) {
 	$r = '<a href="?mod';
 	foreach ($tmp_mod_pages as $k => $v) $mod_list .= $r.'='.$k.'">'.$v.'</a><br>'.NL;
 	$mod_link =
-		'<u class="mod-link">'
-	.		indent(
-				$r.$s['#'].NL
-			.	'<u class="mod-list">'
-			.		indent($mod_list)
-			.	'</u>'
-			)
-	.	'</u>';
+		'<u class="menu-head">'.indent(
+			$r.$s['#'].NL.
+			'<u class="menu-top">'.
+			'<u class="menu-hid">'.
+			'<u class="menu-list">'.indent(
+				$mod_list
+			).'</u></u></u>'
+		).'</u>';
 }
 
 if (!$is_report_page) {
@@ -1139,7 +1139,7 @@ if (!$is_report_page) {
 		.	($short?$room_list_link:'')
 		.	$room_link
 		.	($short?'':$arch_link)
-		, 'r' =>
+		, 'ar' =>
 			$mod_link
 		.	($short?$arch_link:'')
 		.	$arch_list_link
@@ -1149,7 +1149,7 @@ if (!$is_report_page) {
 		: array(
 			A.ROOTPRFX.$s['/']
 		.	A.ROOTPRFX.'?draw_test'.$s['~']
-		, 'r' => (
+		, 'ar' => (
 				is_dir(DIR_ARCH)
 				? A.ROOTPRFX.DIR_ARCH.$s['*']
 				: ''

@@ -13,6 +13,11 @@ body, .task input:not([type="checkbox"]), .task select {
 	line-height: 28px;
 	font-size: 21px;
 }
+body>header::after, .task::after, .thread::after, .post::after, .hint::after {
+	content: "";
+	display: block;
+	clear: both;
+}
 body>header>* {
 	display: table;
 	width: 100%;
@@ -22,7 +27,6 @@ body>header>* {
 body>header>*>* {
 	display: table-row;
 	padding: 0 22px;
-	float: none;
 	vertical-align: top;
 }
 body>header>*>u {
@@ -47,24 +51,31 @@ body>header a {
 body>footer .hint {
 	line-height: normal;
 }
-.mod-link {
-	position: relative;
+.menu-head {
 	display: inline-block;
 }
-.mod-list {
+.menu-top {
+	display: none;
+	position: relative;
+}
+.menu-top:hover, .menu-head:hover .menu-top {
+	display: block;
+}
+.menu-hid {
+	display: block;
 	position: absolute;
 	z-index: 999;
-	display: none;
+	top: 0;
 	left: 0;
-	top: 25px;
+	min-width: 100%;
+}
+.menu-list {
+	display: block;
 	padding: 4px;
 	border: 1px solid #aaa;
 	border-top: none;
 	background-color: rgba(85, 85, 85, 0.8);
 	text-align: left;
-}
-.mod-list:hover, .mod-link:hover .mod-list {
-	display: block;
 }
 a, .a {
 	color: #888;
@@ -72,10 +83,10 @@ a, .a {
 a:hover	{
 	color: #000;
 }
-.task a, .task .a, .task label, .mod-list a {
+.task a, .task .a, .task label, .menu-list a {
 	color: #bbb;
 }
-.task a:hover, .task label:hover, .mod-list a:hover {
+.task a:hover, .task label:hover, .menu-list a:hover {
 	color: #fff;
 }
 .touch a, .touch ~ .task a, .touch ~ * .task a {
@@ -120,10 +131,10 @@ a:hover	{
 	border: 5px solid transparent;
 }
 .arr>a:not(.r):hover {
-	border-left-color:	#eee;
+	border-left-color: #eee;
 }
 .arr a.r:hover, .arr .r a:hover {
-	border-right-color:	#eee;
+	border-right-color: #eee;
 }
 .task .arr {
 	padding: 0 !important;
@@ -539,11 +550,6 @@ a:hover	{
 .ar {	text-align: right;}
 .hide-p .post .res img {
 	border-color: #ddd;
-}
-#header::after, .task::after, .thread::after, .post::after, .hint::after {
-	content: "";
-	display: block;
-	clear: both;
 }
 small {
 	line-height: 50%;

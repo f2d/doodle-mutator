@@ -1457,7 +1457,11 @@ var	flagVarNames = ['flag', 'flags']
 						? '<a href="javascript:showContent('+(l[i]?1:-1)+')">'+(
 							l[i]
 							? l.total
-							: (l.lastr || l.last)
+							: (
+								dtp.reflinks
+								? (l.lastr || l.last)
+								: l.last
+							)
 						)+'</a>'
 						: (
 							l[i] ? (
