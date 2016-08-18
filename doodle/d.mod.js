@@ -340,7 +340,6 @@ var	count = {checked: 0, text: 0, req: 0}
 			}
 			e.focus();
 		}
-		menuFixHeight(d);
 	}
 	while (!regTagForm.test(e.tagName) && (e = e.parentNode));
 	if (e) {
@@ -350,23 +349,12 @@ var	count = {checked: 0, text: 0, req: 0}
 	}
 }
 
-function menuFixHeight(p) {
-var	d = p.parentNode
-,	p = gn('p',d)
-,	i = p.length
-,	m = 0
-	;
-	while (i--) m = Math.max(m, p[i].offsetHeight);
-	d.style.minHeight = m+'px';
-}
-
 function menuClose(e) {
 	if (e && e.tagName) {
 	var	m = e.parentNode;
 		while (!m.id) m = m.parentNode;
 	var	p = m.parentNode;
 		p.removeChild(m);
-		menuFixHeight(p);
 		menuOpenOnClick(p);
 	} else {
 	var	a = gi(), i = a.length;

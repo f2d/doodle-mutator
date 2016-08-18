@@ -304,7 +304,8 @@ a:hover	{
 	word-wrap: break-word;
 }
 .post {	background-color: #f5f5f5;} body,
-.alt {	background-color: #eee;} .burnt-hell,
+.alt {	background-color: #eee;}
+.warn {	background-color: #fc7;} .burnt-hell,
 .burnt .post {	background-color: #fdd;} .post .burnt, .hot,
 .burnt .alt {	background-color: #ecc;} .post:target, .ok,
 .full .post {	background-color: #dfd;} .post .full, .ok.alt, .green,

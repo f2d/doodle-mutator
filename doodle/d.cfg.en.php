@@ -186,8 +186,7 @@ Misfired pic makes a new thread with copy of your task, a text post just starts 
 'If your task is empty, you can try to change it anytime, if not — once in '.TARGET_CHANGE_TIME.'s, by entering or refreshing room.
 Do not open the same room in multiple tabs, the site keeps only single target per room for you, and it will change.
 If, after some time or room actions, you finally decide to perform your task, be sure to check it with the [a|⌈?⌋] button at right. This check is also performed automatically when sending a post.
-While red-stripe message is displayed, refreshing room in-place (i.e., using the F5 key) will not change the task.
-The link to room in the page header will change the task regardless.',
+Note: while any message in a [report|red bar] is displayed at top, or in-room draw app selection is used, refreshing the room in-place (i.e., using the F5 key) will not change the task. Сlicking the room link at the top will drop this effect.',
 'Threads stay full at '.TRD_MAX_POSTS.' pics for '.TRD_ARCH_TIME.'s (to let reports and moderation), then go to archive when the next new thread is created.
 Single-letter rooms keep only 1 page in archive (no more than '.TRD_PER_PAGE.' threads), have no reports and moderation, and full threads go to archive right away.'
 ));

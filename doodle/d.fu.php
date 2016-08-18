@@ -472,10 +472,14 @@ function get_template_page($t, $NOS = 0) {
 	if (!$static) {
 		$L = LINK_TIME;
 		if ($a = $t['report']) {
+			$e_class = array(
+				'trd_arch' => 'gloom'
+			,	'trd_miss' => 'warn'
+			);
 			if (!is_array($a)) $a = preg_split('~\W+~', $a);
 			foreach ($a as $v) if ($v = trim($v)) {
 				$e = $tmp_post_err[$v];
-				$err .= NL.'<p class="anno '.($v == 'trd_arch'?'gloom':'report').'"><b>'.indent($e ?: $v).'</b></p>';
+				$err .= NL.'<p class="anno '.($e_class[$v] ?: 'report').'"><b>'.indent($e ?: $v).'</b></p>';
 			}
 		}
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
