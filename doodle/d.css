@@ -13,42 +13,42 @@ body, .task input:not([type="checkbox"]), .task select {
 	line-height: 28px;
 	font-size: 21px;
 }
-body>header::after, .task::after, .thread::after, .post::after, .hint::after {
+.header::after, .task::after, .thread::after, .post::after, .hint::after {
 	content: "";
 	display: block;
 	clear: both;
 }
-body>header>* {
+.header>* {
 	display: table;
 	width: 100%;
 	margin: 8px 0;
 	text-align: left;
 }
-body>header>*>* {
+.header>*>* {
 	display: table-row;
 	padding: 0 22px;
 	vertical-align: top;
 }
-body>header>*>u {
+.header>*>u {
 	display: table-cell;
 }
-body>header>*>u:not(:first-child) {
+.header>*>u:not(:first-child) {
 	padding-left: 4px;
 }
-body>header>*>u:not(:last-child) {
+.header>*>u:not(:last-child) {
 	padding-right: 4px;
 }
-body>header u {
+.header u {
 	text-decoration: none;
 }
-body>header.a>*>* {
+.header.a>*>* {
 	width: 25%;
 	text-align: center;
 }
-body>header a {
+.header a {
 	white-space: nowrap;
 }
-body>footer .hint {
+.header ~ footer .hint {
 	line-height: normal;
 }
 .menu-head {

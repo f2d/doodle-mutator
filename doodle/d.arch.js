@@ -15,13 +15,8 @@
 	||	location.pathname.split('/').slice(-2)[0]
 	||	'room'
 	).replace(regTrim, '')
-,	timeRange;
-
-//* Runtime *------------------------------------------------------------------
-
-if (a = gn('meta')) for (i in a) if ((e = a[i]) && e.name == 'viewport') {v = e; break;}
-if (a = gn('pre')) for (i in a) if (e = a[i]) showArch(e);
-if (touch) fit(), meta();	//* <- compact view and big buttons for touch screen
+,	timeRange
+	;
 
 //* Utility functions *--------------------------------------------------------
 
@@ -73,7 +68,9 @@ var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
 		if (i == 1) ++v;
 		return leftPad(v);
 	});
-var	YMD = t.slice(0,3).join('-'), HIS = t.slice(3).join(':');
+var	YMD = t.slice(0,3).join('-')
+,	HIS = t.slice(3).join(':')
+	;
 	return (
 		plain
 		? YMD+' '+HIS
@@ -87,18 +84,25 @@ var	YMD = t.slice(0,3).join('-'), HIS = t.slice(3).join(':');
 //* Specific functions *-------------------------------------------------------
 
 function showArch(p) {
+	if (id('task1')) return;
+
 var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 
+,	regSiteName = /^(\w+:+)?\/\/([^\/]+)\/+/
 ,	regLNaN = /^\D+/
 ,	regImgTag = /<img [^>]+>/i
 ,	regImgTitle = /\s+(title="[^"]+)"/i
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
 ,	regTimeDrawn = /^((\d+)-(\d+)|[\d:]+)(?:=(-?\d+))?,(.*)$/m
 
-,	line = p.innerHTML.split('\n');
-
+,	line = p.innerHTML.split('\n')
+	;
 	for (i in line) if (line[i].indexOf(t) > 0) {
-	var	tab = line[i].split(t), post = '<br>', m = getFTimeIfTime(tab[0], 1), res = 0;
+	var	tab = line[i].split(t)
+	,	post = '<br>'
+	,	m = getFTimeIfTime(tab[0], 1)
+	,	res = 0
+		;
 		tab[0] = getFTimeIfTime(tab[0]);
 		if (!timeRange) timeRange = [m,m];
 		else {
@@ -185,9 +189,9 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 			while (e = k.lastChild) k.removeChild(e);
 		} else {
 			k = cre('div', d, d.firstChild);
-			k.id = 'task';
 		}
 		while (i--) if ((l = a[i]) && (h = l.getAttribute('href'))) {
+			h = h.replace(regSiteName, '/');
 			if (l.rel == 'index') rootPath = h; else			//* <- explicit link given
 			if (l.rel == 'next') nextPage = h; else
 			if (l.rel == 'prev') prevPage = h; else
@@ -208,8 +212,8 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 		,	'&#9636;': 'javascript:meta()'
 		}, h = '';
 		for (i in a) h += '<u><a href="'+a[i]+'">'+i+'</a></u>'
-		e = gn('header')[0] || cre('header', d, d.firstChild);
-		e.className = 'a'+(touch?' touch':'');
+		e = gn(i = 'header')[0] || cre(i, d, d.firstChild);
+		e.className = i+' a'+(touch?' touch':'');
 		e.innerHTML = '<u>'+h+'</u>';
 	//* top/bottom bar, links to prev/next:
 		h =	'<p class="arr">'
@@ -219,7 +223,7 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 		p = p.parentNode, a = [k, p], i = a.length;
 		while (i--) {
 			e = cre('div', e = a[i], e.firstChild);
-			e.className = 'task';
+			e.parentNode.id = (e.className = 'task')+(orz(i) || '');
 			e.innerHTML = h;
 		}
 	//* posts content:
@@ -228,3 +232,9 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 		e.innerHTML = threadHTML;
 	}
 }
+
+//* Runtime *------------------------------------------------------------------
+
+if (a = gn('meta')) for (i in a) if ((e = a[i]) && e.name == 'viewport') {v = e; break;}
+if (a = gn('pre')) for (i in a) if (e = a[i]) showArch(e);
+if (touch) fit(), meta();	//* <- compact view and big buttons for touch screen
