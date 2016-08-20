@@ -13,7 +13,7 @@ ob_start();
 define(NAMEPRFX, 'd');
 define(M0, $t[0]);
 define(GET_Q, strpos($_SERVER['REQUEST_URI'], '?'));
-define(ROOTPRFX, substr($s = $_SERVER['PHP_SELF'], 0, strrpos($s, '/')+1));
+define(ROOTPRFX, substr($s = $_SERVER['PHP_SELF'] ?: $_SERVER['SCRIPT_NAME'], 0, strrpos($s, '/')+1) ?: '/');
 
 if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
 	function strip_magic_slashes(&$value, $key) {$value = stripslashes($value);}
@@ -146,7 +146,7 @@ if ($qdir) {
 	if ($l = mb_strlen($room = trim_room($room_url = URLdecode($_REQUEST['room'])))) define(R1, $l = (mb_strlen(ltrim($room, '.')) <= 1));
 } else {
 	if ($u_key && !$u_room_default) $qd_opts = 1;
-	if (GOD) rewrite_htaccess();
+	if (GOD) rewrite_htaccess(!strlen(trim(get_const('ROOTPRFX'))));
 }
 
 define(MOD, GOD || $u_flag['mod'] || $u_flag['mod_'.$room]);
@@ -541,15 +541,16 @@ NL.(++$a)."	$old => $new	".($old == $new?'same':(rename($old, $new)?'OK':'fail')
 if (TIME_PARTS && $a) time_check_point("done $a pics");
 				} else
 				if (substr($do, 0,3) == 'hta') {
-					$t = rewrite_htaccess(substr($do, -5) == 'write');
+					$t = rewrite_htaccess(substr($do, -5) != 'write');
 				} else {
 					$t = data_fix($do);
 				}
 				if (!$t) $t = $tmp_no_change;
 			}
 		} else
-		if ($q == 'vars') {
+		if (substr($q,0,4) == 'vars') {
 			exit_if_not_mod();				//* <- never exits, to check HTTP_IF_MODIFIED_SINCE, etc
+			if (substr($q, -4) == 'sort') ksort($_SERVER);
 			$t = '_SERVER = '		.print_r($_SERVER, true)
 			.NL.'strip magic slashes = '	.print_r($gpc ?: 'off'.NL, true)
 			.NL.'DATE_RFC822 = '		.gmdate(DATE_RFC822, T0)

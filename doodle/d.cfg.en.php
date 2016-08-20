@@ -78,6 +78,7 @@ $tmp_mod_pages = array(
 ,	'users' =>	'Users'
 ,	'reflinks' =>	'Ref.links'
 ,	'vars' =>	'Vars'
+,	'varsort' =>	'Var.sort'
 );
 $tmp_mod_panel = 'Mod panel';
 $tmp_mod_post_hint = 'Modify this post or thread.';

@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-08-20 05:55'.NL.	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-08-20 09:10'.NL.	//* <- change this to invalidate old pages cached in browsers
 		'Or user key/options changed: '.$_REQUEST[ME]
 	).'"';
 	header('Etag: '.$q);
@@ -541,7 +541,7 @@ function get_template_page($t, $NOS = 0) {
 .indent($task, 1)
 .indent($content, 1).(($t =
  indent($footer, 1)
-.indent($scripts, 1)) && ($k = get_const('TOOK'))?str_replace($k, get_time_elapsed(), $t):$t)
+.indent($scripts, 1)) && ($k = get_const('TOOK'))?str_replace($k, round(get_time_elapsed(), 9), $t):$t)
 .'</body>
 </html>';
 }

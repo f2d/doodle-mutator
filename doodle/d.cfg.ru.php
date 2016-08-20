@@ -83,6 +83,7 @@ $tmp_mod_pages = array(
 ,	'users' =>	'Пользователи'
 ,	'reflinks' =>	'Реф.Ссылки'
 ,	'vars' =>	'Переменные'
+,	'varsort' =>	'Перем.сорт'
 );
 $tmp_mod_panel = 'Мод-панель';
 $tmp_mod_post_hint = 'Операции на этот пост и тред.';
