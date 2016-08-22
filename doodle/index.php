@@ -738,8 +738,13 @@ if ($u_key) {
 		,	'pref'	=> array($i, 'name="'.O.'o')
 		) as $k => $v) $d .= $v[0].$tmp_options_drop[$k].'" '.$v[1].'">';
 
-		if (!$qdir) $content = '
+		$content = '';
+		if (!$qdir) {
+			if (GOD && NGINX) $content .= vsprintf('
+||<b class="anno report">%s<br><a href="?mod=files&do=nginx">%s</a></b>', $tmp_options_warning);
+			$content .= '
 ||<b class="anno">'.$tmp_options_first.'</b>';
+		}
 		$content .= '
 <form method="post">'.$d.'
 </form><form method="post">'
@@ -1051,7 +1056,7 @@ $left	$right	$room";
 
 	if (!$room) {
 		header('HTTP/1.1 303 To home room');
-		header('Location: '.$room_list_href.($u_room_default?$u_room_default.'/':''));
+		header('Location: '.$room_list_href.(strlen(trim($u_room_default, '.'))?$u_room_default.'/':''));
 		exit;
 	}
 } else {

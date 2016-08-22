@@ -4,7 +4,7 @@
 
 Parallel turn-based multiplayer online drawing game.
 Server-side scripts in PHP and client-side in JS.
-Apache htaccess URL-rewriting is currently required to work.
+URL-rewriting is currently required to work (Apache htaccess is added automatically, Nginx example is available).
 A Perl message/image board is included for convenience.
 
 ### How to install

@@ -325,6 +325,9 @@ a:hover	{
 .wider .post .center {
 	max-width: 690px;
 }
+.post .center .anno.report {
+	display: block;
+}
 .post .center p {
 	line-height: 28px;
 	min-width: 0;
