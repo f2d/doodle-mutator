@@ -52,6 +52,7 @@ $cfg_dir = array(
 );
 define(DIR_PICS, 'i/');
 define(DIR_THUMB, 'th/');
+define(DIR_BOARD, '/board/');	//* <- prepend ROOTPRFX here for a relative link
 
 define(LINK_TIME, false);	//* <- src=file?modtime to force reload at clients
 define(LOG_IP, true);		//* <- for each visit, add IP Address to separate file per user
@@ -116,7 +117,7 @@ define(PAT_CONTENT, '~<pre>(.*\S)\s*</pre>~uis');
 define(FOOT_NOTE, '
 <a href="https://github.com/f2d/doodle-mutator">%s</a> &mdash;
 <a href="https://github.com/f2d">%s</a>, 2013-2016,
-<a href="/board/">%s</a>%s');
+<a href="'.DIR_BOARD.'">%s</a>%s');
 /*
 	^ lang-specific %s:
 	1. site engine link

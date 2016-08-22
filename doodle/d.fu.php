@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-08-20 09:10'.NL.	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-08-22 04:12'.NL.	//* <- change this to invalidate old pages cached in browsers
 		'Or user key/options changed: '.$_REQUEST[ME]
 	).'"';
 	header('Etag: '.$q);
@@ -21,7 +21,7 @@ function exit_if_not_mod($t = 0) {
 }
 
 function get_const($name) {return defined($name) ? constant($name) : '';}
-function rewrite_htaccess($read_only = 0) {
+function rewrite_htaccess($write_to_file = 1) {
 	$start_mark = '# 8<-- start mark: '.NAMEPRFX.', version: ';
 	$end_mark = '# 8<-- end mark: '.NAMEPRFX.', placed automatically: ';
 	$new_mark = $start_mark.ROOTPRFX.' 2016-07-11 17:04';		//* <- change this to invalidate old version
@@ -82,7 +82,7 @@ $old
 $new";
 
 //* rewrite htaccess if none/changed, when logged in and viewing root folder:
-	if (!$read_only && $changed) {
+	if ($write_to_file && $changed) {
 		$saved = (
 			file_put_contents($f, $new)
 			? 'Succesfully updated'
@@ -121,7 +121,7 @@ function is_not_hidden($room) {
 	);
 }
 
-function get_dir_contents($path, $num_sort = 0, $hiding = 0) {
+function get_dir_contents($path = '.', $num_sort = 0, $hiding = 0) {
 	$a = (is_dir($path) ? array_filter(scandir($path), 'is_not_dot') : array());
 	if ($a && $hiding) $a = array_filter($a, 'is_not_hidden');
 	if ($a && $num_sort) natcasesort($a);

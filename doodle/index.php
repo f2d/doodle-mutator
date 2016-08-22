@@ -13,6 +13,7 @@ ob_start();
 define(NAMEPRFX, 'd');
 define(M0, $t[0]);
 define(GET_Q, strpos($_SERVER['REQUEST_URI'], '?'));
+define(NGINX, stripos($_SERVER['SERVER_SOFTWARE'], 'nginx') !== false);
 define(ROOTPRFX, substr($s = $_SERVER['PHP_SELF'] ?: $_SERVER['SCRIPT_NAME'], 0, strrpos($s, '/')+1) ?: '/');
 
 if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
@@ -146,7 +147,7 @@ if ($qdir) {
 	if ($l = mb_strlen($room = trim_room($room_url = URLdecode($_REQUEST['room'])))) define(R1, $l = (mb_strlen(ltrim($room, '.')) <= 1));
 } else {
 	if ($u_key && !$u_room_default) $qd_opts = 1;
-	if (GOD) rewrite_htaccess(!strlen(trim(get_const('ROOTPRFX'))));
+	if (GOD && !NGINX && strlen(trim(get_const('ROOTPRFX')))) rewrite_htaccess();
 }
 
 define(MOD, GOD || $u_flag['mod'] || $u_flag['mod_'.$room]);
@@ -467,7 +468,7 @@ if (isset($_POST[ME]) && strlen($me = trim_post($_POST[ME], USER_NAME_MAX_LENGTH
 				$do = $a[$i-1];
 			}
 		}
-		if ($q == 'users' && $i) {
+		if ($q === 'users' && $i) {
 			die(get_template_page(array(
 				'title' => $tmp_mod_pages[3].': #'.$i
 			,	'content' => (
@@ -483,7 +484,7 @@ if (isset($_POST[ME]) && strlen($me = trim_post($_POST[ME], USER_NAME_MAX_LENGTH
 		$lnk = $t = '';
 		$mod_page = $mod_p = $tmp_mod_pages[$q] ?: $tmp_empty;
 
-		if ($q == 'logs') {
+		if ($q === 'logs') {
 			$day = $query['day'] ?: $etc;
 			$ymd = preg_match(PAT_DATE, $day, $m);
 			if ($l = data_get_mod_log()) {
@@ -518,39 +519,52 @@ room = $k".
 				$lnk .= ' <small>'.date('H:i:s', $last).'</small></p>';
 			}
 		} else
-		if ($q == 'files') {
+		if ($q === 'files') {
 			foreach ($tmp_mod_files as $k => $v) $lnk .= '
 <p><a href="?mod='.$q.'&do='.$k.'">'.str_replace_first(' ', '</a> ', $v).'</p>';
 			if ($do) {
 				ignore_user_abort(true);
 				$a = intval($a[1]);
 if (TIME_PARTS) time_check_point('ignore user abort');
-				if ($do == 'arch') {
+				if ($do === 'arch') {
 					require_once(NAMEPRFX.'.arch.php');
 					$t = data_archive_rewrite();
 				} else
-				if ($do == 'post_count') {
+				if ($do === 'post_count') {
 					$t = data_post_refresh(true);
 				} else
-				if ($do == 'img2subdir') {
+				if ($do === 'img2subdir') {
 					foreach (get_dir_contents($d = DIR_PICS) as $f) if (is_file($old = $d.$f)) {
 						$new = get_pic_subpath($f, 1);
 						$t .=
-NL.(++$a)."	$old => $new	".($old == $new?'same':(rename($old, $new)?'OK':'fail'));
+NL.(++$a)."	$old => $new	".($old === $new?'same':(rename($old, $new)?'OK':'fail'));
 					}
 if (TIME_PARTS && $a) time_check_point("done $a pics");
 				} else
-				if (substr($do, 0,3) == 'hta') {
-					$t = rewrite_htaccess(substr($do, -5) != 'write');
+				if ($do === 'nginx') {
+					foreach (get_dir_contents() as $f) if (
+						stripos($f, $do) !== false
+					&&	strlen($x = trim(file_get_contents($f)))
+					) {
+						if (preg_match_all('~\$([_A-Z][_A-Z\d]*)~', $x, $match)) foreach ($match[1] as $k) {
+							if ($v = get_const($k) ?: $_SERVER[$k]) $x = str_replace('$'.$k, $v, $x);
+						}
+						$t .= "# Example: $f #
+$x
+# End of example. #";
+					}
+				} else
+				if (substr($do, 0,3) === 'hta') {
+					$t = rewrite_htaccess(substr($do, -5) === 'write');
 				} else {
 					$t = data_fix($do);
 				}
 				if (!$t) $t = $tmp_no_change;
 			}
 		} else
-		if (substr($q,0,4) == 'vars') {
+		if (substr($q,0,4) === 'vars') {
 			exit_if_not_mod();				//* <- never exits, to check HTTP_IF_MODIFIED_SINCE, etc
-			if (substr($q, -4) == 'sort') ksort($_SERVER);
+			if (substr($q, -4) === 'sort') ksort($_SERVER);
 			$t = '_SERVER = '		.print_r($_SERVER, true)
 			.NL.'strip magic slashes = '	.print_r($gpc ?: 'off'.NL, true)
 			.NL.'DATE_RFC822 = '		.gmdate(DATE_RFC822, T0)
@@ -559,7 +573,7 @@ if (TIME_PARTS && $a) time_check_point("done $a pics");
 		if ($q) {
 			exit_if_not_mod(data_get_mod_log($q, 1));
 			if ($t = data_get_mod_log($q)) {
-				if ($q == 'users') {
+				if ($q === 'users') {
 					$content .= "
 left_link = ?mod=users&id=
 left = $tmp_mod_user_info
@@ -570,7 +584,7 @@ v,$u_num,u	v
 preg_replace('~(\V+)(	\V+)	(\V+)\+\V+(	\V+?)~Uu', '$3,$1$4$2',	//* <- transform data fields
 NL.$t));
 				} else
-				if ($q == 'reflinks') {
+				if ($q === 'reflinks') {
 					$content .= '
 flags = c'.NL.
 preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);	//* <- transform data fields
@@ -581,7 +595,7 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);	//* <- transform data 
 		}
 		if (!$content) $textarea = $t;				//* <- dump plain text as is
 		$task = '
-<p>'.$mod_p.'</p>'.($lnk || $content || $textarea ? $lnk : $tmp_empty);
+<p>'.$mod_p.':</p>'.($lnk || $content || $textarea ? $lnk : $tmp_empty);
 		$js['mod']++;
 		$js[0]++;
 	} else
