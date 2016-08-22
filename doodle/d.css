@@ -89,7 +89,7 @@ a:hover	{
 .task a:hover, .task label:hover, .menu-list a:hover {
 	color: #fff;
 }
-.touch a, .touch ~ .task a, .touch ~ * .task a {
+.touch, .touch a, .touch ~ .task a, .touch ~ * .task a {
 	font-size: 56pt;
 	line-height: 56pt;
 	text-decoration: none;

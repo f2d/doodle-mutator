@@ -1576,7 +1576,7 @@ var	flagVarNames = ['flag', 'flags']
 			if (a = gn('p', e)[0]) a.innerHTML += '\n<span id="range"></span>';
 			e.innerHTML += (
 				!param.start && param.total > param.on_page
-				? '<p id="pages"></p>'
+				? '<p id="pages"'+(touch?' class="touch"':'')+'></p>'
 				: '<p>'+la.page+': 1</p>'
 			)+'<div id="thumbs"></div>';
 			page(1);
