@@ -313,7 +313,10 @@ function optimize_pic($filepath) {
 				if (!$return) $return = 'fallback';
 			}
 			if ($return) {
-				if (!strlen($o = trim(is_array($output) ? implode(NL, $output) : $output))) $o = 'empty';
+				$o = trim(preg_replace('~\v+~u', NL, is_array($output) ? implode(NL, $output) : $output));
+				if (strlen($o)) {
+					if (false !== strpos($o, NL)) $o = NL.'['.indent($o).']';
+				} else $o = 'empty';
 				data_log_adm("Command line: $e\nReturn code: $return\nShell output: $o");
 			}
 			return;
