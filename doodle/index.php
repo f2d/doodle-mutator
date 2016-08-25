@@ -256,11 +256,17 @@ room = $k".
 				ignore_user_abort(true);
 				$a = intval($a[1]);
 if (TIME_PARTS) time_check_point('ignore user abort');
+				if ($do === 'opcache_reset') {
+					$t = (function_exists('opcache_reset') ? opcache_reset() : $tmp_not_supported);
+				} else
+				if ($do === 'opcache_check') {
+					$t = (function_exists('opcache_get_status') ? print_r(opcache_get_status(), true) : $tmp_not_supported);
+				} else
 				if ($do === 'arch') {
 					require_once(NAMEPRFX.'.arch.php');
 					$t = data_archive_rewrite();
 				} else
-				if ($do === 'post_count') {
+				if ($do === 'room_list_reset') {
 					$t = data_post_refresh(true);
 				} else
 				if ($do === 'img2subdir') {
