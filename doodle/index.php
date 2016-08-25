@@ -256,11 +256,19 @@ room = $k".
 				ignore_user_abort(true);
 				$a = intval($a[1]);
 if (TIME_PARTS) time_check_point('ignore user abort');
+				if ($do === 'opcache_check') {
+					$t = (function_exists('opcache_get_status') ? print_r(opcache_get_status(), true) : $tmp_not_supported);
+				} else
 				if ($do === 'opcache_reset') {
 					$t = (function_exists('opcache_reset') ? opcache_reset() : $tmp_not_supported);
 				} else
-				if ($do === 'opcache_check') {
-					$t = (function_exists('opcache_get_status') ? print_r(opcache_get_status(), true) : $tmp_not_supported);
+				if ($do === 'opcache_inval') {
+					$t = (function_exists('opcache_invalidate')
+						? implode(NL, array_filter(array_map(function($f) {
+							return get_file_ext($f) === 'php' ? "$f\t".opcache_invalidate($f) : '';
+						}, get_dir_contents())))
+						: $tmp_not_supported
+					);
 				} else
 				if ($do === 'arch') {
 					require_once(NAMEPRFX.'.arch.php');

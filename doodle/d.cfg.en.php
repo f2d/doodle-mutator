@@ -72,8 +72,9 @@ $tmp_mod_files = array(
 ,	'users' =>		'Convert old user data.'
 ,	'logs' =>		'Convert old report logs.'
 ,	'room_list_reset' =>	'Clear cached post counts for room list.'
-,	'opcache_reset' =>	'Clear PHP OpCache.'
-,	'opcache_check' =>	'Check PHP OpCache stats.'
+,	'opcache_reset' =>	'Clear PHP OpCache globally.'
+,	'opcache_inval' =>	'Clear PHP OpCache for this folder only.'
+,	'opcache_check' =>	'View PHP OpCache stats.'
 );
 $tmp_mod_pages = array(
 	'logs' =>	'Logs'
