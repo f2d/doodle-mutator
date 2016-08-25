@@ -4,7 +4,7 @@ function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
 		'To refresh page if broken since 2016-08-22 07:30'.NL.	//* <- change this to invalidate old pages cached in browsers
-		'Or user key/options changed: '.$_REQUEST[ME]
+		'Or user key/options changed: '.ME_VAL
 	).'"';
 	header('Etag: '.$q);
 	if (
@@ -24,7 +24,7 @@ function get_const($name) {return defined($name) ? constant($name) : '';}
 function rewrite_htaccess($write_to_file = 1) {
 	$start_mark = '# 8<-- start mark: '.NAMEPRFX.', version: ';
 	$end_mark = '# 8<-- end mark: '.NAMEPRFX.', placed automatically: ';
-	$new_mark = $start_mark.ROOTPRFX.' 2016-07-11 17:04';		//* <- change this to invalidate old version
+	$new_mark = $start_mark.ROOTPRFX.' 2016-08-24 13:20';		//* <- change this to invalidate old version
 	if (
 		!($old = (is_file($f = '.htaccess') ? trim(file_get_contents($f)) : ''))
 	||	false === strpos($old, $new_mark)
@@ -56,13 +56,13 @@ function rewrite_htaccess($write_to_file = 1) {
 	RewriteRule ^'.$dd.'.*$ . [L,R=301]':'').'
 	RewriteRule ^('.DIR_PICS.')(([^/])[^/]+\.([^/])[^/]+)$ $1$4/$3/$2'.'
 	RewriteRule ^'.$d.'$ $0/ [L,R=301]'.'
-	RewriteRule ^'.$d.'(/[-\d]*)$ index.php?dir=$1&room=$3&etc=$4 [L,'.$e_set.']
+	RewriteRule ^'.$d.'(/[-\d]*)$ . [L,'.$e_set.']
 # files not found:
 	RewriteCond %{REQUEST_FILENAME} -f [OR]
 	RewriteCond %{REQUEST_FILENAME} -d
 	RewriteRule ^.? - [S=2]
 	RewriteRule ^('.DIR_PICS.'|'.DIR_ARCH.'[^/]+/'.DIR_THUMB.').*$ err.png [L,'.$e_set.']
-	RewriteRule ^('.$d.'/).+$ $1. [L,R,'.$e_set.']
+	RewriteRule ^('.$d.'/).+$ $1 [L,R,'.$e_set.']
 </IfModule>
 <IfModule headers_module>
 	Header set Cache-Control "max-age=0; must-revalidate; no-cache"'.$e_cond.'
@@ -95,18 +95,46 @@ $report");
 	return $report;
 }
 
+function fix_encoding($text) {
+	global $fix_encoding_chosen;
+	if (mb_check_encoding($text)) {
+		$fix_encoding_chosen[] = ENC;
+		return $text;
+	}
+//* Apache / nginx: OK for GET archive search;
+//* nginx only: does not work for POST room name input or manual folder request via address bar:
+	if (function_exists('iconv')) {
+		foreach (explode(',', $ef = get_const('ENC_FALLBACK')) as $e) if (
+			strlen($e = trim($e))
+		&&	false !== ($fix = iconv($e, ENC, $text))
+		&&	mb_check_encoding($fix)
+		) {
+			$fix_encoding_chosen[] = $e;
+			return $fix;
+		}
+	}
+//* another futile attempt:
+	if (false !== ($e = mb_detect_encoding($text, $ef, true))) {
+		$fix_encoding_chosen[] = $e;
+		return mb_convert_encoding($text, ENC, $e);
+	}
+	return $text;
+}
+
 function str_replace_first($f, $to, $s) {return false === ($pos = strpos($s, $f)) ? $s : substr_replace($s, $to, $pos, strlen($f));}
 function abbr($a, $sep = '_') {foreach ((is_array($a)?$a:explode($sep, $a)) as $word) $r .= $word[0]; return $r;}
 function trim_post($p, $len = 456) {
 	$s = trim(preg_replace('~\s+~us', ' ', $p));
-	if ($len > 0) $s = mb_substr($s, 0, $len, ENC);
+	if ($len > 0) $s = mb_substr($s, 0, $len);
 	return POST ? htmlspecialchars($s) : $s;
 }
 
 function trim_room($r) {
-	return strtolower(mb_substr(preg_replace('/\.+/', '.', preg_replace(
-'/[^\w\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}.!-]+/u', '_', trim(trim($r), '\\/')	//* <- add more unicode alphabets to complement \w?
-	)), 0, ROOM_NAME_MAX_LENGTH, ENC));
+	return mb_strtolower(mb_substr(
+		preg_replace('/\.+/u', '.',
+		preg_replace('/[^\w\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}.!-]+/u', '_',
+		trim(trim($r), '\\/')
+	)), 0, ROOM_NAME_MAX_LENGTH));
 }
 
 function is_tag_attr($t) {return strpos($t, '<') === strpos($t, '>');}	//* <- if only both === false
@@ -130,8 +158,8 @@ function get_dir_contents($path = '.', $num_sort = 0, $hiding = 0) {
 
 function get_file_lines($path) {return is_file($path) ? file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : array();}
 function get_file_name($path, $full = 1, $delim = '/') {return false === ($rr = strrpos($path, $delim)) ? ($full?$path:'') : substr($path, $rr+1);}
-function get_file_ext($path, $full = 0) {return strtolower(get_file_name($path, $full, '.'));}
-function get_room_skip_name($r) {return array(ME.'-skip-'.md5($r = rawurlencode($r)), $r);}
+function get_file_ext($path, $full = 0) {return mb_strtolower(get_file_name($path, $full, '.'));}
+function get_room_skip_name($r) {return array(ME.'-skip-'.md5($r = rawURLencode($r)), $r);}
 function get_room_skip_list($k = '') {
 	return ($v = $_COOKIE[$k ?: reset(get_room_skip_name($GLOBALS['room']))])
 	?	array_slice(explode('/', $v, TRD_MAX_SKIP_PER_ROOM+1), 1, TRD_MAX_SKIP_PER_ROOM-($k?1:0))
@@ -399,9 +427,10 @@ function get_template_form($t) {
 		.		indent("$a[label]:".NL.'<input type="checkbox"'.$n.$r.'>')
 		.	'</label>';
 	}
+	$attr = $method ?: '';
 	return $head.NL.(
 		$name || $method
-		? "<form$method>".indent(
+		? "<form$attr>".indent(
 			'<b>'.indent(
 				'<b><'.(
 					$textarea
@@ -450,7 +479,12 @@ function get_template_content($p, $static = 0, $tag = '', $attr = '') {
 		$p = '';
 		foreach ($a as $k => $v) if (!$k) $p = $v; else if ($v) $attr .= " $k=\"$v\"";
 	}
-	if ($p) {
+	if (strlen($p)) {
+		if (GOD && ($v = $GLOBALS[$k = 'fix_encoding_chosen'])) {
+			$v = implode(',', (array)$v);
+			$p = "
+$k = $v$p";
+		}
 		$t = $tag ?: 'pre';
 		$p = "
 <$t$attr>$p
@@ -502,7 +536,7 @@ function get_template_page($t, $NOS = 0) {
 <meta name="viewport" content="width=690">
 <link rel="stylesheet" type="text/css" href="'.$N.($v = '.css').($L?'?'.filemtime(NAMEPRFX.$v):'').'">').'
 <link rel="shortcut icon" type="image/png" href="'.(($v = $t['icon'])?ROOTPRFX.$v:$N).'.png">'
-.($R || $_REQUEST[ME]?'
+.($R || ME_VAL?'
 <link rel="index" href="http://'.$_SERVER['SERVER_NAME'].ROOTPRFX.'">':'')
 .(($v = $t['head'])?NL.$v:'')
 .(($v = $t['title'])?NL."<title>$v</title>":'');

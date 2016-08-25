@@ -180,19 +180,12 @@ function data_get_archive_search_terms() {
 	global $tmp_archive_find_by, $query;
 	$terms = array();
 	if ($query) {
-		$ef = explode(',', get_const('ENC_FALLBACK'));
 		foreach ($tmp_archive_find_by as $k => $v) if (
 			array_key_exists($k, $query)
 		&&	strlen($q = $query[$k])
+		&&	strlen($q = mb_strtolower(trim_post(fix_encoding($q), FIND_MAX_LENGTH)))
 		) {
-			if (!mb_check_encoding($q, ENC)) foreach ($ef as $e) if (
-				strlen($e = trim($e))
-			&&	mb_check_encoding($i = iconv($e, ENC, $q), ENC)
-			) {
-				$q = $i;
-				break;
-			}
-			if (strlen($q = mb_strtolower(trim_post($q, FIND_MAX_LENGTH), ENC))) $terms[$k] = $q;
+			$terms[$k] = $q;
 		}
 	}
 	return $terms;
@@ -299,7 +292,7 @@ if (TIME_PARTS) time_check_point(count($files).' files in '.$d);
 					}
 					if (!$draw_time_check) foreach ((array)$t as $v) if (strlen($v)) {
 						$v = html_entity_decode($v);
-						if ($caseless) $v = mb_strtolower($v, ENC);
+						if ($caseless) $v = mb_strtolower($v);
 						if ($found = (false !== strpos($v, $what))) break;
 					}
 					if (!$found) continue 2;

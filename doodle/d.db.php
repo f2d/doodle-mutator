@@ -64,11 +64,11 @@ function data_log($file_path, $line, $n = UTF, $report = 1) {
 	return $written;
 }
 
-function data_global_announce($type = 'all', $room = '') {
-	if ($d = ($room ?: $_REQUEST['room'] ?: '')) $d = DIR_ROOM.$d.'/';
+function data_global_announce($type = 'all', $room1 = '') {
+	global $room, $tmp_announce;
+	if ($d = ($room1 ?: $room ?: '')) $d = DIR_ROOM.$d.'/';
 	$x = '.txt';
 //* check single presence:
-	global $tmp_announce;
 	if (array_key_exists($type, $tmp_announce)) return (
 		is_file(DIR_DATA.($f = $type.$x))
 	||	($d && is_file(DIR_DATA.$d.$f))
@@ -84,7 +84,7 @@ function data_global_announce($type = 'all', $room = '') {
 			if (!$d) continue;
 			$f = $d.substr($k, $i+1);
 		} else {
-			if ($room) continue;
+			if ($room1) continue;
 			$f = $k;
 		}
 		if (is_file($f = DIR_DATA.$f.$x)) switch ($type) {
@@ -192,7 +192,7 @@ if (TIME_PARTS && $a) time_check_point("done $a $t in $room");
 }
 
 function data_check_u($u, $reg) {
-	global $u_key, $u_num, $u_flag, $usernames, $last_user, $room;
+	global $u_key, $u_num, $u_flag, $usernames, $last_user;
 	$d = DIR_META_U;
 	if (is_file($f = "$d.log")) foreach (get_file_lines($f) as $line) if (strpos($line, '	')) {
 		list($i, $k, $t, $name) = explode('	', $line);
@@ -710,7 +710,7 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 				foreach (preg_split('~\v+~u', $msg) as $line)
 				if (
 					preg_match('~^(\w+)[\s:=]\s*(\S.*)$~u', trim($line), $match)
-				&&	in_array($k = strtolower($match[1]), $keys)
+				&&	in_array($k = mb_strtolower($match[1]), $keys)
 				) {
 					$v = preg_replace('~\s+~u', ' ', $match[2]);
 					$ok .= NL."	$k => $v";

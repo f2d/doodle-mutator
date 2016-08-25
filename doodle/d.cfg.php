@@ -106,7 +106,7 @@ define(THUMB_MAX_WIDTH, 160);
 define(THUMB_MAX_HEIGHT, 90);
 
 define(ENC, 'utf-8');
-define(ENC_FALLBACK, 'windows-1251, Shift_JIS');	//* <- comma-separated list, to convert search requests from weird browsers into ENC
+define(ENC_FALLBACK, 'windows-1251, iso-8859-1, Shift_JIS');	//* <- comma-separated list, to convert search requests from weird browsers into ENC
 define(NB, '&#8203;');	//&nbsp;
 define(NL, '
 ');

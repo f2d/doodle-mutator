@@ -3,7 +3,7 @@
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
 ,	INFO_VERSION = 'v0.9.68'
-,	INFO_DATE = '2013-04-01 — 2016-08-15'
+,	INFO_DATE = '2013-04-01 — 2016-08-25'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -1834,10 +1834,16 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 		if (dest)		alert(lang.bad_id+'\n\nid='+dest+'\nautosave='+a); else
 		if (!outside.send)	alert(lang.no.form); else
 		if (fillCheck())	alert(lang.no.drawn); else {
-			a = select.imgLimits, c = 'send';
-			for (i in a) if (canvas[i] < a[i][0] || canvas[i] > a[i][1]) c = 'size';
+			a = select.imgLimits, c = lang.confirm.send;
+			for (i in a) if (canvas[i] < a[i][0] || canvas[i] > a[i][1]) {
+				j = a.width.length;
+				c = lang.confirm.size.map(function(v,i) {
+					return v+(i < j?a.width[i]+'x'+a.height[i]:'');
+				}).join('');
+				break;
+			}
 		}
-		if (c && confirm(lang.confirm[c])) {
+		if (c && confirm(c)) {
 			if ((f = outside.send) && f.tagName) clearContent(f);
 			else {
 				setId(e = cre('form', container), 'send');
@@ -2324,7 +2330,11 @@ var	o = outside
 		,	found_swap:	'Рисунок был в запасе, теперь сдвинут на первое место.'
 		,	confirm: {
 				send:	'Отправить рисунок в сеть?'
-			,	size:	'Размеры полотна вне допустимых пределов. Отправить всё равно?'
+			,	size:[
+					'Размеры полотна вне допустимых пределов, от '
+				,	' до '
+				,	'. Отправить всё равно?'
+				]
 			,	save: [
 					'Сохранить рисунок в память браузера?'
 				,	'Заменить старую копию, изменённую:'
@@ -2448,7 +2458,11 @@ var	o = outside
 		,	found_swap:	'Found same image still saved, swapped it to first slot.'
 		,	confirm: {
 				send:	'Send image to server?'
-			,	size:	'Canvas size is outside of limits. Send anyway?'
+			,	size:[
+					'Canvas size is outside of limits, from '
+				,	' to '
+				,	'. Send anyway?'
+				]
 			,	save: [
 					'Save image to your browser memory?'
 				,	'Replace saved copy edited at:'
