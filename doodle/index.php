@@ -254,10 +254,14 @@ room = $k".
 <p><a href=".?mod='.$q.'&do='.$k.'">'.str_replace_first(' ', '</a> ', $v).'</p>';
 			if ($do) {
 				ignore_user_abort(true);
-				$a = intval($a[1]);
 if (TIME_PARTS) time_check_point('ignore user abort');
 				if ($do === 'opcache_check') {
-					$t = (function_exists('opcache_get_status') ? print_r(opcache_get_status(), true) : $tmp_not_supported);
+					if (function_exists('opcache_get_status')) {
+						if (is_array($a = opcache_get_status())) {
+							if (array_key_exists($k = 'scripts', $a) && is_array($b = &$a[$k])) ksort($b);
+							$t = print_r($a, true);
+						} else $t = $a;
+					} else $t = $tmp_not_supported;
 				} else
 				if ($do === 'opcache_reset') {
 					$t = (function_exists('opcache_reset') ? opcache_reset() : $tmp_not_supported);
