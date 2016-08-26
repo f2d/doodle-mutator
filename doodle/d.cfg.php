@@ -22,7 +22,7 @@ example:
 );
 $cfg_optimize_pics = array(
 	'png' => array(
-		'optipng' => '"%s" -fix "%s" 2>&1'
+		'optipng' => '"%s" -fix -v "%s" 2>&1'
 	)
 );
 $cfg_draw_app = array('dfc', 'milf');

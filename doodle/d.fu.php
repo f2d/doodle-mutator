@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-08-22 07:30'.NL.	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-08-26 06:45'.NL.	//* <- change this to invalidate old pages cached in browsers
 		'Or user key/options changed: '.ME_VAL
 	).'"';
 	header('Etag: '.$q);
@@ -557,9 +557,14 @@ function get_template_page($t, $NOS = 0) {
 		$attr = get_template_attr($t['data'][$k]);
 		if ($sub = $t['subtask']) $v = '<div class="task">'.indent($v).'</div>'.$sub;
 		else if (!$static) $attr = ' class="task"'.$attr;
-		if ($sub = $$txt) $v .= "
-<$txt>$sub
-</$txt>";
+		if ($sub = $$txt) {
+			$k = ' class="dump" id="dump"';
+			$v .= "
+<label$k>
+	<$txt>$sub
+	</$txt>
+</label>";
+		}
 		$task = '<div id="task"'.$attr.'>'.indent($v).'</div>';
 	} else
 	if ($v = $$txt) $content .= get_template_content($v, $static, $txt);

@@ -876,7 +876,7 @@ if ($u_key && !$u_opts['times']) {
 	define(TOOK, $took = '<!--?-->');
 	if (TIME_PARTS) {
 		time_check_point('inb4 template');
-		$took = '<a href="javascript:'.$js[0].',toggleHide(took)">'.$took.'</a>';
+		$took = '<a href="javascript:'.$js[0].',toggleHide(took),took.scrollIntoView()">'.$took.'</a>';
 		foreach ($tcp as $t => $comment) {
 			$t = get_time_elapsed($t);
 			$t_diff = ltrim(sprintf('%.6f', $t - $t_prev), '0.');
