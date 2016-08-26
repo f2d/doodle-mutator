@@ -251,7 +251,9 @@ room = $k".
 		} else
 		if ($q === 'files') {
 			foreach ($tmp_mod_files as $k => $v) $lnk .= '
-<p><a href=".?mod='.$q.'&do='.$k.'">'.str_replace_first(' ', '</a> ', $v).'</p>';
+<li><a href=".?mod='.$q.'&do='.$k.'">'.str_replace_first(' ', '</a> ', $v).'</li>';
+			$lnk = '
+<ul class="mod">'.indent($lnk).'</ul>';
 			if ($do) {
 				ignore_user_abort(true);
 if (TIME_PARTS) time_check_point('ignore user abort');

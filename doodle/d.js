@@ -1712,14 +1712,14 @@ if (k = id('task')) {
 	if (i = (j = gn('ul',k)).length) {
 		n = (m = gn('b')).length, h = 1;
 		while (n--) if (regClassAnno.test(m[n].className)) {h = 0; break;}
-		while (i--) if (m = j[i].previousElementSibling) {
+		while (i--) if (m = (n = j[i]).previousElementSibling) {
 			m.innerHTML =
 				'<a href="javascript:void this'
 			+	'" onClick="toggleHide(this.parentNode.nextElementSibling)'
 			+	'">'
 			+		m.innerHTML
 			+	'</a>';
-			if (h) toggleHide(j[i]), allowApply(-1);
+			if (h && n.className != 'mod') toggleHide(n), allowApply(-1);
 		}
 	}
 }
