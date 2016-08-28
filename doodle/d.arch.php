@@ -234,14 +234,15 @@ if (TIME_PARTS) time_check_point('inb4 archive search prep');
 if (TIME_PARTS) time_check_point('inb4 archive search iteration'.NL);
 	foreach (($room ? array($room) : get_dir_contents(DIR_ARCH, 1, 1)) as $r) {
 		$n_found = 0;
-		$files = get_dir_contents($d = DIR_ARCH.$r.'/', 1);
-if (TIME_PARTS) time_check_point(count($files).' files in '.$d);
-		foreach ($files as $f) if (
+		$files = array();
+		foreach (get_dir_contents($d = DIR_ARCH.$r.'/', 1) as $f) if (
 			substr($f, -$elen) == PAGE_EXT
 		&&	is_file($path = $d.$f)
-		&&	preg_match(PAT_CONTENT, file_get_contents($path), $match)
+		) $files[$path] = intval($f);
+if (TIME_PARTS) time_check_point(count($files).' files in '.$d);
+		foreach ($files as $path => $i) if (
+			preg_match(PAT_CONTENT, file_get_contents($path), $match)
 		) {
-			$i = intval($f);
 			$n_check = '';
 			foreach (explode(NL, $match[1]) as $line) {
 				$draw_time = '';

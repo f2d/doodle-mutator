@@ -503,11 +503,12 @@ function data_archive_ready_go() {
 
 function data_del_pic_file($f, $keep) {
 	if (!is_file($f)) return false;
+	$d = 'unlink';
 	return (
 		$keep
-		? rename($f, $keep.get_file_name($f))
-		: unlink($f)
-	);
+		? rename($f, $d = $keep.get_file_name($f))
+		: $d($f)
+	)?$d:'';
 }
 
 function data_del_pic($f, $keep) {
@@ -642,10 +643,10 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 		&&	is_file($f = get_pic_subpath($fn))
 		&&	(
 				$un == 1
-				? (file_put_contents($f, '') === 0)	//* <- 0-truncate
-				: data_del_pic($f, !(GOD && $un > 1))
+				? (($d = file_put_contents($f, '')) === 0)	//* <- 0-truncate
+				: ($d = data_del_pic($f, !(GOD && $un > 1)))
 			)
-		) $ok = "$a[1]=$f";
+		) $ok = "$a[1]=$f -> $d";
 	} else
 	if (substr($o,0,7) == 'merge t') {
 		if (list($d,$f,$m) = data_get_thread_by_num($a[0])) {

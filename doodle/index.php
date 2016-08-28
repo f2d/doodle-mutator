@@ -250,31 +250,58 @@ room = $k".
 			}
 		} else
 		if ($q === 'files') {
+			$a = array(
+				'opcache_check' => 'opcache_get_status'
+			,	'opcache_reset' => 'opcache_reset'
+			,	'opcache_inval' => 'opcache_invalidate'
+			);
+			foreach ($a as $k => $v) if (!function_exists($v)) unset($tmp_mod_files[$k]);
 			foreach ($tmp_mod_files as $k => $v) $lnk .= '
 <li><a href=".?mod='.$q.'&do='.$k.'">'.str_replace_first(' ', '</a> ', $v).'</li>';
 			$lnk = '
 <ul class="mod">'.indent($lnk).'</ul>';
-			if ($do) {
+			if (!$do) $do = end(array_keys($tmp_mod_files));
+			if ($do && array_key_exists($do, $tmp_mod_files)) {
+				if ($a = $tmp_mod_files[$do]) $lnk .= '
+<p>'.rtrim($a, '.').':</p>';
 				ignore_user_abort(true);
 if (TIME_PARTS) time_check_point('ignore user abort');
+				if ($do === 'list') {
+					$len = array(0,0,0);
+					$dirs = array();
+					$files = array();
+					foreach (get_dir_contents() as $f) {
+						$d = is_dir($f);
+						$m = date(TIMESTAMP, filemtime($f));
+						$s = ($d ? 'DIR' : filesize($f).' B');
+						$a = array($f, $s, $m);
+						foreach ($len as $k => &$v) $v = max($v, strlen($a[$k]));
+						${$d?'dirs':'files'}[] = $a;
+					}
+					foreach (array_merge($dirs, $files) as $a) {
+						foreach ($len as $k => $v) {
+							$s = strlen($a[$k]);
+							if ($s < $v) $a[$k] .= str_repeat(' ', $v-$s);
+						}
+						$t .= implode('	', $a).NL;
+					}
+				} else
 				if ($do === 'opcache_check') {
-					if (function_exists('opcache_get_status')) {
-						if (is_array($a = opcache_get_status())) {
-							if (array_key_exists($k = 'scripts', $a) && is_array($b = &$a[$k])) ksort($b);
-							$t = print_r($a, true);
-						} else $t = $a;
-					} else $t = $tmp_not_supported;
+					if (is_array($a = opcache_get_status())) {
+						if (array_key_exists($k = 'scripts', $a) && is_array($b = &$a[$k])) ksort($b);
+						$t = print_r($a, true);
+					} else $t = $a;
 				} else
 				if ($do === 'opcache_reset') {
-					$t = (function_exists('opcache_reset') ? opcache_reset() : $tmp_not_supported);
+					$t = opcache_reset();
 				} else
 				if ($do === 'opcache_inval') {
-					$t = (function_exists('opcache_invalidate')
-						? implode(NL, array_filter(array_map(function($f) {
+					$t = implode(NL, array_filter(array_map(
+						function($f) {
 							return get_file_ext($f) === 'php' ? "$f\t".opcache_invalidate($f) : '';
-						}, get_dir_contents())))
-						: $tmp_not_supported
-					);
+						}
+					,	get_dir_contents()
+					)));
 				} else
 				if ($do === 'arch') {
 					require_once(NAMEPRFX.'.arch.php');
