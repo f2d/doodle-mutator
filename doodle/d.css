@@ -38,7 +38,7 @@ body, .task input:not([type="checkbox"]), .task select {
 .header>*>u:not(:last-child) {
 	padding-right: 4px;
 }
-.header u {
+.header u, a[onclick] {
 	text-decoration: none;
 }
 .header.a>*>* {
@@ -561,6 +561,23 @@ a:hover	{
 .ar {	text-align: right;}
 .hide-p .post .res img {
 	border-color: #ddd;
+}
+.plus-minus {
+	display: inline-block;
+	border: 1px solid #888;
+	width: 24px;
+	height: 24px;
+	margin-right: 4px;
+	padding: 0;
+	font-size: 22px;
+	font-family: monospace;
+	text-align: center;
+}
+a:hover .plus-minus {
+	border-color: #fff;
+}
+.thread a:hover .plus-minus {
+	border-color: #000;
 }
 small {
 	line-height: 50%;

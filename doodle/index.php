@@ -221,6 +221,9 @@ if (POST) goto posting;
 				$data_attr['content']['type'] = 'reports';
 				$content = '
 day_link = .?mod=logs&day=';
+				$last = end(end($l));
+				$last = data_get_mod_log($last_ymd = key($l).'-'.$last, 1);
+				if (!$day) $day = $ymd = $last_ymd;
 				if ($ymd) {
 					exit_if_not_mod(data_get_mod_log($day, 1));
 					if ($a = data_get_mod_log($mod_page = $day)) {
@@ -238,12 +241,9 @@ room = $k".
 	NL.htmlspecialchars($v)))));
 }, array_keys($a), $a));
 					}
+				} else {
+					exit_if_not_mod($last);
 				}
-
-				$last = end(end($l));
-				$last = data_get_mod_log(key($l).'-'.$last, 1);
-				if (!$ymd) exit_if_not_mod($last);
-
 				foreach ($l as $ym => $d) $lnk .= ($lnk?'</p>':'').'
 <p>'.$ym.'-'.implode(',', $d);
 				$lnk .= ' <small>'.date('H:i:s', $last).'</small></p>';
@@ -263,7 +263,7 @@ room = $k".
 			if (!$do) $do = end(array_keys($tmp_mod_files));
 			if ($do && array_key_exists($do, $tmp_mod_files)) {
 				if ($a = $tmp_mod_files[$do]) $lnk .= '
-<p>'.rtrim($a, '.').':</p>';
+<p>'.rtrim($a, ':.').':</p>';
 				ignore_user_abort(true);
 if (TIME_PARTS) time_check_point('ignore user abort');
 				if ($do === 'list') {
