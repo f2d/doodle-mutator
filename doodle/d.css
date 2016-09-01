@@ -592,9 +592,10 @@ a:hover	{
 	border-color: #000;
 }
 .hint .toggle::before {
-	width: 16px;
-	height: 16px;
-	line-height: 16px;
+	border: none;
+	width: 8px;
+	height: 13px;
+	line-height: 12px;
 	font-size: 13px;
 }
 small {
