@@ -714,7 +714,6 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 				&&	in_array($k = mb_strtolower($match[1]), $keys)
 				) {
 					$v = preg_replace('~\s+~u', ' ', $match[2]);
-					$ok .= NL."	$k => $v";
 					if ($k == 're') {
 						$k = 'text';
 						$v = '<span class="mod">'.$v.'</span>';
@@ -723,6 +722,7 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 				}
 			//	if (!$lsv) $lsv['text'] = preg_replace('~\s+~u', ' ', $msg);
 				if ($lsv) {
+					$ok .= NL.'data = '.trim(print_r($lsv, true));
 					$tab = (
 						$un < 2
 						? array(T0, $u_num)		//* <- add, insert (own post from now, if not specified)

@@ -226,7 +226,9 @@ day_link = .?mod=logs&day=';
 				if (!$day) $day = $ymd = $last_ymd;
 				if ($ymd) {
 					exit_if_not_mod(data_get_mod_log($day, 1));
-					if ($a = data_get_mod_log($mod_page = $day)) {
+					$mod_page = "$mod_p: $day";
+					if ($a = data_get_mod_log($day)) {
+						$attr = ' data-day="'.$day.'"';
 						$content .= '
 images = '.ROOTPRFX.DIR_PICS.'
 rooms = '.ROOTPRFX.DIR_ROOM.'
@@ -387,8 +389,8 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);	//* <- transform data 
 			}
 		}
 		if (!$content) $textarea = $t;				//* <- dump plain text as is
-		$task = '
-<p>'.$mod_p.':</p>'.($lnk || $content || $textarea ? $lnk : $tmp_empty);
+		$task = "
+<p$attr>$mod_p:</p>".($lnk || $content || $textarea ? $lnk : $tmp_empty);
 		$js['mod']++;
 		$js[0]++;
 	} else
@@ -983,30 +985,34 @@ die(get_template_page(array(
 ,	'lang' => $lang
 ,	'title' => (
 		$mod_page
-		? $tmp_mod_panel.' - '.$mod_page.S
-		: ''
-	).(
-		$qd_opts == 1
-		? $tmp_options.S
+		? $tmp_mod_panel.' - '.$mod_page.S.(
+			$qdir && $room
+			? $room_title.S
+			: ''
+		)
 		: (
-			$qd_arch
-			? (
-				$room
-				? $room_title.S
-				: ''
-			).$tmp_archive.S
+			$qd_opts == 1
+			? $tmp_options.S
 			: (
-				$qd_room
+				$qd_arch
 				? (
 					$room
+					? $room_title.S
+					: ''
+				).$tmp_archive.S
+				: (
+					$qd_room
 					? (
-						$is_report_page
-						? $tmp_report.S
-						: ''
-					).$room_title.S
-					: $tmp_rooms.S
+						$room
+						? (
+							$is_report_page
+							? $tmp_report.S
+							: ''
+						).$room_title.S
+						: $tmp_rooms.S
+					)
+					: ''
 				)
-				: ''
 			)
 		)
 	).$tmp_title.(

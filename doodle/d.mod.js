@@ -9,7 +9,7 @@
 	var	a = function (i,t,d) {return '<a href="'+(d || '')+i+(i == day?(at = y, '" class="at'):'')+'">'+t+'</a>';}
 	,	h = ''
 	,	n = k.textContent.replace(regTrim, '').split('|')
-	,	day = location.search.split('=').slice(-1)[0] || location.pathname.split('/').slice(-1)[0]
+	,	day = k.getAttribute('data-day') || location.search.split('=').slice(-1)[0] || location.pathname.split('/').slice(-1)[0]
 	,	prefix = d || k.getAttribute('data-var') || ''
 		;
 //* task category tabs:
