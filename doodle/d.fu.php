@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-08-28 17:16'.NL.	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-09-01 18:17'.NL.	//* <- change this to invalidate old pages cached in browsers
 		'Or user key/options changed: '.ME_VAL
 	).'"';
 	header('Etag: '.$q);

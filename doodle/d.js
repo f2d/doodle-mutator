@@ -1,11 +1,10 @@
 ﻿var	LS = window.localStorage || localStorage
 
+,	regClassHid = getClassReg('hid')
 ,	regClassAlt = getClassReg('alt|ok')
 ,	regClassAnno = getClassReg('anno')
 ,	regClassPost = getClassReg('post')
 ,	regClassThread = getClassReg('thread')
-,	regClassToggle = getClassReg('plus-minus')
-,	regClassToggleTail = getClassReg('colon')
 ,	regTagDiv = /^div$/i
 ,	regTagDivP = /^(div|p)$/i
 ,	regTagForm = /^form$/i
@@ -53,10 +52,6 @@
 	,	s: 'frozen'
 	,	d: 'burnt'
 	,	f: 'full'
-	}
-,	toggle = {
-		firstElementChild: ['+', '-', regClassToggle]
-	,	lastElementChild: ['.', ':', regClassToggleTail]
 	}
 ,	mm
 ,	room = location.pathname.split('/').slice(-2)[0] || 'room'
@@ -296,6 +291,7 @@ var	a = line.split(split || ','), i,o = {};
 	return o;
 }
 
+function gc(n,p) {return TOS.slice.call((p || document).getElementsByClassName(n) || []);}
 function gn(n,p) {return TOS.slice.call((p || document).getElementsByTagName(n) || []);}
 function gi(t,p) {return (p = gn('input', p)).length && t ? p.filter(function(e) {return e.type == t;}) : p;}
 function id(i) {return document.getElementById(i);}
@@ -320,38 +316,34 @@ function eventStop(e) {
 }
 
 function deleteCookie(c) {document.cookie = c+'=; expires='+(new Date(0).toUTCString())+'; Path='+rootPath;}
-function getToggleButtonHTML(content, hide) {
-var	i = (hide?0:1);
+function getToggleButtonHTML(content, open) {
 	return '<a href="javascript:void this'
 	+	'" onClick="toggleHideNext(this)'
+	+	'" class="toggle'+(open?' open':'')
 	+	'">'
-	+		'<span class="plus-minus">'+toggle.firstElementChild[i]+'</span>'
 	+		content.replace(regTrimPun, '')
-	+		'<span class="colon">'+toggle.lastElementChild[i]+'</span>'
 	+	'</a>';
 }
 
 function toggleHide(e,d) {e.style.display = (e.style.display != (d?d:d='')?d:'none');}
 function toggleHideNext(e) {
-	toggleHide(h = e.parentNode.nextElementSibling);
-var	h = (h.style.display === 'none'?0:1)
-,	a = toggle
-,	b,c,f,i
-	;
-	for (i in a) if ((f = e[i]) && (c = f.className) && (b = a[i])[2].test(c)) {
-		while (c = f.firstElementChild) f = c;
-		f.textContent = b[h];
-	}
+	toggleClass(h = e.parentNode.nextElementSibling, 'hid');
+	toggleClass(e, 'open', regClassHid.test(h.className)?-1:1);
 }
 
 function toggleClass(e,c,keep) {
-var	i = e.className, a = (i?i.split(regSpace):[]), i = a.indexOf(c);
+var	k = 'className'
+,	old = e[k]
+,	a = (old ? old.split(regSpace) : [])
+,	i = a.indexOf(c)
+	;
 	if (i < 0) {
 		if (!(keep < 0)) a.push(c);
 	} else {
 		if (!(keep > 0)) a.splice(i, 1);
 	}
-	e.className = a.join(' ');
+	if (a.length) e[k] = a.join(' ');
+	else if (old) e[k] = '', e.removeAttribute(k);
 }
 
 function meta() {toggleClass(id('content') || document.body, 'hide-p');}
@@ -608,8 +600,16 @@ var	containers = showContent('last')
 }
 
 function showOpen(i,top) {
-var	t = id(i) || (showContent(), id(i)), d = t.firstElementChild;
-	if (d && (i = d.firstElementChild) && i.href) d.nextElementSibling.style.display = '';
+var	t = id(i) || (showContent(), id(i))
+,	d = t.firstElementChild
+,	c
+	;
+	if (d
+	&&	(i = d.firstElementChild)
+	&&	i.href
+	&&	(d = d.nextElementSibling)
+	&&	(((c = d.style.display) && c === 'none') || ((c = d.className) && regClassHid.test(c)))
+	) i.click();
 	t.scrollIntoView(!!top);
 }
 
@@ -1556,9 +1556,9 @@ var	flagVarNames = ['flag', 'flags']
 							;
 							if (dontCollapse.indexOf(j) < 0) v =
 								'<div class="post alt anno">'
-							+		getToggleButtonHTML(la.hint[j]+la.hint.show, 1)
+							+		getToggleButtonHTML(la.hint[j]+la.hint.show)
 							+	'</div>'
-							+	'<div style="display:none">'
+							+	'<div class="hid">'
 							+		v
 							+	'</div>';
 						}
@@ -1736,12 +1736,13 @@ if (k = id('task')) {
 		} else e.name = '!';
 	}
 //* show/hide rules:
-	if (i = (j = gn('ul',k)).length) {
-		n = (m = gn('b')).length, h = 1;
-		while (n--) if (regClassAnno.test(m[n].className)) {h = 0; break;}
-		while (i--) if (m = (n = j[i]).previousElementSibling) {
-			m.innerHTML = getToggleButtonHTML(m.innerHTML);
-			if (h && n.className != 'mod') m.firstElementChild.click(), allowApply(-1);
+	if (i = (j = gn('ul',k).concat(gc('hid',k))).length) {
+		while (i--) if (
+			(m = (n = j[i]).previousElementSibling)
+		&&	!((e = m.firstElementChild) && e.tagName.toLowerCase() === 'a')
+		) {
+			if (h = regClassHid.test(n.className)) allowApply(-1);
+			m.innerHTML = getToggleButtonHTML(m.innerHTML, !h);
 		}
 	}
 }

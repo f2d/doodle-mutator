@@ -259,7 +259,7 @@ room = $k".
 			foreach ($tmp_mod_files as $k => $v) $lnk .= '
 <li><a href=".?mod='.$q.'&do='.$k.'">'.str_replace_first(' ', '</a> ', $v).'</li>';
 			$lnk = '
-<ul class="mod">'.indent($lnk).'</ul>';
+<ul>'.indent($lnk).'</ul>';
 			if (!$do) $do = end(array_keys($tmp_mod_files));
 			if ($do && array_key_exists($do, $tmp_mod_files)) {
 				if ($a = $tmp_mod_files[$do]) $lnk .= '
@@ -548,11 +548,12 @@ if ($u_key) {
 .($u_flag ? NL.$tmp_options_flags.$s.implode(', ', $u_flag) : '')
 .$i.$tmp_options_apply.'" id="apply">
 </form>';
+		$hid = ($qdir?' class="hid"':'');
 		foreach ($tmp_rules as $head => $hint) {
 			if (is_array($hint)) {
 				$s = '';
 				foreach ($hint as $i) $s .= NL.'<li>'.indent(get_template_hint($i)).'</li>';
-				$s = NL.'<ul>'.indent($s).'</ul>';
+				$s = NL."<ul$hid>".indent($s).'</ul>';
 			} else	$s = NL.'<p class="hint">'.indent(get_template_hint($hint)).'</p>';
 			$task .= NL."<p>$head</p>$s";
 		}

@@ -562,22 +562,40 @@ a:hover	{
 .hide-p .post .res img {
 	border-color: #ddd;
 }
-.plus-minus {
+.toggle::after {
+	content: ".";
+}
+.toggle::before {
 	display: inline-block;
 	border: 1px solid #888;
-	width: 24px;
-	height: 24px;
 	margin-right: 4px;
 	padding: 0;
+	width: 23px;
+	height: 23px;
+	line-height: 23px;
 	font-size: 22px;
 	font-family: monospace;
 	text-align: center;
+	vertical-align: middle;
+	content: "+";
 }
-a:hover .plus-minus {
+.toggle.open::after {
+	content: ":";
+}
+.toggle.open::before {
+	content: "-";
+}
+.toggle:hover::before {
 	border-color: #fff;
 }
-.thread a:hover .plus-minus {
+.thread .toggle:hover::before {
 	border-color: #000;
+}
+.hint .toggle::before {
+	width: 16px;
+	height: 16px;
+	line-height: 16px;
+	font-size: 13px;
 }
 small {
 	line-height: 50%;
