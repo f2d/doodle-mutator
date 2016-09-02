@@ -191,7 +191,7 @@ function get_pic_subpath($p, $mk = 0) {
 function get_pic_url($p) {return ROOTPRFX.(PIC_SUB?get_pic_subpath($p):DIR_PICS.$p);}
 function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for archive pages; default = current date
 	global $cfg_date_class, $date_classes;
-	if ($date_classes) return $date_classes;
+	if (!$t_first && !$t_last && $date_classes) return $date_classes;
 	if (!$t_first) $t_first = T0;
 	if (!$t_last) $t_last = $t_first;
 	$date_classes = array();

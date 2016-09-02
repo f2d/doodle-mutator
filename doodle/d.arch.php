@@ -136,6 +136,7 @@ function data_archive_full_threads($threads) {
 }
 
 function data_archive_rewrite() {
+	global $date_classes;
 	$a = 0;
 	$elen = strlen(PAGE_EXT);
 	$img_src = array(
@@ -167,6 +168,7 @@ function data_archive_rewrite() {
 				if (!unlink($x)) $x = 'delete old failed'; else
 				$x = strlen($old)." => $sz bytes";
 			}
+			if ($date_classes) $x .= '	'.implode(' ', $date_classes);
 			$text_report .= NL."$path	$x";
 			++$t;
 		}
