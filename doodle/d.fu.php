@@ -3,8 +3,9 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-09-01 18:17'.NL.	//* <- change this to invalidate old pages cached in browsers
-		'Or user key/options changed: '.ME_VAL
+		'To refresh page if broken since 2016-09-02 17:50'	//* <- change this to invalidate old pages cached in browsers
+	.NL.	'Or user key/options/date background changed: '.ME_VAL
+	.NL.	implode(NL, get_date_class())
 	).'"';
 	header('Etag: '.$q);
 	if (
@@ -189,10 +190,11 @@ function get_pic_subpath($p, $mk = 0) {
 
 function get_pic_url($p) {return ROOTPRFX.(PIC_SUB?get_pic_subpath($p):DIR_PICS.$p);}
 function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for archive pages; default = current date
-	global $cfg_date_class;
+	global $cfg_date_class, $date_classes;
+	if ($date_classes) return $date_classes;
 	if (!$t_first) $t_first = T0;
 	if (!$t_last) $t_last = $t_first;
-	$classes = array();
+	$date_classes = array();
 	foreach ($cfg_date_class as $a) if (is_array($a) && $a[0] && $a[1]) {
 		$now = array(
 			date($a[1], $t_first)
@@ -212,12 +214,12 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 			?	($check[0] || $check[1])
 			:	($check[0] && $check[1])
 			) {
-				$classes[] = $a[0];
+				$date_classes[] = $a[0];
 				break;
 			}
 		}
 	}
-	return $classes;
+	return $date_classes;
 }
 
 function get_draw_app_list() {
