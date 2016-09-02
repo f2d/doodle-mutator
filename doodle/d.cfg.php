@@ -18,7 +18,7 @@ example:
 ,	array('leap-year', 'nd', 229, 229)
 ,	array('april-fools','nd',401, 401)
 */
-,	array('new-year', 'nd', 1231, 109)
+	array('new-year', 'nd', 1231, 109)
 );
 $cfg_optimize_pics = array(
 	'png' => array(
