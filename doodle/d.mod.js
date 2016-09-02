@@ -27,26 +27,25 @@
 		&&	r.test(j = m.innerHTML.replace(regTrim, ''))
 		) {
 //* logs, row = month, column = day:
-		var	k,at,c,d
+		var	at,c
 		,	j = j.split('-')
 		,	f = j[0]
 		,	y = 'year'+f
 		,	n = j.pop().split(',')
 		,	j = j.join('-')
-		,	h = j+':'
+		,	h = function (v) {return a(j+'-'+v.replace(w, ''), v, prefix);}
 			;
-			for (i in n) h += '\n'+a(j+'-'+n[i].replace(w, ''), n[i], prefix);
-			m.innerHTML = h;
+			m.innerHTML = j+': '+n.map(h).join(' ');
 			if (!d || d.id != y) {
 				(d = cre('div',c?c:c = cre('div',p,k.nextElementSibling))).id = y;
 				if (d.previousElementSibling) {
-					toggleHide(d);
-					cre('div',c,d).innerHTML = '<p><a href="javascript:toggleHide('+y+')">'+f+'</a></p>';
+					d.className = 'hid';
+					cre('p',c,d).innerHTML = getToggleButtonHTML(f);
 				}
 			}
 			d.appendChild(m);
 		}
-		if (at && (d = id(at))) d.style.display = '';
+		if (at && (d = id(at)) && (d = d.previousElementSibling) && (d = gn('a',d)[0])) d.click();
 	}
 //* god|mod:
 	if (flag && (flag.g || flag.m)) {

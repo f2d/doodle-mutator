@@ -296,7 +296,7 @@ a:hover	{
 .multi-thread {
 	background-color: #aaa;
 }
-.multi-thread:not(:empty), .thread, .task p:first-child, .task label {
+.multi-thread:not(:empty), .thread, .task p:first-child, .task div:not(.hid) + p, .task label {
 	padding-top: 8px;
 }
 .multi-thread, .thread, body>footer {
@@ -307,7 +307,6 @@ a:hover	{
 	padding-top: 0;
 }
 .post, .post.p p .report {
-/*	overflow-wrap: break-word;*/
 	word-wrap: break-word;
 }
 .post {	background-color: #f5f5f5;} body,
