@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-09-02 17:50'	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-09-04 02:30'	//* <- change this to invalidate old pages cached in browsers
 	.NL.	'Or user key/options/date background changed: '.ME_VAL
 	.NL.	implode(NL, get_date_class())
 	).'"';
@@ -497,20 +497,20 @@ $k = $v$p";
 	return '';
 }
 
-function get_template_page($t, $NOS = 0) {
-	global $tmp_announce, $tmp_post_err;
+function get_template_page($page, $NOS = 0) {
+	global $lang, $tmp_announce, $tmp_post_err;
 	$N = ROOTPRFX.NAMEPRFX;
-	if (!is_array($j = $t['js'])) $j = ($j ? array($j => 1) : array());
+	if (!is_array($j = $page['js'])) $j = ($j ? array($j => 1) : array());
 	$R = !!$j['arch'];
 	$static = ($NOS || $R);
-	$class = (($v = $t['body']) ? (array)$v : array());
-	if ($t['anno']) foreach (data_global_announce('all') as $k => $v) {
+	$class = (($v = $page['body']) ? (array)$v : array());
+	if ($page['anno']) foreach (data_global_announce('all') as $k => $v) {
 		if (MOD) $v = "<span id=\"$k\">$v</span>";
 		$ano .= NL."<b>$tmp_announce[$k]: $v</b>";
 	}
 	if (!$static) {
 		$L = LINK_TIME;
-		if ($a = $t['report']) {
+		if ($a = $page['report']) {
 			$e_class = array(
 				'trd_arch' => 'gloom'
 			,	'trd_miss' => 'warn'
@@ -524,8 +524,8 @@ function get_template_page($t, $NOS = 0) {
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
 		if ($d = get_date_class()) $class = array_merge($class, $d);
 	}
-	if ($a = $t[$k = 'content']) {
-		$attr = get_template_attr($t['data'][$k]);
+	if ($a = $page[$k = 'content']) {
+		$attr = get_template_attr($page['data'][$k]);
 		if ($NOS) {
 			foreach ((array)$a as $k => $v) $content .= ($content?NL:'').NL.$k.$NOS.$v;
 			$content = "
@@ -537,27 +537,30 @@ function get_template_page($t, $NOS = 0) {
 	$head = '<meta charset="'.ENC.'">'.($NOS?'':'
 <meta name="viewport" content="width=690">
 <link rel="stylesheet" type="text/css" href="'.$N.($v = '.css').($L?'?'.filemtime(NAMEPRFX.$v):'').'">').'
-<link rel="shortcut icon" type="image/png" href="'.(($v = $t['icon'])?ROOTPRFX.$v:$N).'.png">'
+<link rel="shortcut icon" type="image/png" href="'.(($v = $page['icon'])?ROOTPRFX.$v:$N).'.png">'
 .($R || ME_VAL?'
 <link rel="index" href="http://'.$_SERVER['SERVER_NAME'].ROOTPRFX.'">':'')
-.(($v = $t['head'])?NL.$v:'')
-.(($v = $t['title'])?NL."<title>$v</title>":'');
+.(($v = $page['head'])?NL.$v:'')
+.(($v = $page['title'])?NL."<title>$v</title>":'');
 
 	if ($ano) $header .= NL.'<p class="anno">'.indent($ano).'</p>';
 	if ($err) $header .= NL.$err;
-	if ($a = $t['header']) {
+	if ($a = $page[$k = 'header']) {
 		if (is_array($a)) {
-			foreach ($a as $k => &$v) if ($v) $v = ($k?'<u class="'.$k.'">':'<u>').indent($v).'</u>';
+			foreach ($a as $i => &$v) if ($v) $v = ($i?'<u class="'.$i.'">':'<u>').indent($v).'</u>';
 			$a = implode(NL, $a);
 		}
 		$header .= NL.'<p>'.indent($a).'</p>';
 	}
-	if ($header) $header = '<header id="header" class="header">'.indent($header).'</header>';
-
-	if ($v = $t[$txt = 'textarea']) $$txt = htmlspecialchars($v);
-	if ($v = $t[$k = 'task']) {
-		$attr = get_template_attr($t['data'][$k]);
-		if ($sub = $t['subtask']) $v = '<div class="task">'.indent($v).'</div>'.$sub;
+	if ($header) {
+		$i = '"'.$k.'"';
+		$attr = get_template_attr($page['data'][$k]);
+		$header = "<$k id=$i class=$i$attr>".indent($header)."</$k>";
+	}
+	if ($v = $page[$txt = 'textarea']) $$txt = NL.trim(htmlspecialchars($v));
+	if ($v = $page[$k = 'task']) {
+		$attr = get_template_attr($page['data'][$k]);
+		if ($sub = $page['subtask']) $v = '<div class="task">'.indent($v).'</div>'.$sub;
 		else if (!$static) $attr = ' class="task"'.$attr;
 		if ($sub = $$txt) {
 			$k = ' class="dump" id="dump"';
@@ -570,13 +573,13 @@ function get_template_page($t, $NOS = 0) {
 		$task = '<div id="task"'.$attr.'>'.indent($v).'</div>';
 	} else
 	if ($v = $$txt) $content .= get_template_content($v, $static, $txt);
-	if ($v = $t['footer']) $footer = '<footer>'.indent($v).'</footer>';
+	if ($v = $page['footer']) $footer = '<footer>'.indent($v).'</footer>';
 
 	if ($j) foreach ($j as $k => $v) $scripts .= '
 <script src="'.$N.($v = ($k?".$k":'').'.js').($L?'?'.filemtime(NAMEPRFX.$v):'').'"></script>';
 
 	return '<!doctype html>
-<html lang="'.($t['lang'] ?: 'en').'">
+<html lang="'.($page['lang'] ?: $lang ?: 'en').'">
 <head>'
 .indent($head)
 .'</head>

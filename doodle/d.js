@@ -788,10 +788,11 @@ var	i = param.on_page
 			i || (param.current.order?'&r':'&l')+'aquo;'
 		), param.current.rangeHTML += '\n'+(
 			param.current.page == i
-			? p
+			? '<span id="current-page">'+p+'</span>'
 			: '<a href="javascript:page('+i+')">'+p+'</a>'
 		);
 		j.innerHTML = (touch?'':la.page+': ')+param.current.rangeHTML;
+		if (i = id('current-page')) (i.nextElementSibling || i.parentNode.firstElementChild).focus();
 	}
 }
 
