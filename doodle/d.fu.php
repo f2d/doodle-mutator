@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-09-04 02:30'	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-09-08 03:09'	//* <- change this to invalidate old pages cached in browsers
 	.NL.	'Or user key/options/date background changed: '.ME_VAL
 	.NL.	implode(NL, get_date_class())
 	).'"';
@@ -27,20 +27,10 @@ function rewrite_htaccess($write_to_file = 1) {
 	$end_mark = '# 8<-- end mark: '.NAMEPRFX.', placed automatically: ';
 	$new_mark = $start_mark.ROOTPRFX.' 2016-08-24 13:20';		//* <- change this to invalidate old version
 	if (
-		!($old = (is_file($f = '.htaccess') ? trim(file_get_contents($f)) : ''))
+		!strlen($old = (is_file($f = '.htaccess') ? trim(file_get_contents($f)) : ''))
 	||	false === strpos($old, $new_mark)
 	||	false === strpos($old, $end_mark)
 	) {
-		if ($old) {
-			$b_found = (false !== ($i = strpos($old, $start_mark)));
-			$before = ($b_found ? trim(substr($old, 0, $i)) : '');
-
-			$a_found = (false !== ($i = strpos($old, $end_mark)));
-			$after = ($a_found && false !== ($i = strpos($old, NL, $i)) ? trim(substr($old, $i)) : '');
-
-			if ($b_found || $a_found) $new = ($before?$before.NL.NL:'').$new.($after?NL.NL.$after:'');
-			else $new .= NL.NL.$old;
-		} else $old = 'none';
 		$n = 'NO_CACHE';
 		$e_cond = " env=$n";
 		$e_set = "E=$n:1";
@@ -72,6 +62,19 @@ function rewrite_htaccess($write_to_file = 1) {
 	Header unset Vary'.$e_cond.'
 </IfModule>
 '.$end_mark.date(TIMESTAMP, T0).' -- Manual changes inside will be lost on the next update.';
+		if ($old) {
+			$b_found = (false !== ($i = strpos($old, $start_mark)));
+			$before = ($b_found ? trim(substr($old, 0, $i)) : '');
+
+			$a_found = (false !== ($i = strpos($old, $end_mark)));
+			$after = ($a_found && false !== ($i = strpos($old, NL, $i)) ? trim(substr($old, $i)) : '');
+
+			if ($b_found || $a_found) $new =
+				(strlen($before) ? $before.NL.NL : '')
+			.	$new
+			.	(strlen($after) ? NL.NL.$after : '')
+			; else $new .= NL.NL.$old;
+		} else $old = 'none';
 		$changed = ($new != $old);
 	} else $new = 'no change';
 	$report = "---- old version: ----
@@ -429,10 +432,9 @@ function get_template_form($t) {
 		.		indent("$a[label]:".NL.'<input type="checkbox"'.$n.$r.'>')
 		.	'</label>';
 	}
-	$attr = $method ?: '';
 	return $head.NL.(
 		$name || $method
-		? "<form$attr>".indent(
+		? "<form$method>".indent(
 			'<b>'.indent(
 				'<b><'.(
 					$textarea

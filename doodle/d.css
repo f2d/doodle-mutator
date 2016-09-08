@@ -253,6 +253,9 @@ a:hover	{
 .task .r {
 	padding-bottom: 0;
 }
+.task label.r {
+	margin-left: 22px;
+}
 .task form textarea {
 	width: 456px;
 	height: 160px;
@@ -547,9 +550,13 @@ a:hover	{
 	vertical-align: top;
 	font-style: italic;
 }
+.hint .poem, .hint .cite {
+	display: inline-block;
+	border: 1px dashed #888;
+	padding: 0px 8px;
+}
 .hint .poem {
 	padding: 8px 12px;
-	border: 1px dashed #888;
 }
 .log {	padding: 8px 183px;}
 .log i {

@@ -48,9 +48,9 @@ $tmp_describe_hint = 'At least '.DESCRIBE_MIN_LENGTH.' letters.'
 		for a blank line.
 	]
 	To write poem blocks, start and end the whole text and each line with a fully spaced slash.
-	[a|/ Like this, / or more than once / / for a blank line. /]
+	[cite|/ Like this, / or more than once / / for a blank line. /]
 	Result is shown at the right side. →
-	Not fully spaced slashes will remain as is, including double [a|//] slashes.
+	Not fully spaced slashes will remain as is, including double [cite|//] slashes.
 ]';
 $tmp_describe_new = 'Describe a picture you would like to see';
 $tmp_describe_this = 'Describe what you see on this picture';

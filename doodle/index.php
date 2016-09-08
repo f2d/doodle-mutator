@@ -167,7 +167,7 @@ if ($qdir) {
 	}
 } else {
 	if ($u_key && !$u_room_default) $qd_opts = 1;
-	if (GOD && !NGINX && strlen(trim(ROOTPRFX))) rewrite_htaccess();
+	if (GOD && !NGINX && strlen(trim(ROOTPRFX)) && substr($query['do'],0,3) !== 'hta') rewrite_htaccess();
 }
 
 define(MOD, GOD || $u_flag['mod'] || $u_flag['mod_'.$room]);
