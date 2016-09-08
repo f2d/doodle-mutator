@@ -9,7 +9,10 @@ AddCharset utf-8 html
 	Deny from all
 </Files>
 
-RedirectMatch 403 /(_bak|extras|include)/
+<IfModule alias_module>
+	RedirectMatch 403 /(_bak|extras|include)/
+	RedirectMatch 302 (^[^?]*/)(res|thumb|src)[/.]*$ $1
+</IfModule>
 
 <IfModule headers_module>
 	<Files *.html>
@@ -22,7 +25,6 @@ RedirectMatch 403 /(_bak|extras|include)/
 
 <IfModule rewrite_module>
 	RewriteEngine On
-	RewriteRule (^|/)(res|thumb|src)[/.]*$ redirect_up.htm [L]
 	RewriteCond %{HTTP_ACCEPT} application/xhtml\+xml
 	RewriteRule \.html$ - [T=application/xhtml+xml;charset=utf-8]
 </IfModule>

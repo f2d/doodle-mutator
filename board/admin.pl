@@ -30,9 +30,9 @@ use constant ADMIN_HEAD_INCLUDE => q{<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.
 <meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
 <title>Admin interface for <const TITLE></title>
 <style type="text/css">
-html, body { background: #eeeeff; }
-a { color: #770022; }
-a:hover { background: #aa1133; color: #eeeeff; }
+html, body { background: #eef; }
+a { color: #702; }
+a:hover { background: #d13; color: #eef; }
 
 #threadlist a { display: block; }
 th { text-align: left; }
@@ -40,15 +40,15 @@ th { text-align: left; }
 #deletecontrols { float: right; }
 
 h2 { font-size: 1.2em; margin: 2em 0 0.5em 0; padding: 0; font-family: sans-serif; }
-h2 a { text-decoration: none; color: #000000; }
+h2 a { text-decoration: none; color: #000; }
 h2 a:hover { text-decoration: underline; }
 
-.post { border: 1px solid #7799cc; background: #e7e7ff; padding: 0; margin-bottom: 0.3em; clear: both; }
+.post { border: 1px solid #79c; background: #e7e7ff; padding: 0; margin-bottom: 0.3em; clear: both; }
 .postcommands { margin: 0; padding: 3px; background: #ccddff; font-family: sans-serif; }
 h3 { font-size: 1em; margin: 0; padding: 0px; font-family: sans-serif; }
 .posttext { padding: 0.5em 2em; }
-.posttext a { text-decoration: none; color: #000000; }
-.posttext a:hover { text-decoration: underline; }
+.posttext a { color: #5ae; }
+.posttext a:hover { background: #5ae; color: #eef; }
 
 .deletebutton { display:none; }
 </style>
@@ -69,21 +69,21 @@ use constant THREAD_TEMPLATE => compile_template(ADMIN_HEAD_INCLUDE.q{
 <div class="navi">
 Pages: <loop template_for("page",0,(scalar(@$threads)-1)/THREADS_DISPLAYED)>
 	<if $page eq $currpage><var $page></if>
-	<if $page ne $currpage><a href="<var $self>/p<var $page>"><var $page></a></if>
+	<if $page ne $currpage><a href="<var $self>?p<var $page>"><var $page></a></if>
 </loop>
-<a href="<var $self>/list">Thread list</a>
+<a href="<var $self>?list">Thread list</a>
 </div>
 
 <div id="maincommands">
 <if @$editable>
 Edit: <loop $editable>
-	<a href="<var $self>/edit?filename=<var urlenc($filename)>"><var $filename></a>
+	<a href="<var $self>?edit&filename=<var urlenc($filename)>"><var $filename></a>
 </loop>
 <br />
 </if>
 <a href="<var $path><const KAREHA_SCRIPT>?task=rebuild&amp;admin=<var $adminpass>">Rebuild caches</a> |
 <a href="<var $path><const HTML_SELF>">Return to board</a> | 
-<a href="<var $self>/logout">Log out</a>
+<a href="<var $self>?logout">Log out</a>
 </div>
 
 <div id="threads">
@@ -99,7 +99,7 @@ Edit: <loop $editable>
 </div>
 
 <loop $shownthreads>
-	<h2><a href="<var $self>/<var $thread>/"><var $title or "Thread $thread"> (<var $postcount>)</a></h2>
+	<h2><a href="<var $self>?<var $thread>"><var $title or "Thread $thread"> (<var $postcount> posts)</a></h2>
 
 	<div class="threadcommands">
 	<if !$permasage><a href="<var $path><const KAREHA_SCRIPT>?task=permasagethread&amp;thread=<var $thread>&amp;state=1&amp;&amp;admin=<var $adminpass>&amp;r=1">permasage thread</a></if>
@@ -120,7 +120,7 @@ Edit: <loop $editable>
 		</label>
 		- <a href="<var $path><const KAREHA_SCRIPT>?task=delete&amp;delete=<var $thread>,<var $num>&amp;password=<var $adminpass>&amp;r=1">delete post</a>
 		<if $filename>- <a href="<var $path><const KAREHA_SCRIPT>?task=delete&amp;delete=<var $thread>,<var $num>&amp;fileonly=1&amp;password=<var $adminpass>&amp;r=1">delete file</a></if>
-		<if ADMIN_BAN_FILE>- <a href="<var $self>/ban?admin=<var $adminpass>&amp;id=<var $masked_ip>" onclick="return banclick(this)">ban IP</a></if>
+		<if ADMIN_BAN_FILE>- <a href="<var $self>?ban&admin=<var $adminpass>&amp;id=<var $masked_ip>" onclick="return banclick(this)">ban IP</a></if>
 		</div>
 		<div class="posttext"><var $abbreviation or $text></div>
 		</div>
@@ -132,9 +132,9 @@ Edit: <loop $editable>
 <div class="navi">
 Pages: <loop template_for("page",0,(scalar(@$threads)-1)/THREADS_DISPLAYED)>
 	<if $page eq $currpage><var $page></if>
-	<if $page ne $currpage><a href="<var $self>/p<var $page>"><var $page></a></if>
+	<if $page ne $currpage><a href="<var $self>?p<var $page>"><var $page></a></if>
 </loop>
-<a href="<var $self>/list">Thread list</a>
+<a href="<var $self>?list">Thread list</a>
 </div>
 
 </body></html>
@@ -154,7 +154,7 @@ You can find an up-to-date version
 or you can get the <code>spam.txt</code> file directly <a href="http://wakaba.c3.cx/antispam/spam.txt">here</a>.
 </p></if>
 
-<form action="<var $self>/edit" method="post">
+<form action="<var $self>?edit" method="post">
 <textarea name="contents" cols="80" rows="45"><var clean_string($contents)></textarea>
 <br />
 <input type="hidden" name="filename" value="<var clean_string($filename)>" />
@@ -180,8 +180,8 @@ use constant LIST_TEMPLATE => compile_template(ADMIN_HEAD_INCLUDE.q{
 <loop $threads>
 	<tr class="line<var $num&1>">
 	<td align="right"><var $num>:</td>
-	<td><a href="<var $self>/<var $thread>/"><var $title or "Thread $thread"><if $closed or $permasage> <small>(<if $closed>closed</if><if !$closed and $permasage>permasaged</if>)</small></if></a></td>
-	<td align="right"><a href="<var $self>/<var $thread>/"><var $postcount></a></td>
+	<td><a href="<var $self>?<var $thread>"><var $title or "Thread $thread"><if $closed or $permasage> <small>(<if $closed>closed</if><if !$closed and $permasage>permasaged</if>)</small></if></a></td>
+	<td align="right"><a href="<var $self>?<var $thread>"><var $postcount></a></td>
 	<td><var make_date($lastmod,DATE_STYLE)></td>
 	<td align="right"><var int($size/1024)> kb</td>
 
@@ -248,8 +248,9 @@ if($pass ne ENCODED_PASS)
 
 my @shownthreads;
 my $showlist;
-my ($threadnum,$ranges,$list,$edit,$ban,$logout,$page)=$ENV{PATH_INFO}=~
-	m!/(?:([0-9]+)(?:/(.*)|)|(list)|(edit)|(ban)|(logout)|p([0-9]+))!i;
+my ($threadnum,$ranges,$list,$edit,$ban,$logout,$page)=
+	$ENV{QUERY_STRING}=~
+	m!/*(?:(\d+)(?:/(.*))?|(list)|(edit)|(ban)|(logout)|p(\d+))!i;
 
 if($threadnum)
 {

@@ -32,7 +32,7 @@ use constant S_PICNAME => 'File: ';						# Prints text before upload name/link
 use constant S_REPLY => 'Reply';						# Prints text for reply link
 use constant S_ABBR => '%d posts omitted. Click Reply to view.';		# Prints text to be shown when replies are hidden
 use constant S_ABBRIMG => '%d posts and %d images omitted. Click Reply to view.';	# Prints text to be shown when replies and images are hidden
-use constant S_ABBRTEXT => '8&lt;--- Comment too long. Click <a href="%s%s%s#%s">here</a> to view the full text. ---';
+use constant S_ABBRTEXT => '8&lt;--- Comment too long. Click <a href="%s">here</a> to view the full text. ---';
 
 use constant S_REPDEL => 'Delete Post ';					# Prints text next to S_DELPICONLY (left)
 use constant S_DELPICONLY => 'File Only';					# Prints text next to checkbox for file deletion (right)
@@ -182,7 +182,7 @@ use constant MAIN_PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<loop $posts>
 		<var $abbreviation or $text>
 
-		<if $abbreviation><p class="abbrev"><var sprintf S_ABBRTEXT,RES_DIR,$thread,PAGE_EXT,$num></p></if>
+		<if $abbreviation><p class="abbrev"><var sprintf(S_ABBRTEXT,"$filename#$num")></p></if>
 		<if $omit and $num==1>
 			<span class="omittedposts">
 			<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
@@ -313,10 +313,10 @@ use constant REPLY_TEMPLATE => compile_template( q{
 	<if !$link><span class="postername"><var $name></span><if $trip><span class="postertrip"><if !$capped><var $trip></if><if $capped><var $capped></if></span></if></if>
 	<var $date></label>
 	<span class="reflink">
-		<a href="<const expand_filename(RES_DIR)><var $thread><const PAGE_EXT>#<var $num>">#<var $num></a>
-		<a href="javascript:insert_reply('&gt;&gt;<var $num>','<const expand_filename(RES_DIR)><var $thread><const PAGE_EXT>')">&lt;&lt;</a>
+		<a href="<var $filename>#<var $num>">#<var $num></a>
+		<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var $filename>')">&lt;&lt;</a>
 	</span>&nbsp;
-	<span class="replylink">[<a href="<const expand_filename(RES_DIR)><var $thread><const PAGE_EXT>" id="reply<var $thread>"><const S_REPLY></a>]</span>
+	<span class="replylink">[<a href="<var $filename>" id="reply<var $thread>"><const S_REPLY></a>]</span>
 
 	<blockquote>
 	<var $comment>
@@ -332,8 +332,8 @@ use constant REPLY_TEMPLATE => compile_template( q{
 	<if !$link><span class="commentpostername"><var $name></span><if $trip><span class="postertrip"><if !$capped><var $trip></if><if $capped><var $capped></if></span></if></if>
 	<var $date></label>
 	<span class="reflink">
-		<a href="<const expand_filename(RES_DIR)><var $thread><const PAGE_EXT>#<var $num>">#<var $num></a>
-		<a href="javascript:insert_reply('&gt;&gt;<var $num>','<const expand_filename(RES_DIR)><var $thread><const PAGE_EXT>')">&lt;&lt;</a>
+		<a href="<var $filename>#<var $num>">#<var $num></a>
+		<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var $filename>')">&lt;&lt;</a>
 	</span>&nbsp;
 
 	<if $image>

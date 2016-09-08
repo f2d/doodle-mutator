@@ -420,7 +420,7 @@ sub escamp($)
 sub urlenc($)
 {
 	my ($str)=@_;
-	$str=~s/([^\w ])/"%".sprintf("%02x",ord $1)/sge;
+	$str=~s/([^\w ._\-])/"%".sprintf("%02x",ord $1)/sge;
 	$str=~s/ /+/sg;
 	return $str;
 }
