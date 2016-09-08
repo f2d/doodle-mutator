@@ -15,7 +15,7 @@ function cre(e,p,b) {
 	return e;
 }
 
-function insert(text,thread) {
+function reply_insert(text,thread) {
 var	i = id('show_postform'), t = id('postform'+thread).comment;
 	if (i && i.style.display != 'none') gn('a',i)[0].click();
 	if (t) {
@@ -39,9 +39,9 @@ var	i = id('show_postform'), t = id('postform'+thread).comment;
 	}
 }
 
-function w_insert(text,link) {
+function insert_reply(text,link) {
 	if (document.body.className == 'mainpage') document.location = link+hash+text;
-	else insert(text,'');
+	else reply_insert(text,'');
 }
 
 function size_field(i,rows) {
@@ -204,9 +204,9 @@ var	a = gn('p'), i = a.length, r = /\babbrev\b/i, t,b,c,d;
 		if (!i.comment.value && (a = location.hash) && a.slice(0, c = hash.length) == hash) {
 			c = a.slice(c);
 			try {
-				insert(unescape(c),'');
+				reply_insert(unescape(c),'');
 			} catch(e) {
-				insert(c,'');
+				reply_insert(c,'');
 			}
 		} else c = 0;
 		if (t = id('index-form-header') || id('reply-form-header')) {
