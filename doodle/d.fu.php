@@ -313,9 +313,12 @@ function optimize_pic($filepath) {
 		$bad_path = "$f.bad";
 		$bak_path = "$f.bak";
 		$d = DIRECTORY_SEPARATOR;
+		$i = (function_exists('ini_get') && function_exists('ini_set'));
+		$m = 'max_execution_time';
 		global $cfg_optimize_pics;
 		foreach ($cfg_optimize_pics as $format => $tool) if ($ext == $format)
-		foreach ($tool as $program => $command) {
+		foreach ($tool as $arr) {
+			list($program, $command) = $arr;
 			if (is_file($p = $program) || is_file($p .= '.exe')) $p = "./$p";
 			else continue;
 
@@ -323,6 +326,7 @@ function optimize_pic($filepath) {
 			$output = array('');
 			$cmd = sprintf($command, $p, $f);
 			if ($d !== '/') $cmd = str_replace('/', $d, $cmd);
+			if ($i) ini_set($m, ini_get($m) + 30);
 
 			data_lock('/pic');
 			$return = exec($cmd, $output, $return_code);
@@ -349,15 +353,19 @@ function optimize_pic($filepath) {
 					? 'done'
 					: 'failed'
 				);
-				$done = "failed, $f = $size bytes, $del$rest.";
+				$done = "failed, $f = $size bytes, $del$rest";
 				if (!$return_code) $return_code = '0, fallback';
-			} else $done = 'done.';
+			} else $done = (
+				$return_code
+				? 'error'
+				: 'done'
+			);
 			if ($return_code) {
 				$o = trim(preg_replace('~\v+~u', NL, implode(NL, (array)$output)));
 				if (strlen($o)) {
 					if (false !== strpos($o, NL)) $o = NL.'['.indent($o).']';
 				} else $o = 'empty';
-				data_log_action("Optimization $done
+				data_log_action("Optimization $done.
 Command line: $cmd
 Return code: $return_code
 Return text: $return
