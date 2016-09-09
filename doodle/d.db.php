@@ -60,7 +60,7 @@ function data_log($file_path, $line, $n = UTF, $report = 1) {
 			$log .= NL."Copied $written to new file, $del $old";
 		}
 	}
-	if ($log && $report) data_log_adm($log);
+	if ($log && $report) data_log_action($log);
 	return $written;
 }
 
@@ -239,7 +239,7 @@ function data_log_ref() {
 	) data_collect(DIR_DATA.'ref.log', $r);
 }
 
-function data_log_adm($a) {			//* <- keep logs of administrative actions by date
+function data_log_action($a) {			//* <- keep logs of administrative actions by date
 	global $u_num, $room;
 	$d = date('Y-m-d', T0);
 	$u = (GOD?'g':(MOD?'m':'r'));
@@ -260,7 +260,7 @@ function data_log_report($r, $freeze = 0) {	//* <- r = array(t-r-c, reason, thre
 		) {
 			if (!$m[5] && $freeze) rename($f, $f.'.stop');
 			data_log(DIR_META_R."$room/reports/$m[2].log", T0.'+'.M0."	$r[3]	$r[4]	$r[1]");
-			if ($r = data_log_adm("$r[0]	$r[1]")) data_post_refresh();
+			if ($r = data_log_action("$r[0]	$r[1]")) data_post_refresh();
 			return $r;
 		}
 		break;
@@ -870,7 +870,7 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 
 	if ($un) $o .= '+'.end($q);
 	if (is_array($a)) $a = implode('-', $a);
-	return data_log_adm("$a	$o: $ok");
+	return data_log_action("$a	$o: $ok");
 }
 
 function data_get_visible_rooms() {
@@ -964,7 +964,7 @@ if (TIME_PARTS) time_check_point('done scan, inb4 room iteration'.NL);
 		if ($last < $last_time_in_room) $last = $last_time_in_room;
 if (TIME_PARTS) time_check_point('done room '.$r);
 	}
-	if ($o = trim(ob_get_clean())) data_log_adm('include(post.count) buffer dump: '.$o);
+	if ($o = trim(ob_get_clean())) data_log_action('include(post.count) buffer dump: '.$o);
 	return $a ? array(
 		'last' => $last
 	,	'list' => $a

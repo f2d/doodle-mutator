@@ -92,7 +92,7 @@ $new";
 			? 'Succesfully updated'
 			: 'Failed to update'
 		);
-		data_log_adm($report = "$saved $f
+		data_log_action($report = "$saved $f
 
 $report");
 	}
@@ -308,51 +308,61 @@ function optimize_pic($filepath) {
 	if (
 		function_exists('exec')
 	&&	($f = $filepath)
-	&&	($e = get_file_ext($f))
+	&&	($ext = get_file_ext($f))
 	) {
+		$bad_path = "$f.bad";
+		$bak_path = "$f.bak";
+		$d = DIRECTORY_SEPARATOR;
 		global $cfg_optimize_pics;
-		foreach ($cfg_optimize_pics as $format => $tool) if ($e == $format)
+		foreach ($cfg_optimize_pics as $format => $tool) if ($ext == $format)
 		foreach ($tool as $program => $command) {
 			if (is_file($p = $program) || is_file($p .= '.exe')) $p = "./$p";
 			else continue;
 
-			$e = vsprintf($command, array($p, $f));
+			$return_code = 0;
 			$output = array('');
+			$cmd = sprintf($command, $p, $f);
+			if ($d !== '/') $cmd = str_replace('/', $d, $cmd);
+
 			data_lock('/pic');
-			exec(DIRECTORY_SEPARATOR == '/' ? $e : str_replace('/', DIRECTORY_SEPARATOR, $e), $output, $return);
+			$return = exec($cmd, $output, $return_code);
 			data_unlock('/pic');
+
 			if (
-				is_file($f .= '.bak')
-			&&	filesize($f)
+				is_file($bak_path)
+			&&	($bak_size = filesize($bak_path))
 			) {
 				$del = (
-					($size = filesize($filepath))
+					($size = filesize($f))
 					? (
-						($rest = rename($filepath, $filepath.'.bad'))
+						($rest = rename($f, $bad_path))
 						? 'renamed to *.bad'
 						: 'not renamed'
 					) : (
-						($rest = unlink($filepath))
+						($rest = unlink($f))
 						? 'deleted'
 						: 'not deleted'
 					)
 				);
-				if ($rest) $rest = ".\nRestoring from $f ".(
-					rename($f, $filepath)
+				if ($rest) $rest = ".\nRestoring from $bak_path = $bak_size bytes, ".(
+					rename($bak_path, $f)
 					? 'done'
 					: 'failed'
 				);
-				data_log_adm("Optimizing $filepath failed, $size bytes, $del$rest.");
-				if (!$return) $return = 'fallback';
-			}
-			if ($return) {
-				$o = trim(preg_replace('~\v+~u', NL, is_array($output) ? implode(NL, $output) : $output));
+				$done = "failed, $f = $size bytes, $del$rest.";
+				if (!$return_code) $return_code = '0, fallback';
+			} else $done = 'done.';
+			if ($return_code) {
+				$o = trim(preg_replace('~\v+~u', NL, implode(NL, (array)$output)));
 				if (strlen($o)) {
 					if (false !== strpos($o, NL)) $o = NL.'['.indent($o).']';
 				} else $o = 'empty';
-				data_log_adm("Command line: $e\nReturn code: $return\nShell output: $o");
-			}
-			return;
+				data_log_action("Optimization $done
+Command line: $cmd
+Return code: $return_code
+Return text: $return
+Shell output: $o");
+			} else return;
 		}
 	}
 }

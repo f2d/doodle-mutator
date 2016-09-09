@@ -413,15 +413,19 @@ function getFormattedNumUnits(num, unit) {
 function checkMyTask(event, e) {
 	if (checking) return;
 	checking = 1;
-var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
+var	d = 'data-id', f = id(CM), s = id(CS);
 	if (f) del(f);
 	if (e && e.tagName) f = getParentByTagName(e, 'form'); else
 	if (f = s.getAttribute(d)) {
 		f = id(f), s.removeAttribute(d);
 		if (!regTagForm.test(f.tagName)) f = gn('form', f)[0];
 	}
-	if (f && event) event.preventDefault();
+	if (event) {
+		if (e = event.preventDefault) e();
+		if (f && (e = f.checkValidity) && !e()) return false;
+	}
 	s.textContent = la.load+0;
+var	r = new XMLHttpRequest();
 	r.onreadystatechange = function() {
 		if (r.readyState == 4) {
 			if (r.status == 200) {
@@ -492,6 +496,7 @@ var	d = 'data-id', f = id(CM), s = id(CS), r = new XMLHttpRequest();
 	};
 	r.open('GET', f?'--':'-', true);
 	r.send();
+	if (event) return false;
 }
 
 function skipMyTask(v) {
@@ -1663,7 +1668,7 @@ if (k = id('task')) {
 		&&	(i = gi('submit',k)[0])
 		&&	(f = getParentByTagName(i, 'form'))
 		) {
-			f.setAttribute('onsubmit', 'checkMyTask(event, this)');
+			f.setAttribute('onsubmit', 'return checkMyTask(event, this)');
 		}
 		if (taskTop) {
 			taskTop.innerHTML += '<a class="r" href="'+(

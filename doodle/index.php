@@ -332,7 +332,7 @@ if (TIME_PARTS && $a) time_check_point("done $a pics");
 				}
 				if ($last) exit_if_not_mod($last);
 				foreach ($a as $f) if (strlen($x = trim(file_get_contents($f)))) {
-					if (preg_match_all('~\$([_A-Z][_A-Z\d]*)~', $x, $match)) foreach ($match[1] as $k) {
+					if (preg_match_all('~\$([_A-Z][_A-Z\d]*)~', $x, $match)) foreach (array_unique($match[1]) as $k) {
 						if ($v = get_const($k) ?: $_SERVER[$k]) $x = str_replace('$'.$k, $v, $x);
 					}
 					$t .= "# Example: $f #
@@ -1307,7 +1307,7 @@ if ($u_key) {
 			$t = '';
 			if ($target || data_aim()) foreach ($target as $key => $val) $t .= "$i$key: $val";
 			$ptx = preg_replace('~\v+~u', $i, trim($ptx));
-			data_log_adm("Denied $post_status: $log
+			data_log_action("Denied $post_status: $log
 Post$op$i$ptx$ed
 Target$op$t$ed"
 			);
@@ -1328,7 +1328,7 @@ if (isset($_POST[ME]) && strlen($me = trim_post($_POST[ME], USER_NAME_MAX_LENGTH
 
 after_posting:
 
-if (strlen($o = trim(ob_get_clean()))) data_log_adm('POST buffer dump: '.$o);
+if (strlen($o = trim(ob_get_clean()))) data_log_action('POST buffer dump: '.$o);
 
 if ($p = $post_status) foreach (array(
 	'OK' => $tmp_post_ok
