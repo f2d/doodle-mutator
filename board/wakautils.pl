@@ -683,6 +683,19 @@ sub get_xhtml_content_type(;$$)
 	return $type;
 }
 
+sub get_filename($)
+{
+	my $path=shift;
+	$path=~m!([^/]+)$!;
+	clean_string($1)
+}
+
+sub get_thread_filename($)
+{
+	my ($thread)=@_;
+	expand_filename(RES_DIR.$thread.PAGE_EXT)
+}
+
 sub expand_filename($)
 {
 	my ($filename)=@_;

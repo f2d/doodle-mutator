@@ -313,10 +313,10 @@ use constant REPLY_TEMPLATE => compile_template( q{
 	<if !$link><span class="postername"><var $name></span><if $trip><span class="postertrip"><if !$capped><var $trip></if><if $capped><var $capped></if></span></if></if>
 	<var $date></label>
 	<span class="reflink">
-		<a href="<var $filename>#<var $num>">#<var $num></a>
-		<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var $filename>')">&lt;&lt;</a>
+		<a href="<var get_thread_filename($thread)>#<var $num>">#<var $num></a>
+		<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var get_thread_filename($thread)>')">&lt;&lt;</a>
 	</span>&nbsp;
-	<span class="replylink">[<a href="<var $filename>" id="reply<var $thread>"><const S_REPLY></a>]</span>
+	<span class="replylink">[<a href="<var get_thread_filename($thread)>" id="reply<var $thread>"><const S_REPLY></a>]</span>
 
 	<blockquote>
 	<var $comment>
@@ -332,8 +332,8 @@ use constant REPLY_TEMPLATE => compile_template( q{
 	<if !$link><span class="commentpostername"><var $name></span><if $trip><span class="postertrip"><if !$capped><var $trip></if><if $capped><var $capped></if></span></if></if>
 	<var $date></label>
 	<span class="reflink">
-		<a href="<var $filename>#<var $num>">#<var $num></a>
-		<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var $filename>')">&lt;&lt;</a>
+		<a href="<var get_thread_filename($thread)>#<var $num>">#<var $num></a>
+		<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var get_thread_filename($thread)>')">&lt;&lt;</a>
 	</span>&nbsp;
 
 	<if $image>
@@ -387,7 +387,5 @@ use constant ERROR_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 }.NORMAL_FOOT_INCLUDE);
 
 
-
-sub get_filename($) { my $path=shift; $path=~m!([^/]+)$!; clean_string($1) }
 
 1;

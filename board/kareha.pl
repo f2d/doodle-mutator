@@ -28,7 +28,7 @@ $stylesheets=get_stylesheets();
 $markup_formats=[map +{id=>$_},MARKUP_FORMATS];
 use strict;
 
-my $replyrange_re=qr{n?(?:[0-9\-,lrq]|&#44;)*[0-9\-lrq]}; # regexp to match reply ranges for >> links
+my $replyrange_re=qr{n?(?:[\d\-,lrq]|&#44;)*[\d\-lrq]}; # regexp to match reply ranges for >> links
 my $protocol_re=protocol_regexp();
 my $url_re=url_regexp();
 
@@ -132,7 +132,7 @@ else { make_http_forward(HTML_SELF,ALTERNATE_REDIRECT) }
 sub show_thread($)
 {
 	my ($path)=@_;
-	my ($threadnum,$ranges)=$path=~m!/([0-9]+)(?:/(.*)|)!i;
+	my ($threadnum,$ranges)=$path=~m!/(\d+)(?:/(.*)|)!i;
 	my $modified=(stat RES_DIR.$threadnum.PAGE_EXT)[9];
 
 	if($ENV{HTTP_IF_MODIFIED_SINCE})
@@ -305,7 +305,7 @@ sub post_stuff($$$$$$$$$$$$)
 	make_error(S_UNJUST) if $ENV{REQUEST_METHOD} and $ENV{REQUEST_METHOD} ne "POST";
 
 	# check for weird characters
-	make_error(S_UNUSUAL) if $thread=~/[^0-9]/;
+	make_error(S_UNUSUAL) if $thread=~/\D/;
 	make_error(S_UNUSUAL) if length($thread)>10;
 	make_error(S_UNUSUAL) if $name=~/[\n\r]/;
 	make_error(S_UNUSUAL) if $link=~/[\n\r]/;
@@ -460,7 +460,7 @@ sub format_comment($$$)
 {
 	my ($comment,$markup,$thread)=@_;
 
-	$thread=expand_filename(RES_DIR.$thread.PAGE_EXT);
+	$thread=get_thread_filename($thread);
 	$markup=DEFAULT_MARKUP unless grep $markup eq $_,MARKUP_FORMATS;
 
 	my %formats = (
@@ -630,7 +630,7 @@ sub delete_stuff($@)
 
 	foreach my $post (@posts)
 	{
-		my ($thread,$num)=$post=~/([0-9]+),([0-9]+)/;
+		my ($thread,$num)=$post=~/(\d+),(\d+)/;
 
 		delete_post($thread,$num,$password,$fileonly);
 	}
@@ -709,7 +709,7 @@ sub delete_thread($)
 {
 	my ($threadnum)=@_;
 
-	make_error(S_UNUSUAL) if($threadnum=~/[^0-9]/); # check to make sure the thread argument is safe
+	make_error(S_UNUSUAL) if($threadnum=~/\D/); # check to make sure the thread argument is safe
 
 	my $thread=read_thread($threadnum);
 
@@ -725,7 +725,7 @@ sub permasage_thread($$)
 {
 	my ($threadnum,$state)=@_;
 
-	make_error(S_UNUSUAL) if($threadnum=~/[^0-9]/); # check to make sure the thread argument is safe
+	make_error(S_UNUSUAL) if($threadnum=~/\D/); # check to make sure the thread argument is safe
 
 	my $thread=read_thread($threadnum);
 	$$thread{permasage}=$state;
@@ -738,7 +738,7 @@ sub close_thread($$)
 {
 	my ($threadnum,$state)=@_;
 
-	make_error(S_UNUSUAL) if($threadnum=~/[^0-9]/); # check to make sure the thread argument is safe
+	make_error(S_UNUSUAL) if($threadnum=~/\D/); # check to make sure the thread argument is safe
 
 	my $thread=read_thread($threadnum);
 	$$thread{closed}=$state;
@@ -775,14 +775,14 @@ sub get_thread($)
 	my ($arg)=@_;
 	my ($thread,$filename);
 
-	if($arg=~/^[0-9]+$/)
+	if($arg=~/^\d+$/)
 	{
 		$thread=$arg;
 		$filename=RES_DIR.$thread.PAGE_EXT;
 	}
 	else
 	{
-		my $re=RES_DIR.'([0-9]+)'.PAGE_EXT;
+		my $re=RES_DIR.'(\d+)'.PAGE_EXT;
 		$filename=$arg;
 		($thread)=$filename=~/$re/;
 	}
@@ -870,7 +870,7 @@ sub filter_post_ranges($$;$)
 
 	foreach my $range (split /,/,$ranges)
 	{
-		if($range=~/^([0-9]*)-([0-9]*)$/)
+		if($range=~/^(\d*)-(\d*)$/)
 		{
 			my $start=($1 or 1);
 			my $end=($2 or $total);
@@ -881,23 +881,23 @@ sub filter_post_ranges($$;$)
 			if($start<$end) { push @postnums,($start..$end) }
 			else { push @postnums,reverse ($end..$start) }
 		}
-		elsif($range=~/^([0-9]+)$/)
+		elsif($range=~/^(\d+)$/)
 		{
 			my $post=$1;
 			push @postnums,$post if $post>0 and $post<=$total;
 		}
-		elsif($range=~/^l([0-9]+)$/i)
+		elsif($range=~/^l(\d+)$/i)
 		{
 			my $start=$total-$1+1;
 			$start=1 if $start<1;
 			push @postnums,($start..$total);
 		}
-		elsif($range=~/^r([0-9]{1,4})$/i)
+		elsif($range=~/^r(\d{1,4})$/i)
 		{
 			my $num=($1 or 1);
 			push @postnums,int (rand $total)+1 for(1..$num);
 		}
-		elsif($range=~/^q([0-9]+)$/i)
+		elsif($range=~/^q(\d+)$/i)
 		{
 			my $num=$1;
 
@@ -917,7 +917,7 @@ sub filter_post_ranges($$;$)
 	@postnums=@postnums[0..999] if @postnums>1000;
 	@postnums=(1..$total) unless @postnums;
 
-	if($ranges=~/^[0-9]*-[0-9]*$/ or $ranges=~/^l[0-9]+$/i)
+	if($ranges=~/^\d*-\d*$/ or $ranges=~/^l\d+$/i)
 	{
 		my $start=$postnums[0];
 		my $end=$postnums[$#postnums];
@@ -989,7 +989,7 @@ sub in_range($$)
 
 	foreach my $range (split /(,|&#44;)/,$ranges)
 	{
-		if($range=~/^([0-9]*)-([0-9]*)$/)
+		if($range=~/^(\d*)-(\d*)$/)
 		{
 			my $start=($1 or 1);
 			my $end=($2 or 1000000); # arbitary large number
@@ -998,13 +998,13 @@ sub in_range($$)
 
 			return 1 if($num>=$start and $num<=$end);
 		}
-		elsif($range=~/^([0-9]+)$/)
+		elsif($range=~/^(\d+)$/)
 		{
 			return 1 if($num==$1);
 		}
-		#elsif($range=~/^l([0-9]+)$/i) {} # l ranges never match
-		#elsif($range=~/^r([0-9]*)$/i) {} # r ranges never match
-		#elsif($range=~/^q([0-9]+)$/i) {} # q ranges never match
+		#elsif($range=~/^l(\d+)$/i) {} # l ranges never match
+		#elsif($range=~/^r(\d*)$/i) {} # r ranges never match
+		#elsif($range=~/^q(\d+)$/i) {} # q ranges never match
 	}
 	return 0;
 }
@@ -1119,7 +1119,7 @@ sub lock_log()
 	eval "flock LOGFILE,LOCK_EX"; # may not work on some platforms - ignore it if it does not.
 	seek LOGFILE,0,0;
 
-	my @log=grep { /^([0-9]+)/; -e RES_DIR.$1.PAGE_EXT } read_array(\*LOGFILE);
+	my @log=grep { /^(\d+)/; -e RES_DIR.$1.PAGE_EXT } read_array(\*LOGFILE);
 
 	# should remove MD5 for deleted files somehow
 	return \@log;
