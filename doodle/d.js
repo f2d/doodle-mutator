@@ -421,8 +421,8 @@ var	d = 'data-id', f = id(CM), s = id(CS);
 		if (!regTagForm.test(f.tagName)) f = gn('form', f)[0];
 	}
 	if (event) {
-		if (e = event.preventDefault) e();
-		if (f && (e = f.checkValidity) && !e()) return false;
+		if (event.preventDefault) event.preventDefault();
+		if (f && f.checkValidity && !f.checkValidity()) return false;
 	}
 	s.textContent = la.load+0;
 var	r = new XMLHttpRequest();
