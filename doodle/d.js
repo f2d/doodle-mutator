@@ -126,9 +126,9 @@ if (lang == 'ru') la = {
 	}
 ,	hint: {
 		show: 'Кликните, чтобы показать/спрятать.'
-	,	frozen: 'Замороженная нить.\n'
-	,	burnt: 'Выжженная нить.\n'
-	,	full: 'Полная нить.\n'
+	,	frozen: 'Замороженная нить'
+	,	burnt: 'Выжженная нить'
+	,	full: 'Полная нить'
 	}
 ,	count: {
 		img: 'Рисунков'
@@ -200,9 +200,9 @@ if (lang == 'ru') la = {
 	}
 ,	hint: {
 		show: 'Click here to show/hide.'
-	,	frozen: 'Frozen thread.\n'
-	,	burnt: 'Burnt thread.\n'
-	,	full: 'Full thread.\n'
+	,	frozen: 'Frozen thread'
+	,	burnt: 'Burnt thread'
+	,	full: 'Full thread'
 	}
 ,	count: {
 		img: 'Pictures'
@@ -323,6 +323,20 @@ function getToggleButtonHTML(content, open) {
 	+	'">'
 	+		content.replace(regTrimPun, '')
 	+	'</a>';
+}
+
+function getToggleThreadHTML(param) {
+var	o = param.open || 0
+,	c = param.headerClass || 0
+,	h = param.headerText || 0
+	;
+	return	'<div'+(c?' class="'+c+'"':'')+'>'
+	+		(h?h+' ':'')
+	+		getToggleButtonHTML(param.buttonText || la.hint.show, o)
+	+	'</div>'
+	+	'<div'+(o?'':' class="hid"')+'>'
+	+		param.content
+	+	'</div>';
 }
 
 function toggleHide(e,d) {e.style.display = (e.style.display != (d?d:d='')?d:'none');}
@@ -607,14 +621,14 @@ var	containers = showContent('last')
 function showOpen(i,top) {
 var	t = id(i) || (showContent(), id(i))
 ,	d = t.firstElementChild
+,	a = function(e) {return !!e.onclick || e.href.slice(0,11) === 'javascript:';}
 ,	c
 	;
 	if (d
-	&&	(i = d.firstElementChild)
-	&&	i.href
+	&&	(a = gn('a', d).filter(a)[0])
 	&&	(d = d.nextElementSibling)
 	&&	(((c = d.style.display) && c === 'none') || ((c = d.className) && regClassHid.test(c)))
-	) i.click();
+	) a.click();
 	t.scrollIntoView(!!top);
 }
 
@@ -1329,14 +1343,18 @@ function showContent(sortOrder) {
 		if (notEmpty(threadHTML)) {
 			if (addMarks) threadsMarks.push(threadMark);
 			if ((dtp.found || dtp.reports) && (m = param.room)) {
-				threadHTML =
-					'<div class="post alt x3">'
-				+		'<b class="anno dust">'
-				+			(dtp.found ? la.room_arch : la.room_logs)+': '
-				+			'<a href="'+(dtp.reports ? param.rooms : '')+m+'/">'+m+'</a>'
-				+		'</b>'
-				+	'</div>'
-				+threadHTML;
+				threadHTML = getToggleThreadHTML(
+					{
+						content: threadHTML
+					,	open: 1
+					,	headerClass: 'post alt x3'
+					,	headerText:
+							'<a href="'+(dtp.reports ? param.rooms : '')+m+'/" class="anno dust">'
+						+		m
+						+	'</a>'
+					,	buttonText: (dtp.found ? la.room_arch : la.room_logs)
+					}
+				);
 			}
 			return threadHTML;
 		}
@@ -1560,13 +1578,13 @@ var	flagVarNames = ['flag', 'flags']
 						var	j = reportClass[i.class || 0]
 						,	k = ' '+j+'" id="'+i.id
 							;
-							if (dontCollapse.indexOf(j) < 0) v =
-								'<div class="post alt anno">'
-							+		getToggleButtonHTML(la.hint[j]+la.hint.show)
-							+	'</div>'
-							+	'<div class="hid">'
-							+		v
-							+	'</div>';
+							if (dontCollapse.indexOf(j) < 0) v = getToggleThreadHTML(
+								{
+									content: v
+								,	headerClass: 'post alt anno'
+								,	buttonText: la.hint[j]
+								}
+							);
 						}
 						return	'<div class="thread'+(k || '')+'">'
 						+		v
