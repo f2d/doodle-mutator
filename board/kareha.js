@@ -2,9 +2,11 @@
 
 function id(i) {return document.getElementById(i);}
 function is_ie() {return document.all && !document.opera;}
-function gn(n,p) {return (p||document).getElementsByTagName(n);}
+function gn(n,p) {return (p || document).getElementsByTagName(n);}
 function show(i) {
-var	style = i.style || id(i).style, n = 'none';
+var	style = i.style || id(i).style
+,	n = 'none'
+	;
 	style.display = (style.display!=n?n:'');
 }
 
@@ -16,15 +18,18 @@ function cre(e,p,b) {
 }
 
 function reply_insert(text,thread) {
-var	i = id('show_postform'), t = id('postform'+thread).comment;
+var	i = id('show_postform')
+,	t = id('postform'+thread).comment
+	;
 	if (i && i.style.display != 'none') gn('a',i)[0].click();
 	if (t) {
-		if (t.createTextRange && t.caretPos) {// IE
-		var	caretPos = t.caretPos;
-			caretPos.text = caretPos.text.charAt(caretPos.text.length-1) == ' '?text+' ':text;
+		if (t.createTextRange && (i = t.caretPos)) {// IE
+			i.text = (i.text.charAt(i.text.length-1) == ' ' ? text+' ' : text);
 		} else
 		if (t.setSelectionRange) {// Firefox
-		var	start = t.selectionStart, end = t.selectionEnd;
+		var	start = t.selectionStart
+		,	end = t.selectionEnd
+			;
 			t.value = t.value.substr(0,start)+text+t.value.substr(end);
 			t.setSelectionRange(start+text.length,start+text.length);
 		} else {
@@ -50,64 +55,73 @@ function size_field(i,rows) {
 
 function delete_post(thread,post,file) {
 	if (confirm('Are you sure you want to delete reply '+post+'?')) {
-	var	fileonly = false, script = document.forms[0].action, password = document.forms[0].password.value;
-
+	var	fileonly = false
+	,	script = document.forms[0].action
+	,	password = document.forms[0].password.value
+		;
 		if (file) fileonly = confirm('Leave the reply text and delete the only file?');
 
 		document.location = script
 		+	'?task=delete'
 		+	'&delete='+thread+','+post
 		+	'&password='+password
-		+	'&fileonly='+(fileonly?'1':'0');
+		+	'&fileonly='+(fileonly?1:0);
 	}
 }
 
 function preview_post(formId,thread) {
-var	form = id(formId), preview = id('preview'+thread);
+var	form = id(formId)
+,	preview = id('preview'+thread)
+	;
 
-	if (!form||!preview) return;
+	if (!form || !preview) return;
 
 	preview.style.display = '';
 	preview.innerHTML = '<em>Loading...</em>';
 
-var	text;
-	text = 'task=preview';
-	text += '&comment='+encodeURIComponent(form.comment.value);
-	text += '&markup='+encodeURIComponent(form.markup.value);
+var	text = 'task=preview'
+	+	'&comment='+encodeURIComponent(form.comment.value)
+	+	'&markup='+encodeURIComponent(form.markup.value)
+	;
 	if (thread) text += '&thread='+thread;
 
-var	xmlhttp = get_xmlhttp();
-	xmlhttp.open('POST',self);
-	xmlhttp.onreadystatechange = function() {
-		if (xmlhttp.readyState == 4) preview.innerHTML = xmlhttp.responseText;
+var	x = get_xmlhttp();
+	x.open('POST', self);
+	x.onreadystatechange = function() {
+		if (x.readyState == 4) preview.innerHTML = x.responseText;
 	}
-	if (is_ie()||xmlhttp.setRequestHeader) xmlhttp.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
-	xmlhttp.send(text);
+	if (is_ie() || x.setRequestHeader) x.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+	x.send(text);
 }
 
 function get_xmlhttp() {
-var	xmlhttp;
-	try {
-		xmlhttp = new ActiveXObject('Msxml2.XMLHTTP');
-	} catch(e) {
-		try { xmlhttp = new ActiveXObject('Microsoft.XMLHTTP'); }
-		catch(f) { xmlhttp = null; }
+var	x = null;
+	if (typeof ActiveXObject !== 'undefined') {
+		try {
+			x = new ActiveXObject('Msxml2.XMLHTTP');
+		} catch(e) {
+			try {
+				x = new ActiveXObject('Microsoft.XMLHTTP');
+			} catch(f) {
+				x = null;
+			}
+		}
 	}
-
-	if (!xmlhttp && typeof XMLHttpRequest!='undefined') xmlhttp = new XMLHttpRequest();
-
-	return xmlhttp;
+	if (!x && typeof XMLHttpRequest !== 'undefined') x = new XMLHttpRequest();
+	return x;
 }
 
 function set_new_inputs(i) {
-var	el = id(i);
-	if (!el||!el.link) return;
-
-	if (!el.field_a.value) el.field_a.value = get_cookie('name');
-	if (!el.field_b.value) el.field_b.value = get_cookie('link');
-	if (!el.password.value) el.password.value = get_password('password');
-	if (el.markup && !el.comment.value) el.markup.value = get_cookie('markup');
-	select_markup(el.markup);
+	if (i) i = id(i);
+	if (!i || !i.link) return;
+var	e;
+	if ((e = i.field_a) && !e.value) e.value = get_cookie('name');
+	if ((e = i.field_b) && !e.value) e.value = get_cookie('link');
+	if ((e = i.password) && !e.value) e.value = get_password('password');
+	if (e = i.markup) {
+		if ((i = i.comment) && !i.value) e.value = get_cookie('markup');
+		select_markup(e);
+	}
 }
 
 function set_delpass(i) {
@@ -115,8 +129,12 @@ function set_delpass(i) {
 }
 
 function make_password() {
-var	i = 8, r, pass = '', chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-	while (i--) pass += chars.substring(r = Math.floor(Math.random()*chars.length), r+1);
+var	chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+,	pass = ''
+,	i = 8
+,	j = chars.length
+	;
+	while (i--) pass += chars[Math.floor(Math.random()*j)];
 	return pass;
 }
 
@@ -126,38 +144,44 @@ var	pass = get_cookie(name);
 	return make_password();
 }
 
-function select_markup(sel) {
-	if (!window.markup_descriptions) return;
-
-var	el = sel;
-	while (el = el.nextSibling) if (el.nodeName.toLowerCase() == 'small') break;
-
-	if (el) el.innerHTML = markup_descriptions[sel.value];
+function select_markup(s) {
+	if (m = window.markup_descriptions) {
+	var	m,e = s;
+		while (e = e.nextSibling) if (e.nodeName.toLowerCase() == 'small') break;
+		if (e) e.innerHTML = m[s.value];
+	}
 }
 
 function get_cookie(name) {
 	with(document.cookie) {
-	var	regexp = new RegExp('(^|;\\s+)'+name+'=(.*?)(;|$)'), hit = regexp.exec(document.cookie);
+	var	regexp = new RegExp('(^|;\\s+)'+name+'=(.*?)(;|$)')
+	,	hit = regexp.exec(document.cookie)
+		;
 		if (hit && hit.length > 2) return unescape(hit[2]);
 		else return '';
 	}
 };
 
 function set_cookie(name,value,days) {
+var	x = '';
 	if (days) {
 	var	date = new Date();
 		date.setTime(date.getTime()+(days*24*60*60*1000));
-	var	expires = '; expires='+date.toGMTString();
+		x = '; expires='+date.toGMTString();
 	}
-	else expires = '';
-	document.cookie = name+'='+value+expires+'; path=/';
+	document.cookie = name+'='+value+x+'; path=/';
 }
 
-function rt(e) {return {r:e.getAttribute('rel'), t:e.getAttribute('title')};}
+function rt(e) {
+	return e ? {
+		r: e.getAttribute('rel')
+	,	t: e.getAttribute('title')
+	} : {};
+}
 
 function set_stylesheet(styletitle) {
 var	a = gn('link'), i = a.length, r, found = false;
-	while (i--) if ((r = rt(a[i])).t && r.r.indexOf('style')>=0) {
+	while (i--) if ((r = rt(a[i])).t && r.r.indexOf('style') >= 0) {
 		a[i].disabled = true; // IE needs this to work. IE needs to die.
 		if (styletitle == r.t) a[i].disabled = !(found = true);
 	}
@@ -166,17 +190,17 @@ var	a = gn('link'), i = a.length, r, found = false;
 
 function set_preferred_stylesheet() {
 var	a = gn('link'), i = a.length, r;
-	while (i--) if ((r = rt(a[i])).t && r.r.indexOf('style')>=0) a[i].disabled = (r.r.indexOf('alt')>=0);
+	while (i--) if ((r = rt(a[i])).t && r.r.indexOf('style') >= 0) a[i].disabled = (r.r.indexOf('alt') >= 0);
 }
 
 function get_active_stylesheet() {
 var	a = gn('link'), i = a.length, r;
-	while (i--) if (!a[i].disabled && (r = rt(a[i])).t && r.r.indexOf('style')>=0) return r.t;
+	while (i--) if (!a[i].disabled && (r = rt(a[i])).t && r.r.indexOf('style') >= 0) return r.t;
 }
 
 function get_preferred_stylesheet() {
 var	a = gn('link'), i = a.length, r;
-	while (i--) if ((r = rt(a[i])).t && r.r.indexOf('style')>=0 && r.r.indexOf('alt')<0) return r.t;
+	while (i--) if ((r = rt(a[i])).t && r.r.indexOf('style') >= 0 && r.r.indexOf('alt') < 0) return r.t;
 	return null;
 }
 
@@ -187,7 +211,12 @@ window.onunload = function(e) {
 }
 
 window.onload = function(e) {
-var	a = gn('p'), i = a.length, r = /\babbrev\b/i, t,b,c,d;
+var	a = gn('p')
+,	i = a.length
+,	h = location.hash
+,	r = /\babbrev\b/i
+,	t,b,c
+	;
 	while (i--) if ((d = a[i]).className && r.test(d.className)) {
 		t = gn('td', d.previousElementSibling);
 		t[t.length-1].appendChild(d);
@@ -195,13 +224,19 @@ var	a = gn('p'), i = a.length, r = /\babbrev\b/i, t,b,c,d;
 	if (!id('postform')) {
 		gn('hr')[1].previousElementSibling.innerHTML = postform_fallback;
 	}
-	i = gn('select'), a = {postform: set_new_inputs, delform: set_delpass}, d = document.body;
+var	i = gn('select')
+,	a = {
+		postform: set_new_inputs
+	,	delform: set_delpass
+	}
+,	d = document.body
+	;
 	if (d.getAttribute('style')) d.setAttribute('style', '');
 	if (i.length) i[0].value = get_active_stylesheet();
 	for (i in a) if (id(i)) a[i](i);
 
 	if (i = id('postform')) {
-		if (!i.comment.value && (a = location.hash) && a.slice(0, c = hash.length) == hash) {
+		if (!i.comment.value && h && h.slice(0, c = hash.length) == hash) {
 			c = a.slice(c);
 			try {
 				reply_insert(unescape(c),'');
@@ -210,13 +245,13 @@ var	a = gn('p'), i = a.length, r = /\babbrev\b/i, t,b,c,d;
 			}
 		} else c = 0;
 		if (t = id('index-form-header') || id('reply-form-header')) {
-			if (!c) show(i);
+			if (!h && !c) show(i);
 			a = ' [<a href="javascript:show(postform),show(show_postform);">', b = '</a>]';
 
 			d = cre('span',t);
 			d.id = 'show_postform';
 			d.innerHTML = a+(t.id[0] == 'r'?'Write a reply':'Start a new thread')+b;
-			if (c) show(d);
+			if (!h && c) show(d);
 
 			d = cre('div',gn('tr',i)[0].lastElementChild);
 			d.style.cssFloat = 'right';

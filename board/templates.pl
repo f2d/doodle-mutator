@@ -91,10 +91,10 @@ use constant NORMAL_HEAD_INCLUDE => q{
 </title>
 <meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
 <link rel="shortcut icon" href="<const expand_filename(FAVICON)>" />
-<link rel="stylesheet" type="text/css" href="<const expand_filename(CSS_FILE)>" />
+<link rel="stylesheet" type="text/css" href="<const expand_filename_time(CSS_FILE)>" />
 
 <loop $stylesheets>
-<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="<var expand_filename($filename)>" title="<var $title>" />
+<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="<var expand_filename_time($filename)>" title="<var $title>" />
 </loop>
 
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
@@ -126,7 +126,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 
 use constant NORMAL_FOOT_INCLUDE => include(INCLUDE_DIR."footer.html").q{
 
-<script type="text/javascript" src="<const expand_filename(JS_FILE)>?1473363480"></script>
+<script type="text/javascript" src="<const expand_filename_time(JS_FILE)>"></script>
 </body></html>
 };
 

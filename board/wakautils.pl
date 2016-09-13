@@ -2,6 +2,8 @@
 
 use strict;
 
+use File::stat;
+use Time::localtime;
 use Time::Local;
 use Socket;
 
@@ -696,13 +698,22 @@ sub get_thread_filename($)
 	expand_filename(RES_DIR.$thread.PAGE_EXT)
 }
 
+sub expand_filename_time($)
+{
+	my ($filename)=@_;
+	my $t = ctime(stat($filename)->mtime); # <- works, but FFUUU
+	$t=~s/\s+/_/g;
+	$t=~s/:/-/g;
+	expand_filename($filename)."?".$t
+}
+
 sub expand_filename($)
 {
 	my ($filename)=@_;
 	return $filename if($filename=~m!^/!);
 	return $filename if($filename=~m!^\w+:!);
 
-	my ($self_path)=$ENV{SCRIPT_NAME}=~m!^(.*/)[^/]+$!;
+	my ($self_path)=$ENV{SCRIPT_NAME}=~m!^(.*/)[^/]*$!;
 	return $self_path.$filename;
 }
 
