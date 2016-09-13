@@ -1176,7 +1176,7 @@ function data_aim($unknown_1st = 0, $skip_list = 0, $dont_change = 0) {
 }
 
 function data_log_post($t) {
-	global $u_num, $room, $target;
+	global $u_num, $room, $target, $target_filename;
 	$d = DIR_ROOM.$room.'/';
 	$pic = (is_array($t)?'.p1':'');
 
@@ -1211,8 +1211,9 @@ function data_log_post($t) {
 		,	'arch' => $arch
 		);
 
-		if (($n = data_get_thread_count()+1) <= 1) data_set_u_flag($u_num, 'mod_'.$room, 1, 2);
+		$n = data_get_thread_count() + 1;
 		$f = "$d$n$pic.log";
+		if ($n <= 1) data_set_u_flag($u_num, 'mod_'.$room, 1, 2);
 		if ($pic) $fork = data_log(
 			$f
 		,	$ptp && $target['post']
@@ -1226,16 +1227,30 @@ function data_log_post($t) {
 		data_put(0, $n);			//* <- save last created thread number
 	}
 	$p = ($pic ? IMG.implode('	', $t) : TXT.$t);
-	$l = data_log($f, T0."	$u_num$p");
+	$l = data_log($target_filename = $f, T0."	$u_num$p");
 
 	if (R1 && !$arch) $arch = data_archive_ready_go();
 
 	data_post_refresh();
 	return array(
 		'post' => $l
-	,	'fork' => $target?$fork:0
+	,	'fork' => $target ? $fork : 0
 	,	'arch' => $arch
 	);
+}
+
+function data_rename_last_pic($old, $new) {
+	global $target_filename;
+	if (strlen($f = $target_filename)) {
+		$t = file_get_contents($f);
+		$pos_before = strrpos($t, IMG) + strlen(IMG);
+		$pos_after = strpos($t, '	', $pos_before);
+		if (substr($t, $pos_before, $pos_after - $pos_before) === $old) {
+			$before = substr($t, 0, $pos_before);
+			$after = substr($t, $pos_after);
+			return file_put_contents($f, $before.$new.$after);
+		}
+	}
 }
 
 ?>

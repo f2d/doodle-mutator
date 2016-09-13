@@ -43,7 +43,7 @@ $cfg_opts_order = array(
 		,	'room' => 'room_default'
 		)
 	)
-,	'check' => array('head', 'count', 'times', 'names', 'own', 'unknown', 'active', 'save2common', 'kbox', 'focus', 'modtime304')
+,	'check' => array('head', 'count', 'times', 'names', 'own', 'unknown', 'active', 'save2common', 'kbox', 'focus', 'modtime304', 'picprogress')
 ,	'admin' => array('time_check_points')
 );
 $cfg_dir = array(
@@ -61,6 +61,7 @@ define(LOG_UA, false);		//* <- for each post with pic, add User-Agent field to t
 define(PIC_SUB, false);		//* <- true: img src=/i/p/0/0123.png, false: src=/i/0123.png and leave it to rewrite rule
 define(R1_DEL, false);		//* <- delete 1-letter-room archive content; otherwise just not show
 define(QK_EXPIRES, 100200300);	//* <- seconds; renewed with every successful POST, incl.options
+define(POST_PIC_WAIT, 5);	//* <- seconds
 
 define(ROOM_DEFAULT, 'base');
 define(ROOM_HIDE, '.');		//* <- allow ".hidden" rooms, not shown in client-side listings

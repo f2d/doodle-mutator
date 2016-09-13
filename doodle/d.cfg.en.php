@@ -113,6 +113,7 @@ $tmp_options_input = array(
 	,	'names'		=> 'Show poster names'
 	,	'times'		=> 'Show post dates'
 	,	'own'		=> 'Mark own posts'
+	,	'picprogress'	=> 'Show image post processing progress'
 	,	'focus'		=> 'Autofocus on text input fields'
 	,	'kbox'		=> 'Skip description confirmation'
 	,	'modtime304'	=> 'Use browser cache, when the page will have nothing new'
@@ -159,7 +160,14 @@ $tmp_post_ok = array(
 ,	'user_quit'	=> 'Log out.'
 ,	'user_reg'	=> 'User registered.'
 );
-$tmp_post_refresh = '%s Go to <a href="%s">next</a>.';
+$tmp_post_progress = array(
+	'starting'	=> 'Please wait while your image is processed'
+,	'opt_full'	=> 'Optimizing full image'
+,	'opt_res'	=> 'Optimizing low-res image copy'
+,	'low_res'	=> 'Resizing down to fit image into page view'
+,	'low_bit'	=> 'Restricting low-res image colors to keep file size below full copy'
+,	'refresh'	=> 'Finished. Click <a href="%s">here</a> if the page does not change after %s.'
+);
 $tmp_require_js = 'JavaScript support required.';
 $tmp_report = 'Report problem';
 $tmp_report_freeze = 'Freeze the thread until the issue is resolved';
@@ -210,11 +218,11 @@ $tmp_target_status = array(
 );
 $tmp_time_limit = 'Time limit';
 $tmp_time_units = array(
-/*	31536000 =>	array('year', 'years')
-,	86400 =>	array('day', 'days')
-,*/	3600 =>	array('hour', 'hours')
-,	60 => 	array('minute', 'minutes')
-,	0 =>	array('second', 'seconds')
+/*	31536000	=> array('year', 'years')
+,	86400		=> array('day', 'days')
+,*/	3600	=> array('hour', 'hours')
+,	60	=> array('minute', 'minutes')
+,	0	=> array('second', 'seconds')
 );
 $tmp_title = ($tmp_title_var ? 'Mekurage: Endless Strand' : 'Doodle Mutator');
 $tmp_took = ', took %s sec.';

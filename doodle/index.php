@@ -1222,11 +1222,14 @@ if ($u_key) {
 			$post_status = 'no_lock';
 		} else {
 	//* save pic file:
-			if (($log = file_put_contents($f, $raw_data)) != $x) {
+			if (($log = file_put_contents($todo_pic = $f, $raw_data)) != $x) {
 				$x = 0;
 				$post_status = 'file_put';
 			} else
+	//* check image data:
 			if ($sz = getImageSize($f)) {
+				unset($raw_data, $pp, $_POST['pic']);
+				$raw_size = $x;
 				foreach ($tmp_whu as $k => $v)
 				if ($a = (
 					get_const('DRAW_LIMIT_'.$v)
@@ -1244,42 +1247,27 @@ if ($u_key) {
 				}
 				if ($x > 0 && ($x < 9000 || $w > DRAW_PREVIEW_WIDTH)) {
 					$post_status = 'pic_fill';
-					$g = ($png?'PNG':'JPEG');
-					$i = "imageCreateFrom$g";
+					$file_type = ($png?'PNG':'JPEG');
+					$i = "imageCreateFrom$file_type";
 					$log = imageColorAt($pic = $i($f), 0, 0);
 					for ($x = $w; --$x;)
 					for ($y = $h; --$y;) if (imageColorAt($pic, $x, $y) != $log) break 2;
 				}
-			} else $x = 0;		//* <- post denied: image decoding error
-	//* save post:
+	//* invalid image:
+			} else $x = 0;
+	//* ready to save post:
 			if ($x > 0) {
-				optimize_pic($f);
-				if ($w > DRAW_PREVIEW_WIDTH) {
-					$fn .= ";$w*$h, ".format_filesize($z = filesize($f));
-					$p = imageCreateTrueColor($x = DRAW_PREVIEW_WIDTH, $y = round($h/$w*$x));
-					imageAlphaBlending($p, false);
-					imageSaveAlpha($p, true);
-					imageCopyResampled($p, $pic, 0,0,0,0, $x,$y, $w,$h);
+				if ($resize = ($w > DRAW_PREVIEW_WIDTH)) {
+					$fwh = $fn .= ";$w*$h, ";
+					$fn .= format_filesize($raw_size);
+				} else {
 					imageDestroy($pic);
-					$i = "image$g";
-					$i($p, $f = get_pic_resized_path($f));
-					optimize_pic($f);
-					if ($png && ($z < filesize($f))) {
-						$c = imageCreateTrueColor($x, $y);
-						imageCopyMerge($c, $p, 0, 0, 0, 0, $x, $y, 100);
-						imageTrueColorToPalette($p, false, 255);
-						imageColorMatch($c, $p);
-						imageDestroy($c);
-						$i($p, $f);
-						imageDestroy($p);
-						optimize_pic($f);
-					} else	imageDestroy($p);
 				}
 	//* gather post data fields to store:
 				$x = array($fn, trim_post($txt));
 				if (LOG_UA) $x[] = trim_post($_SERVER['HTTP_USER_AGENT']);
 				$post_status = 'new_post';
-			} else if (is_file($f)) unlink($f);
+			}
 		}
 	}
 
@@ -1288,14 +1276,18 @@ if ($u_key) {
 	if ($post_status == 'new_post') {
 		data_aim();
 		$x = data_log_post($x);
-		data_unlock();
+	//	data_unlock();
 		$t = array();
 		if ($log = $x['fork']) $t[] = 'trd_miss';
 		if ($log = $x['cap']) $t[] = 'trd_max'; else
 		if (!$x['post']) $t[] = 'unkn_res';
+		if (!$x['post'] && ($f = $todo_pic) && is_file($f)) {
+			unlink($f);
+			$todo_pic = '';
+		}
 		if (is_array($x = $x['arch']) && $x['done']) $t[] = 'trd_arch';
 		if (count($t)) $post_status = implode('!', $t);
-	}
+	} else data_unlock();
 
 //* after user posting --------------------------------------------------------
 
@@ -1389,19 +1381,113 @@ if ($OK) {
 			$a = implode('/', $a);
 			$t = T0 + QK_EXPIRES;
 		}
-		$h = 'Set-Cookie: ';
+		$s = 'Set-Cookie: ';
 		$a = ME.'='.$a;
 		$x = '; expires='.gmdate(DATE_COOKIE, $t).'; Path='.ROOTPRFX;
-		header("$h$a$x");
-		if ($add_qk) header("$h$add_qk$x");
+		header("$s$a$x");
+		if ($add_qk) header("$s$add_qk$x");
 	}
 } else {
 	$l .= '?!='.$p;
 	foreach ($query as $k => $v) if (substr($k, 0, 4) == 'draw') $l .= '&'.$k.(strlen($v)?'='.$v:'');
 }
-if (false === strpos('.,;:?!', substr($msg, -1))) $msg .= '.';
 
-header('Location: '.$l);
-printf($tmp_post_refresh, '<meta charset="'.ENC.'">'.$msg, $l);
+//* show pic processing progress ----------------------------------------------
+
+$ri = 0;
+if ($f = $todo_pic) {
+
+	function opt_formatted_size($f) {
+		global $ri, $tmp_no_change, $TO;
+		$old = filesize($f);
+		if ($ri) {
+			echo format_filesize($old).$TO;
+			flush();
+		}
+		optimize_pic($f);
+		if ($old === ($new = filesize($f))) {
+			if ($ri) echo $tmp_no_change;
+			return '';
+		} else {
+			$f = format_filesize($new);
+			if ($ri) echo $f;
+			return $f;
+		}
+	}
+
+	function get_new_line_time() {
+		global $AT;
+		return '</p>
+<p>'.get_time_elapsed().$AT;
+	}
+
+	if ($u_opts['picprogress']) {
+		ob_start();
+	} else {
+		if (false === strpos('.,;:?!', substr($msg, -1))) $msg .= '.';
+		$AT = ' &mdash; ';
+		$BY = ' x ';
+		$TO = ' &#x2192; ';
+		$ri = max(intval(get_const('POST_PIC_WAIT')), 1);
+	//	ini_set('zlib.output_compression', 'Off');
+	//	ini_set('output_buffering', 'Off');
+		header('X-Accel-Buffering: no');
+		header('Content-Encoding: none');
+		header("Refresh: $ri; url=$l");	//* <- some browser may be configured to prevent this
+		echo '<html>
+<head>
+	<meta charset="'.ENC.'">
+	<style>
+		html {background-color: #eee;}
+		body {background-color: #f5f5f5; margin: 1em; padding: 1em; font-family: sans-serif; font-size: 14px;}
+		p {padding: 0 1em;}
+		p:first-child {background-color: #ddd; padding: 1em;}
+		p:last-child {background-color: #def; padding: 1em; margin-block-end: 0;}
+	</style>
+</head>
+<body>
+<p>'.get_time_html()."$AT$tmp_post_progress[starting].".get_new_line_time()."$tmp_post_progress[opt_full]: ";
+	}
+	$changed = opt_formatted_size($f);
+
+	if ($pic && $resize) {
+		if ($changed) data_rename_last_pic($fn, $fwh.$changed);
+		$x = DRAW_PREVIEW_WIDTH;
+		$y = round($h/$w*$x);
+		$z = filesize($f);
+		if ($ri) echo get_new_line_time()."$tmp_post_progress[low_res]: $w$BY$h$TO$x$BY$y";
+		$p = imageCreateTrueColor($x,$y);
+		imageAlphaBlending($p, false);
+		imageSaveAlpha($p, true);
+		imageCopyResampled($p, $pic, 0,0,0,0, $x,$y, $w,$h);
+		imageDestroy($pic);
+		$i = "image$file_type";
+		$i($p, $f = get_pic_resized_path($f));
+		if ($ri) echo get_new_line_time()."$tmp_post_progress[opt_res]: ";
+		opt_formatted_size($f);
+
+		if ($png && ($z < filesize($f))) {
+			if ($ri) echo get_new_line_time()."$tmp_post_progress[low_bit]: 255";
+			$c = imageCreateTrueColor($x,$y);
+			imageCopyMerge($c, $p, 0,0,0,0, $x,$y, 100);
+			imageTrueColorToPalette($p, false, 255);
+			imageColorMatch($c, $p);
+			imageDestroy($c);
+			$i($p, $f);
+			imageDestroy($p);
+			if ($ri) echo get_new_line_time()."$tmp_post_progress[opt_res]: ";
+			opt_formatted_size($f);
+		} else {
+			imageDestroy($p);
+		}
+	}
+	data_unlock();
+
+	if ($ri) echo get_new_line_time().$msg.'</p>
+<p>'.sprintf($tmp_post_progress['refresh'], $l, format_time_units($ri)).'</p>
+</body>
+</html>'; else ob_end_clean();
+}
+if (!$ri) header("Location: $l");	//* <- printing content has no effect with Location header
 
 ?>
