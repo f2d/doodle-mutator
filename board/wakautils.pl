@@ -3,7 +3,6 @@
 use strict;
 
 use File::stat;
-use Time::localtime;
 use Time::Local;
 use Socket;
 
@@ -701,10 +700,7 @@ sub get_thread_filename($)
 sub expand_filename_time($)
 {
 	my ($filename)=@_;
-	my $t = ctime(stat($filename)->mtime); # <- works, but FFUUU
-	$t=~s/\s+/_/g;
-	$t=~s/:/-/g;
-	expand_filename($filename)."?".$t
+	return expand_filename($filename)."?".((stat $filename)->mtime);
 }
 
 sub expand_filename($)
