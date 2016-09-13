@@ -9,6 +9,11 @@ define(ME_VAL, isset($_POST[ME]) ? $_POST[ME] : (isset($_COOKIE[ME]) ? $_COOKIE[
 //define(ME_VAL, $_POST[ME] ?? $_COOKIE[ME] ?? false);	//* <- don't rely on $_REQUEST and EGPCS order; also ?? is only since PHP7
 define(POST, 'POST' == $_SERVER['REQUEST_METHOD']);
 
+header('Cache-Control: max-age=0; must-revalidate; no-cache');
+header('Expires: Mon, 12 Sep 2016 00:00:00 GMT');
+header('Pragma: no-cache');
+if (function_exists($f = 'header_remove')) $f('Vary');
+
 if (POST) {
 	if (!ME_VAL) goto after_posting;		//* <- no anonymous posting
 	ignore_user_abort(true);
@@ -20,7 +25,7 @@ define(NGINX, stripos($_SERVER['SERVER_SOFTWARE'], 'nginx') !== false);
 define(ROOTPRFX, substr($s = $_SERVER['PHP_SELF'] ?: $_SERVER['SCRIPT_NAME'] ?: '/', 0, strrpos($s, '/')+1));
 
 //* source: http://php.net/security.magicquotes.disabling#91653
-if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
+if (function_exists($f = 'get_magic_quotes_gpc') && $f()) {
 	function strip_magic_slashes(&$value, $key) {$value = stripslashes($value);}
 	$gpc = array(&$_COOKIE, &$_GET, &$_POST, &$_REQUEST, &$_SESSION);
 	array_walk_recursive($gpc, 'strip_magic_slashes');

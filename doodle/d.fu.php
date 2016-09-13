@@ -25,41 +25,29 @@ function get_const($name) {return defined($name) ? constant($name) : '';}
 function rewrite_htaccess($write_to_file = 1) {
 	$start_mark = '# 8<-- start mark: '.NAMEPRFX.', version: ';
 	$end_mark = '# 8<-- end mark: '.NAMEPRFX.', placed automatically: ';
-	$new_mark = $start_mark.ROOTPRFX.' 2016-08-24 13:20';		//* <- change this to invalidate old version
+	$new_mark = $start_mark.ROOTPRFX.' 2016-09-13 17:58';		//* <- change this to invalidate old version
 	if (
 		!strlen($old = (is_file($f = '.htaccess') ? trim(file_get_contents($f)) : ''))
 	||	false === strpos($old, $new_mark)
 	||	false === strpos($old, $end_mark)
 	) {
-		$n = 'NO_CACHE';
-		$e_cond = " env=$n";
-		$e_set = "E=$n:1";
 		$d = '('.implode('|', $GLOBALS['cfg_dir']).')(/([^/]+))?';
 		$dd = get_const('DIR_DATA');
 		$new = $new_mark.' -- Do not touch these marks. Only delete them along with the whole block.
 <IfModule rewrite_module>
 	RewriteEngine On
 	RewriteBase '.ROOTPRFX.'
-# variable fix:
-	RewriteCond %{ENV:REDIRECT_'.$n.'} !^$
-	RewriteRule .* - [E='.$n.':%{ENV:REDIRECT_'.$n.'}]
 # virtual folders:'.($dd?'
 	RewriteRule ^'.$dd.'.*$ . [L,R=301]':'').'
 	RewriteRule ^('.DIR_PICS.')(([^/])[^/]+\.([^/])[^/]+)$ $1$4/$3/$2'.'
 	RewriteRule ^'.$d.'$ $0/ [L,R=301]'.'
-	RewriteRule ^'.$d.'(/[-\d]*)$ . [L,'.$e_set.']
+	RewriteRule ^'.$d.'(/[-\d]*|[^?]*\.log([?/].*)?)$ . [L]
 # files not found:
 	RewriteCond %{REQUEST_FILENAME} -f [OR]
 	RewriteCond %{REQUEST_FILENAME} -d
 	RewriteRule ^.? - [S=2]
-	RewriteRule ^('.DIR_PICS.'|'.DIR_ARCH.'[^/]+/'.DIR_THUMB.').*$ err.png [L,'.$e_set.']
-	RewriteRule ^('.$d.'/).+$ $1 [L,R,'.$e_set.']
-</IfModule>
-<IfModule headers_module>
-	Header set Cache-Control "max-age=0; must-revalidate; no-cache"'.$e_cond.'
-	Header set Expires "Wed, 27 Jan 2016 00:00:00 GMT"'.$e_cond.'
-	Header set Pragma "no-cache"'.$e_cond.'
-	Header unset Vary'.$e_cond.'
+	RewriteRule ^('.DIR_PICS.'|'.DIR_ARCH.'[^/]+/'.DIR_THUMB.').*$ err.png [L]
+	RewriteRule ^('.$d.'/).+$ $1 [L,R]'.'
 </IfModule>
 '.$end_mark.date(TIMESTAMP, T0).' -- Manual changes inside will be lost on the next update.';
 		if ($old) {
