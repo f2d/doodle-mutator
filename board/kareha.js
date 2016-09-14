@@ -221,8 +221,8 @@ var	a = gn('p')
 		t = gn('td', d.previousElementSibling);
 		t[t.length-1].appendChild(d);
 	}
-	if (!id('postform')) {
-		gn('hr')[1].previousElementSibling.innerHTML = postform_fallback;
+	if (!id('postform') && (i = gn('hr')) && (i = i[1])) {
+		i.previousElementSibling.innerHTML = postform_fallback;
 	}
 var	i = gn('select')
 ,	a = {
@@ -236,8 +236,11 @@ var	i = gn('select')
 	for (i in a) if (id(i)) a[i](i);
 
 	if (i = id('postform')) {
-		if (!i.comment.value && h && h.slice(0, c = hash.length) == hash) {
-			c = a.slice(c);
+		if (
+			!i.comment.value
+		&&	h && h.slice(0, c = hash.length) == hash
+		&&	(c = h.slice(c))
+		) {
 			try {
 				reply_insert(unescape(c),'');
 			} catch(e) {
@@ -245,13 +248,13 @@ var	i = gn('select')
 			}
 		} else c = 0;
 		if (t = id('index-form-header') || id('reply-form-header')) {
-			if (!h && !c) show(i);
-			a = ' [<a href="javascript:show(postform),show(show_postform);">', b = '</a>]';
-
+		var	a = ' [<a href="javascript:show(postform),show(show_postform);">'
+		,	b = '</a>]'
+			;
 			d = cre('span',t);
 			d.id = 'show_postform';
 			d.innerHTML = a+(t.id[0] == 'r'?'Write a reply':'Start a new thread')+b;
-			if (!h && c) show(d);
+			show(h || c?d:i);
 
 			d = cre('div',gn('tr',i)[0].lastElementChild);
 			d.style.cssFloat = 'right';

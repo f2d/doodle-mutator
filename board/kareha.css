@@ -9,6 +9,7 @@
 .pagetop {line-height: 40px;}
 .postarea table {margin: 0 auto; text-align: left;}
 .postarea {text-align: center;}
+.postlinks {white-space: nowrap; margin-right: 1ex;}
 .reflink a {color: inherit; text-decoration: none;}
 .reply .filesize {margin-left: 1em;}
 .replypage .replylink {display: none;}

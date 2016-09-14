@@ -29,9 +29,11 @@ use constant S_THUMB => 'Thumbnail displayed, click image for full size.';	# Pri
 use constant S_HIDDEN => 'Thumbnail hidden, click filename for the full image.';# Prints instructions for viewing hidden image reply
 use constant S_NOTHUMB => 'No<br />thumbnail';					# Printed when there's no thumbnail
 use constant S_PICNAME => 'File: ';						# Prints text before upload name/link
-use constant S_REPLY => 'Reply';						# Prints text for reply link
-use constant S_ABBR => '%d posts omitted. Click Reply to view.';		# Prints text to be shown when replies are hidden
-use constant S_ABBRIMG => '%d posts and %d images omitted. Click Reply to view.';	# Prints text to be shown when replies and images are hidden
+use constant S_FULLTHREAD => 'View thread';					# Prints text for full thread link
+use constant S_REPLY => '&lt;&lt;';						# Prints text for reply link
+use constant S_ABBR => '%d posts omitted.';					# Prints text to be shown when replies are hidden
+use constant S_ABBRIMG => '%d posts and %d images omitted.';			# Prints text to be shown when replies and images are hidden
+use constant S_ABBRTHREAD => 'Click <a href="%s">here</a> to view full thread.';
 use constant S_ABBRTEXT => '8&lt;--- Comment too long. Click <a href="%s">here</a> to view the full text. ---';
 
 use constant S_REPDEL => 'Delete Post ';					# Prints text next to S_DELPICONLY (left)
@@ -185,8 +187,9 @@ use constant MAIN_PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 		<if $abbreviation><p class="abbrev"><var sprintf(S_ABBRTEXT,"$filename#$num")></p></if>
 		<if $omit and $num==1>
 			<span class="omittedposts">
-			<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
-			<if !$omitimages><var sprintf S_ABBR,$omit></if>
+				<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
+				<if !$omitimages><var sprintf S_ABBR,$omit></if>
+				<var sprintf S_ABBRTHREAD,$filename>
 			</span>
 		</if>
 	</loop>
@@ -292,6 +295,7 @@ use constant THREAD_FOOT_TEMPLATE => compile_template(q{
 
 use constant REPLY_TEMPLATE => compile_template( q{
 <if $num==1>
+	<a name="<var $num>"></a>
 	<if $image>
 		<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_filename(clean_path($image))>"><var get_filename($image)></a>
 		-(<em><var $size> B, <var $width>x<var $height></em>)</span>
@@ -306,17 +310,22 @@ use constant REPLY_TEMPLATE => compile_template( q{
 		</if>
 	</if>
 
-	<a name="<var $num>"></a>
-	<label><input type="checkbox" name="delete" value="<var $thread>,<var $num>" />
-	<span class="filetitle"><var $title></span>
-	<if $link><span class="postername"><a href="<var $link>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $link>"><if !$capped><var $trip></if><if $capped><var $capped></if></a></span></if></if>
-	<if !$link><span class="postername"><var $name></span><if $trip><span class="postertrip"><if !$capped><var $trip></if><if $capped><var $capped></if></span></if></if>
-	<var $date></label>
-	<span class="reflink">
-		<a href="<var get_thread_filename($thread)>#<var $num>">#<var $num></a>
-		<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var get_thread_filename($thread)>')">&lt;&lt;</a>
-	</span>&nbsp;
-	<span class="replylink">[<a href="<var get_thread_filename($thread)>" id="reply<var $thread>"><const S_REPLY></a>]</span>
+	<label>
+		<input type="checkbox" name="delete" value="<var $thread>,<var $num>" />
+		<span class="filetitle"><var $title></span>
+		<if $link><span class="postername"><a href="<var $link>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $link>"><if !$capped><var $trip></if><if $capped><var $capped></if></a></span></if></if>
+		<if !$link><span class="postername"><var $name></span><if $trip><span class="postertrip"><if !$capped><var $trip></if><if $capped><var $capped></if></span></if></if>
+		<var $date>
+		<span class="postlinks">
+			<span class="reflink">
+				<a href="<var get_thread_filename($thread)>#<var $num>">#<var $num></a>
+				<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var get_thread_filename($thread)>')"><const S_REPLY></a>
+			</span>
+			<span class="replylink">
+				[<a href="<var get_thread_filename($thread)>"><const S_FULLTHREAD></a>]
+			</span>
+		</span>
+	</label>
 
 	<blockquote>
 	<var $comment>
@@ -326,15 +335,17 @@ use constant REPLY_TEMPLATE => compile_template( q{
 	<table><tbody><tr><td class="doubledash">&gt;&gt;</td>
 	<td class="reply" id="<var $num>">
 
-	<label><input type="checkbox" name="delete" value="<var $thread>,<var $num>" />
-	<span class="replytitle"><var $title></span>
-	<if $link><span class="commentpostername"><a href="<var $link>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $link>"><if !$capped><var $trip></if><if $capped><var $capped></if></a></span></if></if>
-	<if !$link><span class="commentpostername"><var $name></span><if $trip><span class="postertrip"><if !$capped><var $trip></if><if $capped><var $capped></if></span></if></if>
-	<var $date></label>
-	<span class="reflink">
-		<a href="<var get_thread_filename($thread)>#<var $num>">#<var $num></a>
-		<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var get_thread_filename($thread)>')">&lt;&lt;</a>
-	</span>&nbsp;
+	<label>
+		<input type="checkbox" name="delete" value="<var $thread>,<var $num>" />
+		<span class="replytitle"><var $title></span>
+		<if $link><span class="commentpostername"><a href="<var $link>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $link>"><if !$capped><var $trip></if><if $capped><var $capped></if></a></span></if></if>
+		<if !$link><span class="commentpostername"><var $name></span><if $trip><span class="postertrip"><if !$capped><var $trip></if><if $capped><var $capped></if></span></if></if>
+		<var $date>
+		<span class="postlinks reflink">
+			<a href="<var get_thread_filename($thread)>#<var $num>">#<var $num></a>
+			<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var get_thread_filename($thread)>')"><const S_REPLY></a>
+		</span>
+	</label>
 
 	<if $image>
 		<br />

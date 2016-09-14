@@ -1309,7 +1309,7 @@ sub process_file($$$)
 		if($thread)
 		{
 			unlink $filename; # make sure to remove the file
-			make_error(sprintf S_DUPE,"$ENV{SCRIPT_NAME}/$thread/#$post");
+			make_error(sprintf S_DUPE, get_thread_filename($thread)."#$post");
 		}
 	}
 
