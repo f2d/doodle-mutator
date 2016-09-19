@@ -387,7 +387,7 @@ function capsSave(posts) {
 	//* italic/poem block:
 				if (i = gn('i',e)[0]) {
 				var	f = e.firstChild.textContent.replace(/^\s+/, '').replace(regSpace, ' ')
-				,	t = i.innerHTML.split(/<br[^>]*>/gi)
+				,	t = decodeHTMLSpecialChars(i.innerHTML).split(/<br[^>]*>/gi)
 				,	i = ctx.measureText(f).width
 					;
 					ctx.font = ifont;

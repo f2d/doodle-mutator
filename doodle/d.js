@@ -226,6 +226,7 @@ if (lang == 'ru') la = {
 
 function decodeHTMLSpecialChars(t) {
 	return String(t)
+	.replace(/&nbsp;/gi, ' ')
 	.replace(/&lt;/gi, '<')
 	.replace(/&gt;/gi, '>')
 	.replace(/&quot;/gi, '"')
