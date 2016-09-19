@@ -9,7 +9,7 @@ body, body>*, body>form>*, .content>* {
 	text-align: center;
 }
 body, .task input:not([type="checkbox"]), .task select {
-	font-family: "Arial";
+	font-family: Arial, Helvetica, "Nimbus Sans L", "Liberation Sans", FreeSans, sans-serif;
 	line-height: 28px;
 	font-size: 21px;
 }
@@ -378,12 +378,12 @@ a:hover	{
 	padding: 0 4px;
 	min-width: 165px;
 	font-size: 12px;
-	border-left: 5px solid #eee;
+	border-left: 4px solid #eee;
 	border-right: none;
 }
 .post p.r {
 	border-left: none;
-	border-right: 5px solid #eee;
+	border-right: 4px solid #eee;
 }
 .post p, .l {
 	text-align: left;
@@ -451,7 +451,7 @@ a:hover	{
 	background-position: top;
 }
 .post.p p, .post>p:not(.ref), .post .date-out>* {
-	width: 169px;
+	width: 170px;
 }
 .post.p p .report {
 	display: block;
@@ -469,6 +469,37 @@ a:hover	{
 .post.x3 {
 	padding: 28px 0;
 }
+.post .caps-btn {
+	position: relative;
+	right: 0;
+}
+.post .caps-btn>* {
+	position: absolute;
+	right: 0;
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAATBAMAAAB8awA1AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMTJDBGvsAAAAMFBMVEUAAACqzO4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADcNH1TAAAAEHRSTlMAAAECAwQGBwsMDg8REhMU4+CFkgAAAJlJREFUGNNjEEQGDAIM6xdYvv//bzLXLwZGMG89w///vyC8vv8w8IKRQeLDh///Whki3gO5jQxyQPJq9rttsUD6IYP8////IoCsVqDkRxDvRz6Q960fyvu6H8j7HQ/lfQCZ8I8fxgObz49V5Y96IO87zJR/HkBeC8yG/0eq/2/3+Q/igdwCc9lDBsn/CDCRQWgenPNSkQHF7wDVQa3w7TSI5QAAAABJRU5ErkJggg==");
+	background-repeat: no-repeat;
+	background-position: left;
+	background-color: #ace;
+	border: 1px solid #7eabec;
+	padding-left: 26px;
+	white-space: nowrap;
+}
+.post #caps-btn-top,
+.post #caps-btn-top>* {
+	top: 0;
+}
+.post #caps-btn-bottom,
+.post #caps-btn-bottom>* {
+	bottom: 0;
+}
+.post .caps-btn * {
+	font-size: 13px;
+	line-height: 13px;
+}
+.post .caps-btn b {
+	font-weight: normal;
+	margin: 0 1ex;
+}
 .post .date-out {
 	display: block;
 	position: absolute;
@@ -481,11 +512,11 @@ a:hover	{
 }
 .post .date-out.l>* {
 	top: -28px;
-	left: -177px;
+	left: -178px;
 }
 .post .date-out.r>* {
 	top: -28px;
-	left: 169px;
+	left: 170px;
 	text-align: left;
 }
 .post .date-out>p {
@@ -567,6 +598,18 @@ a:hover	{
 .ar {	text-align: right;}
 .hide-p .post .res img {
 	border-color: #ddd;
+}
+.content:not(.saving) .post.selected.alt {
+	background-color: #7fc6ee;
+}
+.content:not(.saving) .post.selected {
+	background-color: #98e5f5;
+	border: 4px dashed #7eabec;
+	border-top: none;
+	border-bottom: none;
+}
+.content:not(.saving) .post.selected p {
+	border: none;
 }
 .toggle::after {
 	content: ".";

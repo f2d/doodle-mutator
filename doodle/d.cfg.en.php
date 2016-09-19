@@ -119,6 +119,8 @@ $tmp_options_input = array(
 	,	'modtime304'	=> 'Use browser cache, when the page will have nothing new'
 	,	'save2common'	=> 'All draw apps share common save slots'
 	,	'unknown'	=> 'Prefer tasks from unknown threads'
+	,	'capture_altclick'	=> 'Ctrl/Shift + click: select posts (desc & pic pair), Alt + click: save as image'
+	,	'capture_textselection'	=> 'Select text across all posts to capture, use visible button to save as image'
 	)
 ,	'input' => array(
 		'draw_app'		=> 'Drawing tool variant'

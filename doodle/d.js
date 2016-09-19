@@ -1,4 +1,5 @@
 ﻿var	LS = window.localStorage || localStorage
+,	bnw = bnw || [] //* <- bells and whistles
 
 ,	regClassHid = getClassReg('hid')
 ,	regClassAlt = getClassReg('alt|ok')
@@ -53,7 +54,6 @@
 	,	d: 'burnt'
 	,	f: 'full'
 	}
-,	mm
 ,	room = location.pathname.split('/').slice(-2)[0] || 'room'
 ,	rootPath = gn('link').reduce(function(r,e) {
 		return e.rel == 'index' && e.href
@@ -252,28 +252,28 @@ function propNameForIE(n) {
 	})
 	.join('');
 }
-function getStyleValue(obj, prop) {
+function getStyleValue(e, prop) {
 var	o;
-	if (o = obj.currentStyle) return o[propNameForIE(prop)];
-	if (o = window.getComputedStyle) return o(obj).getPropertyValue(prop);
+	if (o = e.currentStyle) return o[propNameForIE(prop)];
+	if (o = window.getComputedStyle) return o(e).getPropertyValue(prop);
 	return null;
 }
 
-function getParentByTagName(e, target) {
-var	p = e, t = target.toLowerCase();
-	while (e.tagName.toLowerCase() != t && (p = e.parentNode)) e = p;
+function getParentByTagName(e,t) {
+var	p = e, t = t.toLowerCase();
+	while (!(e.tagName && e.tagName.toLowerCase() == t) && (p = e.parentNode)) e = p;
 	return e;
 }
 
-function getParentBeforeTagName(e, target) {
-var	p = e, t = target.toLowerCase();
-	while ((e = e.parentNode) && e.tagName.toLowerCase() != t) p = e;
+function getParentBeforeTagName(e,t) {
+var	p = e, t = t.toLowerCase();
+	while ((e = e.parentNode) && !(e.tagName && e.tagName.toLowerCase() == t)) p = e;
 	return p;
 }
 
-function getParentBeforeClass(e, c) {
-var	p = e, r = getClassReg(c);
-	while ((e = e.parentNode) && !r.test(e.className)) p = e;
+function getParentBeforeClass(e,c) {
+var	p = e, r = (c.test?c:getClassReg(c));
+	while ((e = e.parentNode) && !(e.className && r.test(e.className))) p = e;
 	return p;
 }
 
@@ -307,12 +307,19 @@ function cre(e,p,b) {
 	return e;
 }
 
-function eventStop(e) {
-	if (e && e.eventPhase?e:e = window.event) {
+function eventStop(e,i,d) {
+	if ((e && e.eventPhase !== null) ? e : (e = window.event)) {
+		if (d && e.preventDefault) e.preventDefault();
+		if (i && e.stopImmediatePropagation) e.stopImmediatePropagation();
 		if (e.stopPropagation) e.stopPropagation();
-		if (e.cancelBubble != null) e.cancelBubble = true;
+		if (e.cancelBubble !== null) e.cancelBubble = true;
 	}
 	return e;
+}
+
+function reAddEventListener(e,o,f,c) {
+	e.removeEventListener(o,f,!!c);
+	e.addEventListener(o,f,!!c);
 }
 
 function deleteCookie(c) {document.cookie = c+'=; expires='+(new Date(0).toUTCString())+'; Path='+rootPath;}
@@ -390,7 +397,7 @@ var	t = orz(msec)
 }
 
 function getFTimeIfTime(t, plain) {return regTimeBreak.test(t = ''+t) ? getFormattedTime(t, plain) : t;}
-function getFormattedTime(t, plain, only_ymd) {
+function getFormattedTime(t, plain, only_ymd, for_filename) {
 	if (TOS.indexOf(typeof t) > -1) t = orz(t)*1000;
 var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
 	t = ('FullYear,Month,Date'+(only_ymd?'':',Hours,Minutes,Seconds')).split(',').map(function(v,i) {
@@ -398,10 +405,10 @@ var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
 		if (i == 1) ++v;
 		return leftPad(v);
 	});
-var	YMD = t.slice(0,3).join('-'), HIS = t.slice(3).join(':');
+var	YMD = t.slice(0,3).join('-'), HIS = t.slice(3).join(for_filename?'-':':');
 	return (
 		plain
-		? YMD+' '+HIS
+		? YMD+(for_filename?'_':' ')+HIS
 		: '<time datetime="'+YMD+'T'+HIS
 		+	getFormattedTimezoneOffset(t)
 		+	'" data-t="'+Math.floor(d/1000)
@@ -1228,7 +1235,7 @@ function showContent(sortOrder) {
 						+	(imgPost?'':' ')
 						+	t;
 					}
-					if (!imgRes && u == 'u') t = '<span class="u">'+t+'</span>';
+					if (!imgRes) t = '<span class="post-text'+(u == 'u'?' u':'')+'">'+t+'</span>';
 					tab[2] = t;
 				} else tab[2] = (
 					dtp.users
@@ -1272,7 +1279,7 @@ function showContent(sortOrder) {
 				var	m = (i > 0 ? ' class="'+(dtp.reflinks?'ref':'r')+'"' : '');
 					if (modEnabled) {
 					var	postID = threadNum+'-'+postNum+'-'+i;
-						if (mm && (i > 0 || !dtp.users)) {
+						if (bnw.menu && (i > 0 || !dtp.users)) {
 							postMenu = 1;
 							m += ' id="m_'+(
 								dtp.users
@@ -1376,7 +1383,7 @@ var	flagVarNames = ['flag', 'flags']
 		var	i = p.threadsLastSortIndex || 0;
 			if (sortOrder === 'last') {
 				if (!p.innerHTML && (p.innerHTML = h[i])) {
-					if (mm) mm();
+					bnw.adorn();
 					if (i = id('filter')) i.onchange(null, i);
 				}
 				rawr.push(p);
@@ -1390,7 +1397,7 @@ var	flagVarNames = ['flag', 'flags']
 					h = (i == n && p.innerHTML?'':h[n]);
 					p.threadsLastSortIndex = n;
 				}
-				if ((p.innerHTML = h) && mm) mm();
+				if (p.innerHTML = h) bnw.adorn();
 			}
 			continue;
 		}
@@ -1658,6 +1665,12 @@ var	flagVarNames = ['flag', 'flags']
 
 //* Runtime: top panel, etc *--------------------------------------------------
 
+bnw.adorn = function(i) {
+	bnw.map(function(f) {
+		f(i);
+	});
+};
+
 for (i in (a = gn('time'))) if ((e = a[i]) && (t = e.getAttribute('data-t')) && t > 0) e.outerHTML = getFormattedTime(t);
 if (e = id('filter')) e.onchange = e.onkeyup = filter;
 
@@ -1774,7 +1787,7 @@ if (k = id('task')) {
 showContent();
 
 if (e = id('time-zone')) e.innerHTML = getFormattedTimezoneOffset();
-if (mm) mm(1);
+bnw.adorn(1);
 for (i in la.clear) if (e = id(i)) {
 	e.onclick = clearSaves;
 	if (!e.href) e.disabled = true, (e.onmouseover = checkSaves)(i);

@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2016-08-15'
+,	INFO_DATE = '2014-07-16 — 2016-09-19'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -1807,8 +1807,10 @@ function getSaveFileName(j) {
 
 function saveDL(content, suffix) {
 	if (DL) {
-		container.appendChild(a = document.createElement('a'));
-		a.href = content, a[DL] = getSaveFileName(suffix);
+	var	a = document.createElement('a');
+		container.appendChild(a);
+		a.href = content;
+		a[DL] = getSaveFileName(suffix);
 		a.click();
 		setTimeout(function() {container.removeChild(a);}, 5678);
 	} else window.open(content, '_blank');

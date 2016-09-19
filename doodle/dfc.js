@@ -3,7 +3,7 @@
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
 ,	INFO_VERSION = 'v0.9.68'
-,	INFO_DATE = '2013-04-01 — 2016-08-25'
+,	INFO_DATE = '2013-04-01 — 2016-09-19'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -1724,8 +1724,9 @@ var	d = getSaveLSDict(i, swap = orz(swap)), m = d.sum, d = d.dict;
 
 function saveDL(content, suffix) {
 	if (DL) {
-		a = cre('a', id());
-		a.href = content, a[DL] = unixDateToHMS(0,0,2)+suffix;
+	var	a = cre('a', id());
+		a.href = content;
+		a[DL] = unixDateToHMS(0,0,2)+suffix;
 		a.click();
 		setTimeout(function() {a.parentNode.removeChild(a);}, 5678);
 	} else window.open(content, '_blank');

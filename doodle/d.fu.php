@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-09-08 03:09'	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-09-19 09:10'	//* <- change this to invalidate old pages cached in browsers
 	.NL.	'Or user key/options/date background changed: '.ME_VAL
 	.NL.	implode(NL, get_date_class())
 	).'"';

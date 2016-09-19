@@ -487,6 +487,7 @@ page_ext = '.PAGE_EXT."
 flags = $flags
 ".$found;
 				$page['data']['content']['type'] = 'archive found';
+				$page['js']['capture']++;
 			}
 		}
 		$page['js'][0]++;
@@ -676,19 +677,22 @@ if (TIME_PARTS) time_check_point('got visible data, unlocked');
 				else $draw_free = 1;
 			}
 			$desc = ($target['pic'] || !($target['task'] || $draw_free));
-			if (MOD) $page['js']['mod']++;
 			if ($vts = $visible['threads']) {
-				$flags = '';
-				$flag = 'acgmp';
+				$flags = $caps = '';
+				$t = 'acgmp';
 				foreach (array(
 					$u_opts['active']
 				,	!$u_opts['count']
 				,	GOD
 				,	MOD
 				,	PIC_SUB
-				) as $k => $v) if ($v) $flags .= $flag[$k];
-				$images = ROOTPRFX.DIR_PICS;
-				$page['content'] = (
+				) as $k => $v) if ($v) $flags .= $t[$k];
+				$t = 'at';
+				foreach (array(
+					!$u_opts['capture_altclick']
+				,	!$u_opts['capture_textselection']
+				) as $k => $v) if ($v) $caps .= $t[$k];
+				$t = (
 					MOD ? "
 left = $tmp_mod_post_hint
 right = $tmp_mod_user_hint"
@@ -696,10 +700,14 @@ right = $tmp_mod_user_hint"
 left = $tmp_report_post_hint
 right = $tmp_report_user_hint"
 					)
-				)."
-images = $images
-flags = $flags
-";
+				).'
+images = '.ROOTPRFX.DIR_PICS;
+				if ($flags) $t .= "
+flags = $flags";
+				if ($caps) $t .= "
+caps = $caps
+caps_width = ".DRAW_PREVIEW_WIDTH;
+				$page['content'] = $t.NL;
 				$a = array();
 				$b = '<br>';
 if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
@@ -758,6 +766,7 @@ if (TIME_PARTS) time_check_point('done trd '.$tid);
 				ksort($a);
 				$page['content'] .= implode(NL, array_reverse($a));
 if (TIME_PARTS) time_check_point('after sort + join');
+				if ($caps) $page['js']['capture']++;
 				if (GOD) $filter = 1;
 			} else if (GOD) $page['content'] = "
 left = $tmp_empty
@@ -765,6 +774,8 @@ right = $tmp_empty
 flags = vg
 
 0,0	v	v	&mdash;";	//* <- dummy thread for JS drop-down menus
+			if (MOD && $page['content']) $page['js']['mod']++;
+
 			$t = $target['task'];
 			if ($desc) {
 				$page['task'] = get_template_form(
@@ -1143,7 +1154,7 @@ if ($u_key) {
 					$x = '<i class="poem">'
 					.	str_replace($spaced, '<br>',
 						preg_replace("~\s+($delim\s+){2,}~", '<br><br>',
-							trim($x, $delim.' ')
+							trim($x, $spaced)
 						))
 					.'</i>';
 				}
@@ -1442,6 +1453,7 @@ if ($f = $todo_pic) {
 		echo '<html>
 <head>
 	<meta charset="'.ENC.'">
+	<title>'.$tmp_sending.'</title>
 	<style>
 		html {background-color: #eee;}
 		body {background-color: #f5f5f5; margin: 1em; padding: 1em; font-family: sans-serif; font-size: 14px;}

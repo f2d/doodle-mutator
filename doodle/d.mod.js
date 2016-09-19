@@ -1,4 +1,6 @@
-﻿mm = function menuInit(i) {
+﻿var	bnw = bnw || [];
+
+bnw.push(bnw.menu = function menuInit(i) {
 	if (i) {
 	var	k = id('tabs')
 	,	d = param.day_link || ''
@@ -66,7 +68,7 @@
 			}
 		}
 	}
-}
+});
 
 function menuOpenOnClick(p) {
 	p.setAttribute('onclick', 'menuOpen(this)');
@@ -175,7 +177,7 @@ var	n = 'menu_'+p.id
 			}
 		}
 	,	a = (la.o?la.o.split('|'):o)
-	,	b,b0,v,v0,v1,c,i,j,n = '';
+	,	b,b0,v,v0,v1,c,i,j,m = '';
 
 		function checkFeature(f) {
 		var	i,j,r = '';
@@ -194,7 +196,7 @@ var	n = 'menu_'+p.id
 			+	checkFeature(v0+'+')
 			+	'" value="';
 
-			n += '<div class="row">';
+			m += '<div class="row">';
 			for (j in b) b[j] = '</label><label title="'+b[j]+'">'
 				+	(leftSide?'':b[j])
 				+	c+(v1 += '+'+v[j])
@@ -202,7 +204,7 @@ var	n = 'menu_'+p.id
 				+	'">'
 				+	(leftSide?b[j]:'');
 
-			n += '<label title="'+b0+'">'
+			m += '<label title="'+b0+'">'
 			+(b0
 				?	(leftSide?'':b0)
 				+	c+v0
@@ -211,9 +213,9 @@ var	n = 'menu_'+p.id
 				+	(leftSide?b0:'')
 				:''
 			)+b.join('')+'</label>';
-			n += '</div>';
+			m += '</div>';
 		} else {
-			n += '</div><div class="block">';
+			m += '</div><div class="block">';
 		}
 		b = '<input type="button" value="';
 		c = '" onClick="eventStop(event); menuClose(';
@@ -228,7 +230,7 @@ var	n = 'menu_'+p.id
 			+		')" onClick="window.open(\''+j+'\',\'Report\',\'width=656,height=267\')">'+la.r+'</a>'
 			+	'</div>'
 		)
-		+	'<div class="block">'+n+'</div>'
+		+	'<div class="block">'+m+'</div>'
 		+'</div>'
 		+'<textarea name="'+p.id.replace('m', 't')+i+la.i+'" placeholder="'+la.t+'"></textarea>'
 		+'<div>'

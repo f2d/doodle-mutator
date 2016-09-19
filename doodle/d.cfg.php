@@ -43,7 +43,7 @@ $cfg_opts_order = array(
 		,	'room' => 'room_default'
 		)
 	)
-,	'check' => array('head', 'count', 'times', 'names', 'own', 'unknown', 'active', 'save2common', 'kbox', 'focus', 'modtime304', 'picprogress')
+,	'check' => array('head', 'count', 'times', 'names', 'own', 'unknown', 'active', 'save2common', 'kbox', 'focus', 'modtime304', 'picprogress', 'capture_altclick', 'capture_textselection')
 ,	'admin' => array('time_check_points')
 );
 $cfg_dir = array(
