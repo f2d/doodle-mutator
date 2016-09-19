@@ -396,11 +396,14 @@ preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);	//* <- transform data 
 			$lnk .= get_template_form(array('filter' => 1));
 		}
 	}
-	if (!$page['content'] && !($page['textarea'] = $t) && !$lnk) $lnk = $tmp_empty;
+	if ($page['content'] || ($page['textarea'] = $t) || $lnk) {
+		if ($page['content'] || $lnk) {
+			$page['js']['mod']++;
+			$page['js'][0]++;
+		}
+	} else $lnk = $tmp_empty;
 	$page['task'] = "
 <p$attr>$mod_page:</p>$lnk";
-	$page['js']['mod']++;
-	$page['js'][0]++;
 } else
 
 //* archived threads ----------------------------------------------------------
@@ -1014,11 +1017,10 @@ if (!$is_report_page) {
 		$links = vsprintf(FOOT_NOTE, $tmp_foot_notes);
 	}
 	if (!$u_opts['times'] && $u_key) {
-		$page['js'][0]++;
 		define(TOOK, $took = '<!--?-->');
 		if (TIME_PARTS) {
 			time_check_point('inb4 template');
-			$took = '<a href="javascript:'.$page['js'][0].',toggleHide(took),took.scrollIntoView()">'.$took.'</a>';
+			$took = '<a href="javascript:'.(++$page['js'][0]).',toggleHide(took),took.scrollIntoView()">'.$took.'</a>';
 			foreach ($tcp as $t => $comment) {
 				$t = get_time_elapsed($t);
 				$t_diff = ltrim(sprintf('%.6f', $t - $t_prev), '0.');

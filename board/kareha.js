@@ -118,6 +118,7 @@ var	e;
 	if ((e = i.field_a) && !e.value) e.value = get_cookie('name');
 	if ((e = i.field_b) && !e.value) e.value = get_cookie('link');
 	if ((e = i.password) && !e.value) e.value = get_password('password');
+	if (e = i.save_useragent) e.checked = !!get_cookie('save_useragent');
 	if (e = i.markup) {
 		if ((i = i.comment) && !i.value) e.value = get_cookie('markup');
 		select_markup(e);

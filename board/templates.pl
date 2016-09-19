@@ -24,6 +24,8 @@ use constant S_UPLOADFILE => 'File';						# Describes file field
 use constant S_CAPTCHA => 'Verification';					# Describes captcha field
 use constant S_DELPASS => 'Password';						# Describes password field
 use constant S_DELEXPL => '(for post and file deletion)';			# Prints explanation for password box (to the right)
+use constant S_TELL_UA => 'Browser';						# Describes UA switch
+use constant S_TELL_UA_EXPL => '(tell your browser software name and version)';	# Prints explanation for UA switch
 
 use constant S_THUMB => 'Thumbnail displayed, click image for full size.';	# Prints instructions for viewing real source
 use constant S_HIDDEN => 'Thumbnail hidden, click filename for the full image.';# Prints instructions for viewing hidden image reply
@@ -164,6 +166,7 @@ use constant MAIN_PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	</if>
 
 	<tr><td class="postblock"><const S_DELPASS></td><td><input type="password" name="password" size="8" /> <const S_DELEXPL></td></tr>
+	<tr><td class="postblock"><const S_TELL_UA></td><td><label><input type="checkbox" name="save_useragent" /> <const S_TELL_UA_EXPL></label></td></tr>
 
 	<if SPAM_TRAP>
 		<tr style="display:none">
@@ -258,6 +261,7 @@ use constant THREAD_HEAD_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	</if>
 
 	<tr><td class="postblock"><const S_DELPASS></td><td><input type="password" name="password" size="8" /> <const S_DELEXPL></td></tr>
+	<tr><td class="postblock"><const S_TELL_UA></td><td><label><input type="checkbox" name="save_useragent" /> <const S_TELL_UA_EXPL></label></td></tr>
 
 	<if SPAM_TRAP>
 		<tr style="display:none">
@@ -310,7 +314,8 @@ use constant REPLY_TEMPLATE => compile_template( q{
 		</if>
 	</if>
 
-	<label>
+	<if $useragent><label title="<var $useragent>"></if>
+	<if !$useragent><label></if>
 		<input type="checkbox" name="delete" value="<var $thread>,<var $num>" />
 		<span class="filetitle"><var $title></span>
 		<if $link><span class="postername"><a href="<var $link>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $link>"><if !$capped><var $trip></if><if $capped><var $capped></if></a></span></if></if>
@@ -335,7 +340,8 @@ use constant REPLY_TEMPLATE => compile_template( q{
 	<table><tbody><tr><td class="doubledash">&gt;&gt;</td>
 	<td class="reply" id="<var $num>">
 
-	<label>
+	<if $useragent><label title="<var $useragent>"></if>
+	<if !$useragent><label></if>
 		<input type="checkbox" name="delete" value="<var $thread>,<var $num>" />
 		<span class="replytitle"><var $title></span>
 		<if $link><span class="commentpostername"><a href="<var $link>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $link>"><if !$capped><var $trip></if><if $capped><var $capped></if></a></span></if></if>

@@ -64,8 +64,30 @@ if($task eq "post")
 	my $markup=$query->param("markup");
 	my $savemarkup=$query->param("savemarkup");
 	my $key=$query->cookie("captchakey");
+	my $useragent=(
+		$query->param("save_useragent")
+		? $ENV{HTTP_USER_AGENT}
+		: ""
+	);
 
-	post_stuff($thread,$name,$link,$title,$comment,$captcha,$key,$password,$markup,$savemarkup,$file,$file);
+	post_stuff(
+		$thread
+
+	,	$useragent
+	,	$name
+	,	$link
+	,	$title
+
+	,	$comment
+	,	$captcha
+	,	$key
+	,	$password
+
+	,	$markup
+	,	$savemarkup
+	,	$file
+	,	$file
+	);
 }
 elsif($task eq "preview")
 {
@@ -294,9 +316,26 @@ sub update_threads()
 # Posting
 #
 
-sub post_stuff($$$$$$$$$$$$)
+sub post_stuff($$$$$$$$$$$$$)
 {
-	my ($thread,$name,$link,$title,$comment,$captcha,$key,$password,$markup,$savemarkup,$file,$uploadname)=@_;
+	my (
+		$thread
+
+	,	$useragent
+	,	$name
+	,	$link
+	,	$title
+
+	,	$comment
+	,	$captcha
+	,	$key
+	,	$password
+
+	,	$markup
+	,	$savemarkup
+	,	$file
+	,	$uploadname
+	)=@_;
 
 	# get a timestamp for future use
 	my $time=time();
@@ -408,10 +447,29 @@ sub post_stuff($$$$$$$$$$$$)
 
 	# add the reply to the thread
 	my $num=make_reply(
-		ip=>$ip,thread=>$thread,name=>$name,trip=>$trip,link=>$link,capped=>$capped,
-		time=>$time,date=>$date,title=>$title,comment=>$comment,
-		image=>$filename,ext=>$ext,size=>$size,md5=>$md5,width=>$width,height=>$height,
-		thumbnail=>$thumbnail,tn_width=>$tn_width,tn_height=>$tn_height,
+		ip=>$ip
+	,	thread=>$thread
+	,	useragent=>$useragent
+	,	name=>$name
+	,	trip=>$trip
+	,	link=>$link
+	,	capped=>$capped
+
+	,	time=>$time
+	,	date=>$date
+	,	title=>$title
+	,	comment=>$comment
+
+	,	image=>$filename
+	,	ext=>$ext
+	,	size=>$size
+	,	md5=>$md5
+	,	width=>$width
+	,	height=>$height
+
+	,	thumbnail=>$thumbnail
+	,	tn_width=>$tn_width
+	,	tn_height=>$tn_height
 	);
 
 	# make entry in the log
@@ -423,9 +481,16 @@ sub post_stuff($$$$$$$$$$$$)
 	build_pages();
 
 	# set the name, email and password cookies, plus a new captcha key
-	make_cookies(name=>$c_name,link=>$c_link,password=>$c_password,
-	$savemarkup?(markup=>$c_markup):(),
-	captchakey=>make_random_string(8),-charset=>CHARSET,-autopath=>COOKIE_PATH); # yum!
+	make_cookies(
+		name=>$c_name
+	,	link=>$c_link
+	,	password=>$c_password
+	,	$savemarkup?(markup=>$c_markup):()
+	,	save_useragent=>($useragent?"1":"")
+	,	captchakey=>make_random_string(8)
+	,	-charset=>CHARSET
+	,	-autopath=>COOKIE_PATH
+); # yum!
 }
 
 sub preview_post($$$)
