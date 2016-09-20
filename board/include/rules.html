@@ -5,7 +5,9 @@
 <li>Supported file types are: <var get_filetypes()>.</li>
 <li>Maximum file size allowed is <const MAX_KB> KB, maximum image size is <const MAX_IMAGE_WIDTH> x <const MAX_IMAGE_HEIGHT>.</li>
 <li>Images greater than <const MAX_W>x<const MAX_H> pixels will be thumbnailed.</li>
-<li>Thread bump limit is <const MAX_RES> posts, reply limit is <const MAX_POSTS> posts.</li>
+<li>Thread bump limit is <const MAX_RES> posts<if AUTOCLOSE_POSTS>, reply limit is <const AUTOCLOSE_POSTS> posts</if>.</li>
+<if MAX_THREADS><li>Threads count limit is <const MAX_THREADS>.</li></if>
+<if MAX_POSTS><li>Total post count limit is <const MAX_POSTS>.</li></if>
 <li>Text format:
 	<a href=".">http://</a>,
 	<strong>**strong**</strong>

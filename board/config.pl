@@ -31,12 +31,12 @@ use constant DEFAULT_STYLE => 'Ace';		# Default CSS style title
 # Limitations
 #use constant ALLOW_TEXT_THREADS => 1;		# Allow users to create text threads
 #use constant ALLOW_TEXT_REPLIES => 1;		# Allow users to make text replies
-#use constant AUTOCLOSE_POSTS => 0;		# Maximum number of posts before a thread closes. 0 to disable.
+use constant AUTOCLOSE_POSTS => 250;		# Maximum number of posts before a thread closes. 0 to disable.
 #use constant AUTOCLOSE_DAYS => 0;		# Maximum number of days with no activity before a thread closes. 0 to disable.
 #use constant AUTOCLOSE_SIZE => 0;		# Maximum size of the thread HTML file in kilobytes before a thread closes. 0 to disable.
 use constant MAX_RES => 200;			# Maximum topic bumps
-#use constant MAX_THREADS => 200;		# Maximum number of threads - set to 0 to disable
-#use constant MAX_POSTS => 500;			# Maximum number of posts - set to 0 to disable
+#use constant MAX_THREADS => 0;			# Maximum number of threads - set to 0 to disable
+#use constant MAX_POSTS => 0;			# Maximum number of posts - set to 0 to disable
 #use constant MAX_MEGABYTES => 0;		# Maximum size to use for all images in megabytes - set to 0 to disable
 #use constant MAX_FIELD_LENGTH => 100;		# Maximum number of characters in subject, name, and email
 #use constant MAX_COMMENT_LENGTH => 8192;	# Maximum number of characters in a comment

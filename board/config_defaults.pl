@@ -30,9 +30,9 @@ BEGIN {
 	eval "use constant AUTOCLOSE_POSTS => 0" unless(defined &AUTOCLOSE_POSTS);
 	eval "use constant AUTOCLOSE_DAYS => 0" unless(defined &AUTOCLOSE_DAYS);
 	eval "use constant AUTOCLOSE_SIZE => 0" unless(defined &AUTOCLOSE_SIZE);
-	eval "use constant MAX_RES => 20" unless(defined &MAX_RES);
+	eval "use constant MAX_RES => 100" unless(defined &MAX_RES);
 	eval "use constant MAX_THREADS => 0" unless(defined &MAX_THREADS);
-	eval "use constant MAX_POSTS => 500" unless(defined &MAX_POSTS);
+	eval "use constant MAX_POSTS => 0" unless(defined &MAX_POSTS);
 	eval "use constant MAX_MEGABYTES => 0" unless(defined &MAX_MEGABYTES);
 	eval "use constant MAX_FIELD_LENGTH => 100" unless(defined &MAX_FIELD_LENGTH);
 	eval "use constant MAX_COMMENT_LENGTH => 8192" unless(defined &MAX_COMMENT_LENGTH);
