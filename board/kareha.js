@@ -222,6 +222,7 @@ var	a = gn('p')
 		t = gn('td', d.previousElementSibling);
 		t[t.length-1].appendChild(d);
 	}
+	if (id('de-pform')) return;
 	if (!id('postform') && (i = gn('hr')) && (i = i[1])) {
 		i.previousElementSibling.innerHTML = postform_fallback;
 	}
@@ -258,7 +259,7 @@ var	i = gn('select')
 			show(h || c?d:i);
 
 			d = cre('div',gn('tr',i)[0].lastElementChild);
-			d.style.cssFloat = 'right';
+			d.className = 'postform-close';
 			d.innerHTML = a+'x'+b;
 		}
 	}

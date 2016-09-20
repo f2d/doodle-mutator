@@ -148,20 +148,27 @@ use constant MAIN_PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<if FORCED_ANON><input type="hidden" name="field_a" /></if>
 
 	<table><tbody>
-	<if !FORCED_ANON><tr><td class="postblock"><const S_NAME></td><td><input type="text" name="field_a" size="28" /></td></tr></if>
+
+	<if !FORCED_ANON>
+	<tr><td class="postblock"><const S_NAME></td><td><input type="text" name="field_a" size="28" /></td></tr>
+	</if>
 	<tr><td class="postblock"><const S_EMAIL></td><td><input type="text" name="field_b" size="28" /></td></tr>
-	<tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="title" size="35" />
-	<input type="submit" value="<const S_SUBMIT>" /></td></tr>
+	<tr><td class="postblock"><const S_SUBJECT></td><td>
+		<input type="text" name="title" size="35" />
+		<input type="submit" value="<const S_SUBMIT>" />
+	</td></tr>
 	<tr><td class="postblock"><const S_COMMENT></td><td><textarea name="comment" cols="48" rows="4"></textarea></td></tr>
 
 	<if ALLOW_IMAGE_THREADS>
-		<tr><td class="postblock"><const S_UPLOADFILE></td><td><input type="file" name="file" size="35" />
+		<tr><td class="postblock"><const S_UPLOADFILE></td><td>
+			<input type="file" name="file" size="35" />
 		</td></tr>
 	</if>
 
 	<if ENABLE_CAPTCHA>
-		<tr><td class="postblock"><const S_CAPTCHA></td><td><input type="text" name="captcha" size="10" />
-		<img alt="" src="<var expand_filename('captcha.pl')>" />
+		<tr><td class="postblock"><const S_CAPTCHA></td><td>
+			<input type="text" name="captcha" size="10" />
+			<img alt="" src="<var expand_filename('captcha.pl')>" />
 		</td></tr>
 	</if>
 
@@ -169,10 +176,10 @@ use constant MAIN_PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<tr><td class="postblock"><const S_TELL_UA></td><td><label><input type="checkbox" name="save_useragent" /> <const S_TELL_UA_EXPL></label></td></tr>
 
 	<if SPAM_TRAP>
-		<tr style="display:none">
-		<td class="postblock"><const S_SPAMTRAP></td>
-		<td><input type="text" name="name" size="10" autocomplete="off" /><input type="text" name="link" size="10" autocomplete="off" /></td>
-		</tr>
+		<tr style="display:none"><td class="postblock"><const S_SPAMTRAP></td><td>
+			<input type="text" name="name" size="10" autocomplete="off" />
+			<input type="text" name="link" size="10" autocomplete="off" />
+		</td></tr>
 	</if>
 
 	<tr><td colspan="2">
@@ -184,6 +191,8 @@ use constant MAIN_PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 <form id="delform" action="<var $self>" method="post">
 
 <loop $threads>
+	<div id="thread-<var $thread>" class="thread">
+
 	<loop $posts>
 		<var $abbreviation or $text>
 
@@ -196,14 +205,18 @@ use constant MAIN_PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 			</span>
 		</if>
 	</loop>
-	<br clear="left" /><hr />
+
+	</div>
+	<br clear="left" />
+	<hr />
 </loop>
 
-<table class="userdelete"><tbody><tr><td>
-<input type="hidden" name="task" value="delete" />
-<const S_REPDEL>[<label><input type="checkbox" name="fileonly" value="on" /><const S_DELPICONLY></label>]<br />
-<const S_DELKEY><input type="password" name="password" size="8" />
-<input value="<const S_DELETE>" type="submit" /></td></tr></tbody></table>
+	<div class="userdelete">
+		<input type="hidden" name="task" value="delete" />
+		<const S_REPDEL>[<label><input type="checkbox" name="fileonly" value="on" /><const S_DELPICONLY></label>] -
+		<const S_DELKEY><input type="password" name="password" size="8" />
+		<input value="<const S_DELETE>" type="submit" />
+	</div>
 </form>
 
 <table border="1"><tbody><tr><td>
@@ -244,19 +257,27 @@ use constant THREAD_HEAD_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<if FORCED_ANON><input type="hidden" name="field_a" /></if>
 
 	<table><tbody>
-	<if !FORCED_ANON><tr><td class="postblock"><const S_NAME></td><td><input type="text" name="field_a" size="28" /></td></tr></if>
+
+	<if !FORCED_ANON>
+	<tr><td class="postblock"><const S_NAME></td><td><input type="text" name="field_a" size="28" /></td></tr>
+	</if>
 	<tr><td class="postblock"><const S_EMAIL></td><td><input type="text" name="field_b" size="28" /></td></tr>
-	<tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="title" size="35" />
-	<input type="submit" value="<const S_SUBMIT>" /></td></tr>
+	<tr><td class="postblock"><const S_SUBJECT></td><td>
+		<input type="text" name="title" size="35" />
+		<input type="submit" value="<const S_SUBMIT>" />
+	</td></tr>
 	<tr><td class="postblock"><const S_COMMENT></td><td><textarea name="comment" cols="48" rows="4"></textarea></td></tr>
 
 	<if ALLOW_IMAGE_REPLIES>
-		<tr><td class="postblock"><const S_UPLOADFILE></td><td><input type="file" name="file" size="35" /></td></tr>
+		<tr><td class="postblock"><const S_UPLOADFILE></td><td>
+			<input type="file" name="file" size="35" />
+		</td></tr>
 	</if>
 
 	<if ENABLE_CAPTCHA>
-		<tr><td class="postblock"><const S_CAPTCHA></td><td><input type="text" name="captcha" size="10" />
-		<img alt="" src="<var expand_filename('captcha.pl')>?dummy=<var $size>" />
+		<tr><td class="postblock"><const S_CAPTCHA></td><td>
+			<input type="text" name="captcha" size="10" />
+			<img alt="" src="<var expand_filename('captcha.pl')>?dummy=<var $size>" />
 		</td></tr>
 	</if>
 
@@ -264,10 +285,10 @@ use constant THREAD_HEAD_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<tr><td class="postblock"><const S_TELL_UA></td><td><label><input type="checkbox" name="save_useragent" /> <const S_TELL_UA_EXPL></label></td></tr>
 
 	<if SPAM_TRAP>
-		<tr style="display:none">
-		<td class="postblock"><const S_SPAMTRAP></td>
-		<td><input type="text" name="name" size="10" autocomplete="off" /><input type="text" name="link" size="10" autocomplete="off" /></td>
-		</tr>
+		<tr style="display:none"><td class="postblock"><const S_SPAMTRAP></td><td>
+			<input type="text" name="name" size="10" autocomplete="off" />
+			<input type="text" name="link" size="10" autocomplete="off" />
+		</td></tr>
 	</if>
 
 	<tr><td colspan="2">
@@ -278,19 +299,25 @@ use constant THREAD_HEAD_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 <hr />
 <form id="delform" action="<var $self>" method="post">
 
+	<div id="thread-<var $thread>" class="thread">
+	<a name="1"></a>
+
 });
 
 
 
 use constant THREAD_FOOT_TEMPLATE => compile_template(q{
 
-<br clear="left" /><hr />
+	</div>
+	<br clear="left" />
+	<hr />
 
-<table class="userdelete"><tbody><tr><td>
-<input type="hidden" name="task" value="delete" />
-<const S_REPDEL>[<label><input type="checkbox" name="fileonly" value="on" /><const S_DELPICONLY></label>]<br />
-<const S_DELKEY><input type="password" name="password" size="8" />
-<input value="<const S_DELETE>" type="submit" /></td></tr></tbody></table>
+	<div class="userdelete">
+		<input type="hidden" name="task" value="delete" />
+		<const S_REPDEL>[<label><input type="checkbox" name="fileonly" value="on" /><const S_DELPICONLY></label>] -
+		<const S_DELKEY><input type="password" name="password" size="8" />
+		<input value="<const S_DELETE>" type="submit" />
+	</div>
 </form>
 
 }.NORMAL_FOOT_INCLUDE);
@@ -299,15 +326,23 @@ use constant THREAD_FOOT_TEMPLATE => compile_template(q{
 
 use constant REPLY_TEMPLATE => compile_template( q{
 <if $num==1>
-	<a name="<var $num>"></a>
 	<if $image>
-		<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_filename(clean_path($image))>"><var get_filename($image)></a>
-		-(<em><var $size> B, <var $width>x<var $height></em>)</span>
+		<span class="filesize">
+			<const S_PICNAME>
+			<a target="_blank" href="<var expand_filename(clean_path($image))>"><var get_filename($image)></a>
+			-(<em><var $size> B, <var $width>x<var $height></em>)
+		</span>
 		<span class="thumbnailmsg"><const S_THUMB></span><br />
 
 		<if $thumbnail>
 			<a target="_blank" href="<var expand_filename(clean_path($image))>">
-			<img src="<var expand_filename($thumbnail)>" width="<var $tn_width>" height="<var $tn_height>" alt="<var $size>" class="thumb" /></a>
+				<img src="<var expand_filename($thumbnail)>"
+					width="<var $tn_width>"
+					height="<var $tn_height>"
+					alt="<var $size>"
+					class="thumb"
+				/>
+			</a>
 		</if>
 		<if !$thumbnail>
 			<div class="nothumb"><a target="_blank" href="<var expand_filename(clean_path($image))>"><const S_NOTHUMB></a></div>
@@ -318,19 +353,34 @@ use constant REPLY_TEMPLATE => compile_template( q{
 	<if !$useragent><label></if>
 		<input type="checkbox" name="delete" value="<var $thread>,<var $num>" />
 		<span class="filetitle"><var $title></span>
-		<if $link><span class="postername"><a href="<var $link>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $link>"><if !$capped><var $trip></if><if $capped><var $capped></if></a></span></if></if>
-		<if !$link><span class="postername"><var $name></span><if $trip><span class="postertrip"><if !$capped><var $trip></if><if $capped><var $capped></if></span></if></if>
+		<if $link>
+			<span class="postername"><a href="<var $link>"><var $name></a></span>
+			<if $trip>
+				<span class="postertrip"><a href="<var $link>">
+					<if !$capped><var $trip></if>
+					<if $capped><var $capped></if>
+				</a></span>
+			</if>
+		</if>
+		<if !$link>
+			<span class="postername"><var $name></span>
+			<if $trip>
+				<span class="postertrip">
+					<if !$capped><var $trip></if>
+					<if $capped><var $capped></if>
+				</span>
+			</if>
+		</if>
 		<var $date>
-		<span class="postlinks">
-			<span class="reflink">
-				<a href="<var get_thread_filename($thread)>#<var $num>">#<var $num></a>
-				<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var get_thread_filename($thread)>')"><const S_REPLY></a>
-			</span>
-			<span class="replylink">
-				[<a href="<var get_thread_filename($thread)>"><const S_FULLTHREAD></a>]
-			</span>
-		</span>
 	</label>
+
+	<span class="reflink">
+		<a href="<var get_thread_filename($thread)>#<var $num>">#<var $num></a>
+		<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var get_thread_filename($thread)>')"><const S_REPLY></a>
+	</span>
+	<span class="replylink">
+		[<a href="<var get_thread_filename($thread)>"><const S_FULLTHREAD></a>]
+	</span>
 
 	<blockquote>
 	<var $comment>
@@ -344,24 +394,50 @@ use constant REPLY_TEMPLATE => compile_template( q{
 	<if !$useragent><label></if>
 		<input type="checkbox" name="delete" value="<var $thread>,<var $num>" />
 		<span class="replytitle"><var $title></span>
-		<if $link><span class="commentpostername"><a href="<var $link>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $link>"><if !$capped><var $trip></if><if $capped><var $capped></if></a></span></if></if>
-		<if !$link><span class="commentpostername"><var $name></span><if $trip><span class="postertrip"><if !$capped><var $trip></if><if $capped><var $capped></if></span></if></if>
+		<if $link>
+			<span class="commentpostername"><a href="<var $link>"><var $name></a></span>
+			<if $trip><span class="postertrip">
+				<a href="<var $link>">
+					<if !$capped><var $trip></if>
+					<if $capped><var $capped></if>
+				</a></span>
+			</if>
+		</if>
+		<if !$link>
+			<span class="commentpostername"><var $name></span>
+			<if $trip>
+				<span class="postertrip">
+					<if !$capped><var $trip></if>
+					<if $capped><var $capped></if>
+				</span>
+			</if>
+		</if>
 		<var $date>
-		<span class="postlinks reflink">
-			<a href="<var get_thread_filename($thread)>#<var $num>">#<var $num></a>
-			<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var get_thread_filename($thread)>')"><const S_REPLY></a>
-		</span>
 	</label>
+
+	<span class="reflink">
+		<a href="<var get_thread_filename($thread)>#<var $num>">#<var $num></a>
+		<a href="javascript:insert_reply('&gt;&gt;<var $num>','<var get_thread_filename($thread)>')"><const S_REPLY></a>
+	</span>
 
 	<if $image>
 		<br />
-		<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_filename(clean_path($image))>"><var get_filename($image)></a>
-		-(<em><var $size> B, <var $width>x<var $height></em>)</span>
+		<span class="filesize">
+			<const S_PICNAME>
+			<a target="_blank" href="<var expand_filename(clean_path($image))>"><var get_filename($image)></a>
+			-(<em><var $size> B, <var $width>x<var $height></em>)
+		</span>
 		<span class="thumbnailmsg"><const S_THUMB></span><br />
 
 		<if $thumbnail>
 			<a target="_blank" href="<var expand_filename(clean_path($image))>">
-			<img src="<var expand_filename($thumbnail)>" width="<var $tn_width>" height="<var $tn_height>" alt="<var $size>" class="thumb" /></a>
+				<img src="<var expand_filename($thumbnail)>"
+					width="<var $tn_width>"
+					height="<var $tn_height>"
+					alt="<var $size>"
+					class="thumb"
+				/>
+			</a>
 		</if>
 		<if !$thumbnail>
 			<div class="nothumb"><a target="_blank" href="<var expand_filename(clean_path($image))>"><const S_NOTHUMB></a></div>

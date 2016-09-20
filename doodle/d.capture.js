@@ -410,9 +410,9 @@ function capsSave(posts) {
 			}
 			addBlock(p);
 		}
+		if (e = id('content')) toggleClass(e, 'saving', -1);
 	//* compile result image:
 		if (blocks.length) {
-			if (e = id('content')) toggleClass(e, 'saving', -1);
 			cnv.width = w;
 			cnv.height = totalHeight;
 	//* draw bg and images:
