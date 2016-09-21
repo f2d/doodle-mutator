@@ -3,7 +3,7 @@
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
 ,	INFO_VERSION = 'v0.9.68'
-,	INFO_DATE = '2013-04-01 — 2016-09-19'
+,	INFO_DATE = '2013-04-01 — 2016-09-22'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -47,7 +47,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 ,	shapeHotKey = 'NPRTYQ.M'
 ,	select = {
 		imgSizes: {width:640, height:360}
-	,	imgLimits: {width:[32,640], height:[32,800]}
+	,	imgLimits: {width:[32,32767], height:[32,32767]}
 	,	lineCaps: {lineCap:0, lineJoin:0}
 /* shape flags (sum parts):
 	1 = path, mode L: step 1 line, L+U: step 2 curve
@@ -1722,14 +1722,26 @@ var	d = getSaveLSDict(i, swap = orz(swap)), m = d.sum, d = d.dict;
 	return m || 0;				//* <- max size proven to be allowed
 }
 
-function saveDL(content, suffix) {
+function saveDL(dataURI, suffix) {
 	if (DL) {
-	var	a = cre('a', id());
-		a.href = content;
+	var	u = window.URL || window.webkitURL
+	,	a = cre('a', id())
+		;
+		if (u && u.createObjectURL) {
+		var	type = dataURI.split(';', 1)[0].split(':', 2)[1]
+		,	data = dataURI.slice(dataURI.indexOf(',')+1)
+		,	data = Uint8Array.from(modes.map.call(atob(data), function(v) {return v.charCodeAt(0);}))
+		,	blob = window.URL.createObjectURL(new Blob([data], {'type': type}))
+			;
+			a.href = ''+blob;
+		} else a.href = ''+dataURI;
 		a[DL] = unixDateToHMS(0,0,2)+suffix;
 		a.click();
-		setTimeout(function() {a.parentNode.removeChild(a);}, 5678);
-	} else window.open(content, '_blank');
+		setTimeout(function() {
+			if (blob) u.revokeObjectURL(blob);
+			a.parentNode.removeChild(a);
+		}, 12345);
+	} else window.open(dataURI, '_blank');
 }
 
 function confirmShowTime(la, s) {

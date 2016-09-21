@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2016-09-19'
+,	INFO_DATE = '2014-07-16 — 2016-09-22'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -38,7 +38,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 ,	select = {
 		imgRes: {width:640, height:360}
-	,	imgLimits: {width:[64,640], height:[64,800]}
+	,	imgLimits: {width:[64,32767], height:[64,32767]}
 	,	lineCaps: {lineCap:0, lineJoin:0}
 	,	shapeFig: [1,1,6,2,3,4,5]
 	,	shapeFlags: [1,10,66,2,2,2,66,20,28,50]
@@ -1805,15 +1805,27 @@ function getSaveFileName(j) {
 	return unixDateToHMS(0,0,2)+'_'+draw.time.all.join('-')+(j || '.json');
 }
 
-function saveDL(content, suffix) {
+function saveDL(dataURI, suffix) {
 	if (DL) {
-	var	a = document.createElement('a');
+	var	u = window.URL || window.webkitURL
+	,	a = document.createElement('a')
+		;
 		container.appendChild(a);
-		a.href = content;
+		if (u && u.createObjectURL) {
+		var	type = dataURI.split(';', 1)[0].split(':', 2)[1]
+		,	data = dataURI.slice(dataURI.indexOf(',')+1)
+		,	data = Uint8Array.from(modes.map.call(atob(data), function(v) {return v.charCodeAt(0);}))
+		,	blob = window.URL.createObjectURL(new Blob([data], {'type': type}))
+			;
+			a.href = ''+blob;
+		} else a.href = ''+dataURI;
 		a[DL] = getSaveFileName(suffix);
 		a.click();
-		setTimeout(function() {container.removeChild(a);}, 5678);
-	} else window.open(content, '_blank');
+		setTimeout(function() {
+			if (blob) u.revokeObjectURL(blob);
+			a.parentNode.removeChild(a);
+		}, 12345);
+	} else window.open(dataURI, '_blank');
 }
 
 function sendPic(dest, auto) {

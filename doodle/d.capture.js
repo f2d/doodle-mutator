@@ -310,15 +310,55 @@ function capsSave(posts) {
 		blocks.push(b);
 	}
 
-	function saveDL(content) {
+	function saveDL(dataURI) {
+//* sources:
+//* https://github.com/SthephanShinkufag/Dollchan-Extension-Tools/blob/25a5f53349057b1216cdcbdc38a92c8991a9622d/src/Dollchan_Extension_Tools.es6.user.js#L1283
+//* https://gist.github.com/borismus/1032746#gistcomment-1493026
+//* https://developers.google.com/web/updates/2012/06/Don-t-Build-Blobs-Construct-Them
+		size = dataURI.length;
 		if ('download' in gn('a')[0]) {
-		var	a = cre('a', document.body);
-			a.href = content;
-			a.download = getFormattedTime(0,1,0,1)+(room?'_'+room:'')+'.png';
+		var	u = window.URL || window.webkitURL
+		,	a = cre('a', document.body)
+			;
+			if (u && u.createObjectURL) {
+			var	type = dataURI.split(';', 1)[0].split(':', 2)[1]
+			,	data = dataURI.slice(dataURI.indexOf(',')+1)
+			,	data = Uint8Array.from(TOS.map.call(atob(data), function(v) {return v.charCodeAt(0);}))
+			,	blob = window.URL.createObjectURL(new Blob([data], {'type': type}))
+			,	size = data.length
+				;
+				a.href = ''+blob;
+			} else a.href = ''+dataURI;
+;			a.download = getFormattedTime(0,1,0,1)+(room?'_'+room:'')+'.png';
 			a.click();
-			setTimeout(function() {del(a);}, 5678);
-		} else window.open(content, '_blank');
+			setTimeout(function() {
+				if (blob) u.revokeObjectURL(blob);
+				del(a);
+			}, 12345);
+		} else window.open(dataURI, '_blank');
+		return size;
 	}
+
+var	la;
+	if (lang == 'ru') la = {
+		no_posts: 'Не выбран ни один пост для захвата.'
+	,	no_image_size: 'Ошибка: программа-браузер не может создать полотно необходимого размера. Выберите меньше постов.'
+	,	no_image_data: 'Ошибка: программа-браузер не может создать данные для файла изображения.'
+	,	save_size: 'Размер содержимого файла'
+	,	image_data: 'Содержимое изображения'
+	,	image_res: 'Размер изображения'
+	,	pixels: ' пикселей'
+	,	bytes: ' байт'
+	}; else la = {
+		no_posts: 'No posts selected to capture.'
+	,	no_image_size: 'Error: the browser program failed to create a canvas of required size. Try selecting less posts.'
+	,	no_image_data: 'Error: the browser program failed to create resulting image file content.'
+	,	save_size: 'File content size'
+	,	image_data: 'Image content'
+	,	image_res: 'Image size'
+	,	pixels: ' pixels'
+	,	bytes: ' bytes'
+	};
 
 	if (
 		!(typeof posts === 'object' && posts.join)
@@ -411,10 +451,12 @@ function capsSave(posts) {
 			addBlock(p);
 		}
 		if (e = id('content')) toggleClass(e, 'saving', -1);
-	//* compile result image:
-		if (blocks.length) {
+	//* prepare the canvas to draw the image:
+		if (totalHeight > 0) {
 			cnv.width = w;
 			cnv.height = totalHeight;
+		}
+		if (cnv.height == totalHeight) {
 	//* draw bg and images:
 			for (var b_i = y = 0, b_k = blocks.length; b_i < b_k; b_i++) {
 			var	b = blocks[b_i];
@@ -433,9 +475,9 @@ function capsSave(posts) {
 					ctx.font = font;
 					ctx.fillStyle = color;
 					ctx.textBaseline = 'alphabetic';
-					x = Math.round((w - e.width)/2);
-					if (i = b.indent) {
-						x += Math.round(i/2);
+					i = b.indent || 0;
+					x = Math.round((w - e.width + i)/2);
+					if (i) {
 						if (i = b.index) {
 							ctx.textAlign = 'right';
 							ctx.fillText(i, x,y);
@@ -447,10 +489,37 @@ function capsSave(posts) {
 				}
 				y += b.height;
 			}
-			saveDL(cnv.toDataURL());
+			e = x = y = z = 0;
+			try {
+				x = cnv.toDataURL();
+				y = x.length;
+				z = saveDL(x);
+			} catch(err) {
+				e = err;
+			}
+			if (e || !z) {
+				alert(
+					la.no_image_data
+				+	'\n\n'+la.image_res+': '+cnv.width+' x '+cnv.height+la.pixels+', '+(z?Math.round(y*3/4):y)+la.bytes
+				+	(y ?	'\n'+la.image_data+': '+x.slice(0,42)+(y > 42?'(...)':'')
+					+	'\n'+la.save_size+': '+z+la.bytes
+					: '')
+				+	(e ?	'\nError code: '+e.code
+					+	'\nError name: '+e.name
+					+	'\nError text: '+(e.message || 'none')
+					: '')
+				);
+			}
+		} else {
+			alert(
+				la.no_image_size
+			+	'\n'+la.image_res+': '+w+' x '+totalHeight+la.pixels
+			);
 		}
 	//* trying to free memory sooner:
 		cnv.width = cnv.height = 1;
+	} else {
+		alert(la.no_posts);
 	}
 	return false;
 }

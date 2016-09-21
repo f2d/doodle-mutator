@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-09-19 09:41'	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-09-22 02:53'	//* <- change this to invalidate old pages cached in browsers
 	.NL.	'Or user key/options/date background changed: '.ME_VAL
 	.NL.	implode(NL, get_date_class())
 	).'"';
@@ -228,9 +228,9 @@ function get_draw_app_list() {
 	return array('name' => $n, 'src' => ROOTPRFX.$f.(LINK_TIME?'?'.filemtime($f):''), 'list' => $a);
 }
 
-function get_draw_vars($v = '') {
+function get_draw_vars($send = '') {
 	global $cfg_draw_vars, $tmp_wh, $tmp_whu, $u_opts, $query;
-	$vars = ($v?"$v;":'').DRAW_REST.
+	$vars = ($send?"$send;":'').DRAW_REST.
 		';keep_prefix='.DRAW_PERSISTENT_PREFIX
 	.($u_opts['save2common']?'':
 		';save_prefix='.DRAW_BACKUPCOPY_PREFIX.';saveprfx='.NAMEPRFX
@@ -239,10 +239,12 @@ function get_draw_vars($v = '') {
 		if (($i = $GLOBALS['u_'.$v]) || ($i = get_const(strtoupper($v)))) $vars .= ";$k=$i";
 	}
 	if (($res = $query['draw_res']) && strpos($res, 'x')) $wh = explode('x', $res);
-	foreach (array('DEFAULT_', 'LIMIT_') as $i => $j)
-	foreach ($tmp_whu as $k => $l) {
-		$p = $tmp_wh[$k].($i?'l':'');
-		if ((!$i && $wh && ($v = $wh[$k])) || ($v = get_const("DRAW_$j$l"))) $vars .= ";$p=$v";
+	if ($send) {
+		foreach (array('DEFAULT_', 'LIMIT_') as $i => $j)
+		foreach ($tmp_whu as $k => $l) {
+			$p = $tmp_wh[$k].($i?'l':'');
+			if ((!$i && $wh && ($v = $wh[$k])) || ($v = get_const("DRAW_$j$l"))) $vars .= ";$p=$v";
+		}
 	}
 	return csv2nl($vars);
 }
