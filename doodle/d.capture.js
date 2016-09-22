@@ -319,17 +319,18 @@ function capsSave(posts) {
 		if ('download' in gn('a')[0]) {
 		var	u = window.URL || window.webkitURL
 		,	a = cre('a', document.body)
+		,	type = dataURI.split(';', 1)[0].split(':', 2)[1]
+		,	ext = type.split('/').slice(-1)[0]
 			;
 			if (u && u.createObjectURL) {
-			var	type = dataURI.split(';', 1)[0].split(':', 2)[1]
-			,	data = dataURI.slice(dataURI.indexOf(',')+1)
+			var	data = dataURI.slice(dataURI.indexOf(',')+1)
 			,	data = Uint8Array.from(TOS.map.call(atob(data), function(v) {return v.charCodeAt(0);}))
 			,	blob = window.URL.createObjectURL(new Blob([data], {'type': type}))
 			,	size = data.length
 				;
-				a.href = ''+blob;
-			} else a.href = ''+dataURI;
-;			a.download = getFormattedTime(0,1,0,1)+(room?'_'+room:'')+'.png';
+				a.href = blob;
+			} else a.href = dataURI;
+;			a.download = getFormattedTime(0,1,0,1)+(room?'_'+room:'')+(ext?'.'+ext:'');
 			a.click();
 			setTimeout(function() {
 				if (blob) u.revokeObjectURL(blob);
