@@ -431,7 +431,7 @@ sub post_stuff($$$$$$$$$$$$$)
 	}
 
 	# copy file, do checksums, make thumbnail, etc
-	my ($filename,$ext,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height)=process_file($file,$uploadname,$time) if($file);
+	my ($abbr_filename,$filename,$ext,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height)=process_file($file,$uploadname,$time) if($file);
 
 	# create the thread if we are starting a new one
 	$thread=make_thread($title,$time,$name.$trip) unless $thread;
@@ -460,6 +460,8 @@ sub post_stuff($$$$$$$$$$$$$)
 	,	title=>$title
 	,	comment=>$comment
 
+	,	uploadname=>$uploadname
+	,	abbr_filename=>$abbr_filename
 	,	image=>$filename
 	,	ext=>$ext
 	,	size=>$size
@@ -1431,11 +1433,12 @@ sub process_file($$$)
 		$thumbnail=$filename;
 	}
 
+	my $abbr_filename="";
 	if($filetypes{$ext}) # externally defined filetype - restore the name
 	{
 		my $newfilename=$uploadname;
 		$newfilename=~s!^.*[\\/]!!; # cut off any directory in filename
-		$newfilename=IMG_DIR.$newfilename;
+		$newfilename=IMG_DIR.get_compact_filename($filebase.'_'.$newfilename);
 
 		unless(-e $newfilename) # verify no name clash
 		{
@@ -1447,7 +1450,9 @@ sub process_file($$$)
 			unlink $filename;
 			make_error(S_DUPENAME);
 		}
+	} else {
+		$abbr_filename=get_compact_filename($uploadname);
 	}
 
-	return ($filename,$ext,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height);
+	return ($abbr_filename,$filename,$ext,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height);
 }

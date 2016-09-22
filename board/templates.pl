@@ -27,8 +27,9 @@ use constant S_DELEXPL => '(for post and file deletion)';			# Prints explanation
 use constant S_TELL_UA => 'Browser';						# Describes UA switch
 use constant S_TELL_UA_EXPL => '(tell your browser software name and version)';	# Prints explanation for UA switch
 
+use constant S_DLINK => 'Click filename to download.';				# Prints instructions for downloading file
 use constant S_THUMB => 'Thumbnail displayed, click image for full size.';	# Prints instructions for viewing real source
-use constant S_HIDDEN => 'Thumbnail hidden, click filename for the full image.';# Prints instructions for viewing hidden image reply
+use constant S_HIDDEN => 'Thumbnail hidden, click filename to see the image.';	# Prints instructions for viewing hidden image reply
 use constant S_NOTHUMB => 'No<br />thumbnail';					# Printed when there's no thumbnail
 use constant S_PICNAME => 'File: ';						# Prints text before upload name/link
 use constant S_FULLTHREAD => 'View thread';					# Prints text for full thread link
@@ -327,25 +328,30 @@ use constant THREAD_FOOT_TEMPLATE => compile_template(q{
 use constant REPLY_TEMPLATE => compile_template( q{
 <if $num==1>
 	<if $image>
-		<span class="filesize">
+		<span class="filesize" title="<var get_filename($uploadname)>">
 			<const S_PICNAME>
 			<a target="_blank" href="<var expand_filename(clean_path($image))>"><var get_filename($image)></a>
-			-(<em><var $size> B, <var $width>x<var $height></em>)
+			-(<em><var $size> B<if $width or $height>, <var $width>x<var $height></if><if $abbr_filename>, <var $abbr_filename></if></em>)
 		</span>
-		<span class="thumbnailmsg"><const S_THUMB></span><br />
-
-		<if $thumbnail>
-			<a target="_blank" href="<var expand_filename(clean_path($image))>">
-				<img src="<var expand_filename($thumbnail)>"
-					width="<var $tn_width>"
-					height="<var $tn_height>"
-					alt="<var $size>"
-					class="thumb"
-				/>
-			</a>
+		<if !$width and !$height>
+			<span class="thumbnailmsg"><const S_DLINK></span><br />
 		</if>
-		<if !$thumbnail>
-			<div class="nothumb"><a target="_blank" href="<var expand_filename(clean_path($image))>"><const S_NOTHUMB></a></div>
+		<if $width or $height>
+			<span class="thumbnailmsg"><const S_THUMB></span><br />
+
+			<if $thumbnail>
+				<a target="_blank" href="<var expand_filename(clean_path($image))>">
+					<img src="<var expand_filename($thumbnail)>"
+						width="<var $tn_width>"
+						height="<var $tn_height>"
+						alt="<var $size>"
+						class="thumb"
+					/>
+				</a>
+			</if>
+			<if !$thumbnail>
+				<div class="nothumb"><a target="_blank" href="<var expand_filename(clean_path($image))>"><const S_NOTHUMB></a></div>
+			</if>
 		</if>
 	</if>
 
@@ -422,25 +428,30 @@ use constant REPLY_TEMPLATE => compile_template( q{
 
 	<if $image>
 		<br />
-		<span class="filesize">
+		<span class="filesize" title="<var get_filename($uploadname)>">
 			<const S_PICNAME>
 			<a target="_blank" href="<var expand_filename(clean_path($image))>"><var get_filename($image)></a>
-			-(<em><var $size> B, <var $width>x<var $height></em>)
+			-(<em><var $size> B<if $width or $height>, <var $width>x<var $height></if><if $abbr_filename>, <var $abbr_filename></if></em>)
 		</span>
-		<span class="thumbnailmsg"><const S_THUMB></span><br />
-
-		<if $thumbnail>
-			<a target="_blank" href="<var expand_filename(clean_path($image))>">
-				<img src="<var expand_filename($thumbnail)>"
-					width="<var $tn_width>"
-					height="<var $tn_height>"
-					alt="<var $size>"
-					class="thumb"
-				/>
-			</a>
+		<if !$width and !$height>
+			<span class="thumbnailmsg"><const S_DLINK></span><br />
 		</if>
-		<if !$thumbnail>
-			<div class="nothumb"><a target="_blank" href="<var expand_filename(clean_path($image))>"><const S_NOTHUMB></a></div>
+		<if $width or $height>
+			<span class="thumbnailmsg"><const S_THUMB></span><br />
+
+			<if $thumbnail>
+				<a target="_blank" href="<var expand_filename(clean_path($image))>">
+					<img src="<var expand_filename($thumbnail)>"
+						width="<var $tn_width>"
+						height="<var $tn_height>"
+						alt="<var $size>"
+						class="thumb"
+					/>
+				</a>
+			</if>
+			<if !$thumbnail>
+				<div class="nothumb"><a target="_blank" href="<var expand_filename(clean_path($image))>"><const S_NOTHUMB></a></div>
+			</if>
 		</if>
 	</if>
 

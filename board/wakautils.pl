@@ -691,10 +691,25 @@ sub get_filename($)
 	clean_string($1)
 }
 
+sub get_compact_filename($;$)
+{
+	my ($filename,$maxlen)=@_;
+
+	$filename=~s!^.*[\\/]!!; # cut off directory
+	$maxlen=64 unless $maxlen;
+
+	if (length $filename > $maxlen) {
+		my $i=rindex $filename, ".";
+		my $ext=($i ? substr($filename,$i) : "");
+		return (substr $filename,0,($maxlen-(length $ext)))."(...)".$ext;
+	}
+	return $filename;
+}
+
 sub get_thread_filename($)
 {
 	my ($thread)=@_;
-	expand_filename(RES_DIR.$thread.PAGE_EXT)
+	return expand_filename(RES_DIR.$thread.PAGE_EXT);
 }
 
 sub expand_filename_time($)
