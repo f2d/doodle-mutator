@@ -13,7 +13,7 @@ body, .task input:not([type="checkbox"]), .task select {
 	line-height: 28px;
 	font-size: 21px;
 }
-.header::after, .task::after, .thread::after, .post::after, .hint::after {
+.header::after, .task::after, .thread::after, .post::after, .post .image-num::after, .hint::after {
 	content: "";
 	display: block;
 	clear: both;
@@ -102,6 +102,8 @@ a:hover	{
 	white-space: normal;
 	text-align: center;
 	background-color: #ace;
+}
+.anno:not(.post) {
 	color: #fff;
 }
 .anno b {
@@ -551,7 +553,7 @@ a:hover	{
 	vertical-align: top;
 }
 .post .image-num {
-	display: block;
+	display: inline-block;
 	margin-bottom: 4px;
 }
 .post .res {

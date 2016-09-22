@@ -1,5 +1,7 @@
 ﻿var	bnw = bnw || []
+
 ,	capsModes = {}
+,	capsAround = 0
 ,	capsLastAnchor
 ,	capsLastPost
 ,	capsLastText
@@ -8,24 +10,27 @@
 ,	capsBtn = 'caps-btn'
 ,	capsCanvas = 'caps-canvas'
 ,	capsWidth = document.body.offsetWidth
+
 ,	regClassCapsBtn
 	;
 
 bnw.push(bnw.caps = function capsInit(i) {
 	if (i && param) {
 		if ((a = param.caps) && (i = a.length)) while (i--) capsModes[a[i]] = 1;
+		if ((a = param.caps_around) && (i = orz(a)) > 0) capsAround = a;
 		if ((a = param.caps_width) && (i = orz(a)) > 0) capsWidth = a;
 	}
 	if (!capsModes) return;
 
-var	e = id('content') || document.body
+var	f,e = id('content') || document.body
 ,	n = ' \r\n'
-,	f,t = ''
+,	t = ''
 	;
 	if (capsModes.a) {
-		if (i) {
-			reAddEventListener(e, capsL, capsPostClick);
-			reAddEventListener(e, capsR, capsPostClick);
+		if (capsModes.a !== e) {
+			capsModes.a = e;
+			e.addEventListener(capsL, capsPostClick, false);
+			e.addEventListener(capsR, capsPostClick, false);
 		}
 		if (lang == 'ru') a = [
 			'Alt + Shift +		клик: сохранить снимок всей нити'
@@ -46,24 +51,24 @@ var	e = id('content') || document.body
 		capsLastPost = 0;
 	}
 	if (capsModes.t) {
-		if (i) {
-			regClassCapsBtn = getClassReg(capsBtn);
-			reAddEventListener(e, capsL, capsTextSelect);
+		if (capsModes.t !== e) {
+			capsModes.t = e;
+			e.addEventListener(capsL, capsTextSelect, false);
 		}
+		if (!regClassCapsBtn) regClassCapsBtn = getClassReg(capsBtn);
 		if (lang == 'ru') t += (t?n+'Или в':'В')+'ыделить текст нужных постов и появится кнопка сохранения.';
 		else t += (t?n+'Or s':'S')+'elect text across posts to capture, then a save button appears.';
 	}
-var	a = gc('multi-thread',e)
-,	i = n = a.length
-	;
-	while (i--) a[i].title = t;
+	if (!(a = gc('multi-thread', e)).length) a = gc('content');
+	i = n = a.length;
+	while (i--) if (e = a[i]) e.title = t;
 
 var	a = gc('post',e)
 ,	i = a.length
 	;
 	while (i--) if (
 		(e = a[i])
-	&&	(f = e.firstElementChild)
+	&&	(f = e.firstElementChild || e.firstChild)
 	&&	!(f.href || f.onclick)
 	) {
 		if (capsModes.a) capsLastPost = e;
@@ -207,10 +212,20 @@ var	a = [];
 	var	f = e
 	,	p = e
 		;
-		while ((p = p.previousElementSibling) && (wholeThread || !gn('img',p).length)) f = p;
+		if (
+			wholeThread
+		||	(capsAround & 1)
+		) {
+			while ((p = p.previousElementSibling) && (wholeThread || !gn('img',p).length)) f = p;
+		}
 		do {
 			a.push(f);
-			if (!wholeThread && gn('img',f).length) break;
+			if (
+				!wholeThread && (
+					(!(capsAround & 2) && f === e)
+				||	gn('img',f).length
+				)
+			) break;
 		} while (f = f.nextElementSibling);
 		if (wholeThread < 0) while ((e = a.length-1) > 0 && !gn('img', a[e]).length) a.length = e;
 	}
@@ -408,6 +423,7 @@ var	la;
 	//* image post:
 			if (img) {
 				if (img.width || img.height) {
+					if (w < img.width) w = img.width;
 					p.height += img.height;
 					p.img = img;
 				}

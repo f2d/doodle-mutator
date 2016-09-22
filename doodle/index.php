@@ -483,14 +483,19 @@ $n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
 			$page['task'] .= '
 <p class="hint" id="research">'.indent($tmp_archive_found.$research).'</p>';
 			if ($found = data_archive_find_by($search)) {
-				$flags = 'a';
-				if (!$u_opts['count']) $flags .= 'c';
 				$page['content'] = '
-page_ext = '.PAGE_EXT."
-flags = $flags
-".$found;
+page_ext = '.PAGE_EXT.get_flag_vars(
+					array(
+						'flags' => array(
+							'ac', array(
+								1
+							,	!$u_opts['count']
+							)
+						)
+					,	'caps' => 0
+					)
+				).NL.$found;
 				$page['data']['content']['type'] = 'archive found';
-				$page['js']['capture']++;
 			}
 		}
 		$page['js'][0]++;
@@ -681,20 +686,6 @@ if (TIME_PARTS) time_check_point('got visible data, unlocked');
 			}
 			$desc = ($target['pic'] || !($target['task'] || $draw_free));
 			if ($vts = $visible['threads']) {
-				$flags = $caps = '';
-				$t = 'acgmp';
-				foreach (array(
-					$u_opts['active']
-				,	!$u_opts['count']
-				,	GOD
-				,	MOD
-				,	PIC_SUB
-				) as $k => $v) if ($v) $flags .= $t[$k];
-				$t = 'at';
-				foreach (array(
-					!$u_opts['capture_altclick']
-				,	!$u_opts['capture_textselection']
-				) as $k => $v) if ($v) $caps .= $t[$k];
 				$t = (
 					MOD ? "
 left = $tmp_mod_post_hint
@@ -704,12 +695,20 @@ left = $tmp_report_post_hint
 right = $tmp_report_user_hint"
 					)
 				).'
-images = '.ROOTPRFX.DIR_PICS;
-				if ($flags) $t .= "
-flags = $flags";
-				if ($caps) $t .= "
-caps = $caps
-caps_width = ".DRAW_PREVIEW_WIDTH;
+images = '.ROOTPRFX.DIR_PICS.get_flag_vars(
+					array(
+						'flags' => array(
+							'acgmp', array(
+								$u_opts['active']
+							,	!$u_opts['count']
+							,	GOD
+							,	MOD
+							,	PIC_SUB
+							)
+						)
+					,	'caps' => 3
+					)
+				);
 				$page['content'] = $t.NL;
 				$a = array();
 				$b = '<br>';
@@ -769,7 +768,6 @@ if (TIME_PARTS) time_check_point('done trd '.$tid);
 				ksort($a);
 				$page['content'] .= implode(NL, array_reverse($a));
 if (TIME_PARTS) time_check_point('after sort + join');
-				if ($caps) $page['js']['capture']++;
 				if (GOD) $filter = 1;
 			} else if (GOD) $page['content'] = "
 left = $tmp_empty

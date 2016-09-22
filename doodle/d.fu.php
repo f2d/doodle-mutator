@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-09-22 02:53'	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-09-23 00:18'	//* <- change this to invalidate old pages cached in browsers
 	.NL.	'Or user key/options/date background changed: '.ME_VAL
 	.NL.	implode(NL, get_date_class())
 	).'"';
@@ -247,6 +247,36 @@ function get_draw_vars($send = '') {
 		}
 	}
 	return csv2nl($vars);
+}
+
+function get_flag_vars($a) {
+	global $page, $u_opts;
+	$r = '';
+	foreach ($a as $k => $v) {
+		if (!is_array($v)) {
+			$mode = $v;
+			if ($k == 'caps') $v = array(
+				'at'
+			,	array(
+					!$u_opts['capture_altclick']
+				,	!$u_opts['capture_textselection']
+				)
+			);
+		}
+		list($letter, $switch) = $v;
+		$v = '';
+		foreach ($switch as $i => $on) if ($on) $v .= $letter[$i];
+		if ($v) {
+			$r .= "
+$k = $v";		if ($k == 'caps') {
+				$r .= "
+caps_around = $mode
+caps_width = ".DRAW_PREVIEW_WIDTH;
+				$page['js']['capture']++;
+			}
+		}
+	}
+	return $r;
 }
 
 function get_time_html($t = 0) {

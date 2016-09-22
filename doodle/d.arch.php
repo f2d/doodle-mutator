@@ -90,7 +90,7 @@ function data_get_archive_page_html($room, $num, $tsv) {
 		,	'body' => get_date_class($arch_time_min, $arch_time_max)
 		,	'task' => ($p ? '<a href="'.$p.PAGE_EXT.'" title="previous">'.$num.'</a>' : $num)
 		,	'content' => NL.implode(NL, $lines)
-		,	'js' => 'arch'
+		,	'js' => array('capture' => 1, 'arch' => 1)
 		)
 	);
 }

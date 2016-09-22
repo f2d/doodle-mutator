@@ -250,7 +250,7 @@ var	i = gn('select')
 			}
 		} else c = 0;
 		if (t = id('index-form-header') || id('reply-form-header')) {
-		var	a = ' [<a href="javascript:show(postform),show(show_postform);">'
+		var	a = ' [<a href="javascript:show(\'postform\'),show(\'show_postform\');">'
 		,	b = '</a>]'
 			;
 			d = cre('span',t);
