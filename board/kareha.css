@@ -1,7 +1,8 @@
-#delform .reply > blockquote {margin-left: 0;}
+﻿#delform .reply > blockquote {margin-left: 0;}
 #delform .reply blockquote blockquote, .reply p {margin: 1em 0.5em 0 1em;}
 #delform > blockquote, #delform > blockquote blockquote, #delform > blockquote p {margin: 1em 0 1em 0;}
-.cap {color: #969;}
+.cap {color: #a8a;}
+.cap::after {content: "★"; font-family: monospace;}
 .de-parea .postform-close {display: none;}
 .footer {text-align: center;}
 .nothumb {float: left; background: #eee; border: 2px dashed #aaa; text-align: center; margin: 2px 1em; padding: 1em 0.5em 1em 0.5em;}

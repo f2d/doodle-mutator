@@ -1,19 +1,19 @@
 * {font-family: monospace; font-size: 10pt;}
 .adminbar {text-align: right;}
-.commentpostername {background: inherit; color: #ccc; font-weight: bold;}
+.commentpostername {background: inherit; color: #aaa; font-weight: bold;}
 .doubledash {vertical-align: top; clear: both; float: left;}
 .filesize {text-decoration: none; color: #999;}
 .filetitle {background: inherit; color: #000; font-weight: bold; text-decoration: underline;}
 .logo {text-align: center; background: inherit; color: #000; width: 100%; font-family: monospace; font-weight: bold;}
-.oldpost {background: inherit; color: #ccc; font-weight: 800;}
+.oldpost {background: inherit; color: #bbb; font-weight: 800;}
 .omittedposts {background: inherit; color: #999;}
 .postarea {background: inherit;}
 .postblock {background: #fff; border: 1px solid #aaa; color: #aaa; font-weight: bold; padding: 2px 5px 2px 5px;}
-.postername {background: inherit; color: #ccc; font-weight: bold;}
-.postertrip {background: inherit; color: #ccc;}
+.postername {background: inherit; color: #aaa; font-weight: bold;}
+.postertrip {background: inherit; color: #bbb;}
 .reply {background: #fff; color: #000; border: 1px solid #333;}
-.replyhl {background: #fff; color: #ccc;}
-.replytitle {background: inherit; color: #ccc; font-weight: 800;}
+.replyhl {background: #fff; color: #bbb;}
+.replytitle {background: inherit; color: #bbb; font-weight: 800;}
 .spoiler, .spoiler a {background: #aaa; color: #aaa;}
 .spoiler:hover {color: #000;}
 .spoiler:hover a:hover {color: #fff;}
@@ -27,4 +27,4 @@ a:visited {background: inherit; color: #000;}
 a:hover, .replylink a:hover {color: #aaa; background: inherit;}
 hr {border: none; color: #999; background-color: #999; height: 1px;}
 html, body {font-size: 10pt; background: #fff; color: #000;}
-input, textarea {background-color: #fff; border: 1px solid #444; color: #ccc;}
+input, textarea {background-color: #fff; border: 1px solid #444; color: #000;}
