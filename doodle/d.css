@@ -238,7 +238,6 @@ a:hover	{
 	min-width: 100%;
 	min-height: 320px;
 	height: 978px;
-	height: 95vh;
 }
 .task {
 	position: relative;
@@ -274,14 +273,14 @@ a:hover	{
 	color: #fff;
 	background-color: #555;
 }
-.task form>*:not(label) {
+.task form>:not(label) {
 	display: table;
 	width: 100%;
 }
-.task form>*:not(label)>* {
+.task form>:not(label)>* {
 	display: table-cell;
 }
-.task form>*:not(label)>*:not(:first-child) {
+.task form>:not(label)>:not(:first-child) {
 	width: 150px;
 	text-align: right;
 }

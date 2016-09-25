@@ -78,7 +78,7 @@ function data_get_line_fix_time($line) {
 }
 
 function data_get_archive_page_html($room, $num, $tsv) {
-	global $line_time_min, $line_time_max;
+	global $cfg_langs, $line_time_min, $line_time_max;
 	if ($num <= 0) return $num;
 	$p = $num-1;
 	$n = $num+1;
@@ -88,6 +88,7 @@ function data_get_archive_page_html($room, $num, $tsv) {
 	return get_template_page(
 		array(
 			'title' => $room
+		,	'lang' => $cfg_langs[0]
 		,	'head' => ($p ? '<link rel="prev" href="'.$p.PAGE_EXT.'">'.NL : '').
 					'<link rel="next" href="'.$n.PAGE_EXT.'">'
 		,	'body' => get_date_class($line_time_min, $line_time_max)
