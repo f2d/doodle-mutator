@@ -16,14 +16,14 @@ function data_get_visible_archives() {
 	) : $a;
 }
 
-function data_get_thumb($src, $xMax, $yMax) {
+function data_get_thumb($src, $xMax = 0, $yMax = 0) {
 	if (!is_file($src)) return false;
 
 	ob_start();
-	$gis = getImageSize($src);
-	$w = $xMax;	$gis['w'] = $width = $gis[0];
-	$h = $yMax;	$gis['h'] = $height = $gis[1];
-	switch ($gis['mime']) {
+	$data = getImageSize($src);
+	$data['w'] = $width = $data[0];
+	$data['h'] = $height = $data[1];
+	switch ($data['mime']) {
 		case 'image/jpg': case 'image/jpeg': case 'image/pjpeg':
 					$orig = imageCreateFromJPEG($src);	break;
 		case 'image/png': case 'image/x-png':
@@ -35,51 +35,54 @@ function data_get_thumb($src, $xMax, $yMax) {
 
 	imageAlphaBlending($orig, false);
 	imageSaveAlpha($orig, true);
-	if ($r = ($w&&$width>$w) + ($h&&$height>$h) * 2) {
-		if ($r == 3) $r = ($width/$w < $height/$h) + 1;
-		if ($r == 1) $h = round($w*$height/$width);	//* <- w tops, h depends
-		if ($r == 2) $w = round($h*$width/$height);	//* <- h tops, w depends
+	$w = $xMax;
+	$h = $yMax;
+	if ($r = ($w && $width > $w) + ($h && $height > $h)*2) {
+		if ($r == 3) $r = ($width/$w < $height/$h ? 2 : 1);
+		if ($r == 2) $w = round($h*$width/$height); else	//* <- h tops, w depends
+		if ($r == 1) $h = round($w*$height/$width);		//* <- w tops, h depends
 		$res = imageCreateTrueColor($w,$h);
 		imageAlphaBlending($res, false);
 		imageSaveAlpha($res, true);
 		imageCopyResampled($res, $orig, 0,0,0,0, $w,$h, $width,$height);
 		imageDestroy($orig);
 		imageTrueColorToPalette($res, false, 255);
-		$gis['w'] = $w;
-		$gis['h'] = $h;
-		$gis['imgdata'] = $res;
-	} else $gis['imgdata'] = $orig;
-	return $gis;
+		$data['w'] = $w;
+		$data['h'] = $h;
+		$data['imgdata'] = $res;
+	} else $data['imgdata'] = $orig;
+	return $data;
 }
 
-function data_put_thumb($src, $dest, $xMax, $yMax) {
-	if (!is_array($gis = data_get_thumb($src, $xMax, $yMax))) return false;
-/*	switch ($gis['mime']) {
+function data_put_thumb($src, $dest, $xMax = 0, $yMax = 0) {
+	if (!is_array($data = data_get_thumb($src, $xMax, $yMax))) return false;
+/*	switch ($data['mime']) {
 		case 'image/jpg': case 'image/jpeg': case 'image/pjpeg':
-					return imageJPEG($gis['imgdata'], $dest);
-//		case 'image/gif':	return imageGIF($gis['imgdata'], $dest);
+					return imageJPEG($data['imgdata'], $dest);
+//		case 'image/gif':	return imageGIF($data['imgdata'], $dest);
 	}
-*/	return imagePNG($gis['imgdata'], $dest);
+*/	return imagePNG($data['imgdata'], $dest);
 }
 
 function data_get_line_fix_time($line) {
-	global $arch_time_min, $arch_time_max;
+	global $line_time_min, $line_time_max;
 	$before_tab = substr($line, 0, $i = strpos($line, '	'));
 	$t = (
 		preg_match('~\sdata-t=[\'"](\d+)~i', $before_tab, $match)
 		? intval($match[1])
 		: strtotime($before_tab)
 	) ?: intval($before_tab);
-	$arch_time_min = min($arch_time_min ?: $t, $t);
-	$arch_time_max = max($arch_time_max ?: $t, $t);
+	if (!$line_time_min || $line_time_min > $t) $line_time_min = $t;
+	if (!$line_time_max || $line_time_max < $t) $line_time_max = $t;
 	return $t.','.date(DATE_ATOM, $t).substr($line, $i);
 }
 
 function data_get_archive_page_html($room, $num, $tsv) {
-	global $arch_time_min, $arch_time_max;
+	global $line_time_min, $line_time_max;
 	if ($num <= 0) return $num;
 	$p = $num-1;
 	$n = $num+1;
+	$line_time_min = $line_time_max = 0;
 	$lines = array_map('data_get_line_fix_time', explode(NL, trim($tsv)));
 	sort($lines);
 	return get_template_page(
@@ -87,7 +90,7 @@ function data_get_archive_page_html($room, $num, $tsv) {
 			'title' => $room
 		,	'head' => ($p ? '<link rel="prev" href="'.$p.PAGE_EXT.'">'.NL : '').
 					'<link rel="next" href="'.$n.PAGE_EXT.'">'
-		,	'body' => get_date_class($arch_time_min, $arch_time_max)
+		,	'body' => get_date_class($line_time_min, $line_time_max)
 		,	'task' => ($p ? '<a href="'.$p.PAGE_EXT.'" title="previous">'.$num.'</a>' : $num)
 		,	'content' => NL.implode(NL, $lines)
 		,	'js' => array('capture' => 1, 'arch' => 1)
@@ -136,7 +139,7 @@ function data_archive_full_threads($threads) {
 }
 
 function data_archive_rewrite() {
-	global $date_classes;
+	global $date_classes, $line_time_min, $line_time_max;
 	$a = 0;
 	$elen = strlen(PAGE_EXT);
 	$img_src = array(
@@ -168,8 +171,10 @@ function data_archive_rewrite() {
 				if (!unlink($x)) $x = 'delete old failed'; else
 				$x = strlen($old)." => $sz bytes";
 			}
-			if ($date_classes) $x .= '	'.implode(' ', $date_classes);
-			$text_report .= NL."$path	$x";
+			$d0 = date(TIMESTAMP, $line_time_min);
+			$d1 = date(TIMESTAMP, $line_time_max);
+			$dc = ($date_classes ? '	'.implode(' ', $date_classes) : '');
+			$text_report .= NL."$path	$x	$d0 - $d1$dc";
 			++$t;
 		}
 		++$a;
