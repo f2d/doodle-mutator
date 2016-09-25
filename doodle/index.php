@@ -1444,13 +1444,23 @@ if ($f = $todo_pic) {
 		$AT = ' &mdash; ';
 		$BY = ' x ';
 		$TO = ' &#x2192; ';
-		$ri = max(intval(get_const('POST_PIC_WAIT')), 1);
+		$ri = max(intval(POST_PIC_WAIT), 1);
+
+	//* this is not working here, must set in php.ini:
 	//	ini_set('zlib.output_compression', 'Off');
 	//	ini_set('output_buffering', 'Off');
-		header('X-Accel-Buffering: no');
-		header('Content-Encoding: none');
-		header("Refresh: $ri; url=$l");	//* <- some browser may be configured to prevent this
-		echo '<html>
+
+	//* this is for nginx and gzip:
+		if (NGINX) {
+			header('X-Accel-Buffering: no');
+			header('Content-Encoding: none');
+		}
+
+	//* this is for the browser, some may be configured to prevent though:
+		header("Refresh: $ri; url=$l");
+
+		echo '<!doctype html>
+<html lang="'.$lang.'">
 <head>
 	<meta charset="'.ENC.'">
 	<title>'.$tmp_sending.'</title>
@@ -1500,10 +1510,12 @@ if ($f = $todo_pic) {
 	}
 	data_unlock();
 
-	if ($ri) echo get_new_line_time().$msg.'</p>
+	if ($ri) {
+		echo get_new_line_time().$msg.'</p>
 <p>'.sprintf($tmp_post_progress['refresh'], $l, format_time_units($ri)).'</p>
 </body>
-</html>'; else ob_end_clean();
+</html>';
+	} else ob_end_clean();
 }
 if (!$ri) header("Location: $l");	//* <- printing content has no effect with Location header
 
