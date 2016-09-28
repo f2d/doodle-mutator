@@ -46,19 +46,20 @@ function data_put($file_path, $content = '', $r = '') {
 }
 
 function data_log($file_path, $line, $n = UTF, $report = 1) {
-	$old = is_file($file_path);
-	$line = ($old?NL:$n).$line;
+	if ($old = is_file($file_path)) $old_size = filesize($file_path);
+	$line = ($old_size?NL:$n).$line;
 	$written = file_put_contents(data_ensure_filepath_mkdir($file_path), $line, FILE_APPEND);
-
-	if (!$written && $old) {	//* <- wrong user rights, maybe
-		$log = 'Cannot write to '.$file_path;
-		if (
-			rename($file_path, $old = $file_path.'.old'.T0.'.bak')
-		&&	($written = file_put_contents($file_path, file_get_contents($old).$line))
-		) {
-			$del = (unlink($old)?'deleted':'cannot delete');
-			$log .= NL."Copied $written to new file, $del $old";
-		}
+	if (!$written) {
+		if ($old) {	//* <- wrong user rights, maybe
+			$log = 'Cannot write to existing '.$file_path;
+			if (
+				rename($file_path, $old = $file_path.'.old'.T0.'.bak')
+			&&	($written = file_put_contents($file_path, ($old_size?file_get_contents($old):'').$line))
+			) {
+				$del = (unlink($old)?'deleted':'cannot delete');
+				$log .= NL."Copied $old_size + $written bytes to new file, $del $old";
+			}
+		} else $log = 'Cannot create '.$file_path;
 	}
 	if ($log && $report) data_log_action($log);
 	return $written;
@@ -256,12 +257,16 @@ function data_log_report($r, $freeze = 0) {	//* <- r = array(t-r-c, reason, thre
 	) {
 		if (
 			is_file($f = $d.$f)
-		&&	strpos(str_replace(IMG, TXT, file_get_contents($f)), $u_tab)	//* <- cannot report invisible
+		&&	(
+				MOD
+			||	strpos(str_replace(IMG, TXT, file_get_contents($f)), $u_tab)	//* <- cannot report invisible
+			)
 		) {
 			if (!$m[5] && $freeze) rename($f, $f.'.stop');
-			data_log(DIR_META_R."$room/reports/$m[2].log", T0.'+'.M0."	$r[3]	$r[4]	$r[1]");
-			if ($r = data_log_action("$r[0]	$r[1]")) data_post_refresh();
-			return $r;
+			if (data_log(DIR_META_R."$room/reports/$r[2].log", T0.'+'.M0."	$r[3]	$r[4]	$r[1]")) {
+				data_post_refresh();
+				return data_log_action("$r[0]	$r[1]");
+			}
 		}
 		break;
 	}

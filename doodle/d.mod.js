@@ -106,7 +106,7 @@ var	n = 'menu_'+p.id
 				]
 			)
 		,	go: 'пуск'
-		,	r: 'Сообщить о проблеме'
+		,	r: (g?'Ответить на сообщение':'Сообщить о проблеме')
 		,	t: 'Ваш текст тут.'
 		,	i: 'Новый текст поста / имя / объявление.'
 		,	x: 'Закрыть и забыть это меню.'
@@ -146,7 +146,7 @@ var	n = 'menu_'+p.id
 				]
 			)
 		,	go: 'go'
-		,	r: 'Report a problem'
+		,	r: (g?'Reply to report':'Report a problem')
 		,	t: 'Your text here.'
 		,	i: 'New post content / name / announcement.'
 		,	x: 'Close and forget this menu.'
@@ -220,16 +220,13 @@ var	n = 'menu_'+p.id
 		b = '<input type="button" value="';
 		c = '" onClick="eventStop(event); menuClose(';
 		i = '" title="';
+		j = p.id.split('_').slice(1).join('-');
 		v = la.tip.join('\r\n');
 
 		i = '<div title="'+v+'">'
-		+(g
-			?	''
-			:	'<div class="block">'
-			+		'<a href="javascript:void('+(j = p.id.split('_').slice(1).join('-'))
-			+		')" onClick="window.open(\''+j+'\',\'Report\',\'width=656,height=267\')">'+la.r+'</a>'
-			+	'</div>'
-		)
+		+	'<div class="block">'
+		+		'[ <a href="javascript:void window.open(\''+j+'\',\'Report\',\'width=656,height=280\')">'+la.r+'</a> ]'
+		+	'</div>'
 		+	'<div class="block">'+m+'</div>'
 		+'</div>'
 		+'<textarea name="'+p.id.replace('m', 't')+i+la.i+'" placeholder="'+la.t+'"></textarea>'

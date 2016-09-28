@@ -38,7 +38,7 @@ body, .task input:not([type="checkbox"]), .task select {
 .header>*>u:not(:last-child) {
 	padding-right: 4px;
 }
-.header u, a[onclick] {
+.header u, .toggle, #task a[onclick], #task a[href*="javascript:"] {
 	text-decoration: none;
 }
 .header.a>*>* {
