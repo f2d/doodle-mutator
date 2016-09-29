@@ -13,7 +13,7 @@
 ,	regImgTag = /<img [^>]+>/i
 ,	regImgTitle = /\s+(title="[^"]+)"/i
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
-,	regTimeDrawn = /^((\d+)-(\d+)|[\d:]+)(?:=(-?\d+))?,(.*)$/m
+,	regTimeDrawn = /^((\d+)-(\d+)(?:[^\d:,=-]+(\d+)-(\d+))?|[\d:]+)(?:=(-?\d+))?,(.*)$/m
 ,	regTimeBreak = /^\d+(<|>|,|$)/
 ,	regLineBreak = /^(\r\n|\r|\n)/gm
 ,	regLNaN = /^\D+/
@@ -1143,16 +1143,17 @@ function showContent(sortOrder) {
 							if (m = a.match(regTimeDrawn)) {
 								if (m[2]) {
 								var	k = getFormattedHMS(+m[3]-m[2])
-								,	j = m[4]	//* <- sum of active intervals
+								,	i = (m[5] ? getFormattedHMS(+m[5]-m[4]) : '')
+								,	j = m[6]	//* <- sum of active intervals
 									;
 									m[1] = (
 										orz(j) > 0 && (j = getFormattedHMS(j)) != k
-										? j+' ('+k+')'
-										: k
+										? j+' ('+k+(i?' / '+i:'')+')'
+										: k+(i?' ('+i+')':'')
 									);
 								}
-							var	q = m[1]+', '+m[5]
-							,	a = la.time+' '+m[1]+' '+la.using+' '+m[5]
+							var	q = m[1]+', '+m[7]
+							,	a = la.time+' '+m[1]+' '+la.using+' '+m[7]
 								;
 							} else q = a = la.hax+' '+a;
 							if (dtp.found) {

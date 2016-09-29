@@ -1170,6 +1170,7 @@ if ($u_key) {
 		$log = 0;
 		$ppl = strlen($pp = $_POST['pic']);
 		$txt = (($ptx = $_POST['txt']) ?: '0-0,(?)');
+		data_aim();
 	//* metadata, got newline separated tagged format:
 		if (false !== strpos($txt, NL)) {
 			$a = explode(',', 'app,active_time,draw_time,open_time,t0,time,used');	//* <- to add to picture mouseover text
@@ -1185,8 +1186,10 @@ if ($u_key) {
 				$post_status = 'file_part';
 				$log = "$ppl != $z";
 			} else {
+				$t = $y['t0'] ?: $target['time'];
+				$t = array($t.'000', T0.'000');
+				$from_get_to_post = "$t[0]-$t[1]";
 				if (!$y['time']) {
-					$t = array($target['time'].'000', T0.'000');
 					$a = ($x = $y['open_time']) ? explode('-', $x) : array();
 					$b = ($x = $y['draw_time']) ? explode('-', $x) : array();
 					if ($b[0] == $b[1]) $b[0] = 0;
@@ -1194,14 +1197,13 @@ if ($u_key) {
 					$y['time'] = "$t[0]-$t[1]";
 				} else
 				if (!preg_match('~^(\d+:)+\d+$~', $y['time'])) {
-					$t = array(($y['t0'] ?: $target['time']).'000', T0.'000');
 					if (preg_match('~^(\d+)\D+(\d+)$~', $y['time'], $m)) {
 						if ($m[1] && $m[1] != $m[2]) $t[0] = $m[1];
 						if ($m[2]) $t[1] = $m[2];
 					}
 					$y['time'] = "$t[0]-$t[1]";
 				}
-				$t = $y['time'] ?: '0-0';
+				$t = (($t = $y['time']) && $t != $from_get_to_post ? "$t/" : '').$from_get_to_post;
 				$a = $y['app'] ?: '[?]';
 				if ($x = $y['used']) $a .= " (used $x)";
 				if ($x = $y['active_time']) $t .= "=$x";
@@ -1290,7 +1292,7 @@ if ($u_key) {
 //* write new post to a thread ------------------------------------------------
 
 	if ($post_status == 'new_post') {
-		data_aim();
+		if (!$target) data_aim();
 		$x = data_log_post($x);
 	//	data_unlock();
 		$t = array();

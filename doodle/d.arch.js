@@ -156,7 +156,7 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 ,	regImgTag = /<img [^>]+>/i
 ,	regImgTitle = /\s+(title="[^"]+)"/i
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
-,	regTimeDrawn = /^((\d+)-(\d+)|[\d:]+)(?:=(-?\d+))?,(.*)$/m
+,	regTimeDrawn = /^((\d+)-(\d+)(?:[^\d:,=-]+(\d+)-(\d+))?|[\d:]+)(?:=(-?\d+))?,(.*)$/m
 
 ,	line = p.innerHTML.split('\n')
 	;
@@ -183,15 +183,17 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 	//* image, meta, link to full size:
 				if (m = tab[3].match(regTimeDrawn)) {
 					if (m[2]) {
-						k = getFormattedHMS(+m[3]-m[2]);
-						j = m[4];
+					var	k = getFormattedHMS(+m[3]-m[2])
+					,	i = (m[5] ? getFormattedHMS(+m[5]-m[4]) : '')
+					,	j = m[6]
+						;
 						m[1] = (
 							orz(j) > 0 && (j = getFormattedHMS(j)) != k
-							? j+' ('+k+')'
-							: k
+							? j+' ('+k+(i?' / '+i:'')+')'
+							: k+(i?' ('+i+')':'')
 						);
 					}
-					tab[3] = m[1]+', '+m[5];
+					tab[3] = m[1]+', '+m[7];
 				}
 				post = tab[2];
 				res = (post.indexOf(', ') > 0);
