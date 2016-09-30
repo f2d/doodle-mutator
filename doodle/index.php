@@ -1186,24 +1186,25 @@ if ($u_key) {
 				$post_status = 'file_part';
 				$log = "$ppl != $z";
 			} else {
-				$t = $y['t0'] ?: $target['time'];
+				$t = min($y['t0'] ?: T0, $target['time'] ?: T0);
 				$t = array($t.'000', T0.'000');
-				$from_get_to_post = "$t[0]-$t[1]";
-				if (!$y['time']) {
-					$a = ($x = $y['open_time']) ? explode('-', $x) : array();
-					$b = ($x = $y['draw_time']) ? explode('-', $x) : array();
+				$z = ($target ? "/$t[0]-$t[1]" : '');
+				if ($x = $y['time']) {
+					if (!preg_match('~^(\d+:)+\d+$~', $x)) {
+						if (preg_match('~^(\d+)\D+(\d+)$~', $x, $m)) {
+							if ($m[1] && $m[1] != $m[2]) $t[0] = $m[1];
+							if ($m[2]) $t[1] = $m[2];
+						}
+						$x = "$t[0]-$t[1]";
+					}
+				} else {
+					$a = explode('-', $y['open_time'] ?: '-');
+					$b = explode('-', $y['draw_time'] ?: '-');
 					if ($b[0] == $b[1]) $b[0] = 0;
 					foreach ($t as $k => $v) $t[$k] = $b[$k] ?: $a[$k] ?: $v;
-					$y['time'] = "$t[0]-$t[1]";
-				} else
-				if (!preg_match('~^(\d+:)+\d+$~', $y['time'])) {
-					if (preg_match('~^(\d+)\D+(\d+)$~', $y['time'], $m)) {
-						if ($m[1] && $m[1] != $m[2]) $t[0] = $m[1];
-						if ($m[2]) $t[1] = $m[2];
-					}
-					$y['time'] = "$t[0]-$t[1]";
+					$x = "$t[0]-$t[1]";
 				}
-				$t = (($t = $y['time']) && $t != $from_get_to_post ? "$t/" : '').$from_get_to_post;
+				$t = "$x$z";
 				$a = $y['app'] ?: '[?]';
 				if ($x = $y['used']) $a .= " (used $x)";
 				if ($x = $y['active_time']) $t .= "=$x";

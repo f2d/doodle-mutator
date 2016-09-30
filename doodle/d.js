@@ -1143,7 +1143,7 @@ function showContent(sortOrder) {
 							if (m = a.match(regTimeDrawn)) {
 								if (m[2]) {
 								var	k = getFormattedHMS(+m[3]-m[2])
-								,	i = (m[5] ? getFormattedHMS(+m[5]-m[4]) : '')
+								,	i = (m[5] && m[5] != m[4] ? getFormattedHMS(+m[5]-m[4]) : '')
 								,	j = m[6]	//* <- sum of active intervals
 									;
 									m[1] = (

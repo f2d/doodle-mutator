@@ -184,7 +184,7 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 				if (m = tab[3].match(regTimeDrawn)) {
 					if (m[2]) {
 					var	k = getFormattedHMS(+m[3]-m[2])
-					,	i = (m[5] ? getFormattedHMS(+m[5]-m[4]) : '')
+					,	i = (m[5] && m[5] != m[4] ? getFormattedHMS(+m[5]-m[4]) : '')
 					,	j = m[6]
 						;
 						m[1] = (
