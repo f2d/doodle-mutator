@@ -1188,7 +1188,9 @@ if ($u_key) {
 		$log = 0;
 		data_aim();
 		if ($upload = $_FILES['pic']) {
-			$ptx = $_POST['t0'] ?: T0;
+			$t = ($_POST['t0'] ?: T0).'000-'.T0.'000';
+			$ptx = "time: $t
+file: $upload[name]";
 			if ($upload['error']) {
 				$log = print_r($_FILES, true);
 			} else {
@@ -1196,7 +1198,7 @@ if ($u_key) {
 				$file_type = strtolower(substr($x, strpos($x, '/')+1));
 				if (in_array($file_type, $cfg_draw_file_types)) {
 					$file_size = $upload['size'];
-					$txt = $ptx.'000-'.T0.'000,file: '.$upload['name'];
+					$txt = "$t,file: $upload[name]";
 				} else {
 					$log = "File type $x not allowed.";
 				}
@@ -1204,7 +1206,7 @@ if ($u_key) {
 		} else {
 			$post_data_size = strlen($post_data = $_POST['pic']);
 			$txt = (($ptx = $_POST['txt']) ?: '0-0,(?)');
-	//* metadata, got newline separated tagged format:
+	//* metadata, newline-separated key-value format:
 			if (false !== strpos($txt, NL)) {
 				$a = explode(',', 'app,active_time,draw_time,open_time,t0,time,used');	//* <- to add to picture mouseover text
 				$b = explode(',', 'bytes,length');					//* <- to validate
@@ -1254,9 +1256,8 @@ if ($u_key) {
 					$txt = "$t[3]-$t[4],$t[5]";
 				}
 			}
-	//* parse pic content:
 			if (!$log) {
-	//* post_data = "data:image/png;base64,EncodedFileContent"
+	//* check pic content: "data:image/png;base64,EncodedFileContent"
 				$i = strpos($post_data, ':');
 				$j = strpos($post_data, '/');
 				$k = strpos($post_data, ';');
@@ -1285,10 +1286,10 @@ if ($u_key) {
 			$post_status = 'file_size';
 			$log = $x;
 		} else
-		if (is_file($f = get_pic_subpath(
+		if (is_file($pic_final_path = get_pic_subpath(
 			$fn = ($md5 = (
 				$upload
-				? md5_file($tn = $upload['tmp_name'])
+				? md5_file($f = $upload['tmp_name'])
 				: md5($file_content)
 			)).'.'.(
 				($png = ($file_type === 'png'))
@@ -1303,12 +1304,7 @@ if ($u_key) {
 			$post_status = 'no_lock';
 		} else {
 	//* save pic file:
-			$todo_pic = $f;
-			if (
-				$upload
-				? !($log = rename($tn, $f))
-				: (($log = file_put_contents($f, $file_content)) != $x)
-			) {
+			if (!$upload && ($log = file_put_contents($f = $pic_final_path, $file_content)) != $x) {
 				$x = 0;
 				$post_status = 'file_put';
 			} else
@@ -1342,17 +1338,22 @@ if ($u_key) {
 			} else $x = 0;
 	//* ready to save post:
 			if ($x > 0) {
-				if ($resize = ($w > DRAW_PREVIEW_WIDTH)) {
-					$fwh = $fn .= ";$w*$h, ";
-					$fn .= format_filesize($raw_size);
+				if ($upload && !rename($f, $pic_final_path)) {
+					$x = 0;
+					$post_status = 'file_put';
 				} else {
-					imageDestroy($pic);
-				}
+					if ($resize = ($w > DRAW_PREVIEW_WIDTH)) {
+						$fwh = $fn .= ";$w*$h, ";
+						$fn .= format_filesize($raw_size);
+					} else {
+						imageDestroy($pic);
+					}
 	//* gather post data fields to store:
-				$x = array($fn, trim_post($txt));
-				if (LOG_UA) $x[] = trim_post($_SERVER['HTTP_USER_AGENT']);
-				$post_status = 'new_post';
-			}
+					$x = array($fn, trim_post($txt));
+					if (LOG_UA) $x[] = trim_post($_SERVER['HTTP_USER_AGENT']);
+					$post_status = 'new_post';
+				}
+			} else $del_pic = $f;
 		}
 	}
 
@@ -1365,10 +1366,9 @@ if ($u_key) {
 		$t = array();
 		if ($log = $x['fork']) $t[] = 'trd_miss';
 		if ($log = $x['cap']) $t[] = 'trd_max'; else
-		if (!$x['post']) $t[] = 'unkn_res';
-		if (!$x['post'] && ($f = $todo_pic) && is_file($f)) {
-			unlink($f);
-			$todo_pic = '';
+		if (!$x['post']) {
+			$t[] = 'unkn_res';
+			$del_pic = $pic_final_path;
 		}
 		if (is_array($x = $x['arch']) && $x['done']) $t[] = 'trd_arch';
 		if (count($t)) $post_status = implode('!', $t);
@@ -1376,6 +1376,10 @@ if ($u_key) {
 
 //* after user posting --------------------------------------------------------
 
+	if ($f = $del_pic) {
+		if (is_file($f)) unlink($f);
+		unset($pic_final_path);
+	}
 	if ($ptx) {
 		if ($log) {
 			$op = ' = {';
@@ -1480,9 +1484,9 @@ if ($OK) {
 //* show pic processing progress ----------------------------------------------
 
 $ri = 0;
-if ($f = $todo_pic) {
+if ($f = $pic_final_path) {
 
-	function opt_formatted_size($f) {
+	function pic_opt_get_size($f) {
 		global $ri, $tmp_no_change, $TO;
 		$old = filesize($f);
 		if ($ri) {
@@ -1500,7 +1504,7 @@ if ($f = $todo_pic) {
 		}
 	}
 
-	function get_new_line_time() {
+	function pic_opt_get_time() {
 		global $AT;
 		return '</p>
 <p>'.get_time_elapsed().$AT;
@@ -1542,16 +1546,16 @@ if ($f = $todo_pic) {
 	</style>
 </head>
 <body>
-<p>'.get_time_html()."$AT$tmp_post_progress[starting].".get_new_line_time()."$tmp_post_progress[opt_full]: ";
+<p>'.get_time_html()."$AT$tmp_post_progress[starting].".pic_opt_get_time()."$tmp_post_progress[opt_full]: ";
 	}
-	$changed = opt_formatted_size($f);
+	$changed = pic_opt_get_size($f);
 
 	if ($pic && $resize) {
 		if ($changed) data_rename_last_pic($fn, $fwh.$changed);
 		$x = DRAW_PREVIEW_WIDTH;
 		$y = round($h/$w*$x);
 		$z = filesize($f);
-		if ($ri) echo get_new_line_time()."$tmp_post_progress[low_res]: $w$BY$h$TO$x$BY$y";
+		if ($ri) echo pic_opt_get_time()."$tmp_post_progress[low_res]: $w$BY$h$TO$x$BY$y";
 		$p = imageCreateTrueColor($x,$y);
 		imageAlphaBlending($p, false);
 		imageSaveAlpha($p, true);
@@ -1559,11 +1563,11 @@ if ($f = $todo_pic) {
 		imageDestroy($pic);
 		$i = "image$file_type";
 		$i($p, $f = get_pic_resized_path($f));
-		if ($ri) echo get_new_line_time()."$tmp_post_progress[opt_res]: ";
-		opt_formatted_size($f);
+		if ($ri) echo pic_opt_get_time()."$tmp_post_progress[opt_res]: ";
+		pic_opt_get_size($f);
 
 		if ($png && ($z < filesize($f))) {
-			if ($ri) echo get_new_line_time()."$tmp_post_progress[low_bit]: 255";
+			if ($ri) echo pic_opt_get_time()."$tmp_post_progress[low_bit]: 255";
 			$c = imageCreateTrueColor($x,$y);
 			imageCopyMerge($c, $p, 0,0,0,0, $x,$y, 100);
 			imageTrueColorToPalette($p, false, 255);
@@ -1571,8 +1575,8 @@ if ($f = $todo_pic) {
 			imageDestroy($c);
 			$i($p, $f);
 			imageDestroy($p);
-			if ($ri) echo get_new_line_time()."$tmp_post_progress[opt_res]: ";
-			opt_formatted_size($f);
+			if ($ri) echo pic_opt_get_time()."$tmp_post_progress[opt_res]: ";
+			pic_opt_get_size($f);
 		} else {
 			imageDestroy($p);
 		}
@@ -1580,7 +1584,7 @@ if ($f = $todo_pic) {
 	data_unlock();
 
 	if ($ri) {
-		echo get_new_line_time().$msg.'</p>
+		echo pic_opt_get_time().$msg.'</p>
 <p>'.sprintf($tmp_post_progress['refresh'], $l, format_time_units($ri)).'</p>
 </body>
 </html>';
