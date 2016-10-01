@@ -1311,7 +1311,6 @@ file: $upload[name]";
 	//* check image data:
 			if ($sz = getImageSize($f)) {
 				unset($file_content, $post_data, $_POST['pic']);
-				$raw_size = $x;
 				foreach ($tmp_whu as $k => $v)
 				if ($a = (
 					get_const('DRAW_LIMIT_'.$v)
@@ -1327,7 +1326,7 @@ file: $upload[name]";
 						break;
 					}
 				}
-				if ($x > 0 && ($x < 9000 || $w > DRAW_PREVIEW_WIDTH)) {
+				if ((($resize = ($w > DRAW_PREVIEW_WIDTH)) || $x < 9000) && $x > 0) {
 					$post_status = 'pic_fill';
 					$i = "imageCreateFrom$file_type";
 					$log = imageColorAt($pic = $i($f), 0, 0);
@@ -1342,18 +1341,18 @@ file: $upload[name]";
 					$x = 0;
 					$post_status = 'file_put';
 				} else {
-					if ($resize = ($w > DRAW_PREVIEW_WIDTH)) {
+					if ($resize) {
 						$fwh = $fn .= ";$w*$h, ";
-						$fn .= format_filesize($raw_size);
-					} else {
+						$fn .= format_filesize($file_size);
+					} else if ($pic) {
 						imageDestroy($pic);
-					}
+					} else $log = "imageDestroy(none): $f";
 	//* gather post data fields to store:
 					$x = array($fn, trim_post($txt));
 					if (LOG_UA) $x[] = trim_post($_SERVER['HTTP_USER_AGENT']);
 					$post_status = 'new_post';
 				}
-			} else $del_pic = $f;
+			}
 		}
 	}
 
@@ -1372,7 +1371,10 @@ file: $upload[name]";
 		}
 		if (is_array($x = $x['arch']) && $x['done']) $t[] = 'trd_arch';
 		if (count($t)) $post_status = implode('!', $t);
-	} else data_unlock();
+	} else {
+		data_unlock();
+		$del_pic = $f;
+	}
 
 //* after user posting --------------------------------------------------------
 
