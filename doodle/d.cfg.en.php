@@ -54,7 +54,7 @@ $tmp_describe_hint = 'At least '.DESCRIBE_MIN_LENGTH.' letters.'
 ]';
 $tmp_describe_new = 'Describe a picture you would like to see';
 $tmp_describe_this = 'Describe what you see on this picture';
-$tmp_draw_app = array('JS Flat', 'JS Layers');
+$tmp_draw_app = array('JS Flat', 'JS Layers', 'Simply upload your own file');
 $tmp_draw_free = 'Draw anything';
 $tmp_draw_hint = 'This page shares browser memory with the actual game. May be used to restore, offline edit, save to file, etc.';
 $tmp_draw_test = 'Try out.';

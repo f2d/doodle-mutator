@@ -1,51 +1,6 @@
 <?php
 
 $cfg_langs = array($lang = 'en', 'ru');
-$cfg_date_class = array(
-/*
-format:
-	array(CSS class, date() format string, start date, end date, flag)
-omit dates:
-	start: from the beginning of time
-	end: to the end of time
-flag:
-	1: first source date falls in start-end
-	2: last source date falls in start-end
-	3: 1 or 2
-	omit: 2, so archived content is like it was/would be last seen
-example:
-	array('cirno-day', 'Y-m-d', '2009-09-09', '2009-09-09', 2)
-,	array('leap-year', 'nd', 229, 229)
-,	array('april-fools','nd',401, 401)
-*/
-	array('new-year', 'nd', 1231, 109)
-);
-$cfg_optimize_pics = array(
-	'png' => array(
-		array('optipng', '"%s" -v "%s" 2>&1')
-	,	array('optipng', '"%s" -v -fix "%s" 2>&1')
-	)
-);
-$cfg_draw_app = array('dfc', 'milf');
-$cfg_opts_text = array('draw', 'room');
-$cfg_opts_order = array(
-	'input' => array_merge(
-		array(
-			'draw' => 'draw_app'
-		)
-	,	$cfg_draw_vars = array(
-			'save' => 'draw_max_recovery'
-		,	'undo' => 'draw_max_undo'
-		,	'idle' => 'draw_time_idle'
-	)
-	,	array(
-			'page' => 'trd_per_page'
-		,	'room' => 'room_default'
-		)
-	)
-,	'check' => array('head', 'count', 'times', 'names', 'own', 'unknown', 'active', 'save2common', 'kbox', 'focus', 'modtime304', 'picprogress', 'capture_altclick', 'capture_textselection')
-,	'admin' => array('time_check_points')
-);
 $cfg_dir = array(
 	'arch' => 'archive'
 ,	'opts' => 'options'
@@ -77,13 +32,14 @@ define(REPORT_MAX_LENGTH, 500);
 define(DESCRIBE_MIN_LENGTH, 9);
 define(DESCRIBE_MAX_LENGTH, 900);
 
-define(DRAW_DEFAULT_APP_EXT, '.js');
+define(DRAW_APP_NONE, 'no');
+define(DRAW_APP_DEFAULT_EXT, '.js');
 define(DRAW_PREVIEW_WIDTH, 640);
 define(DRAW_DEFAULT_WIDTH, 640);
 define(DRAW_DEFAULT_HEIGHT, 360);
 define(DRAW_LIMIT_WIDTH, '100,1920');
-define(DRAW_LIMIT_HEIGHT, '100,1280');
-define(DRAW_MAX_FILESIZE, 10020030);	//* <- bytes
+define(DRAW_LIMIT_HEIGHT, '100,1920');
+define(DRAW_MAX_FILESIZE, 8388608);	//* <- bytes, 8MiB
 define(DRAW_MAX_RECOVERY, 9);
 define(DRAW_MAX_UNDO, 99);
 define(DRAW_TIME_IDLE, 300);		//* <- seconds, 5min
@@ -127,5 +83,53 @@ define(FOOT_NOTE, '
 	3. guest book/forum/board link
 	4. plain-text tail
 */
+
+$cfg_date_class = array(
+/*
+format:
+	array(CSS class, date() format string, start date, end date, flag)
+omit dates:
+	start: from the beginning of time
+	end: to the end of time
+flag:
+	1: first source date falls in start-end
+	2: last source date falls in start-end
+	3: 1 or 2
+	omit: 2, so archived content is like it was/would be last seen
+example:
+	array('cirno-day', 'Y-m-d', '2009-09-09', '2009-09-09', 2)
+,	array('leap-year', 'nd', 229, 229)
+,	array('april-fools','nd',401, 401)
+,	array('cirno-day', 'nd', 909, 909)
+*/
+	array('new-year', 'nd', 1231, 109)
+);
+$cfg_optimize_pics = array(
+	'png' => array(
+		array('optipng', '"%s" -v "%s" 2>&1')
+	,	array('optipng', '"%s" -v -fix "%s" 2>&1')
+	)
+);
+$cfg_draw_app = array('dfc', 'milf', DRAW_APP_NONE);
+$cfg_draw_file_types = array('png', 'jpg', 'jpeg');
+$cfg_opts_text = array('draw', 'room');
+$cfg_opts_order = array(
+	'input' => array_merge(
+		array(
+			'draw' => 'draw_app'
+		)
+	,	$cfg_draw_vars = array(
+			'save' => 'draw_max_recovery'
+		,	'undo' => 'draw_max_undo'
+		,	'idle' => 'draw_time_idle'
+	)
+	,	array(
+			'page' => 'trd_per_page'
+		,	'room' => 'room_default'
+		)
+	)
+,	'check' => array('head', 'count', 'times', 'names', 'own', 'unknown', 'active', 'save2common', 'kbox', 'focus', 'modtime304', 'picprogress', 'capture_altclick', 'capture_textselection')
+,	'admin' => array('time_check_points')
+);
 
 ?>

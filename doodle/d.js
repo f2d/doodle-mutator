@@ -108,6 +108,7 @@ if (lang == 'ru') la = {
 ,	hax: '(?)'		//'Неизвестный набор данных.'
 ,	time: 'Нарисовано за'
 ,	using: 'с помощью'
+,	using_file_upload: 'файл'
 ,	resized: 'Размер'	//'\nИзображение уменьшено.\nРазмер'
 ,	resized_hint: 'Кликните для просмотра изображения в полном размере.'
 ,	bottom: {
@@ -182,6 +183,7 @@ if (lang == 'ru') la = {
 ,	hax: '(?)'		//'Unknown data set.'
 ,	time: 'Drawn in'
 ,	using: 'using'
+,	using_file_upload: 'file'
 ,	resized: 'Full size'	//'\nShown image is resized.\nFull size'
 ,	resized_hint: 'Click to view full size image.'
 ,	bottom: {
@@ -459,13 +461,14 @@ var	r = new XMLHttpRequest();
 			,	message = (error?status:'')
 			,	img = i.match(/<img[^>]+\balt=["']*([^"'>\s]+)/i)
 			,	task = (img?img[1]:i)
+			,	t = id('task-text')
 				;
 				if (k = id('task')) {
 					i = (e = gn('img', k)).length;
 					if (!i == !!img) {
 						e = s, error = 1;
 						while (!regTagDivP.test(e.tagName) && (i = e.parentNode)) e = i;
-						e = cre('b', e);
+						e = cre('b',e,t);
 						e.id = CM;
 						e.className = 'post r';
 						e.innerHTML =
@@ -477,8 +480,8 @@ var	r = new XMLHttpRequest();
 					} else
 					if (!img) {
 						if (
-							(e = gn('p', k)).length > 1
-						&&	!regTagForm.test((e = e[1]).previousElementSibling.tagName)
+							(e = t || gn('p',k)[1])
+						&&	!((j = e.previousElementSibling) && regTagForm.test(j.tagName))
 						&&	decodeHTMLSpecialChars(e.innerHTML) != decodeHTMLSpecialChars(task)
 						) e.innerHTML = task, error = 1;
 					} else
@@ -698,14 +701,20 @@ var	e = id('apply');
 	if (e) e.disabled = (n < 0);
 }
 
-function selectLink(e,r,t) {
-var	i = e.name+'_link', a = id(i), r = r.replace('*', r.indexOf('.') < 0 ? e.value : e.value.replace(/\.[^.\/]+$/, ''));
-	if (a) a.href = r, allowApply();
-	else {
+function selectLink(e,no,r,t) {
+var	i = e.name+'_link'
+,	a = id(i)
+,	v = e.value || ''
+,	r = (v === no ? '' : r.replace('*', r.indexOf('.') < 0 ? v : v.replace(/\.[^.\/]+$/, '')))
+,	t = (r ? (t || la.draw_test) : '')
+	;
+	if (a) {
+		a.href = r, a.textContent = t, allowApply();
+	} else {
 		e = e.parentNode.nextSibling;
 		e = cre('div', e.parentNode, e);
 		e.className = insideOut;
-		e.innerHTML = '<p class="l"><a href="'+r+'" id="'+i+'">'+(t || la.draw_test)+'</a></p>';
+		e.innerHTML = '<p class="l"><a href="'+r+'" id="'+i+'">'+t+'</a></p>';
 	}
 }
 
@@ -960,7 +969,7 @@ function showContent(sortOrder) {
 			//* colored counters:
 					a = {};
 					for (i in k) if (c = reportClass[b = k[i].slice(-1)]) {
-						a[b] = '<span class="'+c+'" title="'+la[c]+'">'+orz(k[i])+'</span>';
+						a[b] = '<span class="'+c+'" title="'+la.marks[c]+'">'+orz(k[i])+'</span>';
 					}
 					for (i in reportClass) if (a[i]) marks += a[i]+sep;
 				}
@@ -1062,16 +1071,14 @@ function showContent(sortOrder) {
 							+(
 								l.length > 2
 								? '" onChange="selectLink(this,\''
-								+(l[2] || '*')
-								+(
-									l.length > 3
-									? "','"+l[3]
-									: ''
-								)+"')"
+								+(l[2] || 'no')+"','"
+								+(l[3] || '*')
+								+(l.length > 4 ? "','"+l[4] : '')
+								+"')"
 								: ''
 							)+'">';
-							k = (l[0] || '').split(sep);
-							l = (l[1] || '').split(sep);
+							k = (l[1] || '').split(sep);
+							l = (l[0] || '').split(sep);
 							for (i in k) t +=
 								'<option value="'+k[i]+'"'
 							+		(m == i?' selected':'')
@@ -1153,7 +1160,11 @@ function showContent(sortOrder) {
 									);
 								}
 							var	q = m[1]+', '+m[7]
-							,	a = la.time+' '+m[1]+' '+la.using+' '+m[7]
+							,	a = la.time+' '+m[1]+(
+									m[7].slice(0,6) === 'file: '
+									? ', '+la.using_file_upload+': '+m[7].slice(6)
+									: ' '+la.using+' '+m[7]
+								)
 								;
 							} else q = a = la.hax+' '+a;
 							if (dtp.found) {
@@ -1674,21 +1685,32 @@ if (e = id('filter')) e.onchange = e.onkeyup = filter;
 
 if (k = id('task')) {
 //* room task:
+
+	function addTaskBtn(content, attr) {
+	var	i,e = cre('a', taskTop, id('task-text'));
+		e.className = 'r';
+		e.innerHTML = '「'+content+'」';
+		if (attr) for (i in attr) e.setAttribute(i, attr[i]);
+	}
+
 	if (taskTop = gn('p',k)[0]) {
 		if (j = k.getAttribute('data-skip')) {
-			taskTop.innerHTML += '<a class="r'
-			+	'" href="javascript:skipMyTask('+j+')'
-			+	'" title="'+la.skip_hint
-			+	'">「X」</a>'
+			addTaskBtn('X'
+			,	{
+					href: 'javascript:skipMyTask('+j+')'
+				,	title: la.skip_hint
+				}
+			);
 		}
 		if (j = k.getAttribute('data-unskip')) {
-			j = j.split(/\D+/, 1)[0];
-			taskTop.innerHTML += '<a class="r'
-			+	'" href="javascript:void '+j
-			+	'" data-room="'+room
-			+	'" id="unskip'
-			+	'" title="'+la.unskip_hint
-			+	'">「'+la.unskip+'」</a>';
+			addTaskBtn(la.unskip
+			,	{
+					href: 'javascript:void '+j.split(/\D+/, 1)[0]
+				,	title: la.unskip_hint
+				,	id: 'unskip'
+				,	'data-room': room
+				}
+			);
 		}
 	}
 	if ((j = k.getAttribute('data-t')) !== null) {
@@ -1700,11 +1722,18 @@ if (k = id('task')) {
 			f.setAttribute('onsubmit', 'return checkMyTask(event, this)');
 		}
 		if (taskTop) {
-			taskTop.innerHTML += '<a class="r" href="'+(
-				j
-				? 'javascript:checkMyTask()" title="'+new Date(j*1000)+'\n\n'+la.check+'">「<span id="'+CS+'">?</span>'
-				: drawQuery+'">「'+la.draw
-			)+'」</a>';
+			if (j)
+			addTaskBtn('<span id="'+CS+'">?</span>'
+			,	{
+					href: 'javascript:checkMyTask()'
+				,	title: ''+new Date(j*1000)+' \r\n'+la.check
+				}
+			); else
+			addTaskBtn(la.draw
+			,	{
+					href: drawQuery
+				}
+			);
 		}
 		if (
 			(i = gn('img',k)[0])

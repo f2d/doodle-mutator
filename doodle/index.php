@@ -507,14 +507,12 @@ page_ext = '.PAGE_EXT.get_flag_vars(
 
 if (($qd_opts || !$qdir) && GET_Q) {
 	$qd_opts = 2;
-	$n = get_draw_app_list();
+	$n = get_draw_app_list(false);
 	$page['icon'] = $n['name'];
 	$page['task'] = '
 <p>'.$tmp_draw_free.':</p>
-<p class="hint">'.$tmp_draw_hint.'</p><noscript>
-<p class="hint">'.$tmp_require_js.'</p></noscript>';
-	$page['subtask'] = '
-<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.get_draw_vars().'"></script>
+<p class="hint">'.$tmp_draw_hint.'</p>'.$n['noscript'];
+	$page['subtask'] = $n['embed'].'
 <div class="task">'.indent('<p class="hint">'.indent($n['list']).'</p>').'</div>';
 } else
 
@@ -526,8 +524,9 @@ if ($u_key) {
 		$page['data']['content']['type'] = 'options';
 		$draw_app = implode(';', array(
 			(array_search($u_draw_app, $cfg_draw_app) ?: 0)
-		,	implode(',', $cfg_draw_app)
 		,	implode(',', $tmp_draw_app)
+		,	implode(',', $cfg_draw_app)
+		,	DRAW_APP_NONE
 		,	'?draw_app=*'
 		));
 		$s = ':	';
@@ -808,14 +807,22 @@ flags = vg
 					if ($s && !$n) $page['data']['task']['unskip'] = "$s/$n/$target[count_free_unknown]";
 				}
 			} else {
+				$n = get_draw_app_list(true);
 				$page['task'] = '
-<p>'.($t?$tmp_draw_this.':</p>
-<p>'.$t:$tmp_draw_free.':').'</p><noscript>
-<p class="hint">'.$tmp_require_js.'</p></noscript>';
-				$n = get_draw_app_list();
-				$page['subtask'] = '
-<script id="'.$n['name'].'-vars" src="'.$n['src'].'" data-vars="'.get_draw_vars(DRAW_SEND).'"></script>
+<p>'.indent(
+	$t
+	? $tmp_draw_this.':
+<span id="task-text">'.$t.'</span>'
+	: $tmp_draw_free.':'
+).'</p>';
+				if ($x = $n['noscript']) {
+					$page['task'] .= $x;
+					$page['subtask'] = $n['embed'].'
 <div class="task">'.indent('<p class="hint">'.indent($n['list']).'</p>').'</div>';
+				} else {
+					$page['task'] .= $n['embed'].'
+<p class="hint">'.indent($n['list']).'</p>';
+				}
 			}
 			if ($t || $desc) $page['data']['task']['t'] = $task_time;
 			if ($t) $page['data']['task']['skip'] = intval($target['thread']);
@@ -1165,75 +1172,119 @@ if ($u_key) {
 
 //* process new pic post ------------------------------------------------------
 
-	if (isset($_POST['pic'])) {
+	if (isset($_POST['pic']) || isset($_FILES['pic'])) {
 		$post_status = 'file_pic';
 		$log = 0;
-		$ppl = strlen($pp = $_POST['pic']);
-		$txt = (($ptx = $_POST['txt']) ?: '0-0,(?)');
 		data_aim();
-	//* metadata, got newline separated tagged format:
-		if (false !== strpos($txt, NL)) {
-			$a = explode(',', 'app,active_time,draw_time,open_time,t0,time,used');	//* <- to add to picture mouseover text
-			$b = explode(',', 'bytes,length');					//* <- to validate
-			$x = preg_split('~\v+~u', $txt);
-			$y = array();
-			$z = 0;
-			foreach ($x as $line) if (preg_match('~^(\w+)[\s:=]+(.+)$~u', $line, $m) && ($k = strtolower($m[1]))) {
-				if (in_array($k, $a)) $y[$k] = $m[2]; else
-				if (in_array($k, $b)) $z = $m[2];
-			}
-			if ($z && $z != $ppl) {
-				$post_status = 'file_part';
-				$log = "$ppl != $z";
+		if ($upload = $_FILES['pic']) {
+			$ptx = $_POST['t0'] ?: T0;
+			if ($upload['error']) {
+				$log = print_r($_FILES, true);
 			} else {
-				$t = min($y['t0'] ?: T0, $target['time'] ?: T0);
-				$t = array($t.'000', T0.'000');
-				$z = ($target ? "/$t[0]-$t[1]" : '');
-				if ($x = $y['time']) {
-					if (!preg_match('~^(\d+:)+\d+$~', $x)) {
-						if (preg_match('~^(\d+)\D+(\d+)$~', $x, $m)) {
-							if ($m[1] && $m[1] != $m[2]) $t[0] = $m[1];
-							if ($m[2]) $t[1] = $m[2];
+				$x = $upload['type'];
+				$file_type = strtolower(substr($x, strpos($x, '/')+1));
+				if (in_array($file_type, $cfg_draw_file_types)) {
+					$file_size = $upload['size'];
+					$txt = $ptx.'000-'.T0.'000,file: '.$upload['name'];
+				} else {
+					$log = "File type $x not allowed.";
+				}
+			}
+		} else {
+			$post_data_size = strlen($post_data = $_POST['pic']);
+			$txt = (($ptx = $_POST['txt']) ?: '0-0,(?)');
+	//* metadata, got newline separated tagged format:
+			if (false !== strpos($txt, NL)) {
+				$a = explode(',', 'app,active_time,draw_time,open_time,t0,time,used');	//* <- to add to picture mouseover text
+				$b = explode(',', 'bytes,length');					//* <- to validate
+				$x = preg_split('~\v+~u', $txt);
+				$y = array();
+				$z = 0;
+				foreach ($x as $line) if (preg_match('~^(\w+)[\s:=]+(.+)$~u', $line, $m) && ($k = strtolower($m[1]))) {
+					if (in_array($k, $a)) $y[$k] = $m[2]; else
+					if (in_array($k, $b)) $z = $m[2];
+				}
+				if ($z && $z != $post_data_size) {
+					$post_status = 'file_part';
+					$log = "$post_data_size != $z";
+				} else {
+					$t = min($y['t0'] ?: T0, $target['time'] ?: T0);
+					$t = array($t.'000', T0.'000');
+					$z = ($target ? "/$t[0]-$t[1]" : '');
+					if ($x = $y['time']) {
+						if (!preg_match('~^(\d+:)+\d+$~', $x)) {
+							if (preg_match('~^(\d+)\D+(\d+)$~', $x, $m)) {
+								if ($m[1] && $m[1] != $m[2]) $t[0] = $m[1];
+								if ($m[2]) $t[1] = $m[2];
+							}
+							$x = "$t[0]-$t[1]";
 						}
+					} else {
+						$a = explode('-', $y['open_time'] ?: '-');
+						$b = explode('-', $y['draw_time'] ?: '-');
+						if ($b[0] == $b[1]) $b[0] = 0;
+						foreach ($t as $k => $v) $t[$k] = $b[$k] ?: $a[$k] ?: $v;
 						$x = "$t[0]-$t[1]";
 					}
-				} else {
-					$a = explode('-', $y['open_time'] ?: '-');
-					$b = explode('-', $y['draw_time'] ?: '-');
-					if ($b[0] == $b[1]) $b[0] = 0;
-					foreach ($t as $k => $v) $t[$k] = $b[$k] ?: $a[$k] ?: $v;
-					$x = "$t[0]-$t[1]";
+					$t = $x.$z;
+					$a = $y['app'] ?: '[?]';
+					if ($x = $y['used']) $a .= " (used $x)";
+					if ($x = $y['active_time']) $t .= "=$x";
+					$txt = "$t,$a";
 				}
-				$t = "$x$z";
-				$a = $y['app'] ?: '[?]';
-				if ($x = $y['used']) $a .= " (used $x)";
-				if ($x = $y['active_time']) $t .= "=$x";
-				$txt = "$t,$a";
-			}
-		} else
+			} else
 	//* metadata, legacy CSV:
-		if (preg_match('~^(?:(\d+),)?(?:([\d:]+)|(\d+)-(\d+)),(.*)$~is', $txt, $t)) {
-			if ($t[2]) $txt = $t[2].','.$t[5];
-			else {
-				if (!$t[4]) $t[4] = T0.'000';
-				if (!$t[3] || $t[3] == $t[4]) $t[3] = ($t[1] ?: $target['time']).'000';
-				if (!$t[3]) $t[3] = $t[4];
-				$txt = "$t[3]-$t[4],$t[5]";
+			if (preg_match('~^(?:(\d+),)?(?:([\d:]+)|(\d+)-(\d+)),(.*)$~is', $txt, $t)) {
+				if ($t[2]) $txt = $t[2].','.$t[5];
+				else {
+					if (!$t[4]) $t[4] = T0.'000';
+					if (!$t[3] || $t[3] == $t[4]) $t[3] = ($t[1] ?: $target['time']).'000';
+					if (!$t[3]) $t[3] = $t[4];
+					$txt = "$t[3]-$t[4],$t[5]";
+				}
+			}
+	//* parse pic content:
+			if (!$log) {
+	//* post_data = "data:image/png;base64,EncodedFileContent"
+				$i = strpos($post_data, ':');
+				$j = strpos($post_data, '/');
+				$k = strpos($post_data, ';');
+				$l = strpos($post_data, ',');
+				$x = max($i, $j)+1;
+				$y = min($i, $j)+1;
+				$z = min($k, $l);
+				$file_type = strtolower(substr($post_data, $x, $z-$x));
+				$mime_type = strtolower(substr($post_data, $y, $z-$y));
+				if (in_array($file_type, $cfg_draw_file_types)) {
+					$file_content = base64_decode(substr($post_data, max($i, $j, $k, $l)+1));
+					if (false === $file_content) {
+						$log = "invalid content, $post_data_size bytes: ".(
+							$post_data_size > REPORT_MAX_LENGTH
+							? substr($post_data, 0, REPORT_MAX_LENGTH).'(...)'
+							: $post_data
+						);
+					} else $file_size = strlen($file_content);
+				} else {
+					$log = "File type $mime_type not allowed.";
+				}
 			}
 		}
 		if ($log); else
-	//* parse pic content:
-		if ((count($a = explode(',', $pp, 2)) < 2)
-			|| !(($png = strpos($a[0], 'png'))
-				||   strpos($a[0], 'jpeg'))
-			|| (false === ($raw_data = base64_decode($a[1])))
-		) $log = 'invalid, '.$ppl.' bytes: '.($ppl > REPORT_MAX_LENGTH ? substr($pp, 0, REPORT_MAX_LENGTH).'(...)' : $pp);
-		else
-		if (($x = strlen($raw_data)) > DRAW_MAX_FILESIZE) {
+		if (($x = $file_size) && $x > DRAW_MAX_FILESIZE) {
 			$post_status = 'file_size';
 			$log = $x;
 		} else
-		if (is_file($f = get_pic_subpath($fn = ($md5 = md5($raw_data)).($png?'.png':'.jpg'), 1))) {
+		if (is_file($f = get_pic_subpath(
+			$fn = ($md5 = (
+				$upload
+				? md5_file($tn = $upload['tmp_name'])
+				: md5($file_content)
+			)).'.'.(
+				($png = ($file_type === 'png'))
+				? 'png'
+				: 'jpg'
+			), 1
+		))) {
 			$post_status = 'file_dup';
 			$log = $fn;
 		} else
@@ -1241,13 +1292,18 @@ if ($u_key) {
 			$post_status = 'no_lock';
 		} else {
 	//* save pic file:
-			if (($log = file_put_contents($todo_pic = $f, $raw_data)) != $x) {
+			$todo_pic = $f;
+			if (
+				$upload
+				? !($log = rename($tn, $f))
+				: (($log = file_put_contents($f, $file_content)) != $x)
+			) {
 				$x = 0;
 				$post_status = 'file_put';
 			} else
 	//* check image data:
 			if ($sz = getImageSize($f)) {
-				unset($raw_data, $pp, $_POST['pic']);
+				unset($file_content, $post_data, $_POST['pic']);
 				$raw_size = $x;
 				foreach ($tmp_whu as $k => $v)
 				if ($a = (
@@ -1266,7 +1322,6 @@ if ($u_key) {
 				}
 				if ($x > 0 && ($x < 9000 || $w > DRAW_PREVIEW_WIDTH)) {
 					$post_status = 'pic_fill';
-					$file_type = ($png?'PNG':'JPEG');
 					$i = "imageCreateFrom$file_type";
 					$log = imageColorAt($pic = $i($f), 0, 0);
 					for ($x = $w; --$x;)

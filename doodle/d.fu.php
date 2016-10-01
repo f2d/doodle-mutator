@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-09-23 00:18'	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-10-01 12:33'	//* <- change this to invalidate old pages cached in browsers
 	.NL.	'Or user key/options/date background changed: '.ME_VAL
 	.NL.	implode(NL, get_date_class())
 	).'"';
@@ -213,19 +213,46 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 	return $date_classes;
 }
 
-function get_draw_app_list() {
-	global $cfg_draw_app, $tmp_draw_app, $tmp_options_input, $u_draw_app, $query;
-	if (!(($n = $query[$da = 'draw_app']) || ($n = $u_draw_app)) || !in_array($n, $cfg_draw_app)) $n = $cfg_draw_app[0];
-	$a = $tmp_options_input['input'][$da];
+function get_draw_app_list($allow_upload = true) {
+	global $cfg_draw_app, $tmp_draw_app, $tmp_options_input, $tmp_require_js, $tmp_upload_file, $u_draw_app, $query;
+	$a = $tmp_options_input['input'][$da = 'draw_app'];
+	if (!$allow_upload && ($k = array_search(DRAW_APP_NONE, $cfg_draw_app)) !== false) unset($cfg_draw_app[$k]);
+	if (
+		!($n = $query[$da] ?: $u_draw_app)
+	||	!in_array($n, $cfg_draw_app)
+	) $n = $cfg_draw_app[0];
 	foreach ($cfg_draw_app as $k => $v) $a .= ($k?',':':').NL.(
 		$n == $v
 		? $tmp_draw_app[$k]
 		: '<a href="?'.$da.'='.$v.'">'.$tmp_draw_app[$k].'</a>'
 	);
-	$f = $n;
-	if (false !== ($s = strrpos($n, '.'))) $n = substr($n, 0, $s); else $f .= DRAW_DEFAULT_APP_EXT;	//* <- fix to fit <script src=$a>
-	if (false !== ($s = strrpos($n, '/'))) $n = substr($n, $s+1);
-	return array('name' => $n, 'src' => ROOTPRFX.$f.(LINK_TIME?'?'.filemtime($f):''), 'list' => $a);
+	$a = array('list' => $a.'.');
+	if ($n !== DRAW_APP_NONE) {
+		$f = $n;
+		if (false !== ($s = strrpos($n, '.'))) $n = substr($n, 0, $s); else $f .= DRAW_APP_DEFAULT_EXT;
+		if (false !== ($s = strrpos($n, '/'))) $n = substr($n, $s+1);
+		$ext = get_file_ext($f);
+		$f = ROOTPRFX.$f.(LINK_TIME?'?'.filemtime($f):'');
+		$a['name'] = $n;
+	}
+	if ($ext == 'js') {
+		$a['noscript'] = '
+<noscript>
+	<p class="hint">'.$tmp_require_js.'</p>
+</noscript>';
+		$a['embed'] = '
+<script id="'.$n.'-vars" src="'.$f.'" data-vars="'.get_draw_vars($allow_upload ? DRAW_SEND : '').'"></script>';
+	} else {
+		$a['embed'] = '
+<form method="post" enctype="multipart/form-data">
+	<b>
+		<b><input type="file" name="pic" required></b>
+		<b><input type="submit" value="Submit"></b>
+	</b>
+	<input type="hidden" name="t0" value="'.T0.'">
+</form>';
+	}
+	return $a;
 }
 
 function get_draw_vars($send = '') {
@@ -531,7 +558,9 @@ $k = $v$p";
 		$p = "
 <$t$attr>$p
 </$t>".'
-<noscript><p class="hint report">'.($static?'JavaScript support required.':$tmp_require_js).'</p></noscript>';
+<noscript>
+	<p class="hint report">'.($static?'JavaScript support required.':$tmp_require_js).'</p>
+</noscript>';
 		return '<div class="'.($static?'thread':'content" id="content').'">'.indent($p).'</div>';
 	}
 	return '';

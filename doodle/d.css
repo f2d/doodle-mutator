@@ -58,7 +58,7 @@ body, .task input:not([type="checkbox"]), .task select {
 	display: none;
 	position: relative;
 }
-.menu-top:hover, .menu-head:hover .menu-top {
+.menu-top:hover, .menu-head:hover .menu-top, #task-text {
 	display: block;
 }
 .menu-hid {
@@ -103,7 +103,7 @@ a:hover	{
 	text-align: center;
 	background-color: #ace;
 }
-.anno:not(.post) {
+.anno:not(.post):not(.report) {
 	color: #fff;
 }
 .anno b {
@@ -287,7 +287,7 @@ a:hover	{
 .task form input[type="submit"], .task form select {
 	width: 142px;
 }
-.task input[type="text"] {
+.task input[type="text"], .task input[type="file"] {
 	width: 100%;
 }
 .task li {
@@ -310,7 +310,7 @@ a:hover	{
 	margin: 0;
 	padding-top: 0;
 }
-.post, .post.p p .report {
+.post, .post.p p .report, #task-text {
 	word-wrap: break-word;
 }
 .post {	background-color: #f5f5f5;} body,
