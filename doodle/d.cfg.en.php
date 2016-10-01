@@ -57,6 +57,7 @@ $tmp_describe_this = 'Describe what you see on this picture';
 $tmp_draw_app = array('JS Flat', 'JS Layers', 'Simply upload your own file');
 $tmp_draw_free = 'Draw anything';
 $tmp_draw_hint = 'This page shares browser memory with the actual game. May be used to restore, offline edit, save to file, etc.';
+$tmp_draw_limit_hint = 'Here is acceptable to attach you own drawing, limited in size from %sx%s to %sx%s pixels, up to %s bytes (%s), in a file of any of these types: %s.';
 $tmp_draw_test = 'Try out.';
 $tmp_draw_this = 'Try to draw';
 $tmp_empty = 'Empty';

@@ -815,13 +815,24 @@ flags = vg
 <span id="task-text">'.$t.'</span>'
 	: $tmp_draw_free.':'
 ).'</p>';
+				$hint = '
+<p class="hint">'.indent($n['list']).'</p>';
 				if ($x = $n['noscript']) {
 					$page['task'] .= $x;
 					$page['subtask'] = $n['embed'].'
-<div class="task">'.indent('<p class="hint">'.indent($n['list']).'</p>').'</div>';
+<div class="task">'.indent($hint).'</div>';
 				} else {
+					$w = explode(',', DRAW_LIMIT_WIDTH);
+					$h = explode(',', DRAW_LIMIT_HEIGHT);
 					$page['task'] .= $n['embed'].'
-<p class="hint">'.indent($n['list']).'</p>';
+<p class="hint">'.sprintf(
+						$tmp_draw_limit_hint
+					,	$w[0], $h[0]
+					,	$w[1], $h[1]
+					,	DRAW_MAX_FILESIZE
+					,	format_filesize(DRAW_MAX_FILESIZE)
+					,	strtoupper(implode(', ', $cfg_draw_file_types))
+					).'</p>'.$hint;
 				}
 			}
 			if ($t || $desc) $page['data']['task']['t'] = $task_time;
