@@ -863,6 +863,7 @@ sub get_thread($)
 	my %meta=%{eval $code};
 
 	$meta{lastmod}=$meta{lasthit} unless $meta{lastmod};
+	$meta{autosage}=($meta{postcount}>=MAX_RES or $meta{permasage});
 
 	return {
 		%meta,

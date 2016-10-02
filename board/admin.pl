@@ -122,7 +122,10 @@ Edit: <loop $editable>
 		<if $filename>- <a href="<var $path><const KAREHA_SCRIPT>?task=delete&amp;delete=<var $thread>,<var $num>&amp;fileonly=1&amp;password=<var $adminpass>&amp;r=1">delete file</a></if>
 		<if ADMIN_BAN_FILE>- <a href="<var $self>?ban&admin=<var $adminpass>&amp;id=<var $masked_ip>" onclick="return banclick(this)">ban IP</a></if>
 		</div>
-		<div class="posttext"><var $abbreviation or $text></div>
+		<div class="posttext">
+			<var $abbreviation or $text>
+			<if $abbreviation><p class="abbrev">(...)</p></if>
+		</div>
 		</div>
 	</loop>
 </loop>

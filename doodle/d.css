@@ -102,8 +102,6 @@ a:hover	{
 	white-space: normal;
 	text-align: center;
 	background-color: #ace;
-}
-.anno:not(.post):not(.report) {
 	color: #fff;
 }
 .anno b {
