@@ -1145,7 +1145,7 @@ sub spam_screen($)
 # Image utilities
 #
 
-sub analyze_image($$)
+sub analyze_image($;$)
 {
 	my ($file,$name)=@_;
 	my (@res);
@@ -1157,6 +1157,7 @@ sub analyze_image($$)
 	return ("gif",@res) if(@res=analyze_gif($file));
 
 	# find file extension for unknown files
+	$name=$file unless ($name);
 	my ($ext)=$name=~/\.([^\.]+)$/;
 	return (lc($ext),0,0);
 }

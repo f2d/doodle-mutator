@@ -86,7 +86,6 @@ if($task eq "post")
 	,	$markup
 	,	$savemarkup
 	,	$file
-	,	$file
 	);
 }
 elsif($task eq "preview")
@@ -316,7 +315,7 @@ sub update_threads()
 # Posting
 #
 
-sub post_stuff($$$$$$$$$$$$$)
+sub post_stuff($$$$$$$$$$$$)
 {
 	my (
 		$thread
@@ -334,7 +333,6 @@ sub post_stuff($$$$$$$$$$$$$)
 	,	$markup
 	,	$savemarkup
 	,	$file
-	,	$uploadname
 	)=@_;
 
 	# get a timestamp for future use
@@ -344,11 +342,14 @@ sub post_stuff($$$$$$$$$$$$$)
 	make_error(S_UNJUST) if $ENV{REQUEST_METHOD} and $ENV{REQUEST_METHOD} ne "POST";
 
 	# check for weird characters
-	make_error(S_UNUSUAL) if $thread=~/\D/;
-	make_error(S_UNUSUAL) if length($thread)>10;
-	make_error(S_UNUSUAL) if $name=~/[\n\r]/;
-	make_error(S_UNUSUAL) if $link=~/[\n\r]/;
-	make_error(S_UNUSUAL) if $title=~/[\n\r]/;
+	make_error(S_UNUSUAL) if (
+		$name=~/[\n\r]/
+	or	$link=~/[\n\r]/
+	or	$title=~/[\n\r]/
+	or	$thread=~/\D/
+	#or	length($thread)<9
+	#or	length($thread)>10
+	);
 
 	# check for excessive amounts of text
 	make_error(sprintf(S_TOOLONG,"name",length($name)-&MAX_FIELD_LENGTH)) if length($name)>MAX_FIELD_LENGTH;
@@ -431,7 +432,7 @@ sub post_stuff($$$$$$$$$$$$$)
 	}
 
 	# copy file, do checksums, make thumbnail, etc
-	my ($abbr_filename,$filename,$ext,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height)=process_file($file,$uploadname,$time) if($file);
+	my ($abbr_filename,$filename,$ext,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height)=process_file($file,$time) if($file);
 
 	# create the thread if we are starting a new one
 	$thread=make_thread($title,$time,$name.$trip) unless $thread;
@@ -460,7 +461,7 @@ sub post_stuff($$$$$$$$$$$$$)
 	,	title=>$title
 	,	comment=>$comment
 
-	,	uploadname=>$uploadname
+	,	uploadname=>$file
 	,	abbr_filename=>$abbr_filename
 	,	image=>$filename
 	,	ext=>$ext
@@ -492,7 +493,7 @@ sub post_stuff($$$$$$$$$$$$$)
 	,	captchakey=>make_random_string(8)
 	,	-charset=>CHARSET
 	,	-autopath=>COOKIE_PATH
-); # yum!
+	); # yum!
 }
 
 sub preview_post($$$)
@@ -543,7 +544,7 @@ sub format_comment($$$)
 
 	# replace current domain with single slash
 	my $d=$ENV{HTTP_HOST};
-	$comment=~s!(<a href=")[htps]+://$d/+!$1/!gi;
+	$comment=~s!(<a\s+[^>]*?\bhref=")\w+:/+$d/+!$1/!gi;
 
 	return $comment;
 }
@@ -675,7 +676,11 @@ sub make_reply(%)
 
 	$$thread{postcount}++;
 	$$thread{lastmod}=$vars{time};
-	$$thread{lasthit}=$vars{time} unless($vars{link}=~/sage/i or $$thread{postcount}>=MAX_RES or $$thread{permasage}); # bump unless sage, too many replies, or permasage
+	$$thread{lasthit}=$vars{time} unless(
+		$vars{link}=~/sage/i
+	or	$$thread{permasage}
+	or	$$thread{postcount}>=MAX_RES
+	); # bump unless sage or too many replies
 
 	my $num=$$thread{postcount};
 	set_post_text($thread,$num,REPLY_TEMPLATE->(%vars,num=>$num));
@@ -1312,9 +1317,9 @@ sub get_filetypes()
 	return join ", ",map { uc } sort keys %filetypes;
 }
 
-sub process_file($$$)
+sub process_file($$)
 {
-	my ($file,$uploadname,$time)=@_;
+	my ($file,$time)=@_;
 	my %filetypes=FILETYPES;
 
 	# find out the file size
@@ -1327,7 +1332,7 @@ sub process_file($$$)
 	binmode $file;
 
 	# analyze file and check that it's in a supported format
-	my ($ext,$width,$height)=analyze_image($file,$uploadname);
+	my ($ext,$width,$height)=analyze_image($file);
 
 	my $known=$width || $filetypes{$ext};
 
@@ -1437,7 +1442,7 @@ sub process_file($$$)
 	my $abbr_filename="";
 	if($filetypes{$ext}) # externally defined filetype - restore the name
 	{
-		my $newfilename=$uploadname;
+		my $newfilename=$file;
 		$newfilename=~s!^.*[\\/]!!; # cut off any directory in filename
 		$newfilename=IMG_DIR.get_compact_filename($filebase.'_'.$newfilename);
 
@@ -1452,7 +1457,7 @@ sub process_file($$$)
 			make_error(S_DUPENAME);
 		}
 	} else {
-		$abbr_filename=get_compact_filename($uploadname);
+		$abbr_filename=get_compact_filename($file);
 	}
 
 	return ($abbr_filename,$filename,$ext,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height);
