@@ -684,6 +684,14 @@ sub get_xhtml_content_type(;$$)
 	return $type;
 }
 
+sub get_post_add_note($$;$)
+{
+	my ($text,$tail,$link)=@_;
+	$tail=sprintf($tail,$link) if ($link);
+	$text=~s!(</\w+>\s*)+$!$tail$&!;
+	return $text;
+}
+
 sub get_filename($)
 {
 	my $path=shift;

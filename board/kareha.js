@@ -218,9 +218,13 @@ var	a = gn('p')
 ,	r = /\babbrev\b/i
 ,	t,b,c
 	;
-	while (i--) if ((d = a[i]).className && r.test(d.className)) {
-		t = gn('td', d.previousElementSibling);
-		t[t.length-1].appendChild(d);
+	while (i--) if (
+		(d = a[i])
+	&&	(c = d.className) && r.test(c)
+	&&	(t = gn('td', d.previousElementSibling))
+	&&	(c = t.length)
+	) {
+		t[c-1].appendChild(d);
 	}
 	if (id('de-pform')) return;
 	if (!id('postform') && (i = gn('hr')) && (i = i[1])) {

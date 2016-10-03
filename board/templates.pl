@@ -38,6 +38,7 @@ use constant S_ABBR => '%d posts omitted.';					# Prints text to be shown when r
 use constant S_ABBRIMG => '%d posts and %d images omitted.';			# Prints text to be shown when replies and images are hidden
 use constant S_ABBRTHREAD => 'Click <a href="%s">here</a> to view full thread.';
 use constant S_ABBRTEXT => '8&lt;--- Comment too long. Click <a href="%s">here</a> to view the full text. ---';
+use constant S_ABBRTAIL => '<p class="abbrev">'.S_ABBRTEXT.'</p>';
 use constant S_AUTOSAGE => 'Autosage &mdash; cannot bump';
 use constant S_CLOSED => 'Closed &mdash; cannot reply';
 
@@ -202,8 +203,8 @@ use constant MAIN_PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	</div>
 
 	<loop $posts>
-		<var $abbreviation or $text>
-		<if $abbreviation><p class="abbrev"><var sprintf(S_ABBRTEXT,"$filename#$num")></p></if>
+		<if !$abbreviation><var $text></if>
+		<if $abbreviation><var get_post_add_note($abbreviation,S_ABBRTAIL,"$filename#$num")></if>
 		<if $omit and $num==1>
 			<span class="omittedposts">
 				<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
