@@ -1365,7 +1365,10 @@ function showContent(sortOrder) {
 					,	open: 1
 					,	headerClass: 'post alt x3'
 					,	headerText:
-							'<a href="'+(dtp.reports ? param.rooms : '')+m+'/" class="anno dust">'
+							'<a href="'
+						+	(dtp.reports ? param.rooms : '')
+						+	(m === '*' ? param.day_link : m+'/')
+						+	'" class="anno dust">'
 						+		m
 						+	'</a>'
 					,	buttonText: (dtp.found ? la.room_arch : la.room_logs)

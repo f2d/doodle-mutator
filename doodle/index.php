@@ -1429,9 +1429,10 @@ if ($OK && isset($_POST['report'])) die(get_template_page(array(
 header('HTTP/1.1 303 Refresh after POST: '.$p);
 
 $up = ($room?'../':'');
-$l = ((
-	(strlen($room) && $room != $room_in_url)			//* <- move after rename
-	|| strlen($room = trim_room(URLdecode($_POST[$qredir])))	//* <- create new room
+$l = (
+	(
+		(strlen($room) && $room != $room_in_url)				//* <- move after rename
+	||	(($v = $_POST[$qredir]) && strlen($room = trim_room(URLdecode($v))))	//* <- create new room
 	)
 	? $up.URLencode($room).'/'
 	: ($etc && $etc[0] != '-'?$etc:'.')

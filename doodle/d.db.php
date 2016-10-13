@@ -283,18 +283,21 @@ function data_get_mod_log($t = 0, $mt = 0) {	//* <- Y-m-d|int, 1|0
 
 	global $room;
 	$d = DIR_META_R;
-	$rooms = ($room ? array($room) : get_dir_contents($d));
+	$rooms = ($room ? array($room) : array_merge(get_dir_contents($d), array('')));
 	if ($t) {
 		$result = ($mt ? 0 : array());
-		foreach ($rooms as $r) if ($v = data_get_mod_log_file("$d$r/actions/$t", $mt)) {
-			if (!$mt) $result[$r] = $v; else
+		foreach ($rooms as $r) if (
+			($p = ($r ? $d.$r : DIR_DATA))
+		&&	($v = data_get_mod_log_file("$p/actions/$t", $mt))
+		) {
+			if (!$mt) $result[$r ?: '*'] = $v; else
 			if ($result < $v) $result = $v;
 		}
 		return $result;
 	} else {
 		$t = array();
-		foreach ($rooms as $r)
-		foreach (get_dir_contents("$d$r/actions") as $f) {
+		foreach ($rooms as $r) if ($p = ($r ? $d.$r : DIR_DATA))
+		foreach (get_dir_contents("$p/actions") as $f) {
 			if (preg_match(PAT_DATE, $f, $m)) $t[$m[1]][$m[4]] = $m[4];
 		}
 		ksort($t);
