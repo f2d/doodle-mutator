@@ -5,14 +5,13 @@
 Parallel turn-based multiplayer online drawing game.
 Server-side scripts in PHP and client-side in JS.
 URL-rewriting is currently required to work (Apache htaccess is added automatically, Nginx example is available).
-A Perl message/image board is included for convenience.
+An optional board for user feedback is available [here](https://github.com/f2d/bakareha) (uses Perl).
 
 ### How to install
 
 1. Put the folders onto your web-server, make sure they are writeable by the scripts.
-	1. You can rename both folders as you wish (if you do, change the paths in respective config files).
-	2. You can use anything in place of the default board, which is modified [Kareha](http://wakaba.c3.cx/s/web/wakaba_kareha), Public Domain and originally written in Perl by Dag Ågren/WAHa.06x36.
-	3. If you keep everything as is, don't forget to change passwords in config.
+	1. You can rename root folders as you wish, but change the paths in respective config files too.
+	2. Even if you keep everything as is, don't forget to change passwords.
 2. Get the web-server up and running, index.php must be default root for the doodle folder.
 3. Open the doodle folder in a web-browser, input a name for the admin account.
 
