@@ -855,7 +855,10 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 		data_del_tree("$r/reports");
 
 		$c = array('room', 'post');
-		if ($da) $c[] = 'arch';
+		if ($da) {
+			$c[] = 'arch';
+			foreach (array('anno', 'stop') as $f) if (is_file($n = "$r/$f.txt")) $ok .= ", $f: ".unlink($n);
+		}
 		foreach ($c as $f) if (($f .= '.count') && is_file($n = "$r/$f")) $ok .= ", $f: ".unlink($n);
 
 		$count = array();

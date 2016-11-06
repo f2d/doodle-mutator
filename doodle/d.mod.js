@@ -168,7 +168,8 @@ var	n = 'menu_'+p.id
 		).split('|')
 	,	check = {
 			confirm: {
-				erase: ['nuke room+']
+				nuke: ['arch']
+			,	wipe: ['nuke room+']
 			,	rename: ['rename room']
 			}
 		,	text: {
@@ -177,7 +178,8 @@ var	n = 'menu_'+p.id
 			}
 		}
 	,	a = (la.o?la.o.split('|'):o)
-	,	b,b0,v,v0,v1,c,i,j,m = '';
+	,	m = ''
+		;
 
 		function checkFeature(f) {
 		var	i,j,r = '';
@@ -187,28 +189,28 @@ var	n = 'menu_'+p.id
 		}
 
 		for (i in a) if (a[i]) {
-			v1 =
-			v0 = (v = o[i].split('+')).shift();
-			b0 = (b = a[i].split('+')).shift();
-
-			c = '<input type="checkbox" onChange="menuRowCheck(this)" name="'
+		var	b = a[i].split('+'), b0 = b.shift()
+		,	v = o[i].split('+'), v0 = v.shift(), v1 = v0
+		,	k = checkFeature(v0+'+')
+		,	l = '" value="'
+		,	c = '<input type="checkbox" onChange="menuRowCheck(this)" name="'
 			+	p.id.replace('m', 'm'+i)
-			+	checkFeature(v0+'+')
-			+	'" value="';
-
+			;
 			m += '<div class="row">';
 			for (j in b) b[j] = '</label><label title="'+b[j]+'">'
 				+	(leftSide?'':b[j])
-				+	c+(v1 += '+'+v[j])
-				+	checkFeature(v[j])
+				+	c
+				+	(checkFeature(v[j]) || k)
+				+	l+(v1 += '+'+v[j])
 				+	'">'
 				+	(leftSide?b[j]:'');
 
 			m += '<label title="'+b0+'">'
 			+(b0
 				?	(leftSide?'':b0)
-				+	c+v0
-				+	checkFeature(v0)
+				+	c
+				+	(checkFeature(v0) || k)
+				+	l+v0
 				+	'">'
 				+	(leftSide?b0:'')
 				:''
@@ -217,13 +219,12 @@ var	n = 'menu_'+p.id
 		} else {
 			m += '</div><div class="block">';
 		}
-		b = '<input type="button" value="';
-		c = '" onClick="eventStop(event); menuClose(';
-		i = '" title="';
-		j = p.id.split('_').slice(1).join('-');
-		v = la.tip.join('\r\n');
-
-		i = '<div title="'+v+'">'
+	var	b = '<input type="button" value="'
+	,	c = '" onClick="eventStop(event); menuClose('
+	,	i = '" title="'
+	,	j = p.id.split('_').slice(1).join('-')
+	,	v = la.tip.join('\r\n')
+	,	i = '<div title="'+v+'">'
 		+	'<div class="block">'
 		+		'[ <a href="javascript:void window.open(\''+j+'\',\'Report\',\'width=656,height=280\')">'+la.r+'</a> ]'
 		+	'</div>'
@@ -234,8 +235,8 @@ var	n = 'menu_'+p.id
 		+	'<input type="submit" value="'+la.go+i+v+'">&ensp;'
 		+	b+'x'+i+la.x+c+'this)">'
 		+	b+'&gt;&lt;'+i+la.z+c+')">'
-		+'</div>';
-
+		+'</div>'
+		;
 		m = cre('div', p);
 		m.className = 'mod-menu';
 		m.id = n;
@@ -264,12 +265,14 @@ var	count = {checked: 0, text: 0, req: 0}
 ,	la
 	;
 	if (lang == 'ru') la = {
-		erase: 'Комната будет уничтожена, восстановление невозможно.'
-	,	rename: 'Комната сменит адрес, возможны конфликты.'
+		wipe: 'Всё активное содержимое комнаты будет уничтожено, восстановление невозможно.'
+	,	nuke: 'Комната будет уничтожена, восстановление невозможно.'
+	,	rename: 'Комната сменит адрес, возможны конфликты данных.'
 	,	sure: 'Вы уверены?'
 	}; else la = {
-		erase: 'The room will be deleted, this cannot be reverted.'
-	,	rename: 'The room will be renamed, this can cause conflicts.'
+		wipe: 'All active content of the room will be deleted, this cannot be reverted.'
+	,	nuke: 'The room will be deleted, this cannot be reverted.'
+	,	rename: 'The room will be renamed, this can possibly cause conflicts in data.'
 	,	sure: 'Are you sure?'
 	};
 	while (i--) if ((e = a[i]) && e.checked) {
