@@ -452,18 +452,16 @@ $n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
 //* archive posts search ------------------------------------------------------
 
 	if (is_array($search)) {
+		$t = array('r' => sprintf(sprintf($tmp_regex_hint, HINT_REGEX_LINK, HINT_REGEX_FORMAT), $lang, $tmp_regex_hint_pat));
+		if (!($search || $room)) $t[''] = $tmp_archive_hint;
 		$page['task'] = get_template_form(
 			array(
 				'head' =>	$tmp_archive
 			,	'select' =>	$tmp_archive_find_by
 			,	'submit' =>	$tmp_archive_find
-			,	'hint' =>	$search || $room ? '' : $tmp_archive_hint
+			,	'hint' =>	$t
 			,	'min' =>	FIND_MIN_LENGTH
-		/*	,	'checkbox' =>	array(
-					'hint' => $tmp_regex_hint
-				,	'each' => '_regex'
-				)
-		*/	)
+			)
 		);
 		if ($search) {
 			$research = '';

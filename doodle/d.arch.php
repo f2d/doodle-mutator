@@ -191,7 +191,7 @@ function data_get_archive_search_terms() {
 		foreach ($tmp_archive_find_by as $k => $v) if (
 			array_key_exists($k, $query)
 		&&	strlen($q = $query[$k])
-		&&	strlen($q = mb_strtolower(trim_post(fix_encoding($q), FIND_MAX_LENGTH)))
+		&&	strlen($q = trim_post(fix_encoding($q), FIND_MAX_LENGTH))
 		) {
 			$terms[$k] = $q;
 		}
@@ -299,10 +299,16 @@ if (TIME_PARTS) time_check_point(count($files).' files in '.$d);
 							}
 						}
 					}
-					if (!$draw_time_check) foreach ((array)$t as $v) if (strlen($v)) {
-						$v = html_entity_decode($v);
-						if ($caseless) $v = mb_strtolower($v);
-						if ($found = (false !== strpos($v, $what))) break;
+					if (!$draw_time_check) {
+						$is_regex = preg_match(PAT_REGEX_FORMAT, $what);
+						$lowhat = ($caseless ? mb_strtolower($what) : $what);
+						foreach ((array)$t as $v) if (strlen($v)) {
+							$v = html_entity_decode($v);
+							if ($found = (
+								false !== strpos($caseless ? mb_strtolower($v) : $v, $lowhat)
+							||	($is_regex && @preg_match($what, $v))
+							)) break;
+						}
 					}
 					if (!$found) continue 2;
 				}

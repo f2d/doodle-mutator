@@ -171,6 +171,8 @@ $tmp_post_progress = array(
 ,	'low_bit'	=> 'Restricting low-res image colors to keep file size below full copy'
 ,	'refresh'	=> 'Finished. Click <a href="%s">here</a> if the page does not change after %s.'
 );
+$tmp_regex_hint = 'Regular expressions are allowed in format {%s|%s}.';
+$tmp_regex_hint_pat = 'search subject';
 $tmp_require_js = 'JavaScript support required.';
 $tmp_report = 'Report problem';
 $tmp_report_freeze = 'Freeze the thread until the issue is resolved';

@@ -295,6 +295,9 @@ a:hover	{
 	display: block;
 	padding-right: 6px;
 }
+.task p.r.hint + p.r.hint {
+	padding-right: 0;
+}
 .multi-thread {
 	background-color: #aaa;
 }

@@ -752,9 +752,13 @@ var	i = gi('text', getParentBeforeTagName(e, 'form'));
 }
 
 function restoreSearch(e) {
-	if (e && e.target) e = e.target;
+	if (e && e.target) e = getParentByTagName(e.target, 'a');
 	if (!(e && e.tagName)) return;
-var	f,i,j,k,s,p = e, n = e.name || '!';
+var	f,i,j,k,s
+,	p = e
+,	n = e.name || '!'
+,	v = decodeHTMLSpecialChars((e.firstElementChild || e).textContent)
+	;
 	while (!(f = gn('form',p)).length && (p = p.parentNode));
 	if (f = f[0]) {
 		f = f.firstElementChild;
@@ -767,7 +771,7 @@ var	f,i,j,k,s,p = e, n = e.name || '!';
 		&&	(f = f.nextElementSibling)
 		);
 		if (i) {
-			i.value = decodeHTMLSpecialChars((e.firstElementChild || e).textContent);
+			i.value = v;
 			if (s) s.value = n, s.onchange();
 			else i.name = n;
 		}
