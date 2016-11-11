@@ -72,8 +72,8 @@ define(O, 'opt_');
 define(TIMESTAMP, 'Y-m-d H:i:s');
 define(PAT_DATE, '~((\d+)-(\d+))-(\d+)~');
 define(PAT_CONTENT, '~<pre>(.*\S)\s*</pre>~uis');
-define(PAT_REGEX_FORMAT, '~^/.+/[iuU]*$~');
-define(HINT_REGEX_FORMAT, '/%s/iu');
+define(PAT_REGEX_FORMAT, '~^/.+/[imsu]*$~');
+define(HINT_REGEX_FORMAT, '/%s/imsu');
 define(HINT_REGEX_LINK, 'http://php.net/manual/%s/pcre.pattern.php');
 define(FOOT_NOTE, '
 <a href="https://github.com/f2d/doodle-mutator">%s</a> &mdash;

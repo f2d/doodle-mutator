@@ -257,44 +257,46 @@ if (TIME_PARTS) time_check_point(count($files).' files in '.$d);
 				$tab = explode('	', $line);
 				foreach ($where as $type => $what) {
 					$found = $draw_time_check = $t = '';
-					if ($type == 'name') $t = $tab[1];			//* <- username
-					else
-					if ($tab[2][0] != '<') {
-						if ($type == 'post') $t = $tab[2];		//* <- text-only post content
+					if ($type == 'name') {
+						$t = $tab[1];		//* <- username
+					} else
+					if ($type == 'post') {
+						$t = $tab[2];		//* <- text-only post content
+						if (false !== strpos($t, '<')) {
+							$t = preg_replace('~<[^>]+>~', '', str_replace('<br>', NL, $t));
+						}
+					} else
+					if ($type == 'file') {
+						$t = explode('"', $tab[2]);
+						$t = array_filter($t, 'is_tag_attr');
+						$t = array_map('get_file_name', $t);
 					} else {
-						if ($type == 'file') {
-							$t = explode('"', $tab[2]);
-							$t = array_filter($t, 'is_tag_attr');
-							$t = array_map('get_file_name', $t);
-						} else
-						if ($type != 'post') {
-							$t = $tab[3];				//* <- what was used to draw
-							if ($type == 'time') {
-								$draw_time_check = 1;
-								if (preg_match('~^[\d:-]+~i', $t, $t)) {
-									$t = $t[0];
-									if (strrpos($t, '-')) {
-										$t1 = $t0 = false;
-										foreach (explode('-', $t) as $n) if (strlen($n)) {
-											if (false === $t0) $t0 = $n;
-											$t1 = $n;
-										}
-										$t = intval(($t1-$t0)/1000);	//* <- msec. from JS
-									} else {
-										$t = get_time_seconds($t);
+						$t = $tab[3];		//* <- what was used to draw
+						if ($type == 'time') {
+							$draw_time_check = 1;
+							if (preg_match('~^[\d:-]+~i', $t, $t)) {
+								$t = $t[0];
+								if (strrpos($t, '-')) {
+									$t1 = $t0 = false;
+									foreach (explode('-', $t) as $n) if (strlen($n)) {
+										if (false === $t0) $t0 = $n;
+										$t1 = $n;
 									}
-									foreach ($time_ranges as $cond) if (
-										array_key_exists($k = 'operator', $cond)
-										? (
-											($cond[$k] == '=' && $t == $cond['value'])
-										||	($cond[$k] == '<' && $t < $cond['value'])
-										||	($cond[$k] == '>' && $t > $cond['value'])
-										)
-										: ($t >= $cond['min'] && $t <= $cond['max'])
-									) {
-										$found = $draw_time = "(drawn in $t sec.)";
-										break;
-									}
+									$t = intval(($t1-$t0)/1000);	//* <- msec. from JS
+								} else {
+									$t = get_time_seconds($t);
+								}
+								foreach ($time_ranges as $cond) if (
+									array_key_exists($k = 'operator', $cond)
+									? (
+										($cond[$k] == '=' && $t == $cond['value'])
+									||	($cond[$k] == '<' && $t < $cond['value'])
+									||	($cond[$k] == '>' && $t > $cond['value'])
+									)
+									: ($t >= $cond['min'] && $t <= $cond['max'])
+								) {
+									$found = $draw_time = "(drawn in $t sec.)";
+									break;
 								}
 							}
 						}
