@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'To refresh page if broken since 2016-10-01 12:33'	//* <- change this to invalidate old pages cached in browsers
+		'To refresh page if broken since 2016-11-23 01:00'	//* <- change this to invalidate old pages cached in browsers
 	.NL.	'Or user key/options/date background changed: '.ME_VAL
 	.NL.	implode(NL, get_date_class())
 	).'"';
@@ -574,8 +574,11 @@ function get_template_page($page, $NOS = 0) {
 	$static = ($NOS || $R);
 	$class = (($v = $page['body']) ? (array)$v : array());
 	if ($page['anno']) foreach (data_global_announce('all') as $k => $v) {
-		if (MOD) $v = "<span id=\"$k\">$v</span>";
-		$ano .= NL."<b>$tmp_announce[$k]: $v</b>";
+		if (strlen($v)) {
+			$v = ': '.(MOD ? "<span id=\"$k\">$v</span>" : $v);
+			$c = '';
+		} else $c = ' class="twilight"';
+		$ano .= NL."<b$c>$tmp_announce[$k]$v</b>";
 	}
 	if (!$static) {
 		$L = LINK_TIME;

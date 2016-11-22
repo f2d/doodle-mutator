@@ -66,7 +66,7 @@ function data_log($file_path, $line, $n = UTF, $report = 1) {
 }
 
 function data_global_announce($type = 'all', $room1 = '') {
-	global $room, $tmp_announce;
+	global $last_user, $room, $tmp_announce;
 	if ($d = ($room1 ?: $room ?: '')) $d = DIR_ROOM.$d.'/';
 	$x = '.txt';
 //* check single presence:
@@ -81,6 +81,13 @@ function data_global_announce($type = 'all', $room1 = '') {
 		default: return false;
 	}
 	foreach ($tmp_announce as $k => $v) {
+		if (
+			('new_game' === $k && !$last_user)
+		||	('new_room' === $k && $d && !is_dir($d))
+		) {
+			$a[$k] = '';
+			continue;
+		}
 		if ($i = strrpos($k, '_')) {
 			if (!$d) continue;
 			$f = $d.substr($k, $i+1);

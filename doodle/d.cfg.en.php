@@ -5,6 +5,8 @@ $tmp_announce = array(
 ,	'stop' =>	'Global freeze'
 ,	'room_anno' =>	'Room announce'
 ,	'room_stop' =>	'Room freeze'
+,	'new_game' =>	'No users exist yet. The first user will get administrator status to access global controls.'
+,	'new_room' =>	'The room does not exist yet. The first participant will get room moderator status to access some of the room controls.'
 );
 $tmp_archive = 'Archive';
 $tmp_archive_find = 'Find';
