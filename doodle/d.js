@@ -1628,7 +1628,7 @@ var	flagVarNames = ['flag', 'flags']
 		//* show open threads on page load only if option set:
 				if (flag.a) e.innerHTML = h[0];
 			} else {
-				if (dtp.found || dtp.threads) cre('div', p, e.nextElementSibling).outerHTML = afterThreadsBar;
+				if (dtp.found || (dtp.threads && !flag.v)) cre('div', p, e.nextElementSibling).outerHTML = afterThreadsBar;
 				e.className = 'thread';
 				e.threadsHTML = e.innerHTML = threadsHTML.join('');
 			}

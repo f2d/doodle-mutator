@@ -85,7 +85,7 @@ function data_global_announce($type = 'all', $room1 = '') {
 			('new_game' === $k && !$last_user)
 		||	('new_room' === $k && $d && !is_dir($d))
 		) {
-			$a[$k] = '';
+			if (is_array($a)) $a[$k] = '';
 			continue;
 		}
 		if ($i = strrpos($k, '_')) {

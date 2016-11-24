@@ -742,7 +742,6 @@ if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
 							$tabs['color'] .= '#'.$uid;
 							if ($t = $post['browser']) $tabs['browser'] = $t;
 						}
-					//	if (MOD)
 						if (is_array($r = $visible['reports'][$tid][$postnum])) {
 							foreach ($r as $k => $lines) {
 								$k = 'reports_on_'.($k > 0?'user':'post');
@@ -771,7 +770,7 @@ left = $tmp_empty
 right = $tmp_empty
 flags = vg
 
-0,0	v	v	&mdash;";	//* <- dummy thread for JS drop-down menus
+0,0	v	v";	//* <- dummy thread for JS drop-down menus
 			if (MOD && $page['content']) $page['js']['mod']++;
 
 			$t = $target['task'];

@@ -56,6 +56,7 @@ bnw.push(bnw.menu = function menuInit(i) {
 		;
 		while (i--) if ((p = a[i]).id && p.id.slice(0,2) == 'm_') {
 			menuOpenOnClick(p);
+			if (flag.v) p.click();
 			if ((p = getParentBeforeClass(p, 'content')) && !regTagForm.test(p.tagName)) {
 			var	n = p.nextElementSibling
 			,	d = +new Date()
@@ -106,7 +107,7 @@ var	n = 'menu_'+p.id
 				]
 			)
 		,	go: 'пуск'
-		,	r: (g?'Ответить на сообщение':'Сообщить о проблеме')
+		,	r: (g?'Добавить сообщение':'Сообщить о проблеме')
 		,	t: 'Ваш текст тут.'
 		,	i: 'Новый текст поста / имя / объявление.'
 		,	x: 'Закрыть и забыть это меню.'
@@ -115,8 +116,8 @@ var	n = 'menu_'+p.id
 				leftSide ? (
 					(flag.v?'':'в архив+готово+нет|замороз.нить+отм.'+(g?'+скрыть':'')+'|удалить сообщения||удалить нить'
 				+	(g?'+файлы+стереть с диска':'')+'|удалить пост (но не файл)|уд.файл+обнулить'
-				+	(g?'+стереть с диска':'')+'|доб.пост+перед+изменить||слить сюда+отсюда|разделить нить отсюда')
-				+	(g?'|уд.комн.+файлов+архива|переназ.комн.'+(flag.v?'':'+коп.нить в'):'')
+				+	(g?'+стереть с диска':'')+'|доб.пост+перед+изменить||слить сюда+отсюда|разделить нить отсюда'+(g?'|':''))
+				+	(g?'уд.комн.+файлов+архива|переназ.комн.'+(flag.v?'':'+коп.нить в'):'')
 				) : (
 					(flag.v?'':'закрыть доступ+открыть|может жаловаться+нет|'
 				+	(g?'получает цели+нет|видит неизв.+нет|':'')+'дать модератора+снять|'
@@ -146,7 +147,7 @@ var	n = 'menu_'+p.id
 				]
 			)
 		,	go: 'go'
-		,	r: (g?'Reply to report':'Report a problem')
+		,	r: (g?'Add a comment':'Report a problem')
 		,	t: 'Your text here.'
 		,	i: 'New post content / name / announcement.'
 		,	x: 'Close and forget this menu.'
@@ -156,8 +157,8 @@ var	n = 'menu_'+p.id
 			leftSide ? (
 				(flag.v?'':'archive+ready+wait|freeze tr.+warm up'+(g?'+hide':'')+'|delete comments||delete thread'
 			+	(g?'+pics+erase from disk':'')+'|delete post (but not pic)|delete pic+nullify'
-			+	(g?'+erase from disk':'')+'|add post+before+edit||merge thread target+source|split thread from here')
-			+	(g?'|nuke room+pics+arch|rename room'+(flag.v?'':'+copy trd to'):'')
+			+	(g?'+erase from disk':'')+'|add post+before+edit||merge thread target+source|split thread from here'+(g?'|':''))
+			+	(g?'nuke room+pics+arch|rename room'+(flag.v?'':'+copy trd to'):'')
 			) : (
 				(flag.v?'':'ban+lift|can report+not|'
 			+	(g?'gets targets+not|sees unknown+not|':'')+'give mod+take|'
@@ -225,9 +226,11 @@ var	n = 'menu_'+p.id
 	,	j = p.id.split('_').slice(1).join('-')
 	,	v = la.tip.join('\r\n')
 	,	i = '<div title="'+v+'">'
-		+	'<div class="block">'
+		+	(flag.v || flag.u?'':
+			'<div class="block">'
 		+		'[ <a href="javascript:void window.open(\''+j+'\',\'Report\',\'width=656,height=280\')">'+la.r+'</a> ]'
 		+	'</div>'
+			)
 		+	'<div class="block">'+m+'</div>'
 		+'</div>'
 		+'<textarea name="'+p.id.replace('m', 't')+i+la.i+'" placeholder="'+la.t+'"></textarea>'
