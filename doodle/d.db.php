@@ -82,7 +82,7 @@ function data_global_announce($type = 'all', $room1 = '') {
 	}
 	foreach ($tmp_announce as $k => $v) {
 		if (
-			('new_game' === $k && !$last_user)
+			('new_game' === $k && !$last_user && !is_file(DIR_META_U.'.log'))
 		||	('new_room' === $k && $d && !is_dir($d))
 		) {
 			if (is_array($a)) $a[$k] = '';
