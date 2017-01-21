@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2016-09-22'
+,	INFO_DATE = '2014-07-16 — 2017-01-21'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -1805,27 +1805,52 @@ function getSaveFileName(j) {
 	return unixDateToHMS(0,0,2)+'_'+draw.time.all.join('-')+(j || '.json');
 }
 
-function saveDL(dataURI, suffix) {
-	if (DL) {
-	var	u = window.URL || window.webkitURL
-	,	a = document.createElement('a')
-		;
-		container.appendChild(a);
+function saveDL(data, suffix) {
+
+	function dataToURI(data) {
+		return (data.slice(0,5) == prefix ? data : prefix+type+','+encodeURIComponent(data));
+	}
+
+	function dataToBlob(data) {
 		if (u && u.createObjectURL) {
-		var	type = dataURI.split(';', 1)[0].split(':', 2)[1]
-		,	data = dataURI.slice(dataURI.indexOf(',')+1)
-		,	data = Uint8Array.from(modes.map.call(atob(data), function(v) {return v.charCodeAt(0);}))
-		,	blob = window.URL.createObjectURL(new Blob([data], {'type': type}))
+			if (data.slice(0, k = prefix.length) == prefix) {
+			var	i = data.indexOf(',')
+			,	meta = data.slice(k,i)
+			,	data = data.slice(i+1)
+			,	k = meta.indexOf(';')
+				;
+				if (k < 0) type = meta, data = decodeURIComponent(data);
+				else {
+					type = meta.slice(0,k);
+					if (meta.slice(k+1) == 'base64') data = atob(data);
+				}
+			}
+			data = Uint8Array.from(modes.map.call(data, function(v) {return v.charCodeAt(0);}));
+			return u.createObjectURL(new Blob([data], {'type': type}));
+		}
+	}
+
+var	u = window.URL || window.webkitURL
+,	data = ''+data
+,	prefix = 'data:'
+,	type = 'text/plain'
+	;
+	if (DL) {
+		try {
+		var	a = cre('a', container)
+		,	blob = dataToBlob(data)
 			;
-			a.href = ''+blob;
-		} else a.href = ''+dataURI;
-		a[DL] = getSaveFileName(suffix);
-		a.click();
-		setTimeout(function() {
-			if (blob) u.revokeObjectURL(blob);
-			a.parentNode.removeChild(a);
-		}, 12345);
-	} else window.open(dataURI, '_blank');
+			a.href = ''+(blob || dataToURI(data));
+			a[DL] = getSaveFileName(suffix);
+			a.click();
+			setTimeout(function() {
+				if (blob) u.revokeObjectURL(blob);
+				a.parentNode.removeChild(a);
+			}, 12345);
+		} catch(e) {
+			alert('Error code: '+e.code+', '+e.message+'\n\n'+lang.copy_to_save+':\n\n'+data);
+		}
+	} else window.open(dataToURI(data), '_blank');
 }
 
 function sendPic(dest, auto) {
@@ -1933,7 +1958,7 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 					if (readSavedLayers(b = JSON.parse(a.data))) a = a.name;
 					else if (confirm(lang.bad_data+' \r\n'+lang.confirm.reprint)) {
 						b = JSON.stringify(b, null, '\t');
-						saveDL('data:text/plain,'+encodeURIComponent(b));
+						saveDL(b);
 					}
 				} catch(e) {
 					alert(lang.bad_data), a = '';
@@ -1954,11 +1979,7 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 		var	blob = bb.getBlob('text/plain');
 			saveAs(blob, getSaveFileName());
 		} catch(e) {
-			try {
-				saveDL('data:text/plain,'+encodeURIComponent(b));
-			} catch(d) {
-				alert(lang.copy_to_save+':\n\n'+b);
-			}
+			saveDL(b);
 		}
 		break;
 //* send
