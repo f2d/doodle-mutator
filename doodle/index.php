@@ -5,8 +5,8 @@
 define(T0, end($t = explode(' ',microtime())));
 define(M0, $t[0]);
 define(ME, 'me');
-define(ME_VAL, isset($_POST[ME]) ? $_POST[ME] : (isset($_COOKIE[ME]) ? $_COOKIE[ME] : false));
-//define(ME_VAL, $_POST[ME] ?? $_COOKIE[ME] ?? false);	//* <- don't rely on $_REQUEST and EGPCS order; also ?? is only since PHP7
+//define(ME_VAL, isset($_POST[ME]) ? $_POST[ME] : (isset($_COOKIE[ME]) ? $_COOKIE[ME] : false));
+define(ME_VAL, $_POST[ME] ?? $_COOKIE[ME] ?? false);	//* <- don't rely on $_REQUEST and EGPCS order; also ?? is only since PHP7
 define(POST, 'POST' == $_SERVER['REQUEST_METHOD']);
 
 header('Cache-Control: max-age=0; must-revalidate; no-cache');
@@ -1044,10 +1044,24 @@ if (!$is_report_page) {
 		}
 		$took = get_time_html().str_replace_first(' ', NL, sprintf($tmp_took, $took));
 	}
+	if (
+		isset($cfg_link_schemes)
+	&&	is_array($cfg_link_schemes)
+	&&	($s = strtolower($_SERVER['REQUEST_SCHEME'] ?? $_SERVER['HTTPS'] ?? $cfg_link_schemes[0]))
+	) {
+		if ($s === 'off') $s = 'http'; else
+		if ($s === 'on') $s = 'https';
+		if (($i = array_search($s, $cfg_link_schemes)) !== false) unset($cfg_link_schemes[$i]);
+		foreach ($cfg_link_schemes as $k) {
+			$j = "$k://$_SERVER[SERVER_NAME]$_SERVER[REQUEST_URI]";
+			$took .= NL.'<a href="'.$j.'">'.$tmp_link_schemes[$k].'</a>';
+		}
+	}
 	foreach (array(
 		'l' => $took
 	,	'r' => $links
 	) as $k => $v) if (strlen($v)) $footer .= NL.'<span class="'.$k.'">'.indent($v).'</span>';
+
 	if ($footer) $page['footer'] = '<p class="hint">'.indent($footer).'</p>'.(
 		$took_list
 		? NL.'<table id="took" style="display:none">'.indent($took_list).'</table>'

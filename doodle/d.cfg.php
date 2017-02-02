@@ -1,6 +1,7 @@
 <?php
 
 $cfg_langs = array($lang = 'en', 'ru');
+$cfg_link_schemes = array('http', 'https');
 $cfg_dir = array(
 	'arch' => 'archive'
 ,	'opts' => 'options'

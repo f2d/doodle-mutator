@@ -69,6 +69,10 @@ $tmp_draw_test = 'Испытать.';
 $tmp_draw_this = 'Попробуйте нарисовать';
 $tmp_empty = 'Пусто';
 $tmp_foot_notes = array('Проект', 'автор', 'доска сообщений', ' для связи.');
+$tmp_link_schemes = array(
+	'http'	=> 'Перейти на HTTP.'
+,	'https'	=> 'Перейти на HTTPS.'
+);
 $tmp_me = 'Назовитесь';
 $tmp_me_hint = 'Не более '.USER_NAME_MAX_LENGTH.' букв. Также тут можно ввести свой старый ключ.';
 $tmp_mod_files = array(

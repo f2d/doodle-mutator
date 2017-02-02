@@ -64,6 +64,10 @@ $tmp_draw_test = 'Try out.';
 $tmp_draw_this = 'Try to draw';
 $tmp_empty = 'Empty';
 $tmp_foot_notes = array('Project', 'author', 'message board', ' for contact.');
+$tmp_link_schemes = array(
+	'http'	=> 'Switch to HTTP.'
+,	'https'	=> 'Switch to HTTPS.'
+);
 $tmp_me = 'Name yourself';
 $tmp_me_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters. Also you may enter your old key here.';
 $tmp_mod_files = array(
