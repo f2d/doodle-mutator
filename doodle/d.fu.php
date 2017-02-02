@@ -611,7 +611,7 @@ function get_template_page($page, $NOS = 0) {
 <link rel="stylesheet" type="text/css" href="'.$N.($v = '.css').($L?'?'.filemtime(NAMEPRFX.$v):'').'">').'
 <link rel="shortcut icon" type="image/png" href="'.(($v = $page['icon'])?ROOTPRFX.$v:$N).'.png">'
 .($R || ME_VAL?'
-<link rel="index" href="http://'.$_SERVER['SERVER_NAME'].ROOTPRFX.'">':'')
+<link rel="index" href="//'.$_SERVER['SERVER_NAME'].ROOTPRFX.'">':'')
 .(($v = $page['head'])?NL.$v:'')
 .(($v = $page['title'])?NL."<title>$v</title>":'');
 

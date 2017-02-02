@@ -240,11 +240,17 @@ function data_log_ip() {
 }
 
 function data_log_ref() {
-	if (!POST
-	&& ($r = $_SERVER['HTTP_REFERER'])
-	&& ($r != ($s = "http://$_SERVER[SERVER_NAME]"))
-	&& (0 !== strpos($r, $s.'/'))
-	) data_collect(DIR_DATA.'ref.log', $r);
+	if (
+		!POST
+	&&	($r = $_SERVER['HTTP_REFERER'])
+	&&	($s = $_SERVER['SERVER_NAME'])
+//	&&	($r != ($s = "http://$s")) && (0 !== strpos($r, $s.'/'))
+//	&&	!preg_match("~^\w+:/+$s/~i", $r)
+	) {
+		$i = (strpos($r, '://'  ) ?: 0)+3;
+		$j = (strpos($r, '/', $i) ?: 0);
+		if ($s !== substr($r, $i, $j-$i)) data_collect(DIR_DATA.'ref.log', $r);
+	}
 }
 
 function data_log_action($a) {			//* <- keep logs of administrative actions by date

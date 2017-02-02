@@ -884,7 +884,7 @@ function showContent(sortOrder) {
 						+		'<tr>'
 						+			rowHTML
 						+		'</tr>'
-						+	'</table>'
+						+	'</table>';
 						tableRow = [];
 					}
 				} else
