@@ -11,13 +11,12 @@ define(DIR_PICS, 'i/');
 define(DIR_THUMB, 'th/');
 define(DIR_BOARD, '/board/');	//* <- prepend ROOTPRFX here for a relative link
 
+define(DIR_DOTS, false);	//* <- use href="./.." in top menu
 define(LINK_TIME, false);	//* <- src=file?modtime to force reload at clients
 define(LOG_IP, true);		//* <- for each visit, add IP Address to separate file per user
 define(LOG_UA, false);		//* <- for each post with pic, add User-Agent field to the post itself
-define(PIC_SUB, false);		//* <- true: img src=/i/p/0/0123.png, false: src=/i/0123.png and leave it to rewrite rule
+define(PIC_SUB, false);		//* <- true: img src="/i/p/0/0123.png", false: src="/i/0123.png" and leave it to rewrite rule
 define(R1_DEL, false);		//* <- delete 1-letter-room archive content; otherwise just not show
-define(QK_EXPIRES, 100200300);	//* <- seconds; renewed with every successful POST, incl.options
-define(POST_PIC_WAIT, 5);	//* <- seconds
 
 define(ROOM_DEFAULT, 'base');
 define(ROOM_HIDE, '.');		//* <- allow ".hidden" rooms, not shown in client-side listings
@@ -48,6 +47,9 @@ define(DRAW_PERSISTENT_PREFIX, NAMEPRFX.'Keep');
 define(DRAW_BACKUPCOPY_PREFIX, NAMEPRFX.'Save');
 define(DRAW_SEND, 'send=layers.json, log.json, pic.png, jpg>1002003; check=checkStatus');
 define(DRAW_REST, 'resize_style=body, #task; resize_min_id=header');
+
+define(QK_EXPIRES, 100200300);	//* <- seconds; renewed with every successful POST, incl.options
+define(POST_PIC_WAIT, 5);	//* <- seconds
 
 define(TARGET_CHANGE_TIME, 600);//* 10min
 define(TARGET_DESC_TIME, 1200);	//* 20min

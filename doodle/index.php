@@ -985,17 +985,17 @@ if (!$is_report_page) {
 	}
 
 	$this_href = ($room?'..':'.');
-	$room_list_link = A.($qd_room ? $this_href : $room_list_href).$a_head['..'];
+	$room_list_link = A.(DIR_DOTS && $qd_room ? $this_href : $room_list_href).$a_head['..'];
 	$arch_list_link = (
 		$qd_arch || is_dir(DIR_ARCH)
-		? A.($qd_arch ? $this_href : $arch_list_href).$a_head['*']
+		? A.(DIR_DOTS && $qd_arch ? $this_href : $arch_list_href).$a_head['*']
 		: ''
 	);
 	if ($room) {
-		$room_link = A.($qd_room ? '.' : "$room_list_href$room/").$a_head['.'];
+		$room_link = A.(DIR_DOTS && $qd_room ? '.' : "$room_list_href$room/").$a_head['.'];
 		$arch_link = (
 			$qd_arch || is_dir(DIR_ARCH.$room)
-			? A.($qd_arch ? '.' : "$arch_list_href$room/").$a_head['a']
+			? A.(DIR_DOTS && $qd_arch ? '.' : "$arch_list_href$room/").$a_head['a']
 			: ''
 		);
 	}
@@ -1011,7 +1011,7 @@ if (!$is_report_page) {
 		.	($short?$arch_link:'')
 		.	$arch_list_link
 		.	($short?'':$room_list_link)
-		.	A.($qdir && $qd_opts?'.':ROOTPRFX.DIR_OPTS.($room?$room.'/':'')).$a_head['?']
+		.	A.(DIR_DOTS && $qdir && $qd_opts?'.':ROOTPRFX.DIR_OPTS.($room?"$room/":'')).$a_head['?']
 		)
 		: array(
 			A.ROOTPRFX.$a_head['/']
@@ -1439,14 +1439,14 @@ if ($OK && isset($_POST['report'])) die(get_template_page(array(
 
 header('HTTP/1.1 303 Refresh after POST: '.$p);
 
-$up = ($room?'../':'');
+$d = (DIR_DOTS ? '' : ROOTPRFX.($qdir?"$qdir/":''));
 $l = (
 	(
-		(strlen($room) && $room != $room_in_url)				//* <- move after rename
-	||	(($v = $_POST[$qredir]) && strlen($room = trim_room(URLdecode($v))))	//* <- create new room
+		(strlen($room) && $room != $room_in_url)					//* <- move after rename
+	||	(($v = $_POST[$qredir]) && strlen($room_dec = trim_room(URLdecode($v))))	//* <- create new room
 	)
-	? $up.URLencode($room).'/'
-	: ($etc && $etc[0] != '-'?$etc:'.')
+	? ($d ?: ($room?'../':'')).URLencode($room_dec).'/'
+	: ($d?$d.($room?"$room/":''):'').($etc && $etc[0] != '-'?$etc:($d?'':'.'))
 );
 if ($OK) {
 	if ($u_key) {

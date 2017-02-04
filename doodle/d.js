@@ -57,7 +57,7 @@
 ,	room = location.pathname.split('/').slice(-2)[0] || 'room'
 ,	rootPath = gn('link').reduce(function(r,e) {
 		return e.rel == 'index' && e.href
-		? e.href.replace(/^\w+:+\/+[^\/]+/, '')
+		? e.href.replace(/^(\w+:)?\/\/+[^\/]+\/*/, '/')
 		: r;
 	}) || '/'
 ,	touch = ('ontouchstart' in document.documentElement)
