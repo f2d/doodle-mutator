@@ -48,6 +48,7 @@ define(DRAW_BACKUPCOPY_PREFIX, NAMEPRFX.'Save');
 define(DRAW_SEND, 'send=layers.json, log.json, pic.png, jpg>1002003; check=checkStatus');
 define(DRAW_REST, 'resize_style=body, #task; resize_min_id=header');
 
+define(QK_KEEP_AFTER_LOGOUT, false);
 define(QK_EXPIRES, 100200300);	//* <- seconds; renewed with every successful POST, incl.options
 define(POST_PIC_WAIT, 5);	//* <- seconds
 

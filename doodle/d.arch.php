@@ -89,6 +89,7 @@ function data_get_archive_page_html($room, $num, $tsv) {
 		array(
 			'title' => $room
 		,	'lang' => $cfg_langs[0]
+		,	'link' => ROOTPRFX.DIR_ARCH."$room/$num".PAGE_EXT
 		,	'head' => ($p ? '<link rel="prev" href="'.$p.PAGE_EXT.'">'.NL : '').
 					'<link rel="next" href="'.$n.PAGE_EXT.'">'
 		,	'body' => get_date_class($line_time_min, $line_time_max)

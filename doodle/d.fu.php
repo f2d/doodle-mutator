@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'Refresh any page cached before 2017-02-04 00:40'	//* <- change this line to invalidate browser cache after breaking changes
+		'Refresh any page cached before 2017-02-05 20:52'	//* <- change this line to invalidate browser cache after breaking changes
 	.NL.	'Or if user key, options or date-related decoration changed: '.ME_VAL
 	.NL.	implode(NL, get_date_class())
 	).'"';
@@ -241,7 +241,7 @@ function get_draw_app_list($allow_upload = true) {
 	<p class="hint">'.$tmp_require_js.'</p>
 </noscript>';
 		$a['embed'] = '
-<script id="'.$n.'-vars" src="'.$f.'" data-vars="'.get_draw_vars($allow_upload ? DRAW_SEND : '').'"></script>';
+<div id="draw-app">'.indent('<script id="'.$n.'-vars" src="'.$f.'" data-vars="'.get_draw_vars($allow_upload ? DRAW_SEND : '').'"></script>').'</div>';
 	} else {
 		$a['embed'] = '
 <form method="post" enctype="multipart/form-data">
@@ -566,12 +566,14 @@ $k = $v$p";
 	return '';
 }
 
-function get_template_page($page, $NOS = 0) {
+function get_template_page($page) {
 	global $lang, $tmp_announce, $tmp_post_err;
-	$N = ROOTPRFX.NAMEPRFX;
-	if (!is_array($j = $page['js'])) $j = ($j ? array($j => 1) : array());
+	if (!is_array($j = $page['js'] ?: array())) $j = array($j => 1);
 	$R = !!$j['arch'];
-	$static = ($NOS || $R);
+	$RL = $page['link'] ?? '';
+	$LN = $page['listing'] ?? '';
+	$N = ROOTPRFX.NAMEPRFX;
+	$static = ($LN || $R);
 	$class = (($v = $page['body']) ? (array)$v : array());
 	if ($page['anno']) foreach (data_global_announce('all') as $k => $v) {
 		if (strlen($v)) {
@@ -598,18 +600,26 @@ function get_template_page($page, $NOS = 0) {
 	}
 	if ($a = $page[$k = 'content']) {
 		$attr = get_template_attr($page['data'][$k]);
-		if ($NOS) {
-			foreach ((array)$a as $k => $v) $content .= ($content?NL:'').NL.$k.$NOS.$v;
+		if ($LN) {
+			foreach ((array)$a as $k => $v) $content .= ($content?NL:'').NL.$k.$LN.$v;
 			$content = "
 <pre$attr>$content
 </pre>";
 		} else $content = get_template_content($a, $static, '', $attr);
 	}
-
-	$head = '<meta charset="'.ENC.'">'.($NOS?'':'
+	if ($RL || !ME_VAL) {
+		$k = $GLOBALS['cfg_link_schemes'] ?? '';
+		if ($k = (is_array($k)?$k[0]:$k)) {
+			$v = $RL ?: $_SERVER['REQUEST_URI'];
+			$canon = "$k://$_SERVER[SERVER_NAME]$v";
+		}
+	}
+	$head = '<meta charset="'.ENC.'">'.($LN?'':'
 <meta name="viewport" content="width=690">
 <link rel="stylesheet" type="text/css" href="'.$N.($v = '.css').($L?'?'.filemtime(NAMEPRFX.$v):'').'">').'
 <link rel="shortcut icon" type="image/png" href="'.(($v = $page['icon'])?ROOTPRFX.$v:$N).'.png">'
+.($canon?'
+<link rel="canonical" href="'.$canon.'">':'')
 .($R || ME_VAL?'
 <link rel="index" href="//'.$_SERVER['SERVER_NAME'].ROOTPRFX.'">':'')
 .(($v = $page['head'])?NL.$v:'')

@@ -5,8 +5,8 @@
 define(T0, end($t = explode(' ',microtime())));
 define(M0, $t[0]);
 define(ME, 'me');
-//define(ME_VAL, isset($_POST[ME]) ? $_POST[ME] : (isset($_COOKIE[ME]) ? $_COOKIE[ME] : false));
-define(ME_VAL, $_POST[ME] ?? $_COOKIE[ME] ?? false);	//* <- don't rely on $_REQUEST and EGPCS order; also ?? is only since PHP7
+//define(ME_VAL, isset($_POST[ME]) ? $_POST[ME] : (isset($_COOKIE[ME]) ? $_COOKIE[ME] : ''));
+define(ME_VAL, $_POST[ME] ?? $_COOKIE[ME] ?? '');	//* <- don't rely on $_REQUEST and EGPCS order; also ?? is only since PHP7
 define(POST, 'POST' == $_SERVER['REQUEST_METHOD']);
 
 header('Cache-Control: max-age=0; must-revalidate; no-cache');
@@ -217,7 +217,8 @@ if (GOD && (
 				), $a)
 				: $tmp_empty
 			)
-		), ':'.NL));
+		,	'listing' => ':'.NL
+		)));
 	}
 	$lnk = $t = '';
 	$mod_title = $mod_page = $tmp_mod_pages[$q] ?: $tmp_empty;
@@ -1045,14 +1046,13 @@ if (!$is_report_page) {
 		$took = get_time_html().str_replace_first(' ', NL, sprintf($tmp_took, $took));
 	}
 	if (
-		isset($cfg_link_schemes)
-	&&	is_array($cfg_link_schemes)
-	&&	($s = strtolower($_SERVER['REQUEST_SCHEME'] ?? $_SERVER['HTTPS'] ?? $cfg_link_schemes[0]))
+		is_array($a = $GLOBALS['cfg_link_schemes'] ?? '')
+	&&	($s = strtolower($_SERVER['REQUEST_SCHEME'] ?? $_SERVER['HTTPS'] ?? $a[0]))
 	) {
 		if ($s === 'off') $s = 'http'; else
 		if ($s === 'on') $s = 'https';
-		if (($i = array_search($s, $cfg_link_schemes)) !== false) unset($cfg_link_schemes[$i]);
-		foreach ($cfg_link_schemes as $k) {
+		if (($i = array_search($s, $a)) !== false) unset($a[$i]);
+		foreach ($a as $k) {
 			$j = "$k://$_SERVER[SERVER_NAME]$_SERVER[REQUEST_URI]";
 			$took .= NL.'<a href="'.$j.'">'.$tmp_link_schemes[$k].'</a>';
 		}
@@ -1411,8 +1411,8 @@ Target$op$t$ed"
 
 //* register new user ---------------------------------------------------------
 
-if (isset($_POST[ME]) && strlen($me = trim_post($_POST[ME], USER_NAME_MAX_LENGTH)) >= USER_NAME_MIN_LENGTH) {
-	$post_status = (data_log_user($u_key = md5($me.T0.substr(M0,2,3)), $me)?'user_reg':'unkn_res');
+if (isset($_POST[ME]) && strlen($name = trim_post($_POST[ME], USER_NAME_MAX_LENGTH)) >= USER_NAME_MIN_LENGTH) {
+	$post_status = (data_log_user($u_key = md5($name.T0.substr(M0,2,3)), $name)?'user_reg':'unkn_res');
 }
 
 
@@ -1442,19 +1442,21 @@ header('HTTP/1.1 303 Refresh after POST: '.$p);
 $d = (DIR_DOTS ? '' : ROOTPRFX.($qdir?"$qdir/":''));
 $l = (
 	(
-		(strlen($room) && $room != $room_in_url)					//* <- move after rename
-	||	(($v = $_POST[$qredir]) && strlen($room_dec = trim_room(URLdecode($v))))	//* <- create new room
+		(strlen($room) && $room != $room_in_url)				//* <- move after rename
+	||	(($v = $_POST[$qredir]) && strlen($room_dec = trim_room(URLdecode($v))))//* <- create new room
 	)
 	? ($d ?: ($room?'../':'')).URLencode($room_dec).'/'
 	: ($d?$d.($room?"$room/":''):'').($etc && $etc[0] != '-'?$etc:($d?'':'.'))
 );
 if ($OK) {
 	if ($u_key) {
-		if ($u_key === 'quit') {
-			$a = $t = 0;
-		} else {
+		if (QK_KEEP_AFTER_LOGOUT) {
+			$a = preg_replace('~^[0-9a-z]+~i', '', $_COOKIE[ME] ?: '');	//* <- keep after quit
+			if (isset($_POST[ME])) $a = "$u_key$a";				//* <- restore at enter
+		} else $a = '';
+		if (!$a && $u_key !== 'quit') {
 			$a = array($u_key);
-			if ($u_opts !== 'default') {
+			if ($u_opts && $u_opts !== 'default') {
 				foreach ($cfg_opts_order as $i => $o) if ($i === 'input') {
 					foreach ($o as $k => $u) if (isset(${$n = "u_$u"})) {
 						if (!in_array($k, $cfg_opts_text)) {
@@ -1482,11 +1484,10 @@ if ($OK) {
 				}
 			}
 			$a = implode('/', $a);
-			$t = T0 + QK_EXPIRES;
 		}
 		$s = 'Set-Cookie: ';
+		$x = '; expires='.gmdate(DATE_COOKIE, ($a ? T0 + QK_EXPIRES : 0)).'; Path='.ROOTPRFX;
 		$a = ME.'='.$a;
-		$x = '; expires='.gmdate(DATE_COOKIE, $t).'; Path='.ROOTPRFX;
 		header("$s$a$x");
 		if ($add_qk) header("$s$add_qk$x");
 	}
