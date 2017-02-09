@@ -7,6 +7,7 @@ $tmp_announce = array(
 ,	'room_stop' =>	'Room freeze'
 ,	'new_game' =>	'No users exist yet. The first user will get administrator status to access global controls.'
 ,	'new_room' =>	'The room does not exist yet. The first participant will get room moderator status to access some of the room controls.'
+,	'new_data' =>	'Found data in old format, use mod.panel: files: convert.'
 );
 $tmp_archive = 'Archive';
 $tmp_archive_find = 'Find';
@@ -73,8 +74,8 @@ $tmp_me_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters. Also you ma
 $tmp_mod_files = array(
 	'arch' =>		'Rewrite arch with newest template.'
 ,	'img2subdir' =>		'Pics to subfolders.'
-,	'users' =>		'Convert old user data.'
-,	'logs' =>		'Convert old report logs.'
+,	'users' =>		'Convert old user data to current format.'
+,	'logs' =>		'Convert old report logs to current format.'
 ,	'room_list_reset' =>	'Clear cached post counts for room list.'
 ,	'hta_check' =>		'Check .htaccess template for Apache2.'
 ,	'hta_write' =>		'Rewrite .htaccess (automatically done for each admin\'s main page visit).'
@@ -150,7 +151,6 @@ $tmp_post_err = array(
 ,	'file_pic'	=> 'File denied: not image.'
 ,	'file_put'	=> 'File denied: saving failed.'
 ,	'file_size'	=> 'File denied: size out of limits.'
-,	'no_lock'	=> 'Could not lock data.'
 ,	'no_path'	=> 'Path not found.'
 ,	'pic_fill'	=> 'Image denied: same color flood.'
 ,	'pic_size'	=> 'Image denied: size out of limits.'
@@ -235,7 +235,7 @@ $tmp_time_units = array(
 ,	60	=> array('minute', 'minutes')
 ,	0	=> array('second', 'seconds')
 );
-$tmp_title = ($tmp_title_var ? 'Mekurage: Endless Strand' : 'Doodle Mutator');
+$tmp_title = 'Doodle Mutator';
 $tmp_took = ', took %s sec.';
 
 ?>

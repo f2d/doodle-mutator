@@ -237,9 +237,7 @@ function get_draw_app_list($allow_upload = true) {
 	}
 	if ($ext == 'js') {
 		$a['noscript'] = '
-<noscript>
-	<p class="hint">'.$tmp_require_js.'</p>
-</noscript>';
+<noscript>'.indent('<p class="hint">'.$tmp_require_js.'</p>').'</noscript>';
 		$a['embed'] = '
 <div id="draw-app">'.indent('<script id="'.$n.'-vars" src="'.$f.'" data-vars="'.get_draw_vars($allow_upload ? DRAW_SEND : '').'"></script>').'</div>';
 	} else {
@@ -557,10 +555,8 @@ $k = $v$p";
 		$t = $tag ?: 'pre';
 		$p = "
 <$t$attr>$p
-</$t>".'
-<noscript>
-	<p class="hint report">'.($static?'JavaScript support required.':$tmp_require_js).'</p>
-</noscript>';
+</$t>
+<noscript>".indent('<p class="hint report">'.($static?'JavaScript support required.':$tmp_require_js).'</p>').'</noscript>';
 		return '<div class="'.($static?'thread':'content" id="content').'">'.indent($p).'</div>';
 	}
 	return '';

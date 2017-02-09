@@ -242,15 +242,7 @@ day_link = .?mod=logs&day=';
 images = '.ROOTPRFX.DIR_PICS.'
 rooms = '.ROOTPRFX.DIR_ROOM.'
 flags = a
-'.implode(NL, array_map(function($k, $v) {
-	return "
-room = $k".
-	preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',	//* <- transform data fields
-	preg_replace('~\h+~u', ' ',
-	preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1	',	//* <- keep multiline entries atomic
-	preg_replace('~\v+~u', '<br>',
-	NL.htmlspecialchars($v)))));
-}, array_keys($a), $a));
+'.$a;
 				}
 			} else {
 				exit_if_not_mod($last);
@@ -276,6 +268,7 @@ room = $k".
 			if ($a = $tmp_mod_files[$do]) $lnk .= '
 <p>'.rtrim($a, ':.').':</p>';
 			ignore_user_abort(true);
+			data_lock('/mod');
 if (TIME_PARTS) time_check_point('ignore user abort');
 			if ($do === 'list') {
 				$len = array(0,0,0);
@@ -352,6 +345,7 @@ $x
 				$t = data_fix($do);
 			}
 			if (!$t) $t = $tmp_no_change;
+			data_unlock('/mod');
 		}
 	} else
 	if (substr($q,0,4) === 'vars') {
@@ -375,6 +369,7 @@ $x
 		}
 	} else
 	if ($q) {
+		data_lock($k = "/$q", false);
 		exit_if_not_mod(data_get_mod_log($q, 1));
 		if ($t = data_get_mod_log($q)) {
 			if ($q === 'users') {
@@ -384,18 +379,17 @@ left = $tmp_mod_user_info
 right = $tmp_mod_user_hint
 flags = cgu
 v,$u_num,u	v
-".trim(
-preg_replace('~(\V+)(	\V+)	(\V+)\+\V+(	\V+?)~Uu', '$3,$1$4$2',	//* <- transform data fields
-NL.$t));
+$t";
 			} else
 			if ($q === 'reflinks') {
-				$page['content'] .= '
-flags = c'.NL.
-preg_replace('~(\d+)([^\d\s]\V+)?	(\V+)~u', '$1	$3', $t);	//* <- transform data fields
+				$page['content'] .= "
+flags = c
+$t";
 			}
 			$page['data']['content']['type'] = $q;
 			$lnk .= get_template_form(array('filter' => 1));
 		}
+		data_unlock($k);
 	}
 	if ($page['content'] || ($page['textarea'] = $t) || $lnk) {
 		if ($page['content'] || $lnk) {
@@ -599,31 +593,31 @@ if ($u_key) {
 			if ($etc[0] == '-') {
 		//* show current task:
 				$sending = (strlen($etc) > 1);
-				if (!strlen(trim($etc, '-'))) die(
-					data_lock($room)
-					? '<!--'.date(TIMESTAMP, T0).'-->'
-					.NL.'<meta charset="'.ENC.'">'
-					.NL.'<title'.(
-						is_array($t = data_check_my_task())
-						? '>'.(
-							$sending
-							? $tmp_sending
-							: $tmp_target_status[$t[0]].'. '.$tmp_time_limit.': '.format_time_units($t[1])
+				if (!strlen(trim($etc, '-'))) {
+					$t = data_check_my_task();
+					die(
+						'<!--'.date(TIMESTAMP, T0).'-->'
+						.NL.'<meta charset="'.ENC.'">'
+						.NL.'<title'.(
+							is_array($t)
+							? '>'.(
+								$sending
+								? $tmp_sending
+								: $tmp_target_status[$t[0]].'. '.$tmp_time_limit.': '.format_time_units($t[1])
+							)
+							: (
+								$sending
+								? ' id="confirm-sending"'
+								: ''
+							).'>'.$tmp_target_status[$t]
+						).'</title>'
+						.NL.(
+							($t = $target['task']) && $target['pic']
+							? '<img src="'.get_pic_url($t).'" alt="'.$t.'">'
+							: $t
 						)
-						: (
-							$sending
-							? ' id="confirm-sending"'
-							: ''
-						).'>'.$tmp_target_status[$t]
-					).'</title>'
-					.NL.(
-						($t = $target['task'])
-					&&	$target['pic']
-						? '<img src="'.get_pic_url($t).'" alt="'.$t.'">'
-						: $t
-					)
-					: $tmp_post_err['no_lock']
-				);
+					);
+				}
 		//* skip current task, obsolete way by GET:
 				$t = substr($etc, 1);
 				list($a, $r) = get_room_skip_name($room);
@@ -665,7 +659,6 @@ if ($u_key) {
 			$skip_list = get_room_skip_list();
 
 if (TIME_PARTS) time_check_point('inb4 aim lock');
-			data_lock($room);
 			data_aim(
 				!$u_opts['unknown']
 			,	$skip_list
@@ -1046,7 +1039,7 @@ if (!$is_report_page) {
 		$took = get_time_html().str_replace_first(' ', NL, sprintf($tmp_took, $took));
 	}
 	if (
-		is_array($a = $GLOBALS['cfg_link_schemes'] ?? '')
+		($a = (array)$cfg_link_schemes)
 	&&	($s = strtolower($_SERVER['REQUEST_SCHEME'] ?? $_SERVER['HTTPS'] ?? $a[0]))
 	) {
 		if ($s === 'off') $s = 'http'; else
@@ -1117,15 +1110,12 @@ if ($u_key) {
 		}
 		if ($act) {
 			natsort($k);
-			if (!data_lock($room)) {
-				$post_status = 'no_lock';
-			} else {
-				foreach (array_reverse($k) as $i) {
-					$m = data_mod_action($act[$i]);	//* <- act = array(option name, thread, row, column)
-					if ($post_status != 'unkn_res') $post_status = ($m?OK:'unkn_res');
-				}
-				data_unlock();
+			data_lock($room);
+			foreach (array_reverse($k) as $i) {
+				$m = data_mod_action($act[$i]);	//* <- act = array(option name, thread, row, column)
+				if ($post_status != 'unkn_res') $post_status = ($m?OK:'unkn_res');
 			}
+			data_unlock();
 		}
 	} else
 	if (!$qd_room || !$room); else	//* <- no posting outside room
@@ -1137,16 +1127,13 @@ if ($u_key) {
 		if (preg_match(PAT_DATE, $postID, $r) && ($postID == $r[0])) {	//* <- r = array(t-r-c, t-r, thread, row, column)
 			$post_status = 'text_short';
 			if (mb_strlen($r[1] = trim_post($_POST['report'], REPORT_MAX_LENGTH)) >= REPORT_MIN_LENGTH) {
-				if (!data_lock($room)) {
-					$post_status = 'no_lock';
-				} else {
-					$post_status = (
-						data_log_report($r, $_POST['freeze'] || $_POST['check']) > 0
-						? OK
-						: 'unkn_res'
-					);
-					data_unlock();
-				}
+				data_lock($room);
+				$post_status = (
+					data_log_report($r, $_POST['freeze'] || $_POST['check']) > 0
+					? OK
+					: 'unkn_res'
+				);
+				data_unlock();
 			}
 		}
 	} else
@@ -1172,23 +1159,21 @@ if ($u_key) {
 	if (isset($_POST['describe'])) {
 		$post_status = 'text_short';
 		if (mb_strlen($x = $ptx = trim_post($_POST['describe'], DESCRIBE_MAX_LENGTH)) >= DESCRIBE_MIN_LENGTH) {
-			if (data_lock($room)) {
-				$unlim = trim($_POST['describe']);
-				$n = strlen($delim = '/');
-				if (
-					substr($unlim, 0, $n) == $delim
-				&&	substr($unlim, -$n) == $delim
-				&&	substr_count($x = trim($x, $spaced = " $delim "), $spaced)
-				) {
-					$x = '<i class="poem">'
-					.	str_replace($spaced, '<br>',
-						preg_replace("~\s+($delim\s+){2,}~", '<br><br>',
-							trim($x, $spaced)
-						))
-					.'</i>';
-				}
-				$post_status = 'new_post';
-			} else $post_status = 'no_lock';
+			$unlim = trim($_POST['describe']);
+			$n = strlen($delim = '/');
+			if (
+				substr($unlim, 0, $n) == $delim
+			&&	substr($unlim, -$n) == $delim
+			&&	substr_count($x = trim($x, $spaced = " $delim "), $spaced)
+			) {
+				$x = '<i class="poem">'
+				.	str_replace($spaced, '<br>',
+					preg_replace("~\s+($delim\s+){2,}~", '<br><br>',
+						trim($x, $spaced)
+					))
+				.'</i>';
+			}
+			$post_status = 'new_post';
 		}
 	} else
 
@@ -1310,9 +1295,6 @@ file: $upload[name]";
 		))) {
 			$post_status = 'file_dup';
 			$log = $fn;
-		} else
-		if (!data_lock($room)) {
-			$post_status = 'no_lock';
 		} else {
 	//* save pic file:
 			if (!$upload && ($log = file_put_contents($f = $pic_final_path, $file_content)) != $x) {
