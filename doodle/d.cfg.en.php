@@ -61,7 +61,7 @@ $tmp_draw_app = array('JS Flat', 'JS Layers', 'Simply upload your own file');
 $tmp_draw_free = 'Draw anything';
 $tmp_draw_hint = 'This page shares browser memory with the actual game. May be used to restore, offline edit, save to file, etc.';
 $tmp_draw_limit_hint = 'It\'s acceptable here to attach you own drawing, limited in size from %sx%s to %sx%s pixels, up to %s bytes (%s), in a file of any of these types: %s.';
-$tmp_draw_test = 'Try out.';
+$tmp_draw_test = 'Test drawing pad';
 $tmp_draw_this = 'Try to draw';
 $tmp_empty = 'Empty';
 $tmp_foot_notes = array('Project', 'author', 'message board', ' for contact.');
@@ -110,33 +110,33 @@ $tmp_options_drop = array(
 );
 $tmp_options_first = 'Press '.$tmp_options_apply.' to continue.';
 $tmp_options_flags = 'Status';
-$tmp_options_input = array(
-	'admin' => array(
-		'time_check_points'	=> 'Work time check points in footer'
-	)
-,	'check' => array(
-		'active'	=> 'Autohide visible threads, if more than 1'
-	,	'count'		=> 'Show contents count'
-	,	'head'		=> 'Show full header'
-	,	'names'		=> 'Show poster names'
-	,	'times'		=> 'Show post dates'
-	,	'own'		=> 'Mark own posts'
-	,	'picprogress'	=> 'Show image post processing progress'
-	,	'focus'		=> 'Autofocus on text input fields'
-	,	'kbox'		=> 'Skip description confirmation'
-	,	'modtime304'	=> 'Use browser cache, when the page will have nothing new'
-	,	'save2common'	=> 'All draw apps share common save slots'
-	,	'unknown'	=> 'Prefer tasks from unknown threads'
-	,	'capture_altclick'	=> 'Ctrl/Shift + click: select posts (desc & pic pair), Alt + click: save as image'
-	,	'capture_textselection'	=> 'Select text across all posts to capture, use visible button to save as image'
-	)
-,	'input' => array(
+$tmp_options_input = array(	//* cookie key => array(setting description, default value (yes), toggled value (no))
+	'input' => array(
 		'draw_app'		=> 'Drawing tool variant'
 	,	'draw_max_recovery'	=> 'Drawing autosaved recovery slots'
 	,	'draw_max_undo'		=> 'Drawing undo history length'
 	,	'draw_time_idle'	=> 'Drawing idle time minimum, in seconds'
 	,	'trd_per_page'		=> 'Threads per page'
 	,	'room_default'		=> 'Home room (single dot = room list)'
+	)
+,	'check' => array(
+		'head'			=> 'Page top links|full|short'
+	,	'count'			=> 'Room contents count|show|hide'
+	,	'names'			=> 'Poster names|show|hide'
+	,	'times'			=> 'Post dates|show|hide'
+	,	'focus'			=> 'Text input fields focus|auto'
+	,	'active'		=> 'Visible threads|autohide if more than 1|always show'
+	,	'own'			=> 'Own posts|different color|same as others'
+	,	'kbox'			=> 'Description posting|no check|require confirmation'
+	,	'picprogress'		=> 'Image post processing|show + pause|hide + no pause'
+	,	'save2common'		=> 'Draw app save slots|shared for all variants|separate'
+	,	'modtime304'		=> 'When a page has no new content|use your browser cache|reload anyway'
+	,	'unknown'		=> 'Prefer tasks|from unknown threads first|any available'
+	,	'capture_altclick'	=> 'Capture posts (Ctrl/Shift + click: mark posts, Alt + click: save)'
+	,	'capture_textselection'	=> 'Capture posts with selected text (with buttons around text)'
+	)
+,	'admin' => array(
+		'time_check_points'	=> 'Work time check points in footer|show|hide'
 	)
 );
 $tmp_options_name = 'Your signature';

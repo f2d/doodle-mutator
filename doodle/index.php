@@ -515,25 +515,25 @@ if ($u_key) {
 
 	if ($qd_opts) {
 		$page['data']['content']['type'] = 'options';
+		$s = '|';
+		$t = ':	';
 		$draw_app = implode(';', array(
 			(array_search($u_draw_app, $cfg_draw_app) ?: 0)
-		,	implode(',', $tmp_draw_app)
-		,	implode(',', $cfg_draw_app)
+		,	implode($s, $tmp_draw_app)
+		,	implode($s, $cfg_draw_app)
 		,	DRAW_APP_NONE
 		,	'?draw_app=*'
 		));
-		$s = ':	';
 		$c = $d = '';
-		foreach ($cfg_opts_order as $i => $o)
-		foreach ($o as $k => $v) {
-			$k = $tmp_options_input[$i][$v];
-			$v = abbr($v).'='.(
+		foreach ($tmp_options_input as $i => $o)
+		foreach ($o as $k => $l) {
+			$r = abbr($k).'='.(
 				$i === 'input'
-				? ($$v ?: '='.(${'u_'.$v} ?: get_const(strtoupper($v))))
-				: ($u_opts[$v]?1:'')
+				? ($$k ?: '='.(${'u_'.$k} ?: get_const(strtoupper($k))))
+				: ($u_opts[$k]?1:'')
 			);
-			if ($i === 'admin') $k = '<span class="gloom">'.$k.'</span>';
-			$c .= NL.$k.$s.$v;
+			if ($i === 'admin') $l = '<span class="gloom">'.$l.'</span>';
+			$c .= NL.$l.$t.$r;
 		}
 		$i = '
 |<input type="submit" value="';
@@ -554,11 +554,12 @@ if ($u_key) {
 		$page['content'] .= '
 <form method="post">'.$d.'
 </form><form method="post">'
-.NL.$tmp_options_name.$s.$usernames[$u_num]
-.NL.$tmp_options_qk.$s.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">'.$c
-.NL.$tmp_options_time.$s.date('e, T, P')
-.NL.$tmp_options_time_client.$s.'<time id="time-zone"></time>'
-.($u_flag ? NL.$tmp_options_flags.$s.implode(', ', $u_flag) : '')
+.NL.$tmp_options_name.$t.$usernames[$u_num]
+.NL.$tmp_options_qk.$t.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">
+separator = '.$s.$c
+.NL.$tmp_options_time.$t.date('e, T, P')
+.NL.$tmp_options_time_client.$t.'<time id="time-zone"></time>'
+.($u_flag ? NL.$tmp_options_flags.$t.implode(', ', $u_flag) : '')
 .$i.$tmp_options_apply.'" id="apply">
 </form>';
 		$hid = ($qdir?' class="hid"':'');

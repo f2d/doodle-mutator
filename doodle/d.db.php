@@ -257,6 +257,7 @@ function data_check_u($u, $reg) {
 	data_lock('/users', false);
 	if (is_file($f = "$d.log")) foreach (get_file_lines($f) as $line) if (strpos($line, '	')) {
 		list($i, $k, $t, $name) = explode('	', $line);
+		$i = intval($i);
 		if ($last_user < $i) $last_user = $i;
 		if ($u === $k) {
 			$u_key = $k;
@@ -614,7 +615,7 @@ function data_get_full_threads() {
 		foreach (get_file_lines($f) as $line) if (strpos($line, '	')) {
 			$tab = explode('	', $line);
 			$tab[0] = date(TIMESTAMP, $last_time = $tab[0]);
-			$tab[1] = $usernames[$tab[1]];
+			if (($i = intval($tab[1])) && isset($usernames[$i])) $tab[1] = $usernames[$i];
 			if ($tab[2]) {
 				if (!$a[2]) $a[2] = get_pic_subpath($tab[3]);		//* <- thumb
 				$p = get_pic_url($tab[3]);

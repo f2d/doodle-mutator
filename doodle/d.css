@@ -353,15 +353,14 @@ a:hover	{
 .post .center input[type="radio"] {
 	display: none;
 }
-.post .center input[type="radio"]:not(:checked)+b {
-	color: #888;
-	font-weight: normal;
+.post .center input[type="radio"]:not(:checked)+* {
+	color: #aaa;
 	text-decoration: underline;
 }
 .post .center label {
 	display: inline-block;
-	text-align: center;
-	min-width: 25px;
+	padding: 0 4px;
+	margin: 0;
 }
 .post label:hover {
 	background-color: #fff;

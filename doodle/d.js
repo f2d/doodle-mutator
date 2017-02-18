@@ -911,6 +911,7 @@ function showContent(sortOrder) {
 			,	report = ''
 			,	editPostData = ''
 			,	marks = ''
+			,	optionNames = []
 			,	tab = line.split('\t')
 			,	sep = param.separator
 			,	roomDates = {}
@@ -979,6 +980,9 @@ function showContent(sortOrder) {
 				}
 			//* left:
 				if (tab.length > 0 && notEmpty(t = tab[0])) {
+					if (dtp.options && t.indexOf(j = '|') > 0) {
+						t = (optionNames = t.split(j)).shift().replace(regTrimPun, '')+':';
+					} else
 					if (dtp.rooms && sep) {
 						if (roomCount && t.indexOf(sep) >= 0) {
 							k = t.split(sep).map(orz);
@@ -1056,7 +1060,7 @@ function showContent(sortOrder) {
 				//* options:
 					if (dtp.options && t[0] != '<' && t.indexOf('=') > 0) {
 					var	k = t.split('=')
-					,	sep = ','
+					,	sep = sep || ','
 						;
 						if (k.length > 2 && k[1].length > 0) k = [k[0], k.slice(1).join('=')];
 				//* text field:
@@ -1094,13 +1098,14 @@ function showContent(sortOrder) {
 				//* toggle box:
 							t = '['+[0,1].map(
 								function(v) {
+								var	text = (optionNames[v] || la.toggle[v]).replace(regTrimPun, '');
 									return '<label>'
 									+		'<input type="radio'
 									+			'" name="'+optPrefix+k[0]
 									+			'" value="'+v
 									+			'" onChange="allowApply()"'
 									+			(k[1] == v?' checked':'')
-									+		'>\n<b>'+la.toggle[v]+'</b>\n'
+									+		'>\n<b>'+text+'</b>\n'
 									+	'</label>';
 								}
 							).join(sep)+']';
