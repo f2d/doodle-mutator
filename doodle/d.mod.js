@@ -174,7 +174,7 @@ var	n = 'menu_'+p.id
 			,	rename: ['rename room']
 			}
 		,	text: {
-				require: ['add post+', 'rename', 'rename room+']
+				require: ['add post+', 'rename', 'rename room', 'rename room+']
 			,	enable: ['room announce', 'global announce', 'room freeze', 'global freeze']
 			}
 		}

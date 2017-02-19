@@ -1431,7 +1431,7 @@ $l = (
 		(strlen($room) && $room != $room_in_url)				//* <- move after rename
 	||	(($v = $_POST[$qredir]) && strlen($room_dec = trim_room(URLdecode($v))))//* <- create new room
 	)
-	? ($d ?: ($room?'../':'')).URLencode($room_dec).'/'
+	? ($d ?: ($room?'../':'')).URLencode($room_dec ?: $room).'/'
 	: ($d?$d.($room?"$room/":''):'').($etc && $etc[0] != '-'?$etc:($d?'':'.'))
 );
 if ($OK) {
