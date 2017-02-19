@@ -535,7 +535,7 @@ function data_set_u_flag($u, $flag, $on = -1, $harakiri = 0) {
 			||	(
 					$on
 				&&	$flag == 'ban'			//* <- mods cannot ban mods
-				&&	($flags['mod'] || $flags['mod_'.$room])
+				&&	($flags['mod'] || $flags["mod_$room"])
 				)
 			||	(
 					!$on
@@ -916,8 +916,8 @@ function data_mod_action($a) {			//* <- array(option name, thread, row, column, 
 
 	if ($o == 'ban'		) $ok = data_set_u_flag($a, 'ban', !$un); else
 	if ($o == 'can report'	) $ok = data_set_u_flag($a, 'nor', $un); else
-	if ($o == 'give mod'	) $ok = data_set_u_flag($a, 'mod_'.$room, !$un); else
-	if (substr($o,0,4) == 'hara') $ok = data_set_u_flag($u_num, 'mod_'.$room, 0, 1); else
+	if ($o == 'give mod'	) $ok = data_set_u_flag($a, "mod_$room", !$un); else
+	if (substr($o,0,4) == 'hara') $ok = data_set_u_flag($u_num, "mod_$room", 0, 1); else
 
 	if (!GOD && $o != 'room announce') return 0; else
 
@@ -1106,7 +1106,7 @@ if (TIME_PARTS) time_check_point('done scan, inb4 room iteration'.NL);
 			if (
 				GOD
 			||	$u_flag['mod']
-			||	$u_flag['mod_'.$r]
+			||	$u_flag["mod_$r"]
 			) $c['marked'] = $mod;
 		}
 		if ($t = data_global_announce('all', $r)) $c['anno'] = $t;
@@ -1128,7 +1128,7 @@ function data_get_visible_threads() {
 	data_lock($room, false);
 
 	$u_tab = '	'.$u_num.TXT;
-	$u_chars = array('ban', 'god', 'mod', 'mod_'.$room, 'nor');
+	$u_chars = array('ban', 'god', 'mod', "mod_$room", 'nor');
 	$threads = array();
 	$reports = array();
 	$last = 0;

@@ -975,6 +975,10 @@ function showContent(sortOrder) {
 					a = {};
 					for (i in k) if (c = reportClass[b = k[i].slice(-1)]) {
 						a[b] = '<span class="'+c+'" title="'+la.marks[c]+'">'+orz(k[i])+'</span>';
+					} else
+					if ((b = k[i].replace(regTrimWord, '')).length > 0) {
+						if (b === 'mod') u = 'u'; else
+						if (b === 'home') u = b;
 					}
 					for (i in reportClass) if (a[i]) marks += a[i]+sep;
 				}
@@ -1130,11 +1134,11 @@ function showContent(sortOrder) {
 						t = userID+'. '+(u == 'u'?t:'<span class="a">'+t+'</span>');
 					} else
 					if (dtp.rooms) {
-					var	k = (t[0] == '.'?'gloom':'')
-					,	a = ''
-						;
+					var	k = [], a = '';
+				//* room hidden:
+						if (t[0] == '.') k.push('gloom');
 				//* room frozen:
-						if (tab.length > 4) a = tab[4], k = 'frozen';
+						if (tab.length > 4) a = tab[4], k.push('frozen');
 				//* room announce:
 						if (tab.length > 3 && (notEmpty(a) || notEmpty(a = tab[3]))) {
 							a = encodeHTMLSpecialChars(
@@ -1145,7 +1149,11 @@ function showContent(sortOrder) {
 							a =	'" title="'+a
 							+	'" data-title="'+a.substr(a.indexOf(': '));
 						}
-						t = '<a href="'+t+'/'+(a||k?'" class="room-title'+(k?' '+k:'')+a:'')+'">'+t+'</a>';
+						if (a) k.unshift('room-title');
+				//* user's default room or mod status:
+						if (u) k.push(u);
+
+						t = '<a href="'+t+'/'+(k.length?'" class="'+k.join(' '):'')+a+'">'+t+'</a>';
 					} else
 				//* image post:
 					if (tab.length > 3 && notEmpty(a = tab[3])) {
@@ -1388,6 +1396,8 @@ function showContent(sortOrder) {
 		}
 		return '';
 	}
+
+	if ((t = gc('single-thread'))[0]) return t;
 
 var	flagVarNames = ['flag', 'flags']
 ,	dontCollapse = ['full', 'rooms']
@@ -1634,7 +1644,7 @@ var	flagVarNames = ['flag', 'flags']
 				if (flag.a) e.innerHTML = h[0];
 			} else {
 				if (dtp.found || (dtp.threads && !flag.v)) cre('div', p, e.nextElementSibling).outerHTML = afterThreadsBar;
-				e.className = 'thread';
+				e.className = 'thread single-thread';
 				e.threadsHTML = e.innerHTML = threadsHTML.join('');
 			}
 			for (i in (a = gn('select', e))) if (a[i].onchange) a[i].onchange();

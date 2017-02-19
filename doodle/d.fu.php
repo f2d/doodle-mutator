@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'Refresh any page cached before 2017-02-05 20:52'	//* <- change this line to invalidate browser cache after breaking changes
+		'Refresh any page cached before 2017-02-20 00:00'	//* <- change this line to invalidate browser cache after breaking changes
 	.NL.	'Or if user key, options or date-related decoration changed: '.ME_VAL
 	.NL.	implode(NL, get_date_class())
 	).'"';
@@ -136,7 +136,7 @@ function is_not_hidden($room) {
 	return (
 		GOD
 	||	$u_flag['mod']
-	||	$u_flag['mod_'.$room]
+	||	$u_flag["mod_$room"]
 	||	$room[0] != get_const('ROOM_HIDE')
 	);
 }
