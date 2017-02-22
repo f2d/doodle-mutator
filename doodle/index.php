@@ -1436,11 +1436,13 @@ $l = (
 );
 if ($OK) {
 	if ($u_key) {
-		if (QK_KEEP_AFTER_LOGOUT) {
-			$a = preg_replace('~^[0-9a-z]+~i', '', $_COOKIE[ME] ?: '');	//* <- keep after quit
-			if (isset($_POST[ME])) $a = "$u_key$a";				//* <- restore at enter
-		} else $a = '';
-		if (!isset($_POST[ME]) && $u_key !== 'quit') {
+		$a = (
+			QK_KEEP_AFTER_LOGOUT
+			? preg_replace('~^[0-9a-z]+~i', '', $_COOKIE[ME] ?: '')		//* <- keep after quit
+			: ''
+		);
+		if (isset($_POST[ME])) $a = "$u_key$a";					//* <- restore at enter
+		else if ($u_key !== 'quit') {
 			$a = array($u_key);
 			if ($u_opts !== 'default') {
 				foreach ($cfg_opts_order as $i => $o) if ($i === 'input') {

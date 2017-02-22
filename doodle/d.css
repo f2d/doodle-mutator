@@ -80,7 +80,7 @@ body, .task input:not([type="checkbox"]), .task select {
 a, .a {
 	color: #888;
 }
-a:hover	{
+a:hover, a.u:hover {
 	color: #000;
 }
 .task a, .task .a, .task label, .menu-list a {
