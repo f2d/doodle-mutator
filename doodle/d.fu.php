@@ -32,16 +32,17 @@ function rewrite_htaccess($write_to_file = 1) {
 	||	false === strpos($old, $end_mark)
 	) {
 		$d = '('.implode('|', $GLOBALS['cfg_dir']).')(/([^/]+))?';
-		$dd = get_const('DIR_DATA');
+		$ddre = str_regex_escaped($dd = get_const('DIR_DATA'));
+		$dere = get_const('DERE') ?: str_regex_escaped('.log');
 		$new = $new_mark.' -- Do not touch these marks. Only delete them along with the whole block.
 <IfModule rewrite_module>
 	RewriteEngine On
 	RewriteBase '.ROOTPRFX.'
 # virtual folders:'.($dd?'
-	RewriteRule ^'.$dd.'.*$ . [L,R=301]':'').'
+	RewriteRule ^'.$ddre.'.*$ . [L,R=301]':'').'
 	RewriteRule ^('.DIR_PICS.')(([^/])[^/]+\.([^/])[^/]+)$ $1$4/$3/$2'.'
 	RewriteRule ^'.$d.'$ $0/ [L,R=301]'.'
-	RewriteRule ^'.$d.'(/[-\d]*|[^?]*\.log([?/].*)?)$ . [L]
+	RewriteRule ^'.$d.'(/[-\d]*|[^?]*'.$dere.'([?/].*)?)$ . [L]
 # files not found:
 	RewriteCond %{REQUEST_FILENAME} -f [OR]
 	RewriteCond %{REQUEST_FILENAME} -d
@@ -113,6 +114,7 @@ function fix_encoding($text) {
 	return $text;
 }
 
+function str_regex_escaped($s) {return str_replace('.', '\\.', $s);}
 function str_replace_first($f, $to, $s) {return false === ($pos = strpos($s, $f)) ? $s : substr_replace($s, $to, $pos, strlen($f));}
 function abbr($a, $sep = '_') {foreach ((is_array($a)?$a:explode($sep, $a)) as $word) $r .= $word[0]; return $r;}
 function trim_post($p, $len = 456) {
@@ -373,9 +375,9 @@ function optimize_pic($filepath) {
 			if ($d !== '/') $cmd = str_replace('/', $d, $cmd);
 			if ($i) ini_set($m, ini_get($m) + 30);
 
-			data_lock('/pic');
+			data_lock($lk = 'pic');
 			$return = exec($cmd, $output, $return_code);
-			data_unlock('/pic');
+			data_unlock($lk);
 
 			if (
 				is_file($bak_path)

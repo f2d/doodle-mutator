@@ -21,6 +21,7 @@ define(R1_DEL, false);		//* <- delete 1-letter-room archive content; otherwise j
 define(ROOM_DEFAULT, 'base');
 define(ROOM_HIDE, '.');		//* <- allow ".hidden" rooms, not shown in client-side listings
 define(ROOM_DUMP, '');		//* <- TODO: "!dump" rooms, single-desc per trd (OP), or something
+define(ROOM_MARKERS_MOD_ONLY, false);
 define(ROOM_NAME_MIN_LENGTH, 1);
 define(ROOM_NAME_MAX_LENGTH, 26);
 define(USER_NAME_MIN_LENGTH, 1);

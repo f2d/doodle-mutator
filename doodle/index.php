@@ -102,7 +102,7 @@ if (ME_VAL && ($me = URLdecode(ME_VAL))) {
 		,	'body' => 'burnt-hell'
 		)));
 
-		if (!$u_flag['god']) unset($cfg_opts_order['admin']);
+		if (!$u_flag['god']) unset($cfg_opts_order['admin'], $tmp_options_input['admin']);
 		if ($key_value_pairs) {
 			$i = 'input';
 			foreach ($a as $key_value_pair) {
@@ -161,18 +161,23 @@ if ($qdir) {
 define(MOD, GOD || $u_flag['mod'] || $u_flag["mod_$room"]);
 define(FROZEN_HELL, data_global_announce('stop'));	//* <- after $room is defined
 
-if (FROZEN_HELL && !GOD && !($u_key && $qd_opts) && !$qd_arch) {
+if (FROZEN_HELL && !(GOD || $qd_arch || ($qd_opts && $u_key))) {
 	if (POST) goto after_posting;
-	die($etc == '-'?'-':get_template_page(array(
-		'title' => $tmp_stop_all.' '.$tmp_title.'.'
-	,	'header' => array(
-			'<a href="'.ROOTPRFX.'">'.$tmp_title.'.</a>'
-		, 'r' =>
-			'<a href="'.ROOTPRFX.DIR_ARCH.'">'.$tmp_archive.'.</a>'.NL.
-			'<a href="'.ROOTPRFX.DIR_OPTS.'">'.$tmp_options.'.</a>'
-		)
-	,	'task' => $tmp_stop_all
-	)));
+	if (FROZEN_HELL < 0) die(
+		$etc == '-'
+		? $tmp_stop_all
+		: get_template_page(array(
+			'title' => $tmp_stop_all.' '.$tmp_title.'.'
+		,	'task' => $tmp_stop_all
+		,	'anno' => 1
+		,	'header' => array(
+				'<a href="'.ROOTPRFX.'">'.$tmp_title.'.</a>'
+			, 'r' =>
+				'<a href="'.ROOTPRFX.DIR_ARCH.'">'.$tmp_archive.'.</a>'.NL.
+				'<a href="'.ROOTPRFX.DIR_OPTS.'">'.$tmp_options.'.</a>'
+			)
+		))
+	);
 }
 
 if (TIME_PARTS) time_check_point('MOD defined, inb4 action fork');
@@ -266,7 +271,7 @@ flags = a
 			if ($a = $tmp_mod_files[$do]) $lnk .= '
 <p>'.rtrim($a, ':.').':</p>';
 			ignore_user_abort(true);
-			data_lock('/mod');
+			data_lock($lk = 'mod_panel');
 if (TIME_PARTS) time_check_point('ignore user abort');
 			if ($do === 'list') {
 				$len = array(0,0,0);
@@ -343,7 +348,7 @@ $x
 				$t = data_fix($do);
 			}
 			if (!$t) $t = $tmp_no_change;
-			data_unlock('/mod');
+			data_unlock($lk);
 		}
 	} else
 	if (substr($q,0,4) === 'vars') {
@@ -366,8 +371,8 @@ $x
 			}
 		}
 	} else
-	if ($q) {
-		data_lock($k = "/$q", false);
+	if ($q && array_key_exists($q, $tmp_mod_pages)) {
+		data_lock($q, false);
 		exit_if_not_mod(data_get_mod_log($q, 1));
 		if ($t = data_get_mod_log($q)) {
 			if ($q === 'users') {
@@ -387,7 +392,7 @@ $t";
 			$page['data']['content']['type'] = $q;
 			$lnk .= get_template_form(array('filter' => 1));
 		}
-		data_unlock($k);
+		data_unlock($q);
 	}
 	if ($page['content'] || ($page['textarea'] = $t) || $lnk) {
 		if ($page['content'] || $lnk) {
@@ -572,6 +577,8 @@ separator = '.$s.$c
 		$page['js'][0]++;
 	} else
 
+//* rooms ---------------------------------------------------------------------
+
 	if ($qd_room) {
 		if ($room != $room_in_url) {
 			$room = (strlen(trim($room, '.')) ? URLencode($room).'/'.$etc : '');
@@ -579,256 +586,258 @@ separator = '.$s.$c
 			header("Location: $room_list_href$room");
 			exit;
 		}
-
-//* task manipulation ---------------------------------------------------------
-
-		if (strlen($v = $query['report_post'])) $etc = $v; else
-		if (strlen($v = $query['skip_thread'])) $etc = '-'.abs(intval($v)); else
-		if (strlen($v = $query['check_task'])) {
-			if ($v == 'keep' || $v == 'prolong') $etc = '-'; else
-			if ($v == 'post' || $v == 'sending') $etc = '--';
-		}
-		if ($etc) {
-			if ($etc[0] == '-') {
-		//* show current task:
-				$sending = (strlen($etc) > 1);
-				if (!strlen(trim($etc, '-'))) {
-					$t = data_check_my_task();
-					die(
-						'<!--'.date(TIMESTAMP, T0).'-->'
-						.NL.'<meta charset="'.ENC.'">'
-						.NL.'<title'.(
-							is_array($t)
-							? '>'.(
-								$sending
-								? $tmp_sending
-								: $tmp_target_status[$t[0]].'. '.$tmp_time_limit.': '.format_time_units($t[1])
-							)
-							: (
-								$sending
-								? ' id="confirm-sending"'
-								: ''
-							).'>'.$tmp_target_status[$t]
-						).'</title>'
-						.NL.(
-							($t = $target['task']) && $target['pic']
-							? '<img src="'.get_pic_url($t).'" alt="'.$t.'">'
-							: $t
-						)
-					);
-				}
-		//* skip current task, obsolete way by GET:
-				$t = substr($etc, 1);
-				list($a, $r) = get_room_skip_name($room);
-				if ($q = get_room_skip_list($a)) {
-					array_unshift($q, $t);
-					$t = implode('/', $q);
-				}
-				$add_qk = "$a=$r/$t";
-				$post_status = 'skip';
-				goto after_posting;
+		if ($room) {
+			if (FROZEN_HELL) {
+				$page['task'] = $tmp_stop_room ?: $tmp_stop_all;
+				goto template;
 			}
+
+//* task manipulation, implies that $room is set and fixed already ------------
+
+			if (strlen($v = $query['report_post'])) $etc = $v; else
+			if (strlen($v = $query['skip_thread'])) $etc = '-'.abs(intval($v)); else
+			if (strlen($v = $query['check_task'])) {
+				if ($v == 'keep' || $v == 'prolong') $etc = '-'; else
+				if ($v == 'post' || $v == 'sending') $etc = '--';
+			}
+			if ($etc) {
+				if ($etc[0] == '-') {
+			//* show current task:
+					$sending = (strlen($etc) > 1);
+					if (!strlen(trim($etc, '-'))) {
+						$t = data_check_my_task();
+						die(
+							'<!--'.date(TIMESTAMP, T0).'-->'
+							.NL.'<meta charset="'.ENC.'">'
+							.NL.'<title'.(
+								is_array($t)
+								? '>'.(
+									$sending
+									? $tmp_sending
+									: $tmp_target_status[$t[0]].'. '.$tmp_time_limit.': '.format_time_units($t[1])
+								)
+								: (
+									$sending
+									? ' id="confirm-sending"'
+									: ''
+								).'>'.$tmp_target_status[$t]
+							).'</title>'
+							.NL.(
+								($t = $target['task']) && $target['pic']
+								? '<img src="'.get_pic_url($t).'" alt="'.$t.'">'
+								: $t
+							)
+						);
+					}
+			//* skip current task, obsolete way by GET:
+					$t = substr($etc, 1);
+					list($a, $r) = get_room_skip_name($room);
+					if ($q = get_room_skip_list($a)) {
+						array_unshift($q, $t);
+						$t = implode('/', $q);
+					}
+					$add_qk = "$a=$r/$t";
+					$post_status = 'skip';
+					goto after_posting;
+				}
 
 //* report form ---------------------------------------------------------------
 
-			$page['task'] = get_template_form(
-				array(
-					'method' =>	'post'
-				,	'name' =>	'report'
-				,	'min' =>	REPORT_MIN_LENGTH
-				,	'max' =>	REPORT_MAX_LENGTH
-				,	'textarea' =>	($is_report_page = 1)
-				,	'checkbox' =>	array(
-						'name' => 'freeze'
-					,	'label' => $tmp_report_freeze
+				$page['task'] = get_template_form(
+					array(
+						'method' =>	'post'
+					,	'name' =>	'report'
+					,	'min' =>	REPORT_MIN_LENGTH
+					,	'max' =>	REPORT_MAX_LENGTH
+					,	'textarea' =>	($is_report_page = 1)
+					,	'checkbox' =>	array(
+							'name' => 'freeze'
+						,	'label' => $tmp_report_freeze
+						)
 					)
-				)
-			);
-		} else
+				);
+			} else {
 
 //* active room task and visible content --------------------------------------
 
-		if ($room) {
-			foreach ($query as $k => $v) if (substr($k, 0, 4) == 'draw') {
-				$draw_query = 1;
-				break;
-			}
-			$y = $query['!'];
-			$dont_change = ($draw_query || trim(str_replace(array('trd_arch', 'trd_miss'), '', $y), '&'));
-			$skip_list = get_room_skip_list();
+				foreach ($query as $k => $v) if (substr($k, 0, 4) == 'draw') {
+					$draw_query = 1;
+					break;
+				}
+				$y = $query['!'];
+				$dont_change = ($draw_query || trim(str_replace(array('trd_arch', 'trd_miss'), '', $y), '&'));
+				$skip_list = get_room_skip_list();
 
 if (TIME_PARTS) time_check_point('inb4 aim lock');
-			data_aim(
-				!$u_opts['unknown']
-			,	$skip_list
-			,	$dont_change		//* <- after POST with error
-			);
-			$visible = data_get_visible_threads();
-			data_unlock();
+				data_aim(
+					!$u_opts['unknown']
+				,	$skip_list
+				,	$dont_change		//* <- after POST with error
+				);
+				$visible = data_get_visible_threads();
+				data_unlock();
 if (TIME_PARTS) time_check_point('got visible data, unlocked');
 
-			exit_if_not_mod(max($t = $target['time'], $visible['last']));
-			$task_time = ($t ?: T0);	//* <- UTC seconds
-			$x = 'trd_max';
-			if ($draw_query && !$target['task'] && (!$y || false === strpos($y, $x))) {
-				if (data_is_thread_cap()) $query['!'] = ($y?$y.'!':'').$x;
-				else $draw_free = 1;
-			}
-			$desc = ($target['pic'] || !($target['task'] || $draw_free));
-			if ($vts = $visible['threads']) {
-				$t = (
-					MOD ? "
+				exit_if_not_mod(max($t = $target['time'], $visible['last']));
+				$task_time = ($t ?: T0);	//* <- UTC seconds
+				$x = 'trd_max';
+				if ($draw_query && !$target['task'] && (!$y || false === strpos($y, $x))) {
+					if (data_is_thread_cap()) $query['!'] = ($y?$y.'!':'').$x;
+					else $draw_free = 1;
+				}
+				$desc = ($target['pic'] || !($target['task'] || $draw_free));
+				if ($vts = $visible['threads']) {
+					$t = (
+						MOD ? "
 left = $tmp_mod_post_hint
 right = $tmp_mod_user_hint"
-					: (R1 || $u_flag['nor'] ? '' : "
+						: (R1 || $u_flag['nor'] ? '' : "
 left = $tmp_report_post_hint
 right = $tmp_report_user_hint"
-					)
-				).'
-images = '.ROOTPRFX.DIR_PICS.get_flag_vars(
-					array(
-						'flags' => array(
-							'acgmp', array(
-								$u_opts['active']
-							,	!$u_opts['count']
-							,	GOD
-							,	MOD
-							,	PIC_SUB
-							)
 						)
-					,	'caps' => 3
-					)
-				);
-				$page['content'] = $t.NL;
-				$a = array();
-				$b = '<br>';
+					).'
+images = '.ROOTPRFX.DIR_PICS.get_flag_vars(
+						array(
+							'flags' => array(
+								'acgmp', array(
+									$u_opts['active']
+								,	!$u_opts['count']
+								,	GOD
+								,	MOD
+								,	PIC_SUB
+								)
+							)
+						,	'caps' => 3
+						)
+					);
+					$page['content'] = $t.NL;
+					$a = array();
+					$b = '<br>';
 if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
-				foreach ($vts as $tid => $posts) {
-					$tsv = '';
-					foreach ($posts as $postnum => $post) {
-						if ($t = $post['time']) {
-							if ($u_opts['times']) {
-								$l = explode($b, $t, 2);
-								$l[0] = NB;
-								$l = implode($b, $l);
-							} else $l = $t;
-						} else $l = NB;
-						if ($t = $post['user']) {
-							$r = explode($b, $t, 2);
-							$uid = $r[0];
-							$r[0] = (
-								!$u_opts['names']
-							&&	array_key_exists($uid, $usernames)
-								? $usernames[$uid]
-								: NB
+					foreach ($vts as $tid => $posts) {
+						$tsv = '';
+						foreach ($posts as $postnum => $post) {
+							if ($t = $post['time']) {
+								if ($u_opts['times']) {
+									$l = explode($b, $t, 2);
+									$l[0] = NB;
+									$l = implode($b, $l);
+								} else $l = $t;
+							} else $l = NB;
+							if ($t = $post['user']) {
+								$r = explode($b, $t, 2);
+								$uid = $r[0];
+								$r[0] = (
+									!$u_opts['names'] && array_key_exists($uid, $usernames)
+									? $usernames[$uid]
+									: NB
+								);
+								$r = implode($b, $r);
+							} else $r = NB;
+							$tabs = array(
+								'color' => $u_opts['own']?0:$post['flag']
+							,	'time' => $l
+							,	'user' => $r
+							,	'content' => $post['post']
 							);
-							$r = implode($b, $r);
-						} else $r = NB;
-						$tabs = array(
-							'color' => $u_opts['own']?0:$post['flag']
-						,	'time' => $l
-						,	'user' => $r
-						,	'content' => $post['post']
-						);
-						if ($t = $post['used']) $tabs['used'] = $t;
-						if (GOD) {
-							$tabs['color'] .= '#'.$uid;
-							if ($t = $post['browser']) $tabs['browser'] = $t;
-						}
-						if (is_array($r = $visible['reports'][$tid][$postnum])) {
-							foreach ($r as $k => $lines) {
-								$k = 'reports_on_'.($k > 0?'user':'post');
-								$v = '';
-								foreach ($lines as $time => $line) $v .= ($v?'<br>':'').$time.': '.$line;
-								if ($v) $tsv .= NL.$k.' = '.$v;
+							if ($t = $post['used']) $tabs['used'] = $t;
+							if (GOD) {
+								$tabs['color'] .= '#'.$uid;
+								if ($t = $post['browser']) $tabs['browser'] = $t;
 							}
+							if (is_array($r = $visible['reports'][$tid][$postnum])) {
+								foreach ($r as $k => $lines) {
+									$k = 'reports_on_'.($k > 0?'user':'post');
+									$v = '';
+									foreach ($lines as $time => $line) $v .= ($v?'<br>':'').$time.': '.$line;
+									if ($v) $tsv .= NL.$k.' = '.$v;
+								}
+							}
+							$tsv .= NL.(
+								$postnum > 0 || $u_flag['nor'] || (R1 && !MOD)
+								? ''
+								: end(explode('/', $tid)).','
+							).implode('	', $tabs);
 						}
-						$tsv .= NL.(
-							$postnum > 0
-						||	$u_flag['nor']
-						||	(R1 && !MOD)
-							? ''
-							: end(explode('/', $tid)).','
-						).implode('	', $tabs);
-					}
-					$a[$tid] = $tsv;
+						$a[$tid] = $tsv;
 if (TIME_PARTS) time_check_point('done trd '.$tid);
-				}
-				ksort($a);
-				$page['content'] .= implode(NL, array_reverse($a));
+					}
+					ksort($a);
+					$page['content'] .= implode(NL, array_reverse($a));
 if (TIME_PARTS) time_check_point('after sort + join');
-				if (GOD) $filter = 1;
-			} else if (GOD) $page['content'] = "
+					if (GOD) $filter = 1;
+				} else if (GOD) $page['content'] = "
 left = $tmp_empty
 right = $tmp_empty
 flags = vg
 
 0,0	v	v";	//* <- dummy thread for JS drop-down menus
-			if (MOD && $page['content']) $page['js']['mod']++;
+				if (MOD && $page['content']) $page['js']['mod']++;
 
-			$t = $target['task'];
-			if ($desc) {
-				$page['task'] = get_template_form(
-					array(
-						'method' =>	'post'
-					,	'name' =>	'describe'
-					,	'min' =>	DESCRIBE_MIN_LENGTH
-					,	'head' =>	$t ? $tmp_describe_this : $tmp_describe_new
-					,	'hint' =>	$tmp_describe_hint.($u_flag['nop'] ? '\\'.$tmp_no_play_hint : '')
-					,	'filter' =>	$filter
-					,	'checkbox' => (
-							$u_opts['kbox']
-							?  array(
-								'label' => $tmp_check_required
-							,	'required' => 1
+				$t = $target['task'];
+				if ($desc) {
+					$page['task'] = get_template_form(
+						array(
+							'method' =>	'post'
+						,	'name' =>	'describe'
+						,	'min' =>	DESCRIBE_MIN_LENGTH
+						,	'head' =>	$t ? $tmp_describe_this : $tmp_describe_new
+						,	'hint' =>	$tmp_describe_hint.($u_flag['nop'] ? '\\'.$tmp_no_play_hint : '')
+						,	'filter' =>	$filter
+						,	'checkbox' => (
+								$u_opts['kbox']
+								?  array(
+									'label' => $tmp_check_required
+								,	'required' => 1
+								)
+								: ''
 							)
-							: ''
 						)
-					)
-				);
-				if ($t) {
-					$src = (strpos($t, ';') ? get_pic_resized_path(get_pic_normal_path($t)) : $t);
-					$page['task'] .= '
+					);
+					if ($t) {
+						$src = (strpos($t, ';') ? get_pic_resized_path(get_pic_normal_path($t)) : $t);
+						$page['task'] .= '
 <img src="'.get_pic_url($src).'" alt="'.$t.'">';
+					} else {
+						$task_time = '-';
+						$s = count($skip_list);
+						$n = $target['count_free_tasks'];
+						if ($s && !$n) $page['data']['task']['unskip'] = "$s/$n/$target[count_free_unknown]";
+					}
 				} else {
-					$task_time = '-';
-					$s = count($skip_list);
-					$n = $target['count_free_tasks'];
-					if ($s && !$n) $page['data']['task']['unskip'] = "$s/$n/$target[count_free_unknown]";
-				}
-			} else {
-				$n = get_draw_app_list(true);
-				$page['task'] = '
+					$n = get_draw_app_list(true);
+					$page['task'] = '
 <p>'.indent(
 	$t
 	? $tmp_draw_this.':
 <span id="task-text">'.$t.'</span>'
 	: $tmp_draw_free.':'
 ).'</p>';
-				$hint = '
+					$hint = '
 <p class="hint">'.indent($n['list']).'</p>';
-				if ($x = $n['noscript']) {
-					$page['task'] .= $x;
-					$page['subtask'] = $n['embed'].'
+					if ($x = $n['noscript']) {
+						$page['task'] .= $x;
+						$page['subtask'] = $n['embed'].'
 <div class="task">'.indent($hint).'</div>';
-				} else {
-					$w = explode(',', DRAW_LIMIT_WIDTH);
-					$h = explode(',', DRAW_LIMIT_HEIGHT);
-					$page['task'] .= $n['embed'].'
+					} else {
+						$w = explode(',', DRAW_LIMIT_WIDTH);
+						$h = explode(',', DRAW_LIMIT_HEIGHT);
+						$page['task'] .= $n['embed'].'
 <p class="hint">'.sprintf(
-						$tmp_draw_limit_hint
-					,	$w[0], $h[0]
-					,	$w[1], $h[1]
-					,	DRAW_MAX_FILESIZE
-					,	format_filesize(DRAW_MAX_FILESIZE)
-					,	strtoupper(implode(', ', $cfg_draw_file_types))
-					).'</p>'.$hint;
+							$tmp_draw_limit_hint
+						,	$w[0], $h[0]
+						,	$w[1], $h[1]
+						,	DRAW_MAX_FILESIZE
+						,	format_filesize(DRAW_MAX_FILESIZE)
+						,	strtoupper(implode(', ', $cfg_draw_file_types))
+						).'</p>'.$hint;
+					}
 				}
+				if ($t || $desc) $page['data']['task']['t'] = $task_time;
+				if ($t) $page['data']['task']['skip'] = intval($target['thread']);
+				$page['data']['content']['type'] = 'threads';
+				$page['js'][0]++;
 			}
-			if ($t || $desc) $page['data']['task']['t'] = $task_time;
-			if ($t) $page['data']['task']['skip'] = intval($target['thread']);
-			$page['data']['content']['type'] = 'threads';
-			$page['js'][0]++;
 		} else {
 
 //* active rooms list ---------------------------------------------------------
@@ -884,6 +893,8 @@ $left	$right	$mid";
 		}
 	} else
 
+//* home page substitute ------------------------------------------------------
+
 	if (!$room) {
 		$room = (strlen(trim($u_room_default, '.')) ? $u_room_default.'/' : '');
 		header('HTTP/1.1 303 To home room');
@@ -906,6 +917,8 @@ $left	$right	$mid";
 }
 
 //* generate page, put content into template ----------------------------------
+
+template:
 
 define(S, '. ');
 $room_title = ($room == ROOM_DEFAULT ? $tmp_room_default : "$tmp_room $room");
@@ -1112,7 +1125,7 @@ if ($u_key) {
 		}
 		if ($act) {
 			natsort($k);
-			data_lock($room);
+			data_lock("room/$room");
 			foreach (array_reverse($k) as $i) {
 				$m = data_mod_action($act[$i]);	//* <- act = array(option name, thread, row, column)
 				if ($post_status != 'unkn_res') $post_status = ($m?OK:'unkn_res');
@@ -1129,7 +1142,7 @@ if ($u_key) {
 		if (preg_match(PAT_DATE, $postID, $r) && ($postID == $r[0])) {	//* <- r = array(t-r-c, t-r, thread, row, column)
 			$post_status = 'text_short';
 			if (mb_strlen($r[1] = trim_post($_POST['report'], REPORT_MAX_LENGTH)) >= REPORT_MIN_LENGTH) {
-				data_lock($room);
+				data_lock("room/$room");
 				$post_status = (
 					data_log_report($r, $_POST['freeze'] || $_POST['check']) > 0
 					? OK
