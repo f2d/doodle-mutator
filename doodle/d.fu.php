@@ -497,6 +497,7 @@ function get_template_form($t) {
 		.		indent("$a[label]:".NL.'<input type="checkbox"'.$n.$r.'>')
 		.	'</label>';
 	}
+	$submittable = ($submit || $method);
 	return $head.NL.(
 		$name || $method
 		? "<form$method>".indent(
@@ -510,11 +511,15 @@ function get_template_form($t) {
 					? ' data-select="'.$select.'"'
 					: ''
 				).'></b>'.(
-					($submit || $method)
+					$submittable
 					? NL.'<b><input type="submit" value="'.($submit ?: $GLOBALS['tmp_submit']).'"></b>'
 					: ''
 				)
-			).'</b>'.$checkbox
+			).'</b>'.$checkbox.(
+				$submittable && !$GLOBALS['u_key']
+				? NL.'<input type="text" name="pass" value="" placeholder="'.($GLOBALS['tmp_spam_trap'] ?: 'spam').'">'
+				: ''
+			)
 		).'</form>'
 		: '<p><b><input type="text"'.$attr.'></b></p>'
 	).$hint;

@@ -276,6 +276,9 @@ a:hover, a.u:hover {
 	width: 150px;
 	text-align: right;
 }
+.task form>input {
+	display: none;
+}
 .task form input[type="submit"], .task form select {
 	width: 142px;
 }

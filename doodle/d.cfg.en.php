@@ -218,6 +218,7 @@ Note: while any message in a [report|red bar] is displayed at top, or in-room dr
 Single-letter rooms keep only 1 page in archive (no more than '.TRD_PER_PAGE.' threads), have no reports and moderation, and full threads go to archive right away.'
 ));
 $tmp_sending = 'Sending now, please wait...';
+$tmp_spam_trap = 'Leave this empty.';
 $tmp_stop_all = 'Game frozen.';
 $tmp_submit = 'Submit';
 $tmp_target_status = array(

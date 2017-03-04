@@ -14,8 +14,9 @@ header('Expires: Mon, 12 Sep 2016 00:00:00 GMT');
 header('Pragma: no-cache');
 if (function_exists($f = 'header_remove')) $f('Vary');
 
+if ($_REQUEST['pass']) goto after_posting;		//* <- ignore spam bot requests
 if (POST) {
-	if (!ME_VAL) goto after_posting;		//* <- no anonymous posting
+	if (!ME_VAL) goto after_posting;		//* <- ignore anonymous posting
 	ignore_user_abort(true);
 }
 
@@ -48,7 +49,7 @@ if (!POST) {
 	) {
 		foreach ($m[1] as $v) {
 			if (false === strpos($v, '(')) $v = trim($v, ')');
-			data_log_ref(trim($v));
+			if ($v = trim($v)) data_log_ref("$v#(user-agent)");
 		}
 	}
 }
@@ -1503,8 +1504,8 @@ if ($OK) {
 		if ($add_qk) header("$s$add_qk$x");
 	}
 } else {
-	$l .= '?!='.$p;
-	foreach ($query as $k => $v) if (substr($k, 0, 4) == 'draw') $l .= '&'.$k.(strlen($v)?'='.$v:'');
+	if ($p) $l .= '?!='.$p;
+	foreach ((array)$query as $k => $v) if (substr($k, 0, 4) == 'draw') $l .= '&'.$k.(strlen($v)?'='.$v:'');
 }
 
 //* show pic processing progress ----------------------------------------------
