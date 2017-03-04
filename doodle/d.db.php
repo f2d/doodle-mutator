@@ -316,14 +316,8 @@ function data_log_ip() {
 	data_collect(DIR_META_U."/ip/$u_num.ip", $_SERVER['REMOTE_ADDR']);
 }
 
-function data_log_ref() {
-	if (
-		!POST
-	&&	($r = $_SERVER['HTTP_REFERER'])
-	&&	($s = $_SERVER['SERVER_NAME'])
-//	&&	($r != ($s = "http://$s")) && (0 !== strpos($r, $s.'/'))
-//	&&	!preg_match("~^\w+:/+$s/~i", $r)
-	) {
+function data_log_ref($r) {
+	if ($r && ($s = $_SERVER['SERVER_NAME'])) {
 		$i = (strpos($r, '://'  ) ?: 0)+3;
 		$j = (strpos($r, '/', $i) ?: 0);
 		if ($s !== substr($r, $i, $j-$i)) {

@@ -40,6 +40,18 @@ mb_internal_encoding(ENC);
 
 require(NAMEPRFX.'.fu.php');
 require(NAMEPRFX.'.db.php');
+if (!POST) {
+	if ($r = $_SERVER['HTTP_REFERER']) data_log_ref($r);
+	if (
+		($r = $_SERVER['HTTP_USER_AGENT'])
+	&&	preg_match_all('~(?<=^|\s|\+)(\w+:/+\S+)~i', $r, $m)
+	) {
+		foreach ($m[1] as $v) {
+			if (false === strpos($v, '(')) $v = trim($v, ')');
+			data_log_ref(trim($v));
+		}
+	}
+}
 
 //* UI Translation *-----------------------------------------------------------
 
@@ -56,9 +68,7 @@ if (isset($_SERVER[$h = 'HTTP_ACCEPT_LANGUAGE'])) {
 		$lang = $l;
 	}
 }
-
 require(NAMEPRFX.".cfg.$lang.php");
-data_log_ref();
 
 function time_check_point($comment) {global $tcp; $tcp[microtime()][] = $comment;}
 time_check_point('done cfg, inb4 user settings');
