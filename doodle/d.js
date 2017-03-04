@@ -1524,7 +1524,7 @@ var	flagVarNames = ['flag', 'flags']
 		if (threadsHTML.length) {
 		var	e = cre('div', p, e);
 			if (threadsHTML.length > 1) {
-		//* top bar:
+		//* multiple threads, top bar with counters:
 			var	o = {
 					left: []
 				,	right: []
@@ -1643,8 +1643,17 @@ var	flagVarNames = ['flag', 'flags']
 		//* show open threads on page load only if option set:
 				if (flag.a) e.innerHTML = h[0];
 			} else {
+		//* single thread, without counters:
 				if (dtp.found || (dtp.threads && !flag.v)) cre('div', p, e.nextElementSibling).outerHTML = afterThreadsBar;
-				e.className = 'thread single-thread';
+				j = (
+					(i = threadsMarks)
+				&&	(i = i[0])
+				&&	(i = i.class)
+				&&	(i = reportClass[i])
+					? ' '+i
+					: ''
+				);
+				e.className = 'thread single-thread'+j;
 				e.threadsHTML = e.innerHTML = threadsHTML.join('');
 			}
 			for (i in (a = gn('select', e))) if (a[i].onchange) a[i].onchange();
