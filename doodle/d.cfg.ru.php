@@ -76,6 +76,7 @@ $tmp_link_schemes = array(
 );
 $tmp_me = 'Назовитесь';
 $tmp_me_hint = 'Не более '.USER_NAME_MAX_LENGTH.' букв. Также тут можно ввести свой старый ключ.';
+$tmp_me_submit = 'Войти';
 $tmp_mod_files = array(
 	'arch' =>		'Переписать архив по новым шаблонам.'
 ,	'img2subdir' =>		'Картинки в подпапки.'

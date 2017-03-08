@@ -598,7 +598,7 @@ separator = '.$s.$c
 			exit;
 		}
 		if ($room) {
-			if (!GOD && FROZEN_HELL) {
+			if (!MOD && FROZEN_HELL) {
 				$page['task'] = $tmp_stop_room ?: $tmp_stop_all;
 				goto template;
 			}

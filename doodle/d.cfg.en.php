@@ -71,6 +71,7 @@ $tmp_link_schemes = array(
 );
 $tmp_me = 'Name yourself';
 $tmp_me_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters. Also you may enter your old key here.';
+$tmp_me_submit = $tmp_rooms_submit = 'Enter';
 $tmp_mod_files = array(
 	'arch' =>		'Rewrite arch with newest template.'
 ,	'img2subdir' =>		'Pics to subfolders.'
@@ -199,7 +200,6 @@ $tmp_rooms_hint =
 Single-letter rooms have single page in archive and no reports or moderation.';
 $tmp_filter_placeholder =
 $tmp_rooms_placeholder = 'Type here to filter the list.';
-$tmp_rooms_submit = 'Enter';
 $tmp_rules = array(
 	'Rules' => array(
 'Parallel turn-based multiplayer drawing game.',

@@ -672,9 +672,11 @@ a:hover, a.u:hover {
 }
 .welcome tr.you.see td.thread {
 	background-color: #ccc;
+	vertical-align: bottom;
 }
 .welcome tr.you.do td.thread {
 	background-color: #fff;
+	vertical-align: top;
 }
 .welcome u {
 	display: inline-block;

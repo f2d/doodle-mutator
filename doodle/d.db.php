@@ -73,7 +73,7 @@ function data_log($file_path, $line, $n = UTF, $report = 1) {
 }
 
 function data_global_announce($type = 'all', $room_in_list = '') {
-	global $last_user, $room, $tmp_announce, $data_maintenance;
+	global $u_key, $last_user, $room, $tmp_announce, $data_maintenance;
 	if ($d = ($room_in_list ?: $room ?: '')) $d = DIR_ROOM.$d.'/';
 //* check top level flag standing:
 	if (array_key_exists($type, $tmp_announce)) {
@@ -92,7 +92,7 @@ function data_global_announce($type = 'all', $room_in_list = '') {
 		if (
 			('new_game' === $k && !$last_user && !is_file(DIR_META_U.DATA_EXT))
 		||	('new_data' === $k && !$room_in_list && $data_maintenance)
-		||	('new_room' === $k && $d && !is_dir($d))
+		||	('new_room' === $k && $u_key && $d && !is_dir($d))
 		) {
 			if (is_array($a)) $a[$k] = '';
 			continue;
