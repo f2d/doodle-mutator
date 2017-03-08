@@ -449,13 +449,13 @@ function get_template_attr($a = '', $prefix = 'data-') {
 }
 
 function get_template_welcome_see_do($c, $u, $see = '', $do = '') {
-	$user = NL.'<td>	'.$u['who'].'	</td>';
+	$user = NL."<td>	$u[who]	</td>";
 	$skip = NL.'<td>	...	</td>';
 	$class = '<td class="thread">';
 	$td = '<td></td><td></td>';
 	return '<tr class="'.$c.' see">'.indent(
 		$user.$skip.$class.implode(
-			'</td>'.NL.'<td>	<u></u>	</td>'.$class
+			'</td>'.NL.'<td class="then"></td>'.$class
 		,	(array)($see ?: array(
 					"$u[desc_see]:"
 				,	"$u[pic_see]:"
@@ -476,11 +476,13 @@ function get_template_welcome_see_do($c, $u, $see = '', $do = '') {
 	).'</tr>';
 }
 
-function get_template_welcome_interleave($t) {
-	$c = '<td></td>';
-	$a = NL.$c.$c;
-	$b = NL.'<td class="thread">	'.$t.'	</td>';
-	return '<tr>'.indent("$a$b$c$b$c$b$a").'</tr>';
+function get_template_welcome_interleave($c = '', $t = '') {
+	if ($c) $c = ' class="'.$c.'"';
+	if ($t) $t = "	$t	";
+	$d = '<td></td>';
+	$a = NL.$d.$d;
+	$b = NL.'<td class="thread">'.$t.'</td>';
+	return "<tr$c>".indent("$a$b$d$b$d$b$a").'</tr>';
 }
 
 function get_template_form($t) {
@@ -662,14 +664,12 @@ function get_template_page($page) {
 				,	"$u[pic_do]	$i.3b$e"
 				)
 			);
-			$v = get_template_welcome_interleave($t = '<u></u>');
 			$$k = (($i = $a['header']) ? "<p>$i</p>".NL : '')
 			.'<table>'.indent(
-				get_template_welcome_interleave("$a[head]<br>$t")
-			.	$sdo.$v
-			.	$sdu.$v
-			.	$sdo
-			.	get_template_welcome_interleave("$t<br>$a[tail]")
+				get_template_welcome_interleave('prev', $a['head']).$sdo
+			.	get_template_welcome_interleave('prev').$sdu
+			.	get_template_welcome_interleave('next').$sdo
+			.	get_template_welcome_interleave('next', $a['tail'])
 			).'</table>'
 			.(($i = $a['footer']) ? NL."<p>$i</p>" : '');
 		} else $$k = $a;
