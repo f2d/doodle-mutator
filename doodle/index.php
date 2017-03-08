@@ -598,7 +598,7 @@ separator = '.$s.$c
 			exit;
 		}
 		if ($room) {
-			if (FROZEN_HELL) {
+			if (!GOD && FROZEN_HELL) {
 				$page['task'] = $tmp_stop_room ?: $tmp_stop_all;
 				goto template;
 			}
@@ -918,6 +918,7 @@ $left	$right	$mid";
 
 	if ($etc) die('x');
 	foreach ($cfg_dir as $k => $v) unset(${'qd_'.$k});
+	$page['welcome'] = $tmp_welcome_parts;
 	$page['task'] = get_template_form(
 		array(
 			'method' =>	'post'

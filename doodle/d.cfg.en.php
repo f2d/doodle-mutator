@@ -238,5 +238,25 @@ $tmp_time_units = array(
 );
 $tmp_title = 'Doodle Mutator';
 $tmp_took = ', took %s sec.';
+$tmp_welcome_parts = array(
+	'header'	=> 'How to play:'
+,	'footer'	=> 'Come anytime, leave anytime. There is no ending.'
+,	'head'	=> 'thread'
+,	'tail'	=> 'etc.'
+,	'you'	=> array(
+		'who'		=> 'you'
+	,	'desc_see'	=> 'See a description'
+	,	'desc_do'	=> 'draw it'
+	,	'pic_see'	=> 'See a picture'
+	,	'pic_do'	=> 'describe it'
+	)
+,	'other'	=> array(
+		'who'		=> 'other people'
+	,	'desc_see'	=> 'See a description'
+	,	'desc_do'	=> 'draw it'
+	,	'pic_see'	=> 'See a picture'
+	,	'pic_do'	=> 'describe it'
+	)
+);
 
 ?>

@@ -448,6 +448,41 @@ function get_template_attr($a = '', $prefix = 'data-') {
 	return $line ?: '';
 }
 
+function get_template_welcome_see_do($c, $u, $see = '', $do = '') {
+	$user = NL.'<td>	'.$u['who'].'	</td>';
+	$skip = NL.'<td>	...	</td>';
+	$class = '<td class="thread">';
+	$td = '<td></td><td></td>';
+	return '<tr class="'.$c.' see">'.indent(
+		$user.$skip.$class.implode(
+			'</td>'.NL.'<td>	<u></u>	</td>'.$class
+		,	(array)($see ?: array(
+					"$u[desc_see]:"
+				,	"$u[pic_see]:"
+				,	"$u[desc_see]:"
+				)
+			)
+		).'</td>'.$skip.$user
+	).NL.'</tr><tr class="'.$c.' do">'.indent(
+		$td.NL.$class.implode(
+			'</td><td></td>'.NL.$class
+		,	(array)($do ?: array(
+					$u['desc_do']
+				,	$u['pic_do']
+				,	$u['desc_do']
+				)
+			)
+		).'</td>'.NL.$td
+	).'</tr>';
+}
+
+function get_template_welcome_interleave($t) {
+	$c = '<td></td>';
+	$a = NL.$c.$c;
+	$b = NL.'<td class="thread">	'.$t.'	</td>';
+	return '<tr>'.indent("$a$b$c$b$c$b$a").'</tr>';
+}
+
 function get_template_form($t) {
 	if (is_array($t)) {
 		foreach ($t as $k => $v) $$k = $v ?: '';
@@ -610,6 +645,36 @@ function get_template_page($page) {
 </pre>";
 		} else $content = get_template_content($a, $static, '', $attr);
 	}
+	if ($a = $page[$k = 'welcome']) {
+		if (is_array($a)) {
+			$i = '<br><img src="'.ROOTPRFX.NAMEPRFX.'.demo';
+			$e = '.png">';
+			$sdo = get_template_welcome_see_do($v = 'other', $a[$v]);
+			$sdu = get_template_welcome_see_do($v = 'you', $u = $a[$v]
+			,	array(
+					"$u[pic_see]:	$i.1a$e"
+				,	"$u[desc_see]:	$i.2a$e"
+				,	"$u[pic_see]:	$i.3a$e"
+				)
+			,	array(
+					"$u[pic_do]	$i.1b$e"
+				,	"$u[desc_do]	$i.2b$e"
+				,	"$u[pic_do]	$i.3b$e"
+				)
+			);
+			$v = get_template_welcome_interleave($t = '<u></u>');
+			$$k = (($i = $a['header']) ? "<p>$i</p>".NL : '')
+			.'<table>'.indent(
+				get_template_welcome_interleave("$a[head]<br>$t")
+			.	$sdo.$v
+			.	$sdu.$v
+			.	$sdo
+			.	get_template_welcome_interleave("$t<br>$a[tail]")
+			).'</table>'
+			.(($i = $a['footer']) ? NL."<p>$i</p>" : '');
+		} else $$k = $a;
+		if ($$k) $$k = '<div class="'.$k.'">'.indent($$k).'</div>';
+	}
 	if ($RL || !ME_VAL) {
 		$k = $GLOBALS['cfg_link_schemes'] ?? '';
 		if ($k = (is_array($k)?$k[0]:$k)) {
@@ -671,6 +736,7 @@ function get_template_page($page) {
 <body'.($class?' class="'.implode(' ', $class).'"':'').'>'
 .indent($header, 1)
 .indent($task, 1)
+.indent($welcome, 1)
 .indent($content, 1).(($t =
  indent($footer, 1)
 .indent($scripts, 1)) && ($k = get_const('TOOK'))?str_replace($k, round(get_time_elapsed(), 9), $t):$t)
