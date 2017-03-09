@@ -615,12 +615,16 @@ function get_template_page($page) {
 	$N = ROOTPRFX.NAMEPRFX;
 	$static = ($LN || $R);
 	$class = (($v = $page['body']) ? (array)$v : array());
-	if ($page['anno']) foreach (data_global_announce('all') as $k => $v) {
-		if (strlen($v)) {
-			$v = ': '.(MOD ? "<span id=\"$k\">$v</span>" : $v);
-			$c = '';
-		} else $c = ' class="twilight"';
-		$ano .= NL."<b$c>$tmp_announce[$k]$v</b>";
+	$anno = array();
+	if ($page['anno']) {
+		foreach (data_global_announce('all') as $k => $v) {
+			if (strlen($v)) {
+				if (MOD) $v = "<span id=\"$k\">$v</span>";
+				$v = ": $v";
+				$c = '';
+			} else $c = 'new';
+			$anno[$c][] = $tmp_announce[$k].$v;
+		}
 	}
 	if (!$static) {
 		$L = LINK_TIME;
@@ -631,8 +635,7 @@ function get_template_page($page) {
 			);
 			if (!is_array($a)) $a = preg_split('~\W+~', $a);
 			foreach ($a as $v) if ($v = trim($v)) {
-				$e = $tmp_post_err[$v];
-				$err .= NL.'<p class="anno '.($e_class[$v] ?: 'report').'"><b>'.indent($e ?: $v).'</b></p>';
+				$anno[$e_class[$v] ?: 'report'][] = $tmp_post_err[$v] ?: $v;
 			}
 		}
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
@@ -693,8 +696,16 @@ function get_template_page($page) {
 .(($v = $page['head'])?NL.$v:'')
 .(($v = $page['title'])?NL."<title>$v</title>":'');
 
-	if ($ano) $header .= NL.'<p class="anno">'.indent($ano).'</p>';
-	if ($err) $header .= NL.$err;
+	if ($a = (array)$anno) {
+		ksort($a);
+		foreach ($a as $k => $v) {
+			$block = '';
+			if (is_array($v)) foreach ($v as $line) {
+				$block .= NL.'<b>'.indent($line).'</b>';
+			}
+			$header .= NL.'<p class="anno'.($k?" $k":'').'">'.indent($block ?: $v).'</p>';
+		}
+	}
 	if ($a = $page[$k = 'header']) {
 		if (is_array($a)) {
 			foreach ($a as $i => &$v) if ($v) $v = ($i?'<u class="'.$i.'">':'<u>').indent($v).'</u>';

@@ -89,12 +89,12 @@ function data_global_announce($type = 'all', $room_in_list = '') {
 		default: return false;
 	}
 	foreach ($tmp_announce as $k => $v) {
-		if (
-			('new_game' === $k && !$last_user && !is_file(DIR_META_U.DATA_EXT))
-		||	('new_data' === $k && !$room_in_list && $data_maintenance)
-		||	('new_room' === $k && $u_key && $d && !is_dir($d))
-		) {
-			if (is_array($a)) $a[$k] = '';
+		if (0 === strpos($k, 'new')) {
+			if (is_array($a) && (
+				('new_game' === $k && !$last_user && !is_file(DIR_META_U.DATA_EXT))
+			||	('new_data' === $k && !$room_in_list && $data_maintenance)
+			||	('new_room' === $k && $u_key && $d && !is_dir($d))
+			)) $a[$k] = '';
 			continue;
 		}
 		if ($i = strrpos($k, '_')) {

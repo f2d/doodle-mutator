@@ -82,7 +82,7 @@ define(HINT_REGEX_FORMAT, '/%s/imsu');
 define(HINT_REGEX_LINK, 'http://php.net/manual/%s/pcre.pattern.php');
 define(FOOT_NOTE, '
 <a href="https://github.com/f2d/doodle-mutator">%s</a> &mdash;
-<a href="https://github.com/f2d">%s</a>, 2013-2016,
+<a href="https://github.com/f2d">%s</a>, 2013-2017,
 <a href="'.DIR_BOARD.'">%s</a>%s');
 /*
 	^ lang-specific %s:
