@@ -3,7 +3,7 @@
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'Refresh any page cached before 2017-02-20 00:00'	//* <- change this line to invalidate browser cache after breaking changes
+		'Refresh any page cached before 2017-03-12 13:35'	//* <- change this line to invalidate browser cache after breaking changes
 	.NL.	'Or if user key, options or date-related decoration changed: '.ME_VAL
 	.NL.	implode(NL, get_date_class())
 	).'"';
@@ -256,7 +256,7 @@ function get_draw_app_list($allow_upload = true) {
 }
 
 function get_draw_vars($send = '') {
-	global $cfg_draw_vars, $tmp_wh, $tmp_whu, $u_opts, $query;
+	global $cfg_draw_vars, $tmp_wh, $u_opts, $query;
 	$vars = ($send?"$send;":'').DRAW_REST.
 		';keep_prefix='.DRAW_PERSISTENT_PREFIX
 	.($u_opts['save2common']?'':
@@ -268,8 +268,8 @@ function get_draw_vars($send = '') {
 	if (($res = $query['draw_res']) && strpos($res, 'x')) $wh = explode('x', $res);
 	if ($send) {
 		foreach (array('DEFAULT_', 'LIMIT_') as $i => $j)
-		foreach ($tmp_whu as $k => $l) {
-			$p = $tmp_wh[$k].($i?'l':'');
+		foreach ($tmp_wh as $k => $l) {
+			$p = strtolower($l[0]).($i?'l':'');
 			if ((!$i && $wh && ($v = $wh[$k])) || ($v = get_const("DRAW_$j$l"))) $vars .= ";$p=$v";
 		}
 	}
@@ -621,7 +621,7 @@ function get_template_page($page) {
 			if (strlen($v)) {
 				if (MOD) $v = "<span id=\"$k\">$v</span>";
 				$v = ": $v";
-				$c = '';
+				$c = (false !== strpos($k, 'stop')?'cold':'dust');
 			} else $c = 'new';
 			$anno[$c][] = $tmp_announce[$k].$v;
 		}
@@ -759,8 +759,7 @@ function get_template_page($page) {
 
 $arch_list_href = ROOTPRFX.DIR_ARCH;
 $room_list_href = ROOTPRFX.DIR_ROOM;
-$tmp_wh = 'wh';
-$tmp_whu = array('WIDTH','HEIGHT');
+$tmp_wh = array('WIDTH','HEIGHT');
 $tmp_room_new = '{'.$room_list_href.'new/|new}';
 if ($s = get_const('ROOM_HIDE')) $tmp_room_new_hide = '{'.$room_list_href.($s .= 'test')."/|$s}";
 if ($s = get_const('ROOM_DUMP')) $tmp_room_new_dump = '{'.$room_list_href.($s .= 'dump')."/|$s}";

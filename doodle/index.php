@@ -1331,14 +1331,14 @@ file: $upload[name]";
 	//* check image data:
 			if ($sz = getImageSize($f)) {
 				unset($file_content, $post_data, $_POST['pic']);
-				foreach ($tmp_whu as $k => $v)
+				foreach ($tmp_wh as $k => $v)
 				if ($a = (
-					get_const('DRAW_LIMIT_'.$v)
-				?:	get_const('DRAW_DEFAULT_'.$v)
+					get_const("DRAW_LIMIT_$v")
+				?:	get_const("DRAW_DEFAULT_$v")
 				)) {
 					list($a, $b) = preg_split('~\D+~', $a);
 					$y = ($b ?: $a);
-					$z = ${$tmp_wh[$k]} = $sz[$k];
+					$z = ${strtolower($v[0])} = $sz[$k];
 					if (($a && $z < $a) || ($y && $z > $y)) {
 						$x = 0;
 						$post_status = 'pic_size';

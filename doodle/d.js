@@ -911,12 +911,18 @@ function showContent(sortOrder) {
 			,	report = ''
 			,	editPostData = ''
 			,	marks = ''
-			,	optionNames = []
 			,	tab = line.split('\t')
 			,	sep = param.separator
-			,	roomDates = {}
 			,	roomCount = (dtp.rooms && sep && tab.length > 2)
 				;
+				if (dtp.options) {
+				var	optionNames = [];
+				} else
+				if (dtp.rooms) {
+				var	classNames = []
+				,	roomDates = {}
+					;
+				} else
 				if (dtp.found) {
 					if (!threadMark && param.room) threadMark = {id: param.room+'/', posts: 0};
 					if (threadNum != param.t) {
@@ -942,11 +948,11 @@ function showContent(sortOrder) {
 						modEnabled = 1;
 					}
 					if (flag.m) {
-						j = userID ? {
-							user: userID
-						,	time: tab[0]
-						} : {};
-						;
+						j = (
+							userID
+							? {user: userID, time: tab[0]}
+							: {}
+						);
 						if (tab.length > 3) {
 							j.file = tab[2];
 							j.meta = tab[3];
@@ -966,19 +972,20 @@ function showContent(sortOrder) {
 					}
 					threadNum = (tab.length > 2?1:0);
 					modEnabled = 1;
-				} else
+				}
 				if (roomCount && notEmpty(t = tab[2]) && t.indexOf(sep) >= 0) {
 					k = t.split(sep);
-			//* room name:
+				//* room name:
 					tab[2] = k.shift();
-			//* colored counters:
+				//* colored counters:
 					a = {};
 					for (i in k) if (c = reportClass[b = k[i].slice(-1)]) {
 						a[b] = '<span class="'+c+'" title="'+la.marks[c]+'">'+orz(k[i])+'</span>';
 					} else
+				//* user's default room or mod status:
 					if ((b = k[i].replace(regTrimWord, '')).length > 0) {
-						if (b === 'mod') u = 'u'; else
-						if (b === 'home') u = b;
+						if (b === 'mod') classNames.push('u'); else
+						if (b === 'home') classNames.push(b);
 					}
 					for (i in reportClass) if (a[i]) marks += a[i]+sep;
 				}
@@ -1134,7 +1141,7 @@ function showContent(sortOrder) {
 						t = userID+'. '+(u == 'u'?t:'<span class="a">'+t+'</span>');
 					} else
 					if (dtp.rooms) {
-					var	k = [], a = '';
+						k = classNames, a = '';
 				//* room hidden:
 						if (t[0] == '.') k.push('gloom');
 				//* room frozen:
@@ -1150,9 +1157,6 @@ function showContent(sortOrder) {
 							+	'" data-title="'+a.substr(a.indexOf(': '));
 						}
 						if (a) k.unshift('room-title');
-				//* user's default room or mod status:
-						if (u) k.push(u);
-
 						t = '<a href="'+t+'/'+(k.length?'" class="'+k.join(' '):'')+a+'">'+t+'</a>';
 					} else
 				//* image post:
@@ -1273,7 +1277,7 @@ function showContent(sortOrder) {
 					)
 				);
 
-				if (roomDates) {
+				if (roomCount && roomDates) {
 				var	k = (insideOut?' class="'+insideOut+'"':'');
 					for (i in roomDates) lineHTML +=
 						'<div'+k+'>'
