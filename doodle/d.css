@@ -77,6 +77,19 @@ body, .task input:not([type="checkbox"]), .task select {
 	background-color: rgba(85, 85, 85, 0.8);
 	text-align: left;
 }
+.buttons a, .a.buttons {
+	display: inline-block;
+	text-decoration: none;
+	background-color: #777;
+	margin: 0;
+	padding: 0 1em;
+}
+.buttons a + a {
+	margin-left: 0.5em;
+}
+.buttons a:hover {
+	background-color: #aaa;
+}
 a, .a {
 	color: #888;
 }
@@ -132,6 +145,18 @@ a:hover, a.u:hover {
 }
 .task .arr {
 	padding: 0 !important;
+}
+.section .thread {
+	padding: 0;
+}
+.section .task, .section {
+	padding: 8px 0;
+}
+.section .task:first-child {
+	padding-top: 0;
+}
+.section .task:last-child {
+	padding-bottom: 0;
 }
 .room-title {
 	padding: 0 8px;
@@ -205,8 +230,11 @@ a:hover, a.u:hover {
 	border-color: #eee;
 }
 #task>.res>img, #task>img, #task .dump {
-	margin: 8px 8px 0 8px;
+	margin: 8px;
 	vertical-align: bottom;		/* <- removes extra bottom space (sub-baseline) */
+}
+#task>.res:last-child>img, #task>img:last-child, #task .dump:last-child {
+	margin-bottom: 0;
 }
 #task .rem {
 	font-weight: normal;

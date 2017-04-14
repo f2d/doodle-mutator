@@ -1,13 +1,27 @@
 <?php
 
+//* Constants only for internal use: ------------------------------------------
+
+define(HTML_VERSION, '2017-04-15 00:48');	//* <- change this to autoupdate old browser-cached pages
+define(HTACCESS_VERSION, '2017-03-25 03:35');	//* <- change this + open index as admin to autoupdate old .htaccess
+
+//* Function argument flags: --------------------------------------------------
+
+define(F_GET_FULL_IF_NONE, 1);
+define(F_GET_DIR_PART, 2);
+define(F_HIDE, 4);
+define(F_NATSORT, 8);
+
+//* ---------------------------------------------------------------------------
+
 function exit_if_not_mod($t = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
-		'Refresh any page cached before 2017-03-12 13:35'	//* <- change this line to invalidate browser cache after breaking changes
+		'Refresh any page cached before '.HTML_VERSION
 	.NL.	'Or if user key, options or date-related decoration changed: '.ME_VAL
 	.NL.	implode(NL, get_date_class())
 	).'"';
-	header('Etag: '.$q);
+	header("Etag: $q");
 	if (
 		!$GLOBALS['u_opts']['modtime304']
 	&&	isset($_SERVER[$m = 'HTTP_IF_MODIFIED_SINCE'])
@@ -18,51 +32,60 @@ function exit_if_not_mod($t = 0) {
 		header('HTTP/1.0 304 Not Modified');
 		exit;
 	}
-	header('Last-Modified: '.$t);
+	header("Last-Modified: $t");
 }
 
-function get_const($name) {return defined($name) ? constant($name) : '';}
 function rewrite_htaccess($write_to_file = 1) {
 	$start_mark = '# 8<-- start mark: '.NAMEPRFX.', version: ';
 	$end_mark = '# 8<-- end mark: '.NAMEPRFX.', placed automatically: ';
-	$new_mark = $start_mark.ROOTPRFX.' 2016-09-13 17:58';		//* <- change this to invalidate old version
+	$new_mark = $start_mark.ROOTPRFX.' '.HTACCESS_VERSION;
+
+	data_lock($lk = LK_MOD_HTA);
 	if (
-		!strlen($old = (is_file($f = '.htaccess') ? trim(file_get_contents($f)) : ''))
+		!strlen($old = (is_file($f = '.htaccess') ? trim_bom(file_get_contents($f)) : ''))
 	||	false === strpos($old, $new_mark)
 	||	false === strpos($old, $end_mark)
 	) {
-		$d = '('.implode('|', $GLOBALS['cfg_dir']).')(/([^/]+))?';
-		$ddre = str_regex_escaped($dd = get_const('DIR_DATA'));
-		$dere = get_const('DERE') ?: str_regex_escaped('.log');
+		$s = '+([^/]+/+)*';
+		$d = '('.implode('|', $GLOBALS['cfg_dir']).')(/+[^/]+)*';
+		$dd = mb_escape_regex(get_const('DATA_DIR') ?: get_const('DIR_DATA'));
 		$new = $new_mark.' -- Do not touch these marks. Only delete them along with the whole block.
 <IfModule rewrite_module>
 	RewriteEngine On
-	RewriteBase '.ROOTPRFX.'
-# virtual folders:'.($dd?'
-	RewriteRule ^'.$ddre.'.*$ . [L,R=301]':'').'
-	RewriteRule ^('.DIR_PICS.')(([^/])[^/]+\.([^/])[^/]+)$ $1$4/$3/$2'.'
-	RewriteRule ^'.$d.'$ $0/ [L,R=301]'.'
-	RewriteRule ^'.$d.'(/[-\d]*|[^?]*'.$dere.'([?/].*)?)$ . [L]
-# files not found:
-	RewriteCond %{REQUEST_FILENAME} -f [OR]
-	RewriteCond %{REQUEST_FILENAME} -d
-	RewriteRule ^.? - [S=2]
-	RewriteRule ^('.DIR_PICS.'|'.DIR_ARCH.'[^/]+/'.DIR_THUMB.').*$ err.png [L]
-	RewriteRule ^('.$d.'/).+$ $1 [L,R]'.'
+	RewriteBase '.ROOTPRFX.($dd?'
+
+# hide data:
+	RewriteRule ^'.$dd.' . [L,R]':'').'
+
+# expand simple image path:
+	RewriteRule ^('.DIR_PICS.'+)(([^/])[^/]+\.([^/])[^/]+)$ $1$4/$3/$2'.'
+
+# file found, skip next 4 lines:
+	RewriteCond %{REQUEST_FILENAME} -f
+	RewriteRule ^.? - [S=4]
+
+# file not found:
+	RewriteRule ^('.DIR_PICS.$s.'|'.DIR_ARCH.$s.DIR_THUMB.'+)[^/]+$ '.PIC_404.' [L]
+	RewriteRule ^('.DIR_ARCH.$s.')[^/]+$ $1 [L,R]
+
+# virtual folders:
+	RewriteRule ^'.$d.'/+[-\d]*$ . [L]'.'
+	RewriteRule ^'.$d.'$ $0/ [L,R]'.'
+
 </IfModule>
-'.$end_mark.date(TIMESTAMP, T0).' -- Manual changes inside will be lost on the next update.';
+'.$end_mark.date(TIMESTAMP, T0).' -- Manual changes inside will be lost on the next autoupdate.';
 		if ($old) {
-			$b_found = (false !== ($i = strpos($old, $start_mark)));
-			$before = ($b_found ? trim(substr($old, 0, $i)) : '');
+			$b_found = (false !== ($i = mb_strpos($old, $start_mark)));
+			$before = ($b_found ? trim(mb_substr($old, 0, $i)) : '');
 
-			$a_found = (false !== ($i = strpos($old, $end_mark)));
-			$after = ($a_found && false !== ($i = strpos($old, NL, $i)) ? trim(substr($old, $i)) : '');
+			$a_found = (false !== ($i = mb_strpos($old, $end_mark)));
+			$after = ($a_found && false !== ($i = mb_strpos($old, NL, $i)) ? trim(mb_substr($old, $i)) : '');
 
-			if ($b_found || $a_found) $new =
+			if ($b_found || $a_found) $new = (
 				(strlen($before) ? $before.NL.NL : '')
 			.	$new
 			.	(strlen($after) ? NL.NL.$after : '')
-			; else $new .= NL.NL.$old;
+			); else $new .= NL.NL.$old;
 		} else $old = 'none';
 		$changed = ($new != $old);
 	} else $new = 'no change';
@@ -85,8 +108,21 @@ $new";
 
 $report");
 	}
+	data_unlock($lk);
+
 	return $report;
 }
+
+function time_check_point($comment) {$GLOBALS['tcp'][microtime()][] = $comment;}
+
+//* ---------------------------------------------------------------------------
+//* Always use mb_* for text, but simple str* for non-empty checks,
+//* encoded URLs and binary content (BOM, images, etc);
+//* ---------------------------------------------------------------------------
+//* not sure about safety of explode("\n", 'UTF-8 text');
+//* not sure about mb_split() vs preg_split('//u');
+//* mb_split() takes regex without delimiters, and allows encoding other that UTF-8;
+//* ---------------------------------------------------------------------------
 
 function fix_encoding($text) {
 	global $fix_encoding_chosen;
@@ -94,8 +130,6 @@ function fix_encoding($text) {
 		$fix_encoding_chosen[] = ENC;
 		return $text;
 	}
-//* Apache / nginx: OK for GET archive search;
-//* nginx only: does not work for POST room name input or manual folder request via address bar:
 	if (function_exists('iconv')) {
 		foreach (explode(',', $ef = get_const('ENC_FALLBACK')) as $e) if (
 			strlen($e = trim($e))
@@ -106,7 +140,6 @@ function fix_encoding($text) {
 			return $fix;
 		}
 	}
-//* another futile attempt:
 	if (false !== ($e = mb_detect_encoding($text, $ef, true))) {
 		$fix_encoding_chosen[] = $e;
 		return mb_convert_encoding($text, ENC, $e);
@@ -114,24 +147,94 @@ function fix_encoding($text) {
 	return $text;
 }
 
-function str_regex_escaped($s) {return str_replace('.', '\\.', $s);}
-function str_replace_first($f, $to, $s) {return false === ($pos = strpos($s, $f)) ? $s : substr_replace($s, $to, $pos, strlen($f));}
-function abbr($a, $sep = '_') {foreach ((is_array($a)?$a:explode($sep, $a)) as $word) $r .= $word[0]; return $r;}
+function get_const($name) {return defined($s = mb_strtoupper($name)) ? constant($s) : '';}
+function abbr($a, $sep = '_') {foreach ((is_array($a) ? $a : mb_split_filter($a, $sep)) as $word) $r .= mb_substr($word,0,1); return $r;}
+function mb_escape_regex($s) {return preg_replace('~[.:?*|$\\\\/\^\[\](){}-]~u', '\\\\$0', $s);}	//* <- this works with "/" as regex delimiter
+function mb_normalize_slash($s) {return mb_str_replace('\\', '/', $s);}
+function mb_sanitize_filename($s) {return strtr($s, array('"' => "'", ':' => '_', '?' => '_', '*' => '_', '<' => '_', '>' => '_'));}
+function mb_str_split($s) {return preg_split('//u', $s);}
+function mb_split_filter($s, $by = '/', $limit = 0) {
+	return preg_split(
+		$by === NL
+		? '~\v+~u'
+		: '/('.mb_escape_regex($by).')+/u'
+	, $s, $limit, PREG_SPLIT_NO_EMPTY);
+}
+
+function mb_strpos_after ($where, $what) {return false !== ($pos = mb_strpos ($where, $what)) ? $pos + mb_strlen($what) : $pos;}
+function mb_strrpos_after($where, $what) {return false !== ($pos = mb_strrpos($where, $what)) ? $pos + mb_strlen($what) : $pos;}
+function mb_str_replace($what, $to, $where) {return implode($to, preg_split('/('.mb_escape_regex($what).')/u', $where));}
+function mb_str_replace_first($what, $to, $where) {
+	return (
+		false === ($pos = mb_strpos($where, $what))
+		? $where
+		: mb_substr($where, 0, $pos).$to.mb_substr($where, $pos + mb_strlen($what))
+	);
+}
+
+function str_replace_first($what, $to, $where) {
+	return (
+		false === ($pos = strpos($where, $what))
+		? $where
+		: substr_replace($where, $to, $pos, strlen($what))
+	);
+}
+
+function trim_bom($str) {return trim(str_replace(BOM, '', $str));}
 function trim_post($p, $len = 456) {
-	$s = trim(preg_replace('~\s+~us', ' ', $p));
+	$s = trim(preg_replace('~\s+~u', ' ', $p));
 	if ($len > 0) $s = mb_substr($s, 0, $len);
 	return POST ? htmlspecialchars($s) : $s;
 }
 
-function trim_room($r) {
-	return mb_strtolower(mb_substr(
-		preg_replace('/\.+/u', '.',
-		preg_replace('/[^\w\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}.!-]+/u', '_',
-		trim(trim($r), '\\/')
-	)), 0, ROOM_NAME_MAX_LENGTH));
+function trim_room($name, $also_allow_chars = '') {
+	$t = mb_escape_regex("$GLOBALS[cfg_room_prefix_chars]$also_allow_chars");
+	$x = '\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}';
+	$w = "-\\w$x$t";
+	return mb_substr(
+		preg_replace("/([^0-9a-z$x])\\1+/u", '$1',
+		preg_replace("/[^$w]+/u", '_',
+		trim(trim(mb_strtolower($name)), '\\/')
+	)), 0, ROOM_NAME_MAX_LENGTH);
 }
 
-function is_tag_attr($t) {return strpos($t, '<') === strpos($t, '>');}	//* <- if only both === false
+function encode_URL_parts($path, $raw = false) {
+	return implode('/', array_map(
+		$raw ? 'rawURLencode' : 'URLencode'
+	,	is_array($path) ? $path : mb_split_filter($path)
+	));
+}
+
+function encode_opt_value($v) {
+	if (URLencode($v) !== $v) return B64_PRFX.str_replace(
+		array('/', '+')
+	,	array('_', '-')
+	,	base64_encode($v)
+	);
+	return $v;
+}
+
+function decode_opt_value($v) {
+	if (0 === strpos($v, B64_PRFX)) return base64_decode(str_replace(
+		array('_', '-')
+	,	array('/', '+')
+	,	substr($v, strlen(B64_PRFX))
+	));
+	return $v;
+}
+
+function is_url_external($url) {
+	if ($url && ($s = $_SERVER['SERVER_NAME'])) {
+		$i = (strpos($url, '://'  ) ?: 0)+3;
+		$j = (strpos($url, '/', $i) ?: 0);
+		if ($s !== substr($url, $i, $j-$i)) return true;
+	}
+	return false;
+}
+
+function is_deny_arg($k) {return is_prefix($k, ARG_DENY);}
+function is_draw_arg($k) {return is_prefix($k, ARG_DRAW);}
+function is_tag_attr($t) {return mb_strpos($t, '<') === mb_strpos($t, '>');}	//* <- if only both === false
 function is_not_dot($path) {return !!trim($path, './\\');}
 function is_not_hidden($room) {
 	global $u_flag;
@@ -139,30 +242,169 @@ function is_not_hidden($room) {
 		GOD
 	||	$u_flag['mod']
 	||	$u_flag["mod_$room"]
-	||	$room[0] != get_const('ROOM_HIDE')
+	||	!get_room_type($room, 'hide_in_room_list')
 	);
 }
 
-function get_dir_contents($path = '.', $num_sort = 0, $hiding = 0) {
+function mkdir_if_none($file_path) {
+	if (
+		($i = mb_strrpos($file_path, '/'))
+	&&	($d = mb_substr($file_path, 0, $i))
+	&&	!is_dir($d)
+	&&	!is_file($d)
+	) mkdir($d, 0755, true);
+	return $file_path;
+}
+
+function get_dir_contents($path = '.', $flags = 0) {
 	$a = (is_dir($path) ? array_filter(scandir($path), 'is_not_dot') : array());
-	if ($a && $hiding) $a = array_filter($a, 'is_not_hidden');
-	if ($a && $num_sort) natcasesort($a);
+	if ($a && ($flags & F_HIDE)) $a = array_filter($a, 'is_not_hidden');
+	if ($a && ($flags & F_NATSORT)) natcasesort($a);
 	return $a;
 }
 
-function get_file_lines($path) {return is_file($path) ? file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : array();}
-function get_file_name($path, $full = 1, $delim = '/') {return false === ($rr = strrpos($path, $delim)) ? ($full?$path:'') : substr($path, $rr+1);}
-function get_file_ext($path, $full = 0) {return mb_strtolower(get_file_name($path, $full, '.'));}
-function get_room_skip_name($r) {return array(ME.'-skip-'.md5($r = rawURLencode($r)), $r);}
-function get_room_skip_list($k = '') {
-	return ($v = $_COOKIE[$k ?: reset(get_room_skip_name($GLOBALS['room']))])
-	?	array_slice(explode('/', $v, TRD_MAX_SKIP_PER_ROOM+1), 1, TRD_MAX_SKIP_PER_ROOM-($k?1:0))
-	:	array();
+function get_dir_rooms($source_subdir = '', $output_subdir = '', $flags = 0, $type = '') {
+	global $cfg_game_type_dir;
+	if ($s = $source_subdir ?: '') $s = trim($s, '/.').'/';
+	if ($o = $output_subdir ?: '') $o = trim($o, '/.').'/';
+	$a = array();
+	$types = (array)($type ?: $cfg_game_type_dir);
+	foreach ($types as $t) {
+		if ($t) $t = "$t/";
+		foreach (get_dir_contents("$s$t", $flags) as $r) {
+			if (($t || !in_array($r, $cfg_game_type_dir)) && is_dir("$s$t$r")) $a[] = "$o$t$r";
+		}
+	}
+	return $a;
 }
 
-function get_dir_top_file_id($d) {
+function get_file_lines($path) {
+	return (
+		is_file($path)
+		? mb_split_filter(trim_bom(file_get_contents($path)), NL)
+	//	? file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)
+		: array()
+	);
+}
+
+function get_file_ext($path, $flags = 0) {return mb_strtolower(get_file_name($path, $flags, '.'));}
+function get_file_dir($path, $flags = F_GET_FULL_IF_NONE, $delim = '/') {return get_file_name($path, $flags | F_GET_DIR_PART, $delim);}
+function get_file_name($path, $flags = F_GET_FULL_IF_NONE, $delim = '/') {
+	return (
+		false === ($pos = mb_strrpos($path, $delim))
+		? ($flags & F_GET_FULL_IF_NONE ? $path : '')
+		: (
+			$flags & F_GET_DIR_PART
+			? mb_substr($path, 0, $pos)	//* <- last delimiter not included
+			: mb_substr($path, $pos + mb_strlen($delim))
+		)
+	);
+}
+
+function get_room_skip_list($add = '', $room = '') {
+	$a = array();
+	if (
+		!$GLOBALS['room_type']['single_active_thread']
+	&&	($r = $room ?: $GLOBALS['room'])
+	) {
+		$room_sep = '//';
+		$skip_sep = '/';
+		$k = array();
+		$e = array(
+			encode_URL_parts($r, true)
+	//	,	encode_opt_value($r)		//* <- uses base64, but atob() in JS turns utf8 into garbage, not usable
+		);
+//* find existing list in cookies:
+		foreach ($e as $r) {
+			$k[] = $q = ME.'-skip-'.md5($r);
+			if ($v = $_COOKIE[$q]) {
+				$a = array_slice(
+					explode(
+						$skip_sep
+					,	end(explode($room_sep, $v, 2))
+					,	TRD_MAX_SKIP_PER_ROOM + 1
+					)
+				,	0
+				,	TRD_MAX_SKIP_PER_ROOM - ($add?1:0)
+				);
+				break;
+			}
+		}
+		if ($add) {
+//* if room name not yet defined, find shortest encoding result:
+			if (!$a) {
+				foreach ($e as $i => $j) if (strlen($j) < strlen($r)) {
+					$q = $k[$i];
+					$r = $j;
+				}
+			}
+//* prepend given value + return new cookie:
+			array_unshift($a, $add);
+			$v = implode($skip_sep, $a);
+			return "$q=$r$room_sep$v";
+		}
+	}
+//* if not adding, return the list array:
+	return $a;
+}
+
+function get_room_name_length($name, $arr = false) {
+	global $cfg_room_prefixes;
+	$found_prefixes = array();
+	do {
+		$found = 0;
+		foreach ($cfg_room_prefixes as $v) if (
+			0 === strpos($name, $v)
+		&&	!in_array($v, $found_prefixes)
+		) {
+			$found++;
+			$found_prefixes[] = $v;
+			$name = substr($name, strlen($v));
+		}
+	} while (strlen($name) && $found);
+	$l = mb_strlen($name);
+	return ($arr ? array($l, $name, $found_prefixes) : $l);
+}
+
+function get_room_type($room, $type = '') {
+	global $cfg_game_type_dir, $cfg_room_types;
+	$g = 'game_type';
+	$sub = mb_split_filter($room);
+	$name = array_pop($sub);
+//* 1) check game types in room subfolders:
+	if ($type) {
+		if ($v = $cfg_game_type_dir[$type]) return ($v ? in_array($v, $sub) : !$sub);
+		$result = 0;
+	} else {
+		$result = array();
+		foreach ((array)($sub ?: GAME_TYPE_DEFAULT) as $v) if (false !== ($k = array_search($v, $cfg_game_type_dir))) {
+			$result[$g] = $k;
+		}
+	}
+//* 2) check room name:
+	list($l, $name, $found_prefixes) = get_room_name_length($name, true);
+//* if any, match all defined criteria in each rule set:
+	foreach ($cfg_room_types as $set_id => $set) if (
+		(!isset($set['if_game_type']) || (isset($result[$g]) && $set['if_game_type'] === $result[$g]))
+	&&	(!($v = $set['if_name_prefix']) || in_array($v, $found_prefixes))
+	&&	(!($v = intval($set['if_name_length'    ])) || $l == $v)
+	&&	(!($v = intval($set['if_name_length_min'])) || $l >= $v)
+	&&	(!($v = intval($set['if_name_length_max'])) || $l <= $v)
+	) {
+//* latest found values for a key overwrite any previous:
+		if ($type) {
+			if (array_key_exists($type, $set)) $result = $set[$type];
+		} else {
+			$result['set'][] = $set_id;
+			foreach ($set as $k => $v) $result[$k] = $v;
+		}
+	}
+	return $result;
+}
+
+function get_dir_top_file_id($d, $e = '') {
 	$i = 0;
-	foreach (get_dir_contents($d) as $f) if (($n = intval($f)) && $i < $n) $i = $n;
+	foreach (get_dir_contents($d) as $f) if (($n = intval($f)) && (!$e || $f === "$n$e") && $i < $n) $i = $n;
 	return $i;
 }
 
@@ -172,13 +414,15 @@ function get_dir_top_filemtime($d) {
 	return $t;
 }
 
-function get_pic_normal_path($p) {return preg_replace('~(^|[\\/])([^._-]+)[^._-]*(\.[^.,;]+)([;,].*$)?~', '$2$3', $p);}
-function get_pic_resized_path($p) {return substr_replace($p, '_res', -4, 0);}
-function get_pic_subpath($p, $mk = 0) {
+function get_pic_normal_path($p) {return preg_replace('~(^|[\\/])([^._-]+)[^._-]*(\.[^.,;]+)([;,].*$)?~u', '$2$3', $p);}
+function get_pic_resized_path($p) {$s = '_res'; return (false === ($i = mb_strrpos($p, '.')) ? $p.$s : mb_substr($p,0,$i).$s.mb_substr($p,$i));}
+function get_pic_subpath($p, $mk = false) {
 	$p = get_pic_normal_path($p);
-	$n = DIR_PICS.$p[strrpos($p, '.')+1].'/'.$p[0].'/';
-	if ($mk && !is_dir($n)) mkdir($n, 0755, true);
-	return $n.($mk === ''?'':$p);
+	$i = mb_strpos_after($p, '.');
+	$e = mb_substr($p,$i,1);
+	$n = mb_substr($p,0,1);
+	$p = DIR_PICS."$e/$n/$p";
+	return ($mk ? mkdir_if_none($p) : $p);
 }
 
 function get_pic_url($p) {return ROOTPRFX.(PIC_SUB?get_pic_subpath($p):DIR_PICS.$p);}
@@ -231,8 +475,8 @@ function get_draw_app_list($allow_upload = true) {
 	$a = array('list' => $a.'.');
 	if ($n !== DRAW_APP_NONE) {
 		$f = $n;
-		if (false !== ($s = strrpos($n, '.'))) $n = substr($n, 0, $s); else $f .= DRAW_APP_DEFAULT_EXT;
-		if (false !== ($s = strrpos($n, '/'))) $n = substr($n, $s+1);
+		if (false !== ($s = mb_strrpos      ($n, '.'))) $n = mb_substr($n, 0, $s); else $f .= DRAW_APP_DEFAULT_EXT;
+		if (false !== ($s = mb_strrpos_after($n, '/'))) $n = mb_substr($n, $s);
 		$ext = get_file_ext($f);
 		$f = ROOTPRFX.$f.(LINK_TIME?'?'.filemtime($f):'');
 		$a['name'] = $n;
@@ -256,20 +500,20 @@ function get_draw_app_list($allow_upload = true) {
 }
 
 function get_draw_vars($send = '') {
-	global $cfg_draw_vars, $tmp_wh, $u_opts, $query;
+	global $cfg_draw_vars, $cfg_wh, $u_opts, $query;
 	$vars = ($send?"$send;":'').DRAW_REST.
 		';keep_prefix='.DRAW_PERSISTENT_PREFIX
 	.($u_opts['save2common']?'':
 		';save_prefix='.DRAW_BACKUPCOPY_PREFIX.';saveprfx='.NAMEPRFX
 	);
 	foreach ($cfg_draw_vars as $k => $v) {
-		if (($i = $GLOBALS['u_'.$v]) || ($i = get_const(strtoupper($v)))) $vars .= ";$k=$i";
+		if (($i = $GLOBALS["u_$v"]) || ($i = get_const($v))) $vars .= ";$k=$i";
 	}
-	if (($res = $query['draw_res']) && strpos($res, 'x')) $wh = explode('x', $res);
+	if (($res = $query['draw_res']) && false !== mb_strpos($res, 'x')) $wh = array_map('intval', mb_split('x', $res, 2));
 	if ($send) {
 		foreach (array('DEFAULT_', 'LIMIT_') as $i => $j)
-		foreach ($tmp_wh as $k => $l) {
-			$p = strtolower($l[0]).($i?'l':'');
+		foreach ($cfg_wh as $k => $l) {
+			$p = mb_strtolower(mb_substr($l,0,1)).($i?'l':'');
 			if ((!$i && $wh && ($v = $wh[$k])) || ($v = get_const("DRAW_$j$l"))) $vars .= ";$p=$v";
 		}
 	}
@@ -307,10 +551,11 @@ caps_width = ".DRAW_PREVIEW_WIDTH;
 }
 
 function get_time_html($t = 0) {
+	$sep = 'T';
 	$f = date(DATE_ATOM, $uint = ($t ?: T0));
-	$i = strpos($f, 'T');
-	$d = substr($f, 0, $i);
-	$t = substr($f, $i+1, 8);
+	$i = mb_strpos($f, $sep);
+	$d = mb_substr($f, 0, $i);
+	$t = mb_substr($f, $i + mb_strlen($sep), 8);
 	return '<time datetime="'.$f.'" data-t="'.$uint.'">'.$d.' <small>'.$t.'</small></time>';
 }
 
@@ -320,9 +565,9 @@ function get_time_elapsed($t = 0) {
 }
 
 function get_time_seconds($t) {
-	if (strrpos($t, ':') > 0) {
+	if (mb_strrpos($t, ':') > 0) {
 		$sec = 0;
-		foreach (explode(':', $t, 3) as $n) $sec = $sec*60 + intval($n);
+		foreach (explode(':', $t) as $n) $sec = $sec*60 + intval($n);
 		return ($t[0] == '-'?-$sec:$sec);
 	}
 	return floor($t);	//* <- 32-bit signed integer overflow workaround
@@ -345,10 +590,13 @@ function format_time_units($t) {
 	return $r;
 }
 
-function format_filesize($B, $D = 2) {
-	if ($F = floor((strlen($B) - 1) / 3)) $S = 'BkMGTPEZY';
-	else return $B.' B';
-	return sprintf("%.{$D}f", $B/pow(1024, $F)).' '.$S[$F].'B';
+function format_filesize($b = 0, $frac = 2) {
+	$m = 'BkMGTPEZY';
+	if ($i = floor((strlen($b) - 1) / 3)) {
+		$b = sprintf("%.{$frac}f", $b/pow(1024, $i));
+		return "$b $m[$i]$m[0]";
+	}
+	return "$b $m[0]";
 }
 
 function optimize_pic($filepath) {
@@ -357,37 +605,58 @@ function optimize_pic($filepath) {
 	&&	($f = $filepath)
 	&&	($ext = get_file_ext($f))
 	) {
-		$bad_path = "$f.bad";
-		$bak_path = "$f.bak";
+		$out_path = $f.($out = '.out');
+		$bad_path = $f.($bad = '.bad');
+		$bak_path = $f.($bak = '.bak');
 		$d = DIRECTORY_SEPARATOR;
 		$i = (function_exists('ini_get') && function_exists('ini_set'));
 		$m = 'max_execution_time';
 		global $cfg_optimize_pics;
 		foreach ($cfg_optimize_pics as $format => $tool) if ($ext == $format)
 		foreach ($tool as $arr) {
-			list($program, $command) = $arr;
+			list($program, $command) = array_map('mb_normalize_slash', $arr);
+			$program_name = get_file_name($program);
 			if (is_file($p = $program) || is_file($p .= '.exe')) $p = "./$p";
+			else if (PIC_OPT_TRY_GLOBAL_EXEC) $p = $program_name;
 			else continue;
 
 			$return_code = 0;
 			$output = array('');
 			$cmd = sprintf($command, $p, $f);
 			if ($d !== '/') $cmd = str_replace('/', $d, $cmd);
-			if ($i) ini_set($m, ini_get($m) + 30);
+			if ($i) ini_set($m, ini_get($m) + max(1, intval(PIC_OPT_ADD_TIMEOUT)));
 
-			data_lock($lk = 'pic');
+			data_lock($lk = LK_PIC_OPT);
 			$return = exec($cmd, $output, $return_code);
-			data_unlock($lk);
-
-			if (
-				is_file($bak_path)
-			&&	($bak_size = filesize($bak_path))
-			) {
+			$done = ($return_code ? 'error' : 'done');
+			if (is_file($out_path)) {
+				$size = filesize($f);
+				$out_size = filesize($out_path);
+				$old = "old $f = $size bytes";
+				$new = "new $out_path = $out_size bytes";
+				if (
+					$out_size
+				&&	($out_size < $size)
+				&&	!$return_code
+				&&	unlink($f)
+				) {
+					$ren = (rename($out_path, $f) ? 'renamed' : 'could not rename');
+					$done .= ",\n deleted $old,\n $ren $new -> $f";
+				} else
+				if (is_file($f)) {
+					$done .= ",\n kept $old";
+					if (is_file($out_path)) {
+						$del = (unlink($out_path) ? 'deleted' : 'not deleted');
+						$done .= ",\n $del $new";
+					}
+				}
+			} else
+			if (is_file($bak_path) && ($bak_size = filesize($bak_path))) {
 				$del = (
 					($size = filesize($f))
 					? (
 						($rest = rename($f, $bad_path))
-						? 'renamed to *.bad'
+						? "renamed to *$bad"
 						: 'not renamed'
 					) : (
 						($rest = unlink($f))
@@ -402,22 +671,20 @@ function optimize_pic($filepath) {
 				);
 				$done = "failed, $f = $size bytes, $del$rest";
 				if (!$return_code) $return_code = '0, fallback';
-			} else $done = (
-				$return_code
-				? 'error'
-				: 'done'
-			);
+			}
+			data_unlock($lk);
+
 			if ($return_code) {
 				$o = trim(preg_replace('~\v+~u', NL, implode(NL, (array)$output)));
 				if (strlen($o)) {
-					if (false !== strpos($o, NL)) $o = NL.'['.indent($o).']';
+					if (false !== mb_strpos($o, NL)) $o = NL.'['.indent($o).']';
 				} else $o = 'empty';
 				data_log_action("Optimization $done.
 Command line: $cmd
 Return code: $return_code
 Return text: $return
 Shell output: $o");
-			} else return;
+			} else return $program_name;
 		}
 	}
 }
@@ -427,7 +694,7 @@ Shell output: $o");
 function indent($t, $n = 0) {
 	return (
 		!strlen($t = trim($t))
-	||	(!$n && false === strpos($t, NL))
+	||	(!$n && false === mb_strpos($t, NL))
 	)
 	? $t
 	: preg_replace(
@@ -571,10 +838,14 @@ function get_template_hint($t) {
 		,	array('<a href="', '" onClick="', '</a>', '<span class="', '">', '</span>', NL)
 		,	nl2br(
 				htmlspecialchars(
-					preg_replace_callback(
-						'~\b\d+s\b~'
-					,	'format_time_units'
-					,	$t
+					preg_replace(
+						'~([\\\\])\\v+~u'
+					,	'$1'
+					,	preg_replace_callback(
+							'~\b\d+s\b~u'
+						,	'format_time_units'
+						,	$t
+						)
 					)
 				)
 			,	false
@@ -607,7 +878,7 @@ $k = $v$p";
 }
 
 function get_template_page($page) {
-	global $lang, $tmp_announce, $tmp_post_err;
+	global $lang, $tmp_announce, $tmp_post_err, $room;
 	if (!is_array($j = $page['js'] ?: array())) $j = array($j => 1);
 	$R = !!$j['arch'];
 	$RL = $page['link'] ?? '';
@@ -621,7 +892,7 @@ function get_template_page($page) {
 			if (strlen($v)) {
 				if (MOD) $v = "<span id=\"$k\">$v</span>";
 				$v = ": $v";
-				$c = (false !== strpos($k, 'stop')?'cold':'dust');
+				$c = (false !== mb_strpos($k, 'stop')?'cold':'dust');
 			} else $c = 'new';
 			$anno[$c][] = $tmp_announce[$k].$v;
 		}
@@ -633,7 +904,7 @@ function get_template_page($page) {
 				'trd_arch' => 'gloom'
 			,	'trd_miss' => 'warn'
 			);
-			if (!is_array($a)) $a = preg_split('~\W+~', $a);
+			if (!is_array($a)) $a = mb_split_filter($a, ARG_ERROR_SPLIT);
 			foreach ($a as $v) if ($v = trim($v)) {
 				$anno[$e_class[$v] ?: 'report'][] = $tmp_post_err[$v] ?: $v;
 			}
@@ -692,7 +963,7 @@ function get_template_page($page) {
 .($canon?'
 <link rel="canonical" href="'.$canon.'">':'')
 .($R || ME_VAL?'
-<link rel="index" href="//'.$_SERVER['SERVER_NAME'].ROOTPRFX.'">':'')
+<link rel="index" href="//'.$_SERVER['SERVER_NAME'].ROOTPRFX.($room?'" data-room="'.$room:'').'">':'')
 .(($v = $page['head'])?NL.$v:'')
 .(($v = $page['title'])?NL."<title>$v</title>":'');
 
@@ -754,14 +1025,5 @@ function get_template_page($page) {
 .'</body>
 </html>';
 }
-
-//* ---------------------------------------------------------------------------
-
-$arch_list_href = ROOTPRFX.DIR_ARCH;
-$room_list_href = ROOTPRFX.DIR_ROOM;
-$tmp_wh = array('WIDTH','HEIGHT');
-$tmp_room_new = '{'.$room_list_href.'new/|new}';
-if ($s = get_const('ROOM_HIDE')) $tmp_room_new_hide = '{'.$room_list_href.($s .= 'test')."/|$s}";
-if ($s = get_const('ROOM_DUMP')) $tmp_room_new_dump = '{'.$room_list_href.($s .= 'dump')."/|$s}";
 
 ?>

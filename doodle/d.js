@@ -3,9 +3,9 @@
 
 ,	regClassHid = getClassReg('hid')
 ,	regClassAlt = getClassReg('alt|ok')
-,	regClassAnno = getClassReg('anno')
 ,	regClassPost = getClassReg('post')
 ,	regClassThread = getClassReg('thread')
+,	regClassSkipFilter = getClassReg('anno|x3')
 ,	regTagDiv = /^div$/i
 ,	regTagDivP = /^(div|p)$/i
 ,	regTagForm = /^form$/i
@@ -22,6 +22,7 @@
 ,	regSpaceHTML = /\s|&nbsp;|&#8203;/gi
 ,	regTrim = getTrimReg('\\s')
 ,	regTrimPun = getTrimReg(':,.')
+,	regTrimSlash = getTrimReg('\\/')
 ,	regTrimWord = getTrimReg('\\W')
 
 ,	splitSec = 60
@@ -30,8 +31,11 @@
 ,	NW = '&#8203;'
 ,	CS = 'checkStatus'
 ,	CM = 'checkMistype'
-,	drawQuery = '?draw'
-,	checking, flag = {}, param = {}, inputHints = {}
+,	checking, flag = {}, inputHints = {}
+,	param = {
+		task_link_prefix: '?'
+	,	task_link: '?draw'
+	}
 ,	count = {
 		u: 0
 	,	uLast: ''
@@ -54,12 +58,17 @@
 	,	d: 'burnt'
 	,	f: 'full'
 	}
-,	room = location.pathname.split('/').slice(-2)[0] || 'room'
 ,	rootPath = gn('link').reduce(function(r,e) {
 		return e.rel == 'index' && e.href
-		? e.href.replace(/^(\w+:)?\/\/+[^\/]+\/*/, '/')
+		? (room = e.getAttribute('data-room'), e.href.replace(/^(\w+:)?\/\/+[^\/]+\/*/, '/'))
 		: r;
 	}) || '/'
+,	room = (
+		room
+	||	location.pathname.slice(rootPath.length).replace(regTrimSlash, '').split('/').slice(1).join('/')
+	||	location.pathname.replace(regTrimSlash, '').split('/').slice(-1)[0]
+	||	'room'
+	)
 ,	touch = ('ontouchstart' in document.documentElement)
 ,	insideOut = (touch?'':'date-out')
 
@@ -87,8 +96,12 @@ if (lang == 'ru') la = {
 	,	thread: 'Перейти к той нити, в которой был найден этот пост.'
 	,	name: 'Искать этого автора.'
 	}
+,	task: {
+		change: 'Другое'
+	,	draw: 'Рисовать'
+	,	desc: 'Писать'
+	}
 ,	draw_test: 'Попробовать'
-,	draw: 'Рисовать'
 ,	check: 'Нажмите, чтобы проверить и продлить задание.'
 ,	task_mistype: 'Тип задания сменился, обновите страницу или нажмите сюда.'
 ,	task_changed: 'Задание было изменено другими действиями за прошедшее время.'
@@ -162,8 +175,12 @@ if (lang == 'ru') la = {
 	,	thread: 'Go to the thread, where this post is from.'
 	,	name: 'Search this name.'
 	}
+,	task: {
+		change: 'Other'
+	,	draw: 'Draw'
+	,	desc: 'Write'
+	}
 ,	draw_test: 'Try drawing'
-,	draw: 'Draw'
 ,	check: 'Click this to verify and prolong your task.'
 ,	task_mistype: 'Task type changed, please reload the page or click here.'
 ,	task_changed: 'Task was changed by some actions in the meantime.'
@@ -331,16 +348,27 @@ function getToggleButtonHTML(content, open) {
 	+	'</a>';
 }
 
+function getTagAttrIfNotEmpty(name, values, delim) {
+	if (name) {
+	var	a = (values.filter ? values : [values]).filter(function(v) {return !!v;});
+		if (a.length) return ' '+name+'="'+a.join(delim || ' ')+'"';
+	}
+	return '';
+}
+
 function getToggleThreadHTML(param) {
 var	o = param.open || 0
-,	c = param.headerClass || 0
 ,	h = param.headerText || 0
+,	c = param.contentClass || 0
 	;
-	return	'<div'+(c?' class="'+c+'"':'')+'>'
+	if (c.split) c = c.split(' ');
+	if (!c.join) c = [c];
+	if (!o) c.push('hid');
+	return	'<div'+getTagAttrIfNotEmpty('class', param.headerClass)+'>'
 	+		(h?h+' ':'')
 	+		getToggleButtonHTML(param.buttonText || la.hint.show, o)
 	+	'</div>'
-	+	'<div'+(o?'':' class="hid"')+'>'
+	+	'<div'+getTagAttrIfNotEmpty('class', c)+'>'
 	+		param.content
 	+	'</div>';
 }
@@ -466,7 +494,9 @@ var	r = new XMLHttpRequest();
 				if (k = id('task')) {
 					i = (e = gn('img', k)).length;
 					if (!i == !!img) {
-						e = s, error = 1;
+						k = param.task_link_prefix + (img?'desc':'draw');
+						e = s;
+						error = 1;
 						while (!regTagDivP.test(e.tagName) && (i = e.parentNode)) e = i;
 						e = cre('b',e,t);
 						e.id = CM;
@@ -474,7 +504,7 @@ var	r = new XMLHttpRequest();
 						e.innerHTML =
 							'<b class="date-out l">'
 						+		'<b class="report">'
-						+			la.task_mistype.replace(/\s(\S+)$/, ' <a href="'+drawQuery+'">$1</a>')
+						+			la.task_mistype.replace(/\s(\S+)$/, ' <a href="'+k+'">$1</a>')
 						+		'</b>'
 						+	'</b>';
 					} else
@@ -515,7 +545,10 @@ var	r = new XMLHttpRequest();
 			checking = 0;
 		} else s.textContent = la.load+r.readyState;
 	};
-	r.open('GET', f?'--':'-', true);
+	r.open('GET', f
+		? (param.check_task_post || param.check_task_auto || '--')
+		: (param.check_task_keep || param.check_task_manual || '-')
+	, true);
 	r.send();
 	if (event) return false;
 }
@@ -564,17 +597,21 @@ var	r = '_res';
 	);
 }
 
+function getNormalizedText(str) {return (str || '').replace(regTrim, '').toLowerCase();}
 function filter(event, e) {
 	if (event) e = eventStop(event).target;
 	if (!e) return;
-var	f = Math.max(0, orz(e.getAttribute('data-filter')))
-,	v = (e.value || '').replace(regTrim, '').toLowerCase()
+var	v = getNormalizedText(e.value)
 ,	k = 'lastFilterValue'
 ,	i = e[k]
 	;
 	if (event && (i ? (i === v) : !v)) return;
+
 	e[k] = v;
-var	containers = showContent('last')
+var	f_type = e.getAttribute('data-filter') || ''
+,	f_num = Math.max(0, orz(f_type))
+,	va = (!f_num && f_type ? v.split(f_type) : 0)
+,	containers = showContent('last')
 	;
 	for (var c_i = 0, c_len = containers.length; c_i < c_len; c_i++) {
 	var	container = e = containers[c_i]
@@ -584,7 +621,7 @@ var	containers = showContent('last')
 		if (!threads.length) threads = [e];
 		for (var t_i = 0, t_len = threads.length; t_i < t_len; t_i++) {
 		var	thread = e = threads[t_i]
-		,	posts = gn('div', e).filter(function(e) {return regClassPost.test(e.className) && !regClassAnno.test(e.className);})
+		,	posts = gn('div', e).filter(function(e) {return regClassPost.test(e.className) && !regClassSkipFilter.test(e.className);})
 		,	foundPosts = 0
 		,	imgPost = 0
 		,	eqAlt = 0
@@ -594,34 +631,61 @@ var	containers = showContent('last')
 			for (var p_i = 0, p_len = posts.length; p_i < p_len; p_i++) {
 			var	post = e = posts[p_i]
 			,	found = 1
+			,	exact = 0
+			,	a = 0
 			,	c = 0
 				;
 				if (v.length) {
-					while (e && e.firstElementChild == (c = e.lastElementChild)) e = c;
-					if (e && c) {
-						if (f > 1) e = c; else
-						if (f > 0) e = gn('p', e).filter(function(p) {return p.parentNode == e;}).slice(-1)[0];
+					if (c = e.getAttribute('data-filter-value')) {
+						c = getNormalizedText(c);
+						if (va) a = c.split(f_type);
+					} else
+					if (f_num == f_type) {
+						while (e && e.firstElementChild == (c = e.lastElementChild)) e = c;
+						if (e && c) {
+							if (f_num > 1) e = c; else
+							if (f_num > 0) e = gn('p', e).filter(function(p) {return p.parentNode == e;}).slice(-1)[0];
+						}
+						c = (e ? getNormalizedText((e.firstChild || e).textContent) : '');
 					}
-					c = '';
-					if (e
-					&&	(c = (e.firstChild || e).textContent)
-					&&	(c = c.replace(regTrim, '')).length
-					&&	(c = c.toLowerCase()).indexOf(v) < 0
-					) found = 0;
-					else eqAlt = ((c = (c === v)) ? !eqAlt : 0);
+					if (a) {
+						i = va.length-1;
+						if (
+							(i > 0 && va[0] !== a[0])
+						||	a[1].indexOf(va[i]) < 0
+						) found = 0;
+					} else if (c && c.indexOf(v) < 0) found = 0;
+					if (found) {
+						exact = (c === v || (a && a[1] === v));
+						eqAlt = (c ? !eqAlt : 0);
+					} else c = 0;
 				}
 				if (found) {
 					i = gn('img', post).length;
 					if (!foundPosts || !i || (!i == !imgPost)) alt = !alt;
+					if (!v === !c) ++foundPosts;
 					imgPost = i;
-					toggleClass(post, 'alt', (c ? eqAlt : alt)?-1:1);
-					toggleClass(post, 'ok', c?1:-1);
+					toggleClass(post, 'alt', (exact ? eqAlt : alt)?-1:1);
+					toggleClass(post, 'ok', exact?1:-1);
 				} else imgPost = 1;
-				post.style.display = (found?(++foundPosts, ''):'none');
+				post.style.display = (found?'':'none');
 			}
 			thread.style.display = (foundPosts?(++foundThreads, ''):'none');
 		}
 		container.style.display = (foundThreads?'':'none');
+	}
+}
+
+function filterPrefix(p) {
+	if (e = id('filter')) {
+		eventStop(0,1,1);
+	var	e
+	,	v = e.value || ''
+	,	j = e.getAttribute('data-filter') || '/'
+	,	i = v.lastIndexOf(j)
+		;
+		e.value = p+(i < 0 ? v : v.slice(i+j.length));
+		filter(0, e);
 	}
 }
 
@@ -649,15 +713,21 @@ var	keep = (e?e.getAttribute('data-keep'):0) || ''
 ,	l = keep.length
 	;
 	if (v == 'unskip') {
-	var	m,a = document.cookie.split(/;\s*/), i = a.length, r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+)\/(.*)$/i;
+	var	m,n,b = 'base64:'
+	,	a = document.cookie.split(/;\s*/)
+	,	i = a.length
+	,	g = b.length
+	,	r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+?\/+(?:[^\/]+?\/{2})?)(.*)$/i
+		;
 		while (i--) if (
-			(m = a[i].match(r))
-		&&	(m[2] = decodeURIComponent(m[2]))
+			(m = decodeURIComponent(a[i]).match(r))
+		&&	(n = m[2].replace(regTrimSlash, ''))
+	//	&&	(n.slice(0,g) === b ? (n = atob(n.slice(g))) : true)	//* <- atob() turns utf8 into garbage, not usable
 		&&	(!keep || keep !== m[1].substr(0,l))
-		&&	(!room || room === m[2])
+		&&	(!room || room === n)
 		) {
 			k.push(m[1]);
-			j.push(m[2]+': '+getFormattedNumUnits(m[3].split('/').length, la.clear[v].unit));
+			j.push(n+': '+getFormattedNumUnits(m[3].split('/').length, la.clear[v].unit));
 		}
 	} else
 	if (v == 'unsave' && LS && (i = LS.length)) {
@@ -995,22 +1065,26 @@ function showContent(sortOrder) {
 						t = (optionNames = t.split(j)).shift().replace(regTrimPun, '')+':';
 					} else
 					if (dtp.rooms && sep) {
+				//* arch link:
+						j = '<a href="'
+						+	param.archives
+						+	(param.type?param.type+'/':'')
+						+	tab[2]
+						+ '/">';
 						if (roomCount && t.indexOf(sep) >= 0) {
 							k = t.split(sep).map(orz);
 				//* last arch date:
-							if (k.length > 3) {
-								if (i = k[3]) {
-									roomDates['a '+(insideOut?'r':'l')] = i = getFTimeIfTime(i);
-									if (count.uLast < i) count.uLast = i;
-								}
-								if (!count.u.length) count.u = [0,0,0];
-								for (i in (k = k.slice(0,3))) count.u[i] += k[i];
-								if (i = k[2]) k[2] = '<a href="'+param.archives+tab[2]+'/">'+i+'</a>';
+							if (k.length > 3 && (i = k[3])) {
+								roomDates['a '+(insideOut?'r':'l')] = i = getFTimeIfTime(i);
+								if (count.uLast < i) count.uLast = i;
 							}
+							if (!count.u.length) count.u = [0,0,0];
+							for (i in (k = k.slice(0,3))) count.u[i] += k[i];
+							if (i = k[2]) k[2] = j+i+'</a>';
 							t = k.join(sep);
-						} else if (tab[2] && notEmpty(t)) {
-							t = '<a href="'+param.archives+tab[2]+'/">'+t+'</a>';
-						}
+						} else
+				//* date hidden:
+						if (tab[2] && notEmpty(t)) t = j+t+'</a>';
 					} else {
 					var	time = t = getFTimeIfTime(t);
 						if (dtp.found) t =
@@ -1141,7 +1215,8 @@ function showContent(sortOrder) {
 						t = userID+'. '+(u == 'u'?t:'<span class="a">'+t+'</span>');
 					} else
 					if (dtp.rooms) {
-						k = classNames, a = '';
+						j = (param.type?param.type+'/':''), k = classNames, a = '';
+						postAttr += '" data-filter-value="'+(j || '/')+t;
 				//* room hidden:
 						if (t[0] == '.') k.push('gloom');
 				//* room frozen:
@@ -1157,7 +1232,10 @@ function showContent(sortOrder) {
 							+	'" data-title="'+a.substr(a.indexOf(': '));
 						}
 						if (a) k.unshift('room-title');
-						t = '<a href="'+t+'/'+(k.length?'" class="'+k.join(' '):'')+a+'">'+t+'</a>';
+						t = '<a href="'
+						+	j+t+'/'
+						+	(k.length?'" class="'+k.join(' '):'')+a
+						+ '">'+t+'</a>';
 					} else
 				//* image post:
 					if (tab.length > 3 && notEmpty(a = tab[3])) {
@@ -1323,7 +1401,7 @@ function showContent(sortOrder) {
 							m += ' onClick="window.open(\''+(
 								dtp.users
 								? (param.left_link || '')+userID+'\',\'Info\',\'width=400,height=400'
-								: postID+'\',\'Report\',\'width=656,height=300'
+								: (param.report_to || '')+postID+'\',\'Report\',\'width=656,height=300'
 							)+'\')"';
 						}
 					}
@@ -1373,13 +1451,13 @@ function showContent(sortOrder) {
 	,	alt = 1
 	,	tableRow = []
 	,	lines = threadText.split('\n')
-	,	line
+	,	line,s,t
 		;
 		for (var l_i in lines) if (notEmpty(line = lines[l_i])) threadHTML += getLineHTML(line);
 
 		if (notEmpty(threadHTML)) {
 			if (addMarks) threadsMarks.push(threadMark);
-			if ((dtp.found || dtp.reports) && (m = param.room)) {
+			if ((dtp.found || dtp.reports) && (t = param.room)) {
 				threadHTML = getToggleThreadHTML(
 					{
 						content: threadHTML
@@ -1388,13 +1466,32 @@ function showContent(sortOrder) {
 					,	headerText:
 							'<a href="'
 						+	(dtp.reports ? param.rooms : '')
-						+	(m === '*' ? param.day_link : m+'/')
+						+	(t === '*' ? param.day_link : t+'/')
 						+	'" class="anno dust">'
-						+		m
+						+		t
 						+	'</a>'
 					,	buttonText: (dtp.found ? la.room_arch : la.room_logs)
 					}
 				);
+			} else
+			if (dtp.rooms && (t = param.type_title || param.type)) {
+				++sectionCount;
+				s = param.type || '';
+				threadHTML = getToggleThreadHTML(
+					{
+						content: threadHTML
+					,	open: 1
+					,	headerClass: 'post alt x3'
+					,	headerText:
+							'<a href="'
+						+	(s?s+'/':'.')
+						+	'" class="anno dust">'
+						+		t
+						+	'</a>'
+					,	buttonText: la.marks.rooms
+					}
+				);
+				param.type = param.type_title = null;
 			}
 			return threadHTML;
 		}
@@ -1439,6 +1536,7 @@ var	flagVarNames = ['flag', 'flags']
 
 	var	raw = e.value || e.innerHTML
 	,	dtp = o0(t, regSpace, 1)	//* <- split into object properties
+	,	sectionCount = 0
 	,	selfID = ''
 	,	linesToSort = []
 	,	threadsHTML = []
@@ -1527,6 +1625,12 @@ var	flagVarNames = ['flag', 'flags']
 
 		if (threadsHTML.length) {
 		var	e = cre('div', p, e);
+			if (sectionCount) {
+				e.className = 'multi-thread section';
+				e.threadsHTML = e.innerHTML = threadsHTML.map(
+					function(v) {return '<div class="thread">'+v+'</div>';}
+				).join('');
+			} else
 			if (threadsHTML.length > 1) {
 		//* multiple threads, top bar with counters:
 			var	o = {
@@ -1545,7 +1649,7 @@ var	flagVarNames = ['flag', 'flags']
 				for (i in la.groups) if (dtp[i]) {a = la.groups[i]; break;}
 				o.left.push(
 					'<a href="javascript:showContent()">'
-				+		a+': '+threadsHTML.length
+				+		a+': '+(sectionCount || threadsHTML.length)
 				+	'</a>'
 				);
 				if (flag.c) for (i in count) if (k = count[i]) {
@@ -1716,21 +1820,45 @@ bnw.adorn = function(i) {
 };
 
 for (i in (a = gn('time'))) if ((e = a[i]) && (t = e.getAttribute('data-t')) && t > 0) e.outerHTML = getFormattedTime(t);
-if (e = id('filter')) e.onchange = e.onkeyup = filter;
 
 if (k = id('task')) {
 //* room task:
 
 	function addTaskBtn(content, attr) {
-	var	i,e = cre('a', taskTop, id('task-text'));
-		e.className = 'r';
-		e.innerHTML = '「'+content+'」';
+	var	i,e = gc('buttons', taskTop)[0];
+		if (!e) {
+			e = cre('span', taskTop, id('task-text'));
+			e.className = 'buttons r';
+		}
+		e = cre('a', e, e.firstElementChild);
+		e.innerHTML = content;
 		if (attr) for (i in attr) e.setAttribute(i, attr[i]);
 	}
 
+var	t = k.getAttribute('data-t')
+,	n = (t !== null)
+	;
 	if (taskTop = gn('p',k)[0]) {
+		if (j = k.getAttribute('data-free')) {
+			addTaskBtn(
+				la.task['change']
+			,	{
+					href: param.task_link_prefix + 'change'
+				}
+			);
+		}
+		if (j = k.getAttribute('data-change')) {
+			param.task_link = param.task_link_prefix + j;
+			if (!n) addTaskBtn(
+				la.task[j]
+			,	{
+					href: param.task_link
+				}
+			);
+		}
 		if (j = k.getAttribute('data-skip')) {
-			addTaskBtn('X'
+			addTaskBtn(
+				'X'
 			,	{
 					href: 'javascript:skipMyTask('+j+')'
 				,	title: la.skip_hint
@@ -1738,7 +1866,8 @@ if (k = id('task')) {
 			);
 		}
 		if (j = k.getAttribute('data-unskip')) {
-			addTaskBtn(la.unskip
+			addTaskBtn(
+				la.unskip
 			,	{
 					href: 'javascript:void '+j.split(/\D+/, 1)[0]
 				,	title: la.unskip_hint
@@ -1748,25 +1877,20 @@ if (k = id('task')) {
 			);
 		}
 	}
-	if ((j = k.getAttribute('data-t')) !== null) {
+	if (n) {
 		if (
-			(j = orz(j))
+			(j = orz(t))
 		&&	(i = gi('submit',k)[0])
 		&&	(f = getParentByTagName(i, 'form'))
 		) {
 			f.setAttribute('onsubmit', 'return checkMyTask(event, this)');
 		}
 		if (taskTop) {
-			if (j)
-			addTaskBtn('<span id="'+CS+'">?</span>'
+			if (j) addTaskBtn(
+				'<span id="'+CS+'">?</span>'
 			,	{
 					href: 'javascript:checkMyTask()'
 				,	title: ''+new Date(j*1000)+' \r\n'+la.check
-				}
-			); else
-			addTaskBtn(la.draw
-			,	{
-					href: drawQuery
 				}
 			);
 		}
@@ -1849,6 +1973,16 @@ if (k = id('task')) {
 showContent();
 
 if (e = id('time-zone')) e.innerHTML = getFormattedTimezoneOffset();
+if (e = id('filter')) {
+	e.onchange = e.onkeyup = filter;
+	if (
+		(h = location.hash)
+	&&	(i = e.getAttribute('data-filter'))
+	&&	i === h.slice(-1)
+	) {
+		filterPrefix(h.replace(/^#+/, ''));
+	}
+}
 bnw.adorn(1);
 for (i in la.clear) if (e = id(i)) {
 	e.onclick = clearSaves;

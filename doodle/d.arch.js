@@ -268,7 +268,7 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 			if (!prevPage) prevPage = (thisPage-1) + pageExt;
 			if (!nextPage) nextPage = (thisPage+1) + pageExt;
 		}
-		document.title = room+' - '+thisPage+(timeRange?', '+timeRange.join(' - '):'');
+		document.title = room.replace(/\/+/g, ' - ')+' - '+thisPage+(timeRange?', '+timeRange.join(' - '):'');
 	//* header, links up:
 		a = {
 			'&#8662;': rootPath || lastDir || '../..'			//* <- or a hand-wave

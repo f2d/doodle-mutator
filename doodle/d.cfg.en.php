@@ -6,7 +6,7 @@ $tmp_announce = array(
 ,	'room_anno' =>	'Room announce'
 ,	'room_stop' =>	'Room freeze'
 ,	'new_game' =>	'No users exist yet. The first user will get administrator status to access global controls.'
-,	'new_room' =>	'The room does not exist yet. The first participant will get room moderator status to access some of the room controls.'
+,	'new_room' =>	'This room does not exist yet. The first participant will get room moderator status to access some of the room controls.'
 ,	'new_data' =>	'Found data in old format, use mod.panel: files: convert.'
 );
 $tmp_archive = 'Archive';
@@ -41,11 +41,11 @@ $tmp_arch_last = 'last';
 $tmp_back = 'Return.';
 $tmp_ban = 'Access forbidden.';
 $tmp_check_required = 'Final check';
-$tmp_describe_hint = 'At least '.DESCRIBE_MIN_LENGTH.' letters.'
-.'\\[a|Format options]'
-.'\\[hid|'
-.'\\	[r poem|'
-.'\\		Like this,
+$tmp_describe_hint = 'At least '.DESCRIBE_MIN_LENGTH.' letters.\\
+[a|Format options]\\
+[hid|\\
+	[r poem|\\
+		Like this,
 		or more than once
 		
 		for a blank line.
@@ -55,12 +55,14 @@ $tmp_describe_hint = 'At least '.DESCRIBE_MIN_LENGTH.' letters.'
 	Result is shown at the right side. →
 	Not fully spaced slashes will remain as is, including double [cite|//] slashes.
 ]';
+$tmp_describe_free = 'Write anything';
 $tmp_describe_new = 'Describe a picture you would like to see';
 $tmp_describe_this = 'Describe what you see on this picture';
 $tmp_draw_app = array('JS Flat', 'JS Layers', 'Simply upload your own file');
 $tmp_draw_free = 'Draw anything';
 $tmp_draw_hint = 'This page shares browser memory with the actual game. May be used to restore, offline edit, save to file, etc.';
 $tmp_draw_limit_hint = 'It\'s acceptable here to attach you own drawing, limited in size from %sx%s to %sx%s pixels, up to %s bytes (%s), in a file of any of these types: %s.';
+$tmp_draw_next = 'Try to draw what happens after this';
 $tmp_draw_test = 'Test drawing pad';
 $tmp_draw_this = 'Try to draw';
 $tmp_empty = 'Empty';
@@ -89,8 +91,8 @@ $tmp_mod_files = array(
 $tmp_mod_pages = array(
 	'logs' =>	'Logs'
 ,	'files' =>	'Files'
-,	'users' =>	'Users'
-,	'reflinks' =>	'Ref.links'
+,	LK_USERLIST =>	'Users'
+,	LK_REF_LIST =>	'Ref.links'
 ,	'vars' =>	'Vars'
 ,	'varsort' =>	'Var.sort'
 );
@@ -109,7 +111,7 @@ $tmp_options_drop = array(
 ,	'skip'	=> 'Reset skipped threads'
 ,	'pref'	=> 'Reset options'
 );
-$tmp_options_first = 'Press '.$tmp_options_apply.' to continue.';
+$tmp_options_first = 'Press %s or <a href="%s">select a room</a> to continue.';
 $tmp_options_flags = 'Status';
 $tmp_options_input = array(	//* cookie key => array(setting description, default value (yes), toggled value (no))
 	'input' => array(
@@ -147,7 +149,11 @@ $tmp_options_time = 'Default time zone';
 $tmp_options_time_client = 'Your time zone';
 $tmp_options_warning = array('Warning: check your server configuration first!', 'See example.');
 $tmp_post_err = array(
-	'file_dup'	=> 'File denied: copy already exists.'
+	'deny_file_op'		=> 'Room type rules: cannot start a thread with an image.'
+,	'deny_file_reply'	=> 'Room type rules: cannot reply with an image.'
+,	'deny_text_op'		=> 'Room type rules: cannot start a thread with text.'
+,	'deny_text_reply'	=> 'Room type rules: cannot reply with text.'
+,	'file_dup'	=> 'File denied: copy already exists.'
 ,	'file_part'	=> 'File denied: upload not completed, please try to load in draw app and send again.'
 ,	'file_pic'	=> 'File denied: not image.'
 ,	'file_put'	=> 'File denied: saving failed.'
@@ -176,6 +182,7 @@ $tmp_post_progress = array(
 ,	'opt_res'	=> 'Optimizing low-res image copy'
 ,	'low_res'	=> 'Resizing down to fit image into page view'
 ,	'low_bit'	=> 'Restricting low-res image colors to keep file size below full copy'
+,	'program'	=> 'used program'
 ,	'refresh'	=> 'Finished. Click <a href="%s">here</a> if the page does not change after %s.'
 );
 $tmp_regex_hint = 'Regular expressions are allowed in format {%s|%s}.';
@@ -191,13 +198,30 @@ $tmp_room = 'Room';
 $tmp_room_count_threads = 'threads alive, made, archive';
 $tmp_room_count_posts = 'pics, descriptions';
 $tmp_room_default = 'Basement';
+$tmp_room_thread_cap = 'This room has reached maximum thread count.';
+$tmp_room_thread_cap_hint = 'Making new threads is not possible for now, but you can try later.';
+$tmp_room_types_select = 'Show';
+$tmp_room_types_hint = 'Room types';
+$tmp_room_types_name_example = 'example';
+$tmp_room_types_names = array(
+	'single_letter'	=> 'Single-letter rooms have single page in archive and no reports or moderation'
+,	'hidden'	=> 'Hidden rooms are not shown, start with a dot'
+);
+$tmp_room_types_title = array(
+	'all' => 'All'
+,	'1dpd' => 'Doodle Mutator'
+,	'simd' => 'Doodle Version'
+,	'draw' => 'Doodle Story'
+,	'1trd' => 'Doodle Dump'
+);
+$tmp_room_types = array(
+	'1dpd' => 'single drawing per description, a.k.a. the "blind phone" game'
+,	'simd' => 'multiple drawings under single description (topic) in each thread'
+,	'draw' => 'multiple drawings, no text posts, like "continue a story"'
+,	'1trd' => 'single active thread per room, no thread locking, random mess'
+);
 $tmp_rooms = 'Rooms';
-$tmp_rooms_hint =
-'[r|\\	Also rooms may be created via address bar, like so: '.$tmp_room_new.'.'.(ROOM_HIDE?'
-	Hidden rooms are not shown, start with a dot: '.$tmp_room_new_hide.'.':'').(ROOM_DUMP?'
-	Single-thread rooms start with an exclamation: '.$tmp_room_new_dump.' (archived at every '.DUMP_MAX_POSTS.' posts).':'')
-.'\\]\\Maximum length — '.ROOM_NAME_MAX_LENGTH.' letters.
-Single-letter rooms have single page in archive and no reports or moderation.';
+$tmp_rooms_hint = 'Maximum length — '.ROOM_NAME_MAX_LENGTH.' letters.';
 $tmp_filter_placeholder =
 $tmp_rooms_placeholder = 'Type here to filter the list.';
 $tmp_rules = array(
@@ -212,23 +236,23 @@ If not yet taken, or already dropped, you can still send your post and hit the t
 Misfired pic makes a new thread with copy of your task, a text post just starts a new one.',
 'If your task is empty, you can try to change it anytime, if not — once in '.TARGET_CHANGE_TIME.'s, by entering or refreshing room.
 Do not open the same room in multiple tabs, the site keeps only single target per room for you, and it will change.
-If, after some time or room actions, you finally decide to perform your task, be sure to check it with the [a|⌈?⌋] button at right. This check is also performed automatically when sending a post.
+If, after some time or room actions, you finally decide to perform your task, be sure to check it with the [a buttons|?] button at right. This check is also performed automatically when sending a post.
 Note: while any message in a [report|red bar] is displayed at top, or in-room draw app selection is used, refreshing the room in-place (i.e., using the F5 key) will not change the task. Сlicking the room link at the top will drop this effect.',
 'Threads stay full at '.TRD_MAX_POSTS.' pics for '.TRD_ARCH_TIME.'s (to let reports and moderation), then go to archive when the next new thread is created.
 Single-letter rooms keep only 1 page in archive (no more than '.TRD_PER_PAGE.' threads), have no reports and moderation, and full threads go to archive right away.'
 ));
 $tmp_sending = 'Sending now, please wait...';
 $tmp_spam_trap = 'Leave this empty.';
-$tmp_stop_all = 'Game frozen.';
+$tmp_stop_all = 'Game is frozen.';
 $tmp_submit = 'Submit';
 $tmp_target_status = array(
 	'no_room'	=> 'This room is renamed or deleted'
 ,	'no_task'	=> 'Your task is empty'
 ,	'task_let_go'	=> 'This task is taken by others'
-,	'task_owned'	=> 'This is your task, prolonged'
+,	'task_owned'	=> 'This is your task'
 ,	'task_reclaim'	=> 'This task was dropped, now it\'s yours'
 );
-$tmp_time_limit = 'Time limit';
+$tmp_time_limit = 'Time limit from now';
 $tmp_time_units = array(
 /*	31536000	=> array('year', 'years')
 ,	86400		=> array('day', 'days')

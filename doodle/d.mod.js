@@ -84,6 +84,9 @@ var	n = 'menu_'+p.id
 	var	leftSide = (n.slice(-1) == 0)
 	,	d = p.parentNode
 	,	g = flag.g
+	,	u = flag.u
+	,	v = flag.v
+	,	ngm = (!g && flag.n)
 	,	la
 		;
 		if (lang == 'ru') la = {
@@ -114,17 +117,19 @@ var	n = 'menu_'+p.id
 		,	z: 'Закрыть и забыть все меню на странице.'
 		,	o: (
 				leftSide ? (
-					(flag.v?'':'в архив+готово+нет|замороз.нить+отм.'+(g?'+скрыть':'')+'|удалить сообщения||удалить нить'
+					ngm?'':(
+					(v?'':'в архив+готово+нет|замороз.нить+отм.'+(g?'+скрыть':'')+'|удалить сообщения||удалить нить'
 				+	(g?'+файлы+стереть с диска':'')+'|удалить пост (но не файл)|уд.файл+обнулить'
 				+	(g?'+стереть с диска':'')+'|доб.пост+перед+изменить||слить сюда+отсюда|разделить нить отсюда'+(g?'|':''))
-				+	(g?'уд.комн.+файлов+архива|переназ.комн.'+(flag.v?'':'+коп.нить в'):'')
-				) : (
-					(flag.v?'':'закрыть доступ+открыть|может жаловаться+нет|'
+				+	(g?'уд.комн.+файлов+архива|переназ.комн.'+(v?'':'+коп.нить в'):'')
+				)) : (
+					ngm?'комнатное объявление':(
+					(v?'':'закрыть доступ+открыть|может жаловаться+нет|'
 				+	(g?'получает цели+нет|видит неизв.+нет|':'')+'дать модератора+снять|'
 				+	(g?'дать супермод.+снять|переименовать||':''))
-				+	(g?'общее объявление'+(flag.u?'':'|комнатное объявление|замороз. комнату+отм.')+'|заморозить всё+отм.'
+				+	(g?'общее объявление'+(u?'':'|комнатное объявление|замороз. комнату+отм.')+'|заморозить всё+отм.'
 					:'||комнатное объявление')
-				)
+				))
 			)
 		}; else la = {
 			tip: (
@@ -155,17 +160,19 @@ var	n = 'menu_'+p.id
 		};
 	var	o = (
 			leftSide ? (
-				(flag.v?'':'archive+ready+wait|freeze tr.+warm up'+(g?'+hide':'')+'|delete comments||delete thread'
+				ngm?'':(
+				(v?'':'archive+ready+wait|freeze tr.+warm up'+(g?'+hide':'')+'|delete comments||delete thread'
 			+	(g?'+pics+erase from disk':'')+'|delete post (but not pic)|delete pic+nullify'
 			+	(g?'+erase from disk':'')+'|add post+before+edit||merge thread target+source|split thread from here'+(g?'|':''))
-			+	(g?'nuke room+pics+arch|rename room'+(flag.v?'':'+copy trd to'):'')
-			) : (
-				(flag.v?'':'ban+lift|can report+not|'
+			+	(g?'nuke room+pics+arch|rename room'+(v?'':'+copy trd to'):'')
+			)) : (
+				ngm?'room announce':(
+				(v?'':'ban+lift|can report+not|'
 			+	(g?'gets targets+not|sees unknown+not|':'')+'give mod+take|'
 			+	(g?'give god+take|rename||':''))
-			+	(g?'global announce'+(flag.u?'':'|room announce|room freeze+warm up')+'|global freeze+warm up'
+			+	(g?'global announce'+(u?'':'|room announce|room freeze+warm up')+'|global freeze+warm up'
 				:'||room announce')
-			)
+			))
 		).split('|')
 	,	check = {
 			confirm: {
@@ -224,9 +231,9 @@ var	n = 'menu_'+p.id
 	,	c = '" onClick="eventStop(event); menuClose('
 	,	i = '" title="'
 	,	j = p.id.split('_').slice(1).join('-')
-	,	v = la.tip.join('\r\n')
-	,	i = '<div title="'+v+'">'
-		+	(flag.v || flag.u?'':
+	,	t = la.tip.join('\r\n')
+	,	i = '<div title="'+t+'">'
+		+	(ngm || u || v?'':
 			'<div class="block">'
 		+		'[ <a href="javascript:void window.open(\''+j+'\',\'Report\',\'width=656,height=280\')">'+la.r+'</a> ]'
 		+	'</div>'
@@ -235,7 +242,7 @@ var	n = 'menu_'+p.id
 		+'</div>'
 		+'<textarea name="'+p.id.replace('m', 't')+i+la.i+'" placeholder="'+la.t+'"></textarea>'
 		+'<div>'
-		+	'<input type="submit" value="'+la.go+i+v+'">&ensp;'
+		+	'<input type="submit" value="'+la.go+i+t+'">&ensp;'
 		+	b+'x'+i+la.x+c+'this)">'
 		+	b+'&gt;&lt;'+i+la.z+c+')">'
 		+'</div>'
