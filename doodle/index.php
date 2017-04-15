@@ -1029,15 +1029,6 @@ right = $tmp_empty$flags
 						}
 					} else {
 						$post_type = ($draw?'text':'image');
-						$s = count($skip_list);
-						$k = $target['count_free_tasks'];
-						$n = $target['count_free_unknown'];
-						if ($k) {
-							$page['data']['task']['free'] = $k;
-						}
-						if ($s && !$k) {
-							$page['data']['task']['unskip'] = "$s/$k/$n";
-						}
 						if ($room_type["allow_$post_type$post_rel"]) {
 							$page['data']['task']['change'] = ($draw?ARG_DESC:ARG_DRAW);
 						}
@@ -1045,6 +1036,16 @@ right = $tmp_empty$flags
 				}
 				if ($t) {
 					$page['data']['task']['skip'] = intval($target['thread']);
+				} else {
+					$s = count($skip_list);
+					$k = $target['count_free_tasks'];
+					$n = $target['count_free_unknown'];
+					if ($k) {
+						$page['data']['task']['free'] = $k;
+					}
+					if ($s && !$k) {
+						$page['data']['task']['unskip'] = "$s/$k/$n";
+					}
 				}
 				if ($page['content']) {
 					$page['data']['content']['type'] = 'threads';

@@ -246,7 +246,7 @@ function data_fix($what = '') {
 
 		data_lock($t);
 		if (is_dir($old)) {
-			$d = '$old/u';
+			$d = "$old/u";
 			$data_types = array(DATA_U_FLAG, DATA_U_IP, DATA_U_TASK);
 			if ($files = glob("$d/*$e", GLOB_NOSORT) ?: glob("$d?*$e", GLOB_NOSORT)) {
 				natcasesort($files);	//* <- to keep file write dates in ascending order alongside IDs
@@ -471,7 +471,7 @@ function data_log_report($a) {	//* <- write to user report logs, filename by thr
 	if ($text = $a['report'])
 	foreach (get_dir_contents($t = $d.DATA_SUB_TRD) as $f) if (
 		preg_match(DATA_PAT_TRD_MOD, $f, $match)
-	&&	($i = $match['id'])
+	&&	strlen($i = $match['id'])
 	&&	($i == $a['thread'])
 	) {
 //* check permission:
@@ -691,7 +691,7 @@ function data_get_thread_by_num($n) {
 	if ($data_cache_d || is_dir($data_cache_d = DATA_DIR_ROOM."$room/".DATA_SUB_TRD))
 	foreach (get_dir_contents($data_cache_d) as $f) if (
 		preg_match(DATA_PAT_TRD_MOD, $f, $match)
-	&&	$n == $match['id']
+	&&	strlen($n == $match['id'])
 	) return ($data_cache_t[$n] = array($data_cache_d, $f, $match));	//* <- dir/path/, filename, name parts array(num,etc,ext,.stop)
 	return 0;
 }
@@ -1301,7 +1301,7 @@ function data_get_visible_rooms($type = '') {
 	$last = 0;
 	$a = array();
 	$c = count($rooms = get_dir_rooms($g, '', F_NATSORT | F_HIDE, $type));
-if (TIME_PARTS) time_check_point('done scan: $c rooms, inb4 room iteration'.NL);
+if (TIME_PARTS) time_check_point("done scan: $c rooms, inb4 room iteration".NL);
 	foreach ($rooms as $r) if (is_dir($s = ($d = "$g$r/").DATA_SUB_TRD)) {
 		ob_start();
 		$last_time_in_room = 0;
@@ -1610,7 +1610,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 	&&	(T0 < $t + TARGET_CHANGE_TIME)
 	&&	(list($own, $dropped) = mb_split_filter($tt))
 	&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
-	&&	($i = $m['id'])
+	&&	strlen($i = $m['id'])
 	&&	!(is_array($skip_list) && in_array($i, $skip_list))
 	&&	(
 			is_file($f = $d.$own)
@@ -1625,6 +1625,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 		$a = array();
 		$a_unk = array();
 		$a_und = array();
+		$u_own = array();
 		foreach (get_dir_contents($d) as $f) if (
 			!in_array($f, $change_from)
 		&&	preg_match(DATA_PAT_TRD_PLAY, $f, $m)
@@ -1648,7 +1649,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 		,	'count_free_unknown' => count($a_unk)
 		,	'count_free_undrawn' => count($a_und)
 		);
-		if (!$a || $tt) $a[''] = 0;	//* <- add empty task to selection, unless current is empty
+		if (!$a || $tt) $a[''] = '';	//* <- add empty task to selection, unless current is empty
 		if (!(
 			($f = array_rand($a_unk ?: $a_und ?: $a))
 		&&	is_file($path = $d.$f)
@@ -1657,7 +1658,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			$f = '';
 		}
 		if ($f != $own) {
-			if ($f) {
+			if (strlen($f)) {
 				$target = array('time' => T0);
 				$i = $a[$f];
 				$t = trim_bom(data_cache($path));
@@ -1694,13 +1695,14 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			if ($t = implode(NL, $u_task)) {
 				data_put($u_t_f, DATA_LOG_START.$t);
 			} else unlink($u_t_f);
+		}
 
 //* rename old targets as dropped (unlocked):
-			if (is_array($u_own)) foreach ($u_own as $f => $i) {
-				$t = data_get_thread_name_tail(data_cache($f = $d.$f), false);
-				data_cache_file_rename($f, "$d$i$t$e");
-			}
+		if ($u_own && (!strlen($f) || ($f != $own))) foreach ($u_own as $f => $i) {
+			$t = data_get_thread_name_tail(data_cache($f = $d.$f), false);
+			data_cache_file_rename($f, "$d$i$t$e");
 		}
+
 		$target = array_merge($target, $counts);
 	}
 	return $target;
@@ -1727,7 +1729,7 @@ function data_log_post($post) {
 	&&	($tt = $target['thread'])
 	&&	(list($own, $dropped) = mb_split_filter($tt))
 	&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
-	&&	($i = $m['id'])
+	&&	strlen($i = $m['id'])
 	&&	(!($h = $m['hold_u']) || $h == $u_num)		//* <- not taken by others
 	&&	(
 			is_file($f = $d.$own)
