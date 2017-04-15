@@ -77,13 +77,16 @@ function data_get_line_fix_time($line) {
 	return $t.','.date(DATE_ATOM, $t).mb_substr($line, $i);
 }
 
+function data_is_a_content_line($line) {return (false !== mb_strpos($line, '	'));}
 function data_get_archive_page_html($room, $num, $tsv) {
 	global $cfg_langs, $line_time_min, $line_time_max;
 	$line_time_min = $line_time_max = 0;
 	if ($num <= 0) return false;
 	$p = $num-1;
 	$n = $num+1;
-	$lines = array_map('data_get_line_fix_time', mb_split_filter(trim($tsv), NL));
+	$lines = mb_split_filter(trim($tsv), NL);
+	$lines = array_filter($lines, 'data_is_a_content_line');
+	$lines = array_map('data_get_line_fix_time', $lines);
 	sort($lines);
 	return get_template_page(
 		array(

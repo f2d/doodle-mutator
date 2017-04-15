@@ -663,9 +663,17 @@ function data_get_thread_name_tail($t, $count_pics = true) {
 function data_put_thread_rename_if_free($f, $t = '', $m = '') {
 	if (!data_put($f, $t)) return false;
 	if (is_array($m)) {
-		if (strpos($m['etc'], 'p')) $t = data_get_thread_name_tail($t); else	//* <- if task not taken
-		if (!strpos($m['etc'], 'u')) $t = data_get_thread_name_tail($t, false);	//* <- if task was taken and dropped
-		else $t = '';
+//* if task is free:
+		if ($m['pics'] || strpos($m['etc'], 'p') || mb_substr_count($t, DATA_MARK_IMG) >= TRD_MAX_POSTS) {
+			$t = data_get_thread_name_tail($t);
+		} else
+//* if task is taken:
+		if ($m['hold_u'] || strpos($m['etc'], 'u')) {
+			$t = '';
+		} else {
+//* if task was taken and dropped:
+			$t = data_get_thread_name_tail($t, false);
+		}
 		if ($t) $n = get_file_dir($f)."/$m[id]$t$m[ext]$m[inactive]";
 	}
 	if ($n && $n !== $f) rename($f, $n);
@@ -701,9 +709,9 @@ function data_get_tab_by_file_line($f, $tab = 0, $line = 0) {
 		: 0
 	);
 	if ($tab === 'user') {
-		$last = max(mb_strrpos($f, DATA_MARK_IMG), mb_strrpos($f, DATA_MARK_TXT));
-		$t = mb_substr($f, 0, $last);
-		return mb_substr($t, mb_strrpos_after($t, $sep));
+		$i = max(mb_strrpos($f, DATA_MARK_IMG), mb_strrpos($f, DATA_MARK_TXT));
+		$f = mb_substr($f, 0, $i);
+		return mb_substr($f, mb_strrpos_after($f, $sep));
 	}
 	return 0;
 }
@@ -962,6 +970,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 				if (rename($d.$f, "$d$m[id].pf$e")) $ok = OK;	//* <- get ready
 				if ($ok && !$un && is_array($r = data_archive_ready_go())) {
 					foreach ($r as $k => $v) if ($v) $ok .= ", $v $k";
+					$return = 'trd_arch';
 				}
 			}
 			if ($ok) data_post_refresh();
@@ -1270,7 +1279,8 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 
 	if ($un) $o .= '+'.end($q);
 	if (is_array($a)) $a = implode('-', $a);
-	return data_log_action("$a	$o: $ok");
+	$logged = data_log_action("$a	$o: $ok");
+	return $return ?: $logged;
 }
 
 //* END mod actions. ----------------------------------------------------------
@@ -1410,6 +1420,8 @@ if (TIME_PARTS) time_check_point("done scan: $c files in $r, inb4 thread iterati
 	) {
 		$pn = preg_match(DATA_PAT_TRD_MOD, $fn, $n);
 		$pp = preg_match(DATA_PAT_TRD_PLAY, $fn, $p);
+		if (!$pn && !$pp) continue;
+
 		$not = ($pn && $n['inactive']);
 		$frz = ($pn && $n['stopped']);
 		$i = $n['id'];
@@ -1422,8 +1434,9 @@ if (TIME_PARTS) time_check_point("done scan: $c files in $r, inb4 thread iterati
 			&&	($show_unknown || data_thread_has_posts_by($f, $u_num))
 			)
 		) {
-			$last_post_time = $t = filemtime($path);
+			$t = filemtime($path);
 			if ($last < $t) $last = $t;
+			$last_post_time = 0;
 			$posts = array();
 			foreach (mb_split_filter($f, NL) as $line) if (false !== mb_strpos($line = trim($line), $sep)) {
 				$tab = mb_split($sep, $line);

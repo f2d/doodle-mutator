@@ -281,7 +281,8 @@ function get_dir_rooms($source_subdir = '', $output_subdir = '', $flags = 0, $ty
 function get_file_lines($path) {
 	return (
 		is_file($path)
-		? mb_split_filter(trim_bom(file_get_contents($path)), NL)
+		? mb_split_filter(file_get_contents($path), NL)
+	//	? mb_split_filter(trim_bom(file_get_contents($path)), NL)	//* <- trim messes up line indexes, don't touch for now
 	//	? file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)
 		: array()
 	);
@@ -862,7 +863,7 @@ function get_template_content($p, $static = 0, $tag = '', $attr = '') {
 		foreach ($a as $k => $v) if (!$k) $p = $v; else if ($v) $attr .= " $k=\"$v\"";
 	}
 	if (strlen($p)) {
-		if (GOD && ($v = $GLOBALS[$k = 'fix_encoding_chosen'])) {
+		if (GOD && !$static && ($v = $GLOBALS[$k = 'fix_encoding_chosen'])) {
 			$v = implode(',', (array)$v);
 			$p = "
 $k = $v$p";

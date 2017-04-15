@@ -806,7 +806,7 @@ separator = '.$s.$c
 //* active room task and visible content --------------------------------------
 
 				$y = $query[ARG_ERROR];
-				if ($ay = mb_split_filter($y, ARG_ERROR_SPLIT)) unset($a['trd_arch'], $a['trd_miss']);
+				if ($ay = mb_split_filter($y, ARG_ERROR_SPLIT)) unset($ay['trd_arch'], $ay['trd_miss']);
 				$desc_query = isset($query[ARG_DESC]);
 				$draw_query = !!array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY);
 				$dont_change = (
@@ -1395,19 +1395,29 @@ if ($u_key) {
 	if (isset($_POST['mod']) && MOD && (($qd_room && $room) || (GOD && ($query[LK_MOD_ACT] === LK_USERLIST || $etc === '3')))) {
 		$d = 'abcdefg';
 		$k = array();
+		$result = array();
+		$done = 0;
+		$failed = 0;
 		foreach ($_POST as $i => $a) if (preg_match('~^m\d+_(\d+)_(\d+)_(\d+)$~i', $i, $m)) {
 			$m[0] = $a;
 			$act[$k[] = str_replace_first('_', $d[substr_count($a, '+')], $i)] = $m;
 		}
 		if ($act) {
 			natsort($k);
+
 			data_lock(LK_MOD_ACT);
 			data_lock(LK_ROOM.$room);
 			foreach (array_reverse($k) as $i) {
 				$m = data_mod_action($act[$i]);	//* <- act = array(option name, thread, row, column)
-				if ($post_status != 'unkn_res') $post_status = ($m?OK:'unkn_res');
+				if ($m) {
+					if (array_key_exists($m, $tmp_post_err)) ++$result[$m];
+					else ++$done;
+				} else ++$failed;
 			}
 			data_unlock();
+
+			if ($result) $post_status = implode(ARG_ERROR_SPLIT, array_keys($result));
+			else $post_status = ($done && !$failed?OK:'unkn_res');
 		}
 	} else
 	if (!$qd_room || !$room); else	//* <- no posting outside room
