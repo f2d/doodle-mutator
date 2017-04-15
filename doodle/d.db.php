@@ -631,7 +631,11 @@ function data_thread_has_posts_by($t, $u_num, $flags = DATA_FLAG_POST_ANY) {
 }
 
 function data_get_last_post_u($t) {return data_get_tab_by_file_line($t, 'user', -1);}
-function data_get_last_post_time($t) {return intval(mb_substr($t, $i = mb_strrpos_after($t, NL), mb_strpos($t, '	', $i)-$i));}
+function data_get_last_post_time($t) {
+	if (is_array($t)) return intval($t['last_t'] ?: ($t['hold_u'] ? 0 : $t['hold_t']));	//* <- for legacy time mark format
+	return intval(mb_substr($t, $i = mb_strrpos_after($t, NL), mb_strpos($t, '	', $i)-$i));
+}
+
 function data_get_thread_content($t) {return (false === mb_strpos($t, '	') ? data_cache($t) : $t);}
 function data_get_thread_name_tail($t, $count_pics = true) {
 	global $room_type;
@@ -851,7 +855,7 @@ function data_get_full_threads() {
 	foreach (get_dir_contents($d = DATA_DIR_ROOM."$room/".DATA_SUB_TRD) as $f) if (
 		preg_match(DATA_PAT_TRD_PLAY, $f, $match)
 	&&	data_is_thread_full($count = $match['pics'])
-	&&	!($wait && ($t = intval($match['last_t'])) && ($t + TRD_ARCH_TIME < T0))
+	&&	!($wait && ($t = data_get_last_post_time($match)) && ($t + TRD_ARCH_TIME < T0))
 	&&	is_file($f = $d.$f)
 	) {
 		$last_time = 0;

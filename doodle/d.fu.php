@@ -331,7 +331,7 @@ function get_room_skip_list($add = '', $room = '') {
 				break;
 			}
 		}
-		if ($add) {
+		if (strlen($add)) {
 //* if room name not yet defined, find shortest encoding result:
 			if (!$a) {
 				foreach ($e as $i => $j) if (strlen($j) < strlen($r)) {
