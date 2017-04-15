@@ -127,7 +127,7 @@ define(TARGET_DRAW_TIME, 7200);	//* 2h
 define(TARGET_LONG_TIME, 86400);//* 24h
 define(TRD_ARCH_TIME, 86400);	//* 24h
 define(TRD_MAX_POSTS, 10);
-define(TRD_MAX_COUNT, 30);
+define(TRD_MAX_PER_ROOM, 30);
 define(TRD_MAX_SKIP_PER_ROOM, 5);
 define(TRD_PER_PAGE, 30);
 

@@ -3,7 +3,7 @@
 //* Constants only for internal use: ------------------------------------------
 
 define(HTML_VERSION, '2017-04-15 00:48');	//* <- change this to autoupdate old browser-cached pages
-define(HTACCESS_VERSION, '2017-03-25 03:35');	//* <- change this + open index as admin to autoupdate old .htaccess
+define(HTACCESS_VERSION, '2017-04-16 01:41');	//* <- change this + open index as admin to autoupdate old .htaccess
 
 //* Function argument flags: --------------------------------------------------
 
@@ -87,6 +87,8 @@ function rewrite_htaccess($write_to_file = 1) {
 			.	(strlen($after) ? NL.NL.$after : '')
 			); else $new .= NL.NL.$old;
 		} else $old = 'none';
+		$old = preg_replace('~\v~u', PHP_EOL, $old);
+		$new = preg_replace('~\v~u', PHP_EOL, $new);	//* <- workaround for Apache ignoring .htaccess with "\n" (not "\r\n") on Windows
 		$changed = ($new != $old);
 	} else $new = 'no change';
 	$report = "---- old version: ----
@@ -149,7 +151,7 @@ function fix_encoding($text) {
 
 function get_const($name) {return defined($s = mb_strtoupper($name)) ? constant($s) : '';}
 function abbr($a, $sep = '_') {foreach ((is_array($a) ? $a : mb_split_filter($a, $sep)) as $word) $r .= mb_substr($word,0,1); return $r;}
-function mb_escape_regex($s) {return preg_replace('~[.:?*|$\\\\/\^\[\](){}-]~u', '\\\\$0', $s);}	//* <- this works with "/" as regex delimiter
+function mb_escape_regex($s, $delim = '/') {return preg_replace("~[.:?*^$\\\\|\\$delim\\[\\](){}-]~u", '\\\\$0', $s);}
 function mb_normalize_slash($s) {return mb_str_replace('\\', '/', $s);}
 function mb_sanitize_filename($s) {return strtr($s, array('"' => "'", ':' => '_', '?' => '_', '*' => '_', '<' => '_', '>' => '_'));}
 function mb_str_split($s) {return preg_split('//u', $s);}

@@ -842,19 +842,21 @@ check_task_keep = .?check_task=keep' : '')
 					}
 				} else {
 					$post_rel = '_op';
-					if ($desc_query && $room_type["allow_text$post_rel"]) $draw = 0; else
-					if ($draw_query && $room_type["allow_image$post_rel"]) $draw = 1;
 					if (
-						$draw
-					&&	!in_array($x, $ay)
+						!in_array($x, $ay)
 					&&	data_is_thread_cap()
 					) {
-						$draw = 0;
-						$query[ARG_ERROR] = ($y?$y.ARG_ERROR_SPLIT:'').$x;
-					}
+						$draw = -1;
+				//		$query[ARG_ERROR] = ($y?$y.ARG_ERROR_SPLIT:'').$x;
+					} else
+					if ($desc_query) $draw = 0; else
+					if ($draw_query) $draw = 1;
 				}
-				if ($draw && !$room_type["allow_image$post_rel"]) $draw = 0;
-				if (!$draw && !$room_type["allow_text$post_rel"]) $draw = ($room_type["allow_image$post_rel"]?1:-1);
+				if ($draw >= 0) {
+					$post_type = ($draw?'image':'text').$post_rel;
+					$other_type = ($draw?'text':'image').$post_rel;
+					if (!$room_type["allow_$post_type"]) $draw = ($room_type["allow_$other_type"] ? !$draw : -1);
+				}
 
 				if ($vts = $visible['threads']) {
 					if (MOD || !(NO_MOD || $u_flag['nor'])) $t = (
@@ -1732,7 +1734,8 @@ if ($query[LK_MOD_ACT]) {
 } else {
 //* go to room name via post form:
 	if (
-		($v = $_POST[$qredir])
+		$qdir
+	&&	($v = $_POST[$qredir])
 	&&	strlen($v = trim_room(URLdecode($v), '/'))
 	&&	($a = mb_split_filter($v))
 	) {
@@ -1745,15 +1748,18 @@ if ($query[LK_MOD_ACT]) {
 		}
 		if (!$r_type) $r_type = GAME_TYPE_DEFAULT;
 		if (!$room && ($r_type || !GAME_TYPE_DEFAULT)) $room = reset($a);
-		unset($qpath['etc']);
-		if ($r_type) $qpath['room_type'] = $r_type;
-		if ($room  ) $qpath['room_name'] = $room;
+		$qpath = array($qdir, $r_type, $room);
 	} else
 //* after renaming the room:
-	if ($room && $_POST['mod']) {
-		list($qpath['room_type'], $qpath['room_name']) = mb_split_filter($room);
+	if (
+		$room
+	&&	$_POST['mod']
+	&&	($a = mb_split_filter($room))
+	) {
+		$qpath = array($qdir, $a[0], $a[1]);
 	}
-	$l = ROOTPRFX.encode_URL_parts(array_filter($qpath));
+	$l = ROOTPRFX;
+	if (strlen($v = encode_URL_parts(array_filter($qpath, 'strlen')))) $l .= (strlen($qpath['etc'])?$v:"$v/");
 }
 
 if ($OK) {

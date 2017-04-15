@@ -584,13 +584,14 @@ NL.htmlspecialchars($v)))));
 }
 
 function data_put_count($i = 0, $type = COUNT_ROOM, $r = '') {
-	if (!$r) $r = $GLOBALS['room'];
-	$f = DATA_DIR_ROOM."$r/$type".DATA_COUNT_EXT;
-	return data_put($f, $i);
+	if ($r || ($r = $GLOBALS['room'])) {
+		$f = DATA_DIR_ROOM."$r/$type".DATA_COUNT_EXT;
+		return data_put($f, $i);
+	}
 }
 
 function data_get_count($type = COUNT_ROOM, $r = '', $uncached = false, $read = 'file_get_contents', $count = 'get_dir_top_file_id') {
-	if (!$r) $r = $GLOBALS['room'];
+	if ($r || ($r = $GLOBALS['room']))
 //* 1) file_get_contents() seems ~2x faster than count(scandir()) on ~50 files
 //* 2) scandir() seems ~2x faster than glob()
 	return intval(
@@ -614,12 +615,13 @@ function data_get_mtime($type = COUNT_ROOM, $r = '', $uncached = false) {
 
 function data_is_thread_full($n) {return $n === 'f' || intval($n) >= TRD_MAX_POSTS;}
 function data_is_thread_cap($r = '') {
-	if (!$r) $r = $GLOBALS['room'];
-	foreach (get_dir_contents(DIR_ROOM.$r) as $f) if (
-		preg_match(DATA_PAT_TRD_MOD, $f, $match)
-	&&	!$match['deleted']				//* <- "burnt" not counted
-	&&	++$n >= TRD_MAX_COUNT
-	) return $n;
+	if ($r || ($r = $GLOBALS['room'])) {
+		foreach (get_dir_contents(DATA_DIR_ROOM."$r/".DATA_SUB_TRD) as $f) if (
+			preg_match(DATA_PAT_TRD_MOD, $f, $match)
+		&&	!$match['deleted']				//* <- "burnt" not counted
+		&&	++$n >= TRD_MAX_PER_ROOM
+		) return $n;
+	}
 	return 0;
 }
 
@@ -1533,13 +1535,14 @@ function data_check_my_task($aim = false) {
 
 	$f = $target['thread'];
 	$p = $target['post'];
+
+//* auto check for posting or selecting new task:
 	if ($aim) {
 		if ($aim === DATA_U_TASK_CHANGE && $f && $p) array_unshift($u_task, "$aim	$room	$f	$p");
 		if ($aim === DATA_U_TASK_CHANGE || !intval($aim)) {
 			$t = implode(NL, $u_task);
 			return data_put($u_t_f, DATA_LOG_START.$t);
 		}
-//* auto check for posting:
 		return $f;
 	}
 
@@ -1649,9 +1652,10 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 		,	'count_free_unknown' => count($a_unk)
 		,	'count_free_undrawn' => count($a_und)
 		);
-		if (!$a || $tt) $a[''] = '';	//* <- add empty task to selection, unless current is empty
+		if ($tt && !data_is_thread_cap()) $a[''] = '';	//* <- add empty task to selection, unless current is empty
 		if (!(
-			($f = array_rand($a_unk ?: $a_und ?: $a))
+			($f = $a_unk ?: $a_und ?: $a)
+		&&	($f = array_rand($f))
 		&&	is_file($path = $d.$f)
 		)) {
 			$target = array();
@@ -1717,6 +1721,11 @@ function data_log_post($post) {
 	$post_type = ($pic?'image':'text');
 	$post = $u.($pic ? DATA_MARK_IMG.implode('	', $post) : DATA_MARK_TXT.$post);
 	$result = array();
+	if ($change = (
+		$target
+	&&	($t = $target['time'])
+	&&	$t === DATA_U_TASK_CHANGE
+	)) $target = array();
 
 //* thread exists and not full/taken:
 	if ((
@@ -1725,7 +1734,7 @@ function data_log_post($post) {
 		($i = get_dir_top_file_id($d, $e))		//* <- last not yet full
 	&&	is_file($f = "$d$i$e")
 	) : (
-		($t = $target['time']) && $t !== DATA_U_TASK_CHANGE
+		!$change
 	&&	($tt = $target['thread'])
 	&&	(list($own, $dropped) = mb_split_filter($tt))
 	&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
@@ -1743,12 +1752,12 @@ function data_log_post($post) {
 	)) {
 		$post_type .= '_reply';
 	} else {
-		$post_type .= '_op';
+		$post_type .= ($target['post']?'_reply':'_op');
 		$new = 1;
 	}
 
 //* check if post type allowed:
-	if (!$room_type["allow_$post_type"] && !($new && $pic && $target['post'])) {
+	if (!$room_type["allow_$post_type"]) {
 		$result[ARG_DENY."_$post_type"] = 1;
 		return $result;
 	}
@@ -1758,30 +1767,32 @@ function data_log_post($post) {
 		if ($a = data_archive_ready_go()) $result['arch'] = $a;
 
 //* check if not too many existing threads:
+//* still possible to post over the cap, e.g. if user finished drawing too late:
 		if (
-			!($pic_miss = ($pic && !$target['pic']))	//* <- with the right post form opened, still possible to post over the cap
+			!$pic
 		&&	($i = data_is_thread_cap())
 		) {
 			$result['cap'] = $i;
 			return $result;
 		}
 
-//* create new thread:
-		data_put_count($i = data_get_count()+1);	//* <- save last created thread number
-		if ($i <= 1) data_set_u_flag($u_num, "mod_$room", 1);
+//* prepend a task copy or placeholder post, if needed:
+		if ($fork = $target['post']) {
+			$result['fork'] = 1;
+		} else
 		if ($pic) {
-			$fork = (
-				$pic_miss && $target['post']	//* <- late misfire: fork with request copy, if any
-				? $target['post']
-				: $u.DATA_MARK_TXT.(
-					$target
-					? '<span title="'.htmlspecialchars("$target[time]: $target[task]").'">'.NOR.'</span>'
-					: NOR
-				)
+			$fork = $u.DATA_MARK_TXT.(
+				$target
+				? '<span title="'.htmlspecialchars("$target[time]: $target[task]").'">'.NOR.'</span>'
+				: NOR
 			);
-			$post = $fork.NL.$post;
-			if ($target) $result['fork'] = 1;
 		}
+		if ($fork) $post = $fork.NL.$post;
+
+//* create new thread, thread IDs start at 1 (was at 0 before):
+		data_put_count($i = data_get_count()+1);
+		if ($i <= 1) data_set_u_flag($u_num, "mod_$room", 1);
+
 		$t = data_get_thread_name_tail($post);
 		$f = $new = "$d$i$t$e";
 	}
