@@ -326,7 +326,7 @@ a:hover, a.u:hover {
 .multi-thread {
 	background-color: #aaa;
 }
-.multi-thread:not(:empty), .thread, .task p:first-child, .task div:not(.hid) + p, .task label {
+.multi-thread:not(:empty), .thread, .task form:first-child, .task p:first-child, .task div:not(.hid) + p, .task label {
 	padding-top: 8px;
 }
 .multi-thread, .thread, .welcome, body>footer {

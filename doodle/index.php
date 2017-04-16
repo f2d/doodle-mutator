@@ -988,8 +988,14 @@ right = $tmp_empty$flags
 							,	format_filesize(DRAW_MAX_FILESIZE)
 							,	mb_strtoupper(implode(', ', $cfg_draw_file_types))
 							);
-							$page['task'] .= $n['embed'].'
+							$draw = $n['embed'].'
 <p class="hint">'.indent($limit_hint).'</p>'.$hint;
+							if ($target['pic']) {
+								$page['subtask'] = '
+<div class="task">'.indent('<p></p>'.NL.$draw).'</div>';
+							} else {
+								$page['task'] .= $draw;
+							}
 						}
 					} else {
 						$head = (
