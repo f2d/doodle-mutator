@@ -235,6 +235,7 @@ function is_url_external($url) {
 }
 
 function is_deny_arg($k) {return is_prefix($k, ARG_DENY);}
+function is_desc_arg($k) {return is_prefix($k, ARG_DESC);}
 function is_draw_arg($k) {return is_prefix($k, ARG_DRAW);}
 function is_tag_attr($t) {return mb_strpos($t, '<') === mb_strpos($t, '>');}	//* <- if only both === false
 function is_not_dot($path) {return !!trim($path, './\\');}

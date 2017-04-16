@@ -999,11 +999,11 @@ right = $tmp_empty$flags
 						}
 					} else {
 						$head = (
-							$room_type['single_active_thread']
-							? $tmp_describe_free
+							$t
+							? $tmp_describe_this
 							: (
-								$t
-								? $tmp_describe_this
+								$room_type['single_active_thread']
+								? $tmp_describe_free
 								: $tmp_describe_new
 							)
 						);
@@ -1807,7 +1807,12 @@ if ($OK) {
 		header("$s$a$x");
 		if ($add_qk) header("$s$add_qk$x");
 	}
-	unset($query);
+	if ($room_type['single_active_thread']) {
+		$query = (
+			array_filter($query, 'is_desc_arg', ARRAY_FILTER_USE_KEY)
+		?:	array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY)
+		);
+	} else unset($query);
 } else {
 	$query = array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY);
 	if ($_POST['report'] && $postID) $query['report_post'] = $postID;

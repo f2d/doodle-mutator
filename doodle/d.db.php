@@ -851,13 +851,13 @@ function data_get_user_info($u) {
 
 function data_get_full_threads() {
 	global $room, $room_type, $usernames;
-	$wait = !$room_type['arch_wait'];
+	$wait = !!$room_type['arch_wait'];
 	$sep = '	';
 	$threads = array();
 	foreach (get_dir_contents($d = DATA_DIR_ROOM."$room/".DATA_SUB_TRD) as $f) if (
 		preg_match(DATA_PAT_TRD_PLAY, $f, $match)
 	&&	data_is_thread_full($count = $match['pics'])
-	&&	!($wait && ($t = data_get_last_post_time($match)) && ($t + TRD_ARCH_TIME < T0))
+	&&	!($wait && ($t = data_get_last_post_time($match)) && ($t + TRD_ARCH_TIME > T0))
 	&&	is_file($f = $d.$f)
 	) {
 		$last_time = 0;
