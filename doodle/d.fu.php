@@ -2,7 +2,7 @@
 
 //* Constants only for internal use: ------------------------------------------
 
-define(HTML_VERSION, '2017-04-15 00:48');	//* <- change this to autoupdate old browser-cached pages
+define(HTML_VERSION, '2017-04-16 04:05');	//* <- change this to autoupdate old browser-cached pages
 define(HTACCESS_VERSION, '2017-04-16 01:41');	//* <- change this + open index as admin to autoupdate old .htaccess
 
 //* Function argument flags: --------------------------------------------------
@@ -466,8 +466,9 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 }
 
 function get_draw_app_list($allow_upload = true) {
-	global $cfg_draw_app, $tmp_draw_app, $tmp_options_input, $tmp_require_js, $tmp_upload_file, $u_draw_app, $query;
-	$a = $tmp_options_input['input'][$da = 'draw_app'];
+	global $cfg_draw_app, $tmp_draw_app, $tmp_draw_app_select, $tmp_require_js, $tmp_upload_file, $u_draw_app, $query;
+	$a = $tmp_draw_app_select;
+	$da = 'draw_app';
 	if (!$allow_upload && ($k = array_search(DRAW_APP_NONE, $cfg_draw_app)) !== false) unset($cfg_draw_app[$k]);
 	if (
 		!($n = $query[$da] ?: $u_draw_app)

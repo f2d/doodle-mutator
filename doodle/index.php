@@ -707,7 +707,7 @@ if ($u_key) {
 		) as $k => $v) $d .= $v[0].$tmp_options_drop[$k].'" '.$v[1].'">';
 		if (!$qdir) {
 			if (GOD && WS_NGINX) $page['content'] .= vsprintf('
-||<b class="anno report">%s<br><a href=".?'.LK_MOD_ACT.'=files&'.LK_MOD_DO.'=nginx">%s</a></b>', $tmp_options_warning);
+||<b class="anno report">%s<br><a href=".?'.LK_MOD_ACT.'=files&'.LK_MOD_OPT.'=nginx">%s</a></b>', $tmp_options_warning);
 			$page['content'] .= '
 ||<b class="anno">'.sprintf($tmp_options_first, $tmp_options_apply, $room_list_href).'</b>';
 		}

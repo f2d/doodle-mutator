@@ -363,7 +363,7 @@ a:hover, a.u:hover {
 .wider .post .center {
 	max-width: 690px;
 }
-.post .center .anno.report {
+.post .center .anno {
 	display: block;
 }
 .post .center p {
