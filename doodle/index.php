@@ -189,7 +189,7 @@ if ($a = mb_split_filter($p)) {
 			&&	get_room_name_length($room)
 			) {
 				$qpath['room_name'] = $room;
-			} else $etc = '';
+			} else $etc = $room = '';
 		}
 //* 5) this will be either "/last-part" (kept for legacy requests) or just a trailing "/" before optional "?query":
 		if ($etc && !preg_match('~^[-\d]+$~', $etc)) $etc = '';
