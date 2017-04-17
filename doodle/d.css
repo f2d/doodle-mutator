@@ -363,8 +363,9 @@ a:hover, a.u:hover {
 .wider .post .center {
 	max-width: 690px;
 }
-.post .center .anno {
-	display: block;
+.post .anno {
+	display: inline-block;
+	margin: -8px 0;
 }
 .post .center p {
 	line-height: 28px;

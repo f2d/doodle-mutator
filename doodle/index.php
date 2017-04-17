@@ -675,12 +675,13 @@ if ($u_key) {
 
 	if ($qd_opts) {
 		$page['data']['content']['type'] = 'options';
-		$s = '|';
+		$so = '|';
+		$sp = ';';
 		$t = ':	';
-		$draw_app = implode(';', array(
+		$draw_app = implode($sp, array(
 			(array_search($u_draw_app, $cfg_draw_app) ?: 0)
-		,	implode($s, $tmp_draw_app)
-		,	implode($s, $cfg_draw_app)
+		,	implode($so, $tmp_draw_app)
+		,	implode($so, $cfg_draw_app)
 		,	DRAW_APP_NONE
 		,	'?draw_app=*'
 		));
@@ -689,8 +690,13 @@ if ($u_key) {
 		foreach ($o as $k => $l) {
 			$r = abbr($k).'='.(
 				$i === 'input'
-				? ($$k ?: '='.(${"u_$k"} ?: get_const($k)))
-				: ($u_opts[$k]?1:'')
+				? (
+					$$k ?: (
+						!$qdir && $k == 'room_default'
+						? (${"u_$k"} ?: get_const($k))
+						: ${"u_$k"}
+					).$so.get_const($k)
+				) : ($u_opts[$k]?1:'')
 			);
 			if ($i === 'admin') $l = '<span class="gloom">'.$l.'</span>';
 			$c .= NL.$l.$t.$r;
@@ -716,11 +722,12 @@ if ($u_key) {
 </form><form method="post">'
 .NL.$tmp_options_name.$t.$usernames[$u_num]
 .NL.$tmp_options_qk.$t.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">
-separator = '.$s.$c
+separator = '.$so.'
+sep_select = '.$sp.$c
 .NL.$tmp_options_time.$t.date('e, T, P')
 .NL.$tmp_options_time_client.$t.'<time id="time-zone"></time>'
 .($u_flag ? NL.$tmp_options_flags.$t.implode(', ', $u_flag) : '')
-.$i.$tmp_options_apply.'" id="apply">
+.$i.$tmp_options_apply.'" id="apply"'.($qdir?' disabled':'').'>
 </form>';
 		foreach ($tmp_rules as $head => $hint) {
 			if (is_array($hint)) {
@@ -825,7 +832,7 @@ if (TIME_PARTS) time_check_point('inb4 aim lock');
 				);
 				$visible = data_get_visible_threads();
 				data_unlock();
-if (TIME_PARTS) time_check_point('got visible data, unlocked');
+if (TIME_PARTS) time_check_point('got visible threads data, unlocked all');
 
 				exit_if_not_mod(max($t = $target['time'], $visible['last']));
 				$task_time = ($t ?: T0);	//* <- UTC seconds
@@ -888,9 +895,10 @@ images = '.ROOTPRFX.DIR_PICS;
 					$page['content'] = $t.NL;
 					$a = array();
 					$b = '<br>';
-if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
+if (TIME_PARTS) time_check_point('inb4 vts -> tsv'.NL);
 					foreach ($vts as $tid => $posts) {
 						$tsv = '';
+if (TIME_PARTS) $pi = $ri = $li = 0;
 						foreach ($posts as $postnum => $post) {
 							if ($t = $post['time']) {
 								if ($u_opts['times']) {
@@ -915,13 +923,18 @@ if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
 							,	'user' => $r
 							,	'content' => $post['post']
 							);
-							if ($t = $post['used']) $tabs['used'] = $t;
+							if ($t = $post['used']) {
+								$tabs['used'] = $t;
+if (TIME_PARTS) ++$pi;
+							}
 							if (GOD) {
 								$tabs['color'] .= '#'.$uid;
 								if ($t = $post['browser']) $tabs['browser'] = $t;
 							}
 							if (is_array($r = $visible['reports'][$tid][$postnum])) {
+if (TIME_PARTS) $ri += count($r);
 								foreach ($r as $k => $lines) {
+if (TIME_PARTS) $li += count($lines);
 									$k = 'reports_on_'.($k > 0?'user':'post');
 									$v = '';
 									foreach ($lines as $time => $line) $v .= ($v?'<br>':'').$time.': '.$line;
@@ -935,11 +948,11 @@ if (TIME_PARTS) time_check_point('inb4 raw data iteration'.NL);
 							).implode('	', $tabs);
 						}
 						$a[$tid] = $tsv;
-if (TIME_PARTS) time_check_point('done trd '.$tid);
+if (TIME_PARTS) time_check_point("done trd $tid, ".count($posts).' posts'.($pi?", $pi pics":'').($ri?", $li reports on $ri posts":''));
 					}
 					ksort($a);
 					$page['content'] .= implode(NL, array_reverse($a));
-if (TIME_PARTS) time_check_point('after sort + join');
+if (TIME_PARTS) time_check_point('done sort + join');
 					if (GOD) $filter = 1;
 				} else if (MOD) {
 					$left = (GOD || !NO_MOD?'v':'');

@@ -1257,7 +1257,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 	} else
 	if ($o == 'nuke room') {
 		$del_pics = ($un?2:1);
-		$k = DATA_DIR_ROOM.$room;
+		$k = DATA_DIR_ROOM."$room/";
 		$a = array();
 		$count = array();
 
@@ -1419,7 +1419,7 @@ function data_get_visible_threads() {
 
 	data_lock($lk = LK_ROOM.$room, false);
 	$c = count($files = get_dir_contents($td, F_NATSORT));
-if (TIME_PARTS) time_check_point("done scan: $c files in $r, inb4 thread iteration".NL);
+if (TIME_PARTS) time_check_point("done scan: $c files in $td, inb4 thread iteration".NL);
 	foreach ($files as $fn) if (
 		is_file($path = $td.$fn)
 	&&	($f = data_cache($path))

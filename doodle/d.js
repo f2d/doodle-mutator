@@ -16,6 +16,7 @@
 ,	regTimeDrawn = /^((\d+)-(\d+)(?:[^\d:,=-]+(\d+)-(\d+))?|[\d:]+)(?:=(-?\d+))?,(.*)$/m
 ,	regTimeBreak = /^\d+(<|>|,|$)/
 ,	regLineBreak = /^(\r\n|\r|\n)/gm
+,	regLEqual = /^=+/
 ,	regLNaN = /^\D+/
 ,	regNaN = /\D+/
 ,	regSpace = /\s+/g
@@ -398,6 +399,21 @@ function meta() {toggleClass(id('content') || document.body, 'hide-p');}
 function fit() {
 var	e = (id('content') || document.body).style, w = maxWidth;
 	e.maxWidth = w[e.maxWidth != w[1]?1:0];
+}
+
+function parseLineKeyVal(line) {
+
+	function parseLineTrimVal(v) {
+		v = v.replace(regTrim, '');
+		if (v.length && v[0] == '"' && v.slice(-1) == '"') return v.slice(1, -1);
+		return v;
+	}
+
+var	i = line.indexOf('=');
+	return [
+		parseLineTrimVal(line.substr(0,i))
+	,	parseLineTrimVal(line.substr(i).replace(regLEqual, ''))
+	];
 }
 
 function orz(n) {return parseInt(n||0)||0;}
@@ -908,7 +924,7 @@ function showContent(sortOrder) {
 
 	function getThreadHTML(threadText, addMarks) {
 
-		function getLineHTML(line) {
+		function getLineHTML(line, noShrink) {
 		var	lineHTML = ''
 		,	postAttr = ''
 		,	postMenu = 0
@@ -922,7 +938,7 @@ function showContent(sortOrder) {
 		//* announce indent:
 					if (line[1] == '|') return (
 						getLineHTML(t = '\t\t')
-					+	getLineHTML(t+line.slice(2))
+					+	getLineHTML(t+line.slice(2), true)
 					+	getLineHTML(t)
 					);
 		//* 1 line, any cell count, evenly hor.aligned:
@@ -960,11 +976,11 @@ function showContent(sortOrder) {
 				} else
 		//* save variables, show nothing:
 				if ((i = line.indexOf('=')) > 0) {
-				var	k = line.substr(0,i).replace(regTrim, '')
-				,	v = line.substr(i+1).replace(regTrim, '')
+				var	i = parseLineKeyVal(line)
+				,	k = i[0]
+				,	v = i[1]
 					;
 					if (k.length && v.length) {
-						if (v[0] == '"' && v.slice(-1) == '"') v = v.slice(1, -1);
 						if (flagVarNames.indexOf(k) < 0) param[k] = v;
 						else {
 							i = v.length;
@@ -1143,24 +1159,19 @@ function showContent(sortOrder) {
 						t = k.join(sep);
 					} else
 				//* options:
-					if (dtp.options && t[0] != '<' && t.indexOf('=') > 0) {
-					var	k = t.split('=')
-					,	sep = sep || ','
+					if (dtp.options && t[0] != '<' && (i = t.indexOf('=')) >= 0) {
+					var	sep = sep || ','
+					,	sel = param.sep_select || ';'
+					,	i = parseLineKeyVal(t)
+					,	k = i[0]
+					,	v = i[1]
 						;
-						if (k.length > 2 && k[1].length > 0) k = [k[0], k.slice(1).join('=')];
-				//* text field:
-						if (k.length > 2) {
-							t = '<input type="text'
-							+	'" name="'+optPrefix+k[0]
-							+	'" value="'+k[2]
-							+	'" onChange="allowApply()">';
-						} else
 				//* drop-down select:
-						if (k[1].indexOf(sep) > 0) {
-						var	l = k[1].split(';')
+						if (v.indexOf(sel) >= 0) {
+						var	l = v.split(sel)
 						,	m = orz(l.shift())
 							;
-							t = '<select name="'+optPrefix+k[0]
+							t = '<select name="'+optPrefix+k
 							+(
 								l.length > 2
 								? '" onChange="selectLink(this,\''
@@ -1179,17 +1190,26 @@ function showContent(sortOrder) {
 							+		(l[i]?l:k)[i]
 							+	'</option>';
 							t += '</select>';
+						} else
+				//* text field:
+						if (v.indexOf(sep) >= 0) {
+							l = v.split(sep);
+							t = '<input type="text'
+							+	'" name="'+optPrefix+k
+							+	'" value="'+l[0]
+							+	'" placeholder="'+l[1]
+							+	'" onChange="allowApply()">';
 						} else {
 				//* toggle box:
 							t = '['+[0,1].map(
-								function(v) {
-								var	text = (optionNames[v] || la.toggle[v]).replace(regTrimPun, '');
+								function(i) {
+								var	text = (optionNames[i] || la.toggle[i]).replace(regTrimPun, '');
 									return '<label>'
 									+		'<input type="radio'
-									+			'" name="'+optPrefix+k[0]
+									+			'" name="'+optPrefix+k
 									+			'" value="'+v
 									+			'" onChange="allowApply()"'
-									+			(k[1] == v?' checked':'')
+									+			(i == v?' checked':'')
 									+		'>\n<b>'+text+'</b>\n'
 									+	'</label>';
 								}
@@ -1416,7 +1436,7 @@ function showContent(sortOrder) {
 			}
 			if (notEmpty(lineHTML)) {
 		//* half width:
-				if (dtp.options || dtp.rooms) lineHTML =
+				if (!noShrink && (dtp.options || dtp.rooms)) lineHTML =
 						'<div class="center">'
 				+			lineHTML
 				+		'</div>';
@@ -1964,7 +1984,7 @@ var	t = k.getAttribute('data-t')
 			(m = (n = j[i]).previousElementSibling)
 		&&	!((e = m.firstElementChild) && e.tagName.toLowerCase() === 'a')
 		) {
-			if (h = regClassHid.test(n.className)) allowApply(-1);
+			h = regClassHid.test(n.className);
 			m.innerHTML = getToggleButtonHTML(m.innerHTML, !h);
 		}
 	}
