@@ -53,6 +53,7 @@ body, .task input:not([type="checkbox"]), .task select {
 }
 .menu-head {
 	display: inline-block;
+	position: relative;
 }
 .menu-head>a::before {
 	line-height: 50%;
@@ -83,7 +84,7 @@ body, .task input:not([type="checkbox"]), .task select {
 .r .menu-list {
 	text-align: right;
 }
-.r .menu-hid {
+.r .menu-hid, .r .menu-head>a::before {
 	left: inherit;
 	right: 0;
 }
@@ -98,6 +99,12 @@ body, .task input:not([type="checkbox"]), .task select {
 }
 .buttons>*:not(:first-child) {
 	margin-left: 0.5em;
+}
+.buttons .menu-head>a::before {
+	position: absolute;
+	line-height: 0;
+	bottom: 12px;
+	left: 4px;
 }
 .buttons .menu-list {
 	padding: 8px;

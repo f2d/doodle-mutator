@@ -1739,6 +1739,8 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			if ($t = implode(NL, $u_task)) {
 				data_put($u_t_f, DATA_LOG_START.$t);
 			} else unlink($u_t_f);
+
+			$target['changed'] = 1;
 		}
 
 //* rename old targets as dropped (unlocked):
