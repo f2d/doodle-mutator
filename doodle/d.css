@@ -212,7 +212,7 @@ a:hover, a.u:hover {
 	content: attr(data-index);
 	background-color: rgba(160, 160, 160, 0.6);
 }
-#thumbs a:hover {
+#thumbs a:hover, .welcome a:hover {
 	border-color: #09f;
 }
 #took {
@@ -763,6 +763,13 @@ a:hover, a.u:hover {
 .welcome tr.next td.thread::before {
 	display: block;
 	width: 100%;
+}
+.welcome a {
+	display: inline-block;
+	border: 2px solid #ddd;
+}
+.welcome a img {
+	vertical-align: bottom;
 }
 small {
 	line-height: 50%;

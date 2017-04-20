@@ -359,6 +359,9 @@ if (GOD && (
 	$lnk = $t = '';
 	$mod_title = $mod_page = $tmp_mod_pages[$q] ?: $tmp_empty;
 
+	if ($q === 'welcome') {
+		$page['welcome'] = $tmp_welcome_parts;
+	} else
 	if ($q === 'logs') {
 		$day = $query[$qday] ?: $etc;
 		$ymd = preg_match(PAT_DATE, $day);
@@ -534,7 +537,7 @@ $t";
 		}
 		data_unlock($q);
 	}
-	if ($page['content'] || ($page['textarea'] = $t) || $lnk) {
+	if ($page['content'] || ($page['textarea'] = $t) || $page['welcome'] || $lnk) {
 		if ($page['content'] || $lnk) {
 			$page['js']['mod']++;
 			$page['js'][0]++;

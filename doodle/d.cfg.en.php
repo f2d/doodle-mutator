@@ -96,6 +96,7 @@ $tmp_mod_pages = array(
 ,	LK_REF_LIST =>	'Ref.links'
 ,	'vars' =>	'Vars'
 ,	'varsort' =>	'Var.sort'
+,	'welcome' =>	'Welcome page'
 );
 $tmp_mod_panel = 'Mod panel';
 $tmp_mod_post_hint = 'Modify this post or thread.';

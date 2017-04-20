@@ -163,8 +163,8 @@ function mb_split_filter($s, $by = '/', $limit = 0) {
 	, $s, $limit, PREG_SPLIT_NO_EMPTY);
 }
 
-function mb_strpos_after ($where, $what) {return false !== ($pos = mb_strpos ($where, $what)) ? $pos + mb_strlen($what) : $pos;}
-function mb_strrpos_after($where, $what) {return false !== ($pos = mb_strrpos($where, $what)) ? $pos + mb_strlen($what) : $pos;}
+function mb_strpos_after ($where, $what, $offset = 0) {return false !== ($pos = mb_strpos ($where, $what, $offset)) ? $pos + mb_strlen($what) : $pos;}
+function mb_strrpos_after($where, $what, $offset = 0) {return false !== ($pos = mb_strrpos($where, $what, $offset)) ? $pos + mb_strlen($what) : $pos;}
 function mb_str_replace($what, $to, $where) {return implode($to, preg_split('/('.mb_escape_regex($what).')/u', $where));}
 function mb_str_replace_first($what, $to, $where) {
 	return (
@@ -421,10 +421,11 @@ function get_dir_top_filemtime($d) {
 	return $t;
 }
 
+function get_pic_url($p) {return ROOTPRFX.(PIC_SUB ? get_pic_subpath($p) : DIR_PICS.get_file_name($p));}
 function get_pic_normal_path($p) {return preg_replace('~(^|[\\/])([^._-]+)[^._-]*(\.[^.,;]+)([;,].*$)?~u', '$2$3', $p);}
 function get_pic_resized_path($p) {$s = '_res'; return (false === ($i = mb_strrpos($p, '.')) ? $p.$s : mb_substr($p,0,$i).$s.mb_substr($p,$i));}
 function get_pic_subpath($p, $mk = false) {
-	$p = get_pic_normal_path($p);
+	$p = get_pic_normal_path(get_file_name($p));
 	$i = mb_strpos_after($p, '.');
 	$e = mb_substr($p,$i,1);
 	$n = mb_substr($p,0,1);
@@ -432,7 +433,6 @@ function get_pic_subpath($p, $mk = false) {
 	return ($mk ? mkdir_if_none($p) : $p);
 }
 
-function get_pic_url($p) {return ROOTPRFX.(PIC_SUB?get_pic_subpath($p):DIR_PICS.$p);}
 function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for archive pages; default = current date
 	global $cfg_date_class, $date_classes;
 	if (!$t_first && !$t_last && $date_classes) return $date_classes;
@@ -723,30 +723,63 @@ function get_template_attr($a = '', $prefix = 'data-') {
 	return $line ?: '';
 }
 
+function get_template_welcome_row($sep, $a, $cfg_k = '') {
+	global $cfg_welcome_links;
+	$a = (array)$a;
+	foreach ($a as $k => $v) if ($v) {
+		if ($cfg_k && ($i = $cfg_welcome_links[$cfg_k][$k])) {
+			$txt = $v;
+			$url = $i;
+		} else
+		if ($k !== intval($k)) {
+			$txt = $k;
+			$url = $v;
+		} else continue;
+
+		if (
+			false === ($i = mb_strpos($txt, '<img'))
+		||	false === ($j = mb_strpos_after($txt, '>', $i))
+		) continue;
+
+		if (is_array($url)) {
+			list($f, $g) = $url;
+			$url = (function_exists($f) ? $f($g) : $g);
+		}
+		$a[$k] = indent(
+			mb_substr($txt, 0, $i)
+		.NL.	'<a href="'.$url.'" target="_blank">'
+		.NL.	'	'.mb_substr($txt, $i, $j-$i)
+		.NL.	'</a>'
+		.NL.	mb_substr($txt, $j)
+		);
+	}
+	return implode($sep, $a);
+}
+
 function get_template_welcome_see_do($c, $u, $see = '', $do = '') {
 	$user = NL."<td>	$u[who]	</td>";
 	$skip = NL.'<td>	...	</td>';
 	$class = '<td class="thread">';
 	$td = '<td></td><td></td>';
 	return '<tr class="'.$c.' see">'.indent(
-		$user.$skip.$class.implode(
+		$user.$skip.$class.get_template_welcome_row(
 			'</td>'.NL.'<td class="then"></td>'.$class
-		,	(array)($see ?: array(
-					"$u[desc_see]:"
-				,	"$u[pic_see]:"
-				,	"$u[desc_see]:"
-				)
+		,	$see ?: array(
+				"$u[desc_see]:"
+			,	"$u[pic_see]:"
+			,	"$u[desc_see]:"
 			)
+		,	$see?'see':''
 		).'</td>'.$skip.$user
 	).NL.'</tr><tr class="'.$c.' do">'.indent(
-		$td.NL.$class.implode(
+		$td.NL.$class.get_template_welcome_row(
 			'</td><td></td>'.NL.$class
-		,	(array)($do ?: array(
-					$u['desc_do']
-				,	$u['pic_do']
-				,	$u['desc_do']
-				)
+		,	$do ?: array(
+				$u['desc_do']
+			,	$u['pic_do']
+			,	$u['desc_do']
 			)
+		,	$do?'do':''
 		).'</td>'.NL.$td
 	).'</tr>';
 }

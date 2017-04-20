@@ -101,6 +101,7 @@ $tmp_mod_pages = array(
 ,	LK_REF_LIST =>	'Реф.Ссылки'
 ,	'vars' =>	'Переменные'
 ,	'varsort' =>	'Перем.сорт'
+,	'welcome' =>	'Старт.страница'
 );
 $tmp_mod_panel = 'Мод-панель';
 $tmp_mod_post_hint = 'Операции на этот пост и тред.';

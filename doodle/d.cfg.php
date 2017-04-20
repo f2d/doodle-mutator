@@ -275,12 +275,35 @@ $cfg_date_class = array(
 	3: 1 or 2
 	omit: 2, so archived content is like it was/would be last seen
  * Example:
-	array('cirno-day', 'Y-m-d', '2009-09-09', '2009-09-09', 2)
-,	array('leap-year', 'nd', 229, 229)
-,	array('april-fools','nd',401, 401)
-,	array('cirno-day', 'nd', 909, 909)
+	array('cirno-day', 'Y-m-d', '2009-09-09', '2009-09-09', 2),
+	array('leap-year', 'nd', 229, 229),
+	array('april-fools','nd',401, 401),
+	array('cirno-day', 'nd', 909, 909),
 */
-	array('new-year', 'nd', 1231, 109)
+	array('new-year', 'nd', 1231, 109),
+);
+
+//* ---------------------------------------------------------------------------
+
+$cfg_welcome_links = array(
+/*
+ * Format:
+	'row_ID' => array(
+		0 => 'url://full/absolute/path',
+		1 => '/site_root_relative/path',
+		2 => ROOTPRFX.'game_relative/path',
+		3 => array('function_name', 'argument'),
+	)
+ * Omit or empty value to skip a column.
+ * Which columns are actually used is decided by template.
+*/
+	'see' => array(
+	//	0 => array('get_pic_url', 'bc05ecff68a66c0779d02b27c0c713dd.png'),
+	//	2 => ROOTPRFX.'archive/base/167.htm',
+	)
+,	'do' => array(
+	//	1 => array('get_pic_url', '85cd15467fc90d1dcd1ae9d3a9b96ea8.png'),
+	)
 );
 
 //* ---------------------------------------------------------------------------
@@ -290,7 +313,7 @@ define(FOOT_NOTE, '
 <a href="https://github.com/f2d/">%s</a>, 2013-2017,
 <a href="'.BOARD_LINK.'">%s</a>%s');
 /*
- * format lang-specific %s:
+ * Format lang-specific %s:
 	1: site engine link
 	2: author link
 	3: guest book/forum/board link
