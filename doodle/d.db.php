@@ -1615,6 +1615,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 
 	if (!$change) $change = ($target['time'] === DATA_U_TASK_CHANGE);
 	$change_from = ($change ? array($own, $dropped, "$i$e") : array());
+	$alt = !!$room_type['alternate_reply_type'];
 	$counts = array();
 	$u_own = array();
 	$free_tasks = array();
@@ -1645,18 +1646,23 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 	}
 
 //* invert type for change:
-	if ($room_type['alternate_reply_type']) {
+	if ($alt) {
 		if ($change === ARG_DESC) $change = ARG_DRAW; else
 		if ($change === ARG_DRAW) $change = ARG_DESC;
 	} else $change = 0;
 
 //* throw away irrelevant pools:
+	$dont_count = array('undrawn', 'unknown');
 	foreach ($free_tasks as $k => $v) {
+		$typed = (is_prefix($k, ARG_DESC) || is_prefix($k, ARG_DRAW));
+		if (!$alt && $typed) goto dont_count;
+		foreach ($dont_count as $x) if (is_postfix($k, $x)) goto dont_count;
 		$counts[$k] = count($v);
+	dont_count:
 		if (
 			$change
 			? (is_prefix($k, $change) || is_prefix($k, 'any'))
-			: (is_prefix($k, ARG_DESC) || is_prefix($k, ARG_DRAW))
+			: $typed
 		) unset($free_tasks[$k]);
 	}
 	$target['count_free_tasks'] = $counts;
@@ -1666,7 +1672,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 //* change task if thread is missing or taken, or enough time passed since taking last task:
 	if (!(
 		$tt
-	&&	!$change
+	&&	!($change || $change_from)
 	&&	($t = intval($target['time']))
 	&&	(T0 < $t + TARGET_CHANGE_TIME)
 	&&	(list($own, $dropped) = mb_split_filter($tt))

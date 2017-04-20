@@ -3,6 +3,7 @@
 $t = microtime();
 
 function is_prefix($s, $p) {return substr($s, 0, strlen($p)) === $p;}
+function is_postfix($s, $p) {return substr($s, -strlen($p)) === $p;}
 function exit_403($why) {
 	header('HTTP/1.1 403 Forbidden');
 	die("Error 403: Forbidden. Reason: $why.");
@@ -838,7 +839,7 @@ if (TIME_PARTS) time_check_point('inb4 aim lock');
 				data_unlock();
 if (TIME_PARTS) time_check_point('got visible threads data, unlocked all'.($target?', target = '.trim(print_r($target, true)):''));
 
-				exit_if_not_mod(max($t = $target['time'], $visible['last']));
+				exit_if_not_mod(max($t = $target['time'], $visible['last']), $change);
 				$task_time = ($t ?: T0);	//* <- UTC seconds
 				$x = 'trd_max';
 				if ($t = ($target['task'] ? '

@@ -14,7 +14,7 @@ define(F_NATSORT, 8);
 
 //* ---------------------------------------------------------------------------
 
-function exit_if_not_mod($t = 0) {
+function exit_if_not_mod($t = 0, $change = 0) {
 	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
 	$q = 'W/"'.md5(
 		'Refresh any page cached before '.HTML_VERSION
@@ -23,7 +23,8 @@ function exit_if_not_mod($t = 0) {
 	).'"';
 	header("Etag: $q");
 	if (
-		!$GLOBALS['u_opts']['modtime304']
+		!$change
+	&&	!$GLOBALS['u_opts']['modtime304']
 	&&	isset($_SERVER[$m = 'HTTP_IF_MODIFIED_SINCE'])
 	&&	isset($_SERVER[$n = 'HTTP_IF_NONE_MATCH'])
 	&&	$_SERVER[$m] == $t
