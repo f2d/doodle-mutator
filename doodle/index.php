@@ -817,11 +817,11 @@ sep_select = '.$sp.$c
 				$change = (isset($query['change']) ? ($query['change'] ?: true) : false);
 				$desc_query = ($change === ARG_DESC || isset($query[ARG_DESC]));
 				$draw_query = ($change === ARG_DRAW || !!array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY));
-				$dont_change = (
+				$dont_change = (!$change && (
 					$desc_query
 				||	$draw_query
 				||	$ay
-				);
+				));
 				$skip_list = get_room_skip_list();
 
 if (TIME_PARTS) time_check_point('inb4 aim lock');

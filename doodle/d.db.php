@@ -1611,12 +1611,62 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 //* check personal target list:
 	$tt = data_check_my_task(true);
 
-	if (POST || $dont_change) return $target;
+	if (POST) return $target;
 
-//* if thread is missing or taken, or enough time passed since taking last task:
+	if (!$change) $change = ($target['time'] === DATA_U_TASK_CHANGE);
+	$change_from = ($change ? array($own, $dropped, "$i$e") : array());
+	$counts = array();
+	$u_own = array();
+	$free_tasks = array();
+
+//* scan threads; ignore skipped, full or held by others:
+	foreach (get_dir_contents($d) as $f) if (
+		!in_array($f, $change_from)
+	&&	preg_match(DATA_PAT_TRD_PLAY, $f, $m)
+	&&	is_file($path = $d.$f)
+	) {
+		$i = $m['id'];
+		if ($m['hold_u'] == $u_num) $u_own[$f] = $i;	//* <- own current target excluded
+		else if (
+			!(is_array($skip_list) && in_array($i, $skip_list))
+		&&	intval($m['hold_t']) < T0		//* <- other's target expired
+		&&	!data_is_thread_full($m['pics'])
+		&&	($room_type['allow_reply_to_self'] || data_get_last_post_u(data_cache($path)) != $u_num)
+		) {
+			$type = (data_is_thread_last_post_pic($path) ? ARG_DESC : ARG_DRAW);
+			$free_tasks['any'][$f] = $i;
+			$free_tasks[$type][$f] = $i;
+			if ($unknown_1st && !data_thread_has_posts_by($path, $u_num)) {
+				$free_tasks['any_unknown'][$f] = $i;
+				$free_tasks[$type.'_unknown'][$f] = $i;
+			}
+			if (!data_thread_has_posts_by($path, $u_num, DATA_FLAG_POST_IMG)) $free_tasks['any_undrawn'][$f] = $i;
+		}
+	}
+
+//* invert type for change:
+	if ($room_type['alternate_reply_type']) {
+		if ($change === ARG_DESC) $change = ARG_DRAW; else
+		if ($change === ARG_DRAW) $change = ARG_DESC;
+	} else $change = 0;
+
+//* throw away irrelevant pools:
+	foreach ($free_tasks as $k => $v) {
+		$counts[$k] = count($v);
+		if (
+			$change
+			? (is_prefix($k, $change) || is_prefix($k, 'any'))
+			: (is_prefix($k, ARG_DESC) || is_prefix($k, ARG_DRAW))
+		) unset($free_tasks[$k]);
+	}
+	$target['count_free_tasks'] = $counts;
+
+	if ($dont_change) return $target;
+
+//* change task if thread is missing or taken, or enough time passed since taking last task:
 	if (!(
 		$tt
-	&&	!($change || ($change = ($target['time'] === DATA_U_TASK_CHANGE)))
+	&&	!$change
 	&&	($t = intval($target['time']))
 	&&	(T0 < $t + TARGET_CHANGE_TIME)
 	&&	(list($own, $dropped) = mb_split_filter($tt))
@@ -1630,47 +1680,6 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 		)
 	&&	($room_type['allow_reply_to_self'] || data_get_last_post_u(data_cache($f)) != $u_num)
 	)) {
-		$change_from = ($change ? array($own, $dropped, "$i$e") : array());
-
-//* scan threads; ignore skipped, full or held by others:
-		$free_tasks = array();
-		$u_own = array();
-		foreach (get_dir_contents($d) as $f) if (
-			!in_array($f, $change_from)
-		&&	preg_match(DATA_PAT_TRD_PLAY, $f, $m)
-		&&	is_file($path = $d.$f)
-		) {
-			$i = $m['id'];
-			if ($m['hold_u'] == $u_num) $u_own[$f] = $i;	//* <- own current target excluded
-			else if (
-				!(is_array($skip_list) && in_array($i, $skip_list))
-			&&	intval($m['hold_t']) < T0		//* <- other's target expired
-			&&	!data_is_thread_full($m['pics'])
-			&&	($room_type['allow_reply_to_self'] || data_get_last_post_u(data_cache($path)) != $u_num)
-			) {
-				$type = (data_is_thread_last_post_pic($path) ? ARG_DESC : ARG_DRAW);
-				$free_tasks['any'][$f] = $i;
-				$free_tasks[$type][$f] = $i;
-				if ($unknown_1st && !data_thread_has_posts_by($path, $u_num)) {
-					$free_tasks['any_unknown'][$f] = $i;
-					$free_tasks[$type.'_unknown'][$f] = $i;
-				}
-				if (!data_thread_has_posts_by($path, $u_num, DATA_FLAG_POST_IMG)) $free_tasks['any_undrawn'][$f] = $i;
-			}
-		}
-		if ($room_type['alternate_reply_type']) {
-			if ($change === ARG_DESC) $change = ARG_DRAW; else
-			if ($change === ARG_DRAW) $change = ARG_DESC;
-		} else $change = 0;
-		$counts = array();
-		foreach ($free_tasks as $k => $v) {
-			$counts[$k] = count($v);
-			if (
-				$change
-				? (is_prefix($k, $change) || is_prefix($k, 'any'))
-				: (is_prefix($k, ARG_DESC) || is_prefix($k, ARG_DRAW))
-			) unset($free_tasks[$k]);
-		}
 //* add empty task to selection, unless current is empty:
 		if ($tt && !data_is_thread_cap()) $free_tasks['any'][] = '';
 
