@@ -1648,7 +1648,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 //* invert type for change:
 	if ($alt) {
 		if ($change === ARG_DESC) $change = ARG_DRAW; else
-		if ($change === ARG_DRAW) $change = ARG_DESC;
+		if ($change === ARG_DRAW) $change = ARG_DESC; else $change = 0;
 	} else $change = 0;
 
 //* throw away irrelevant pools:
