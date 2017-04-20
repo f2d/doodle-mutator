@@ -635,7 +635,14 @@ function data_thread_has_posts_by($t, $u_num, $flags = DATA_FLAG_POST_ANY) {
 function data_get_last_post_u($t) {return data_get_tab_by_file_line($t, 'user', -1);}
 function data_get_last_post_time($t) {
 	if (is_array($t)) return intval($t['last_t'] ?: ($t['hold_u'] ? 0 : $t['hold_t']));	//* <- for legacy time mark format
-	return intval(mb_substr($t, $i = mb_strrpos_after($t, NL), mb_strpos($t, '	', $i)-$i));
+	return intval(mb_substr($t, mb_strrpos_after($t, NL)));
+}
+
+function data_is_thread_last_post_pic($t) {
+	$t = trim_bom(data_get_thread_content($t));
+	$last_txt = mb_strrpos_after($t, DATA_MARK_TXT);
+	$last_pic = mb_strrpos_after($t, DATA_MARK_IMG);
+	return $last_txt < $last_pic;
 }
 
 function data_get_thread_content($t) {return (false === mb_strpos($t, '	') ? data_cache($t) : $t);}
@@ -1505,7 +1512,7 @@ if (TIME_PARTS) time_check_point("done trd $fn, last = $last");
 
 function data_check_my_task($aim = false) {
 	global $u_num, $u_flag, $u_task, $u_t_f, $room, $target;
-	if (!$target) $target = array();
+	if (!$target) $target = array('time' => T0);
 	if ($u_flag['nop']) return '';
 
 	data_lock(LK_ROOM.$room);
@@ -1522,7 +1529,7 @@ function data_check_my_task($aim = false) {
 	) {
 		if ($g && false === mb_strpos($r, '/')) $r = "$g/$r";
 		if ($r == $room) {
-			if (!$target) $target = array(
+			if (!$target || !$target['task']) $target = array(
 				'time'	=> $t
 			,	'thread'=> $f
 			,	'post'	=> $p
@@ -1593,12 +1600,13 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 	$d = DATA_DIR_ROOM."$room/".DATA_SUB_TRD;
 	$e = DATA_LOG_EXT;
 	$target = array();
+	$new_target = array('time' => T0);
 	if (
 		FROZEN_HELL
 	||	$room_type['single_active_thread']
 	||	$u_flag['nop']
 	||	!is_dir($d)
-	) return $target;
+	) return $target ?: $new_target;
 
 //* check personal target list:
 	$tt = data_check_my_task(true);
@@ -1624,10 +1632,8 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 	)) {
 		$change_from = ($change ? array($own, $dropped, "$i$e") : array());
 
-//* change target randomly; ignore skipped, full or held by others:
-		$a = array();
-		$a_unk = array();
-		$a_und = array();
+//* scan threads; ignore skipped, full or held by others:
+		$free_tasks = array();
 		$u_own = array();
 		foreach (get_dir_contents($d) as $f) if (
 			!in_array($f, $change_from)
@@ -1642,29 +1648,46 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			&&	!data_is_thread_full($m['pics'])
 			&&	($room_type['allow_reply_to_self'] || data_get_last_post_u(data_cache($path)) != $u_num)
 			) {
-				$a[$f] = $i;
-				if ($unknown_1st && !data_thread_has_posts_by($path, $u_num)) $a_unk[$f] = $i;
-				if (!data_thread_has_posts_by($path, $u_num, DATA_FLAG_POST_IMG)) $a_und[$f] = $i;
+				$type = (data_is_thread_last_post_pic($path) ? ARG_DESC : ARG_DRAW);
+				$free_tasks['any'][$f] = $i;
+				$free_tasks[$type][$f] = $i;
+				if ($unknown_1st && !data_thread_has_posts_by($path, $u_num)) {
+					$free_tasks['any_unknown'][$f] = $i;
+					$free_tasks[$type.'_unknown'][$f] = $i;
+				}
+				if (!data_thread_has_posts_by($path, $u_num, DATA_FLAG_POST_IMG)) $free_tasks['any_undrawn'][$f] = $i;
 			}
 		}
-		$counts = array(
-			'count_free_tasks' => count($a)
-		,	'count_free_unknown' => count($a_unk)
-		,	'count_free_undrawn' => count($a_und)
-		);
-		if ($tt && !data_is_thread_cap()) $a[''] = '';	//* <- add empty task to selection, unless current is empty
+		if ($room_type['alternate_reply_type']) {
+			if ($change === ARG_DESC) $change = ARG_DRAW; else
+			if ($change === ARG_DRAW) $change = ARG_DESC;
+		} else $change = 0;
+		$counts = array();
+		foreach ($free_tasks as $k => $v) {
+			$counts[$k] = count($v);
+			if (
+				$change
+				? (is_prefix($k, $change) || is_prefix($k, 'any'))
+				: (is_prefix($k, ARG_DESC) || is_prefix($k, ARG_DRAW))
+			) unset($free_tasks[$k]);
+		}
+//* add empty task to selection, unless current is empty:
+		if ($tt && !data_is_thread_cap()) $free_tasks['any'][] = '';
+
+//* get random target from top-preferred pool:
+		ksort($free_tasks);
 		if (!(
-			($f = $a_unk ?: $a_und ?: $a)
-		&&	($f = array_rand($f))
+			($fa = end($free_tasks))
+		&&	($f = array_rand($fa))
 		&&	is_file($path = $d.$f)
 		)) {
-			$target = array();
+			$target = $new_target;
 			$f = '';
 		}
 		if ($f != $own) {
+			$target = $new_target;
 			if (strlen($f)) {
-				$target = array('time' => T0);
-				$i = $a[$f];
+				$i = $fa[$f];
 				$t = trim_bom(data_cache($path));
 				$b = data_get_thread_name_tail($t, false);
 
@@ -1694,8 +1717,10 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 				data_cache_file_rename($path, $d.$taken);
 				array_unshift($u_task, T0."	$room	$t	$p");
 			}
+		}
 
 //* save new target to personal list:
+		if ($f != $own || !strlen($f) !== !strlen($tt)) {
 			if ($t = implode(NL, $u_task)) {
 				data_put($u_t_f, DATA_LOG_START.$t);
 			} else unlink($u_t_f);
@@ -1707,7 +1732,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			data_cache_file_rename($f, "$d$i$t$e");
 		}
 
-		$target = array_merge($target, $counts);
+		$target['count_free_tasks'] = $counts;
 	}
 	return $target;
 }

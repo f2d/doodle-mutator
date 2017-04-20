@@ -814,8 +814,9 @@ sep_select = '.$sp.$c
 
 				$y = $query[ARG_ERROR];
 				if ($ay = mb_split_filter($y, ARG_ERROR_SPLIT)) unset($ay['trd_arch'], $ay['trd_miss']);
-				$desc_query = isset($query[ARG_DESC]);
-				$draw_query = !!array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY);
+				$change = (isset($query['change']) ? ($query['change'] ?: true) : false);
+				$desc_query = ($change === ARG_DESC || isset($query[ARG_DESC]));
+				$draw_query = ($change === ARG_DRAW || !!array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY));
 				$dont_change = (
 					$desc_query
 				||	$draw_query
@@ -825,14 +826,14 @@ sep_select = '.$sp.$c
 
 if (TIME_PARTS) time_check_point('inb4 aim lock');
 				data_aim(
-					isset($query['change']) ? ($query['change'] ?: true) : false
+					$change
 				,	$dont_change		//* <- after POST with error
 				,	$skip_list
 				,	!$u_opts['unknown']
 				);
 				$visible = data_get_visible_threads();
 				data_unlock();
-if (TIME_PARTS) time_check_point('got visible threads data, unlocked all');
+if (TIME_PARTS) time_check_point('got visible threads data, unlocked all'.($target?', target = '.trim(print_r($target, true)):''));
 
 				exit_if_not_mod(max($t = $target['time'], $visible['last']));
 				$task_time = ($t ?: T0);	//* <- UTC seconds
@@ -1051,22 +1052,18 @@ right = $tmp_empty$flags
 					} else {
 						$post_type = ($draw?'text':'image');
 						if ($room_type["allow_$post_type$post_rel"]) {
-							$page['data']['task']['change'] = ($draw?ARG_DESC:ARG_DRAW);
+							$page['data']['task']['free'] = ($draw?ARG_DESC:ARG_DRAW);
 						}
 					}
 				}
+				if ($f = $target['count_free_tasks']) {
+					$page['data']['task']['change'] = implode(',', array_keys($f));
+				}
 				if ($t) {
 					$page['data']['task']['skip'] = intval($target['thread']);
-				} else {
-					$s = count($skip_list);
-					$k = $target['count_free_tasks'];
-					$n = $target['count_free_unknown'];
-					if ($k) {
-						$page['data']['task']['free'] = $k;
-					}
-					if ($s && !$k) {
-						$page['data']['task']['unskip'] = "$s/$k/$n";
-					}
+				} else
+				if ($s = count($skip_list)) {
+					$page['data']['task']['unskip'] = $s;
 				}
 				if ($page['content']) {
 					$page['data']['content']['type'] = 'threads';
@@ -1267,7 +1264,7 @@ if (!$is_report_page) {
 	,	'*' => $tmp_archives
 	,	'?' => $tmp_options
 	,	'~' => $tmp_draw_test
-	,	'#' => '&#9662; '.$tmp_mod_panel
+	,	'#' => $tmp_mod_panel
 	);
 	foreach ($a_head as $k => &$v) $v = '">'.(
 		$short
@@ -1537,7 +1534,7 @@ file: $upload[name]";
 				} else {
 					$t = min($y['t0'] ?: T0, $target['time'] ?: T0);
 					$t = array($t.'000', T0.'000');
-					$z = ($target ? "/$t[0]-$t[1]" : '');
+					$z = ($target['task'] ? "/$t[0]-$t[1]" : '');
 					if ($x = $y['time']) {
 						if (!preg_match('~^(\d+:)+\d+$~', $x)) {
 							if (preg_match('~^(\d+)\D+(\d+)$~', $x, $m)) {

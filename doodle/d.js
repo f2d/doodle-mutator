@@ -17,10 +17,13 @@
 ,	regTimeBreak = /^\d+(<|>|,|$)/
 ,	regLineBreak = /^(\r\n|\r|\n)/gm
 ,	regLEqual = /^=+/
+,	regREqual = /=+$/
 ,	regLNaN = /^\D+/
 ,	regNaN = /\D+/
+,	regNaNa = /\D+/g
 ,	regSpace = /\s+/g
 ,	regSpaceHTML = /\s|&nbsp;|&#8203;/gi
+,	regSplitWord = /\W+/g
 ,	regTrim = getTrimReg('\\s')
 ,	regTrimPun = getTrimReg(':,.')
 ,	regTrimSlash = getTrimReg('\\/')
@@ -34,8 +37,8 @@
 ,	CM = 'checkMistype'
 ,	checking, flag = {}, inputHints = {}
 ,	param = {
-		task_link_prefix: '?'
-	,	task_link: '?draw'
+		task_keep_prefix: '?'
+	,	task_change_prefix: '?change='
 	}
 ,	count = {
 		u: 0
@@ -98,9 +101,15 @@ if (lang == 'ru') la = {
 	,	name: 'Искать этого автора.'
 	}
 ,	task: {
-		change: 'Другое'
-	,	draw: 'Рисовать'
-	,	desc: 'Писать'
+		free: {
+			desc: 'Писать что угодно'
+		,	draw: 'Рисовать что угодно'
+		}
+	,	change: {
+			any: 'Любое другое задание'
+		,	desc: 'Описать другое'
+		,	draw: 'Рисовать другое'
+		}
 	}
 ,	draw_test: 'Попробовать'
 ,	check: 'Нажмите, чтобы проверить и продлить задание.'
@@ -177,9 +186,15 @@ if (lang == 'ru') la = {
 	,	name: 'Search this name.'
 	}
 ,	task: {
-		change: 'Other'
-	,	draw: 'Draw'
-	,	desc: 'Write'
+		free: {
+			draw: 'Draw anything'
+		,	desc: 'Write anything'
+		}
+	,	change: {
+			any: 'Any other task'
+		,	desc: 'Describe other'
+		,	draw: 'Draw other'
+		}
 	}
 ,	draw_test: 'Try drawing'
 ,	check: 'Click this to verify and prolong your task.'
@@ -305,6 +320,7 @@ var	i,t = '';
 	return alert(t), o;
 }
 
+function isNotEmpty(t) {return String(t).replace(regSpaceHTML, '').length;}
 function getTrimReg(c) {return new RegExp('^['+c+']+|['+c+']+$', 'gi');}
 function getClassReg(c) {return new RegExp('(^|\\s)('+c+')($|\\s)', 'i');}
 function o0(line, split, value) {
@@ -417,8 +433,14 @@ var	i = line.indexOf('=');
 }
 
 function orz(n) {return parseInt(n||0)||0;}
-function leftPad(n) {n = orz(n); return n > 9 || n < 0?n:'0'+n;}
-function notEmpty(t) {return String(t).replace(regSpaceHTML, '').length;}
+function leftPad(n, len, pad) {
+	n = ''+orz(n);
+	len = orz(len) || 2;
+	pad = ''+(pad || 0);
+	while (n.length < len) n = pad+n;
+	return n;
+}
+
 function getFormattedTimezoneOffset(t) {
 	return (
 		(t = (t && t.getTimezoneOffset ? t : new Date()).getTimezoneOffset())
@@ -510,7 +532,7 @@ var	r = new XMLHttpRequest();
 				if (k = id('task')) {
 					i = (e = gn('img', k)).length;
 					if (!i == !!img) {
-						k = param.task_link_prefix + (img?'desc':'draw');
+						k = param.task_keep_prefix + (img?'desc':'draw');
 						e = s;
 						error = 1;
 						while (!regTagDivP.test(e.tagName) && (i = e.parentNode)) e = i;
@@ -1059,7 +1081,7 @@ function showContent(sortOrder) {
 					threadNum = (tab.length > 2?1:0);
 					modEnabled = 1;
 				}
-				if (roomCount && notEmpty(t = tab[2]) && t.indexOf(sep) >= 0) {
+				if (roomCount && isNotEmpty(t = tab[2]) && t.indexOf(sep) >= 0) {
 					k = t.split(sep);
 				//* room name:
 					tab[2] = k.shift();
@@ -1076,7 +1098,7 @@ function showContent(sortOrder) {
 					for (i in reportClass) if (a[i]) marks += a[i]+sep;
 				}
 			//* left:
-				if (tab.length > 0 && notEmpty(t = tab[0])) {
+				if (tab.length > 0 && isNotEmpty(t = tab[0])) {
 					if (dtp.options && t.indexOf(j = '|') > 0) {
 						t = (optionNames = t.split(j)).shift().replace(regTrimPun, '')+':';
 					} else
@@ -1100,7 +1122,7 @@ function showContent(sortOrder) {
 							t = k.join(sep);
 						} else
 				//* date hidden:
-						if (tab[2] && notEmpty(t)) t = j+t+'</a>';
+						if (tab[2] && isNotEmpty(t)) t = j+t+'</a>';
 					} else {
 					var	time = t = getFTimeIfTime(t);
 						if (dtp.found) t =
@@ -1111,7 +1133,7 @@ function showContent(sortOrder) {
 						+	'</a>'
 						+	(alter?' → '+threadNum:'');
 					}
-					if (flag.c && (dtp.reflinks || (tab.length > 2 && notEmpty(tab[2])))) {
+					if (flag.c && (dtp.reflinks || (tab.length > 2 && isNotEmpty(tab[2])))) {
 						++count[k = (u == 'u'?u:'o')];
 						if (time) {
 							if (count[k += 'Last'] < time) count[k] = time;
@@ -1129,7 +1151,7 @@ function showContent(sortOrder) {
 					tab[0] = t;
 				}
 			//* right:
-				if (tab.length > 1 && notEmpty(t = tab[1])) {
+				if (tab.length > 1 && isNotEmpty(t = tab[1])) {
 					if (!regTagPre.test(pre.tagName)) {
 						t = encodeHTMLSpecialChars(t);	//* <- fix for textarea source and evil usernames
 					}
@@ -1216,10 +1238,10 @@ function showContent(sortOrder) {
 							).join(sep)+']';
 						}
 					}
-					tab[1] = (marks && !notEmpty(t) ? marks.slice(0, -sep.length) : marks+t);
+					tab[1] = (marks && !isNotEmpty(t) ? marks.slice(0, -sep.length) : marks+t);
 				}
 			//* center:
-				if (tab.length > 2 && notEmpty(t = tab[2])) {
+				if (tab.length > 2 && isNotEmpty(t = tab[2])) {
 					if (dtp.reports) {
 						t = '<div class="log al">'
 						+	t
@@ -1242,7 +1264,7 @@ function showContent(sortOrder) {
 				//* room frozen:
 						if (tab.length > 4) a = tab[4], k.push('frozen');
 				//* room announce:
-						if (tab.length > 3 && (notEmpty(a) || notEmpty(a = tab[3]))) {
+						if (tab.length > 3 && (isNotEmpty(a) || isNotEmpty(a = tab[3]))) {
 							a = encodeHTMLSpecialChars(
 								a
 								.replace(regTrim, '')
@@ -1258,7 +1280,7 @@ function showContent(sortOrder) {
 						+ '">'+t+'</a>';
 					} else
 				//* image post:
-					if (tab.length > 3 && notEmpty(a = tab[3])) {
+					if (tab.length > 3 && isNotEmpty(a = tab[3])) {
 						imgRes = (t.indexOf(', ') > 0);
 						if (flag.c) ++count.img;
 						if (a[0] == '?') {
@@ -1307,7 +1329,7 @@ function showContent(sortOrder) {
 											regImgTitle
 										,	' $1, '+k+'. '+la.resized_hint+'"'
 										)+l;
-									if (notEmpty(tab[0])) tab[0] += '<br>'+t
+									if (isNotEmpty(tab[0])) tab[0] += '<br>'+t
 										.replace(regImgTag, k)
 										.split(sep)
 										.join('" title="'+la.resized_hint+sep);
@@ -1317,7 +1339,7 @@ function showContent(sortOrder) {
 									j = t.split(';');
 									t = j[0].replace(/(\.[^.]+)$/, '_res$1');
 									k = j[1].replace(regNaN, 'x');
-									if (notEmpty(tab[0])) tab[0] +=
+									if (isNotEmpty(tab[0])) tab[0] +=
 										'<span class="'+(u == 'u'?u:'res')
 								//	+	'" title="'+k+'. '+la.resized_hint
 									+	'">'
@@ -1385,12 +1407,12 @@ function showContent(sortOrder) {
 					+	'</div>';
 				}
 				i = 2;
-				while (i--) if (notEmpty(t = tab[i])) {
+				while (i--) if (isNotEmpty(t = tab[i])) {
 					if (dtp.threads) {
 						j = '';
 						if (b = param[k = reportOnPostTypes[i]]) {
 							b = b.split('<br>');
-							for (var rep_line_i in b) if (notEmpty(c = b[rep_line_i])) {
+							for (var rep_line_i in b) if (isNotEmpty(c = b[rep_line_i])) {
 								d = c.indexOf(':');
 								j +=	'<span class="report">'
 								+		getFormattedTime(c.slice(0, d))
@@ -1412,7 +1434,7 @@ function showContent(sortOrder) {
 							m += ' id="m_'+(
 								dtp.users
 								? userID+'_'+threadNum+'_3'
-								: postID.replace(/\D+/g, '_')
+								: postID.replace(regNaNa, '_')
 							)+'"';
 							if (i == 0 && editPostData) m += ' data-post="'+encodeHTMLSpecialChars(
 								editPostData
@@ -1432,9 +1454,9 @@ function showContent(sortOrder) {
 					+		t
 					+	'</p>';
 				}
-				lineHTML += tab.slice(0,3).filter(notEmpty).join('');
+				lineHTML += tab.slice(0,3).filter(isNotEmpty).join('');
 			}
-			if (notEmpty(lineHTML)) {
+			if (isNotEmpty(lineHTML)) {
 		//* half width:
 				if (!noShrink && (dtp.options || dtp.rooms)) lineHTML =
 						'<div class="center">'
@@ -1473,9 +1495,9 @@ function showContent(sortOrder) {
 	,	lines = threadText.split('\n')
 	,	line,s,t
 		;
-		for (var l_i in lines) if (notEmpty(line = lines[l_i])) threadHTML += getLineHTML(line);
+		for (var l_i in lines) if (isNotEmpty(line = lines[l_i])) threadHTML += getLineHTML(line);
 
-		if (notEmpty(threadHTML)) {
+		if (isNotEmpty(threadHTML)) {
 			if (addMarks) threadsMarks.push(threadMark);
 			if ((dtp.found || dtp.reports) && (t = param.room)) {
 				threadHTML = getToggleThreadHTML(
@@ -1603,7 +1625,7 @@ var	flagVarNames = ['flag', 'flags']
 		} else {
 			threads = raw.split('\n\n');
 		}
-		for (var t_i in threads) if (notEmpty(thread = threads[t_i])) {
+		for (var t_i in threads) if (isNotEmpty(thread = threads[t_i])) {
 		var	t = getThreadHTML(thread, 1);
 			if (t) threadsHTML.push(t);
 		}
@@ -1844,8 +1866,8 @@ for (i in (a = gn('time'))) if ((e = a[i]) && (t = e.getAttribute('data-t')) && 
 if (k = id('task')) {
 //* room task:
 
-	function addTaskBtn(content, attr) {
-	var	i,e = gc('buttons', taskTop)[0];
+	function addTaskBtn(content, attr, parent) {
+	var	i,e = parent || gc('buttons', taskTop)[0];
 		if (!e) {
 			e = cre('span', taskTop, id('task-text'));
 			e.className = 'buttons r';
@@ -1853,43 +1875,54 @@ if (k = id('task')) {
 		e = cre('a', e, e.firstElementChild);
 		e.innerHTML = content;
 		if (attr) for (i in attr) e.setAttribute(i, attr[i]);
+		return e;
+	}
+
+	function addTaskMenuBtn(content, attr, parentId) {
+	var	a,e = id(parentId);
+		if (a = e) {
+			if (a.href) {
+				a.removeAttribute('id');
+				e = cre('u', a.parentNode, a);
+				e.className = 'menu-head';
+				e.innerHTML = '<u class="menu-top"><u class="menu-hid"><u class="menu-list" id="'+parentId+'"></u></u></u>';
+				e.insertBefore(a, e.firstElementChild);
+			}
+			cre('br', e = id(parentId), e.firstElementChild);
+			addTaskBtn(content, attr, e);
+		} else addTaskBtn(content, attr).id = parentId;
 	}
 
 var	t = k.getAttribute('data-t')
 ,	n = (t !== null)
+,	l = la.task
 	;
 	if (taskTop = gn('p',k)[0]) {
-		if (j = k.getAttribute('data-free')) {
-			addTaskBtn(
-				la.task['change']
-			,	{
-					href: param.task_link_prefix + 'change'
-				}
-			);
-		}
-		if (j = k.getAttribute('data-change')) {
-			param.task_link = param.task_link_prefix + j;
-			if (!n) addTaskBtn(
-				la.task[j]
-			,	{
-					href: param.task_link
-				}
-			);
-		}
 		if (j = k.getAttribute('data-skip')) {
-			addTaskBtn(
+			addTaskMenuBtn(
 				'X'
 			,	{
 					href: 'javascript:skipMyTask('+j+')'
 				,	title: la.skip_hint
 				}
+			,	'task-change-buttons'
+			);
+		}
+		for (i in l) if (j = k.getAttribute('data-'+i)) {
+		var	a = j.split(regSplitWord);
+			for (j in a) addTaskMenuBtn(
+				l[i][a[j]]
+			,	{
+					href: (param['task_'+(i == 'free'?'keep':i)+'_prefix'] + a[j]).replace(regREqual, '')
+				}
+			,	'task-change-buttons'
 			);
 		}
 		if (j = k.getAttribute('data-unskip')) {
 			addTaskBtn(
 				la.unskip
 			,	{
-					href: 'javascript:void '+j.split(/\D+/, 1)[0]
+					href: 'javascript:void '+orz(j)
 				,	title: la.unskip_hint
 				,	id: 'unskip'
 				,	'data-room': room

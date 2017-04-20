@@ -45,7 +45,7 @@ body, .task input:not([type="checkbox"]), .task select {
 	width: 25%;
 	text-align: center;
 }
-.header a {
+.header a, .buttons a {
 	white-space: nowrap;
 }
 .header ~ footer .hint {
@@ -53,6 +53,10 @@ body, .task input:not([type="checkbox"]), .task select {
 }
 .menu-head {
 	display: inline-block;
+}
+.menu-head>a::before {
+	line-height: 50%;
+	content: '\25BE\A0';
 }
 .menu-top {
 	display: none;
@@ -73,19 +77,36 @@ body, .task input:not([type="checkbox"]), .task select {
 	display: block;
 	padding: 4px;
 	border: 1px solid #aaa;
-	border-top: none;
 	background-color: rgba(85, 85, 85, 0.8);
 	text-align: left;
 }
-.buttons a, .a.buttons {
+.r .menu-list {
+	text-align: right;
+}
+.r .menu-hid {
+	left: inherit;
+	right: 0;
+}
+.buttons.r .menu-hid {
+	right: -9px;
+}
+.buttons>*, .buttons a, .a.buttons {
 	display: inline-block;
 	text-decoration: none;
 	background-color: #777;
 	margin: 0;
-	padding: 0 1em;
 }
-.buttons a + a {
+.buttons>*:not(:first-child) {
 	margin-left: 0.5em;
+}
+.buttons .menu-list {
+	padding: 8px;
+}
+.buttons .menu-list a~a {
+	margin-top: 8px;
+}
+.buttons a, .a.buttons {
+	padding: 0 1em;
 }
 .buttons a:hover {
 	background-color: #aaa;
