@@ -1132,7 +1132,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 						: mb_split('	', $old)	//* <- edit, replace (assume old post as valid)
 					);
 
-			//* timestamp/ID, accept digits only, or no change:
+			//* timestamp/ID, accept digits > 0 only, or no change:
 					foreach (array('time', 'user') as $i => $k)
 					if (($v = $lsv[$k]) && !trim($v, '0123456789')) $tab[$i] = $v;
 
@@ -1140,11 +1140,14 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 					if ($v = $lsv['text']) $new = "$tab[0]	$tab[1]".DATA_MARK_TXT.$v;
 
 			//* file/info, edit parts if post with file, or replace full post if enough values:
-					else {
+					else if (array_filter(array(
+						($v = $lsv['file'])
+					,	($t = $lsv['meta'])
+					,	($b = $lsv['browser'])
+					))) {
 						$old_mark = $tab[2];
 						$img_mark = trim(DATA_MARK_IMG);
-						$v = mb_sanitize_filename(get_file_name(mb_normalize_slash($lsv['file'])));
-						$t = $lsv['meta'];
+						if ($v) $v = mb_sanitize_filename(get_file_name(mb_normalize_slash($v)));
 						if ($old_mark == $img_mark) {
 							if ($v) $tab[3] = $v; else if ($tab[3]) $v = 1;
 							if ($t) $tab[4] = $t; else if ($tab[4]) $t = 1;
@@ -1154,13 +1157,14 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 							if ($t) $tab[4] = $t; else $tab[4] = '-';
 						}
 						if ($v && $t) {
-							if ($v = $lsv['browser']) $tab[5] = $v;
+							if ($b) $tab[5] = $b;
 							$new = implode('	', $tab);
 						}
-					}
+					} else $new = implode('	', $tab);
 				}
 		//* save result: ----------------------------------------------
-				if (!trim($new) || ($old == $new)) $ok .= NL.'! no change';
+				if (!strlen(trim($new))) $ok .= NL.'! nothing to save';
+				else if ($old === $new) $ok .= NL.'! no change';
 				else {
 					if ($un == 1) $l[$n] = $new.NL.$old;	//* <- add before
 					else if (!$un) $l[$n] = $old.NL.$new;	//* <- add after
@@ -1218,7 +1222,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 		if (!$r_type && in_array($msg, $cfg_game_type_dir)) {
 			$ok = "name /$msg/ is not available (reserved for room type)";
 		} else
-		if ($room == $msg) {
+		if ($room === $msg) {
 			$ok = "source /$room/ = target /$msg/, no change";
 		} else
 		if (!is_dir($old = DATA_DIR_ROOM.$room)) {
