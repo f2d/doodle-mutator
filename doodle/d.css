@@ -740,9 +740,10 @@ a:hover, a.u:hover {
 #task>img:not(:last-child)::after,
 .welcome tr.prev td.thread::after,
 .welcome tr.next td.thread::before,
-.welcome td.then {
+.welcome td.then::before {
 	content: "";
-	width: 48px;
+	display: block;
+	width: 100%;
 	height: 48px;
 	vertical-align: middle;
 	background-repeat: no-repeat;
@@ -750,32 +751,37 @@ a:hover, a.u:hover {
 	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAQAAAD9CzEMAAAAAXNSR0IArs4c6QAAABl0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMC4xMzQDW3oAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAEZ0FNQQAAsY8L/GEFAAAApklEQVR42uzNoRXDQAwFQZXh0lxOOnMZhldKQpKPDoxAnone8p16/7kngboan2uAAQaoAQYYYIABqs56bVoNYG0P5w846vYZd9fxBZTo7wMY0d8HcML3AZzo7wM44fsATvT3AZzwfQAnbA8AErAP4ITvAzjhewJC+N4BJ7J3wInsHXDC9gGc8H0AJ2wPABDZO+BE9n3AiM/AxlPbAoQV6xkkBtVoCwC76rJrYMdZegAAAABJRU5ErkJggg==");
 	opacity: 0.04;
 }
-.welcome .see td.then {
+.welcome .see td.then::before {
 	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAQAAAD9CzEMAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAAXNSR0IArs4c6QAAABl0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMC4xMzQDW3oAAAAEZ0FNQQAAsY8L/GEFAAAAo0lEQVR42mL4T2NIuoYIBglALXZsAiAMRVH0j+5GjuAYlo4Sy1tKkMMHSw+iSd7TAsfcEQZYEQqIYEAEAyIYEMGACAZEECACAN9EwFwb88zaIbr8nQgERDAgggERDIhgQAQDIgIYEaCIAEQIoDn9E/h34L8ivw78SvZ7kd9N3e39iebPZJ8qfC7yyc5nU5+ufT/wDcd3NN8yfU/2TV/9q8DDgReyFLJrMmTQgAAAAABJRU5ErkJggg==");
 }
-.welcome .see.you td.then {
+.welcome .see.you td.then::before {
 	opacity: 0.16;
+}
+.welcome td.then {
+	position: relative;
+	width: 48px;
+}
+.welcome td.then::before {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
 }
 #task>.res:not(:last-child)::after,
 #task>img:not(:last-child)::after {
 	display: block;
-	width: 100%;
 	margin-top: 8px;
 	opacity: 0.25;
 }
 #task>.res:not(:last-child)::after {
 	margin: 0 0 8px 0;
 }
-.welcome tr.prev td.thread::after,
-.welcome tr.next td.thread::before {
-	display: block;
-	width: 100%;
-}
 .welcome a {
 	display: inline-block;
 	border: 2px solid #ddd;
 }
 .welcome a img {
+	display: block;
 	vertical-align: bottom;
 }
 small {
