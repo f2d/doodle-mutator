@@ -35,11 +35,7 @@
 ,	NW = '&#8203;'
 ,	CS = 'checkStatus'
 ,	CM = 'checkMistype'
-,	checking, flag = {}, inputHints = {}
-,	param = {
-		task_keep_prefix: '?'
-	,	task_change_prefix: '?change='
-	}
+,	checking, flag = {}, inputHints = {}, param = {}
 ,	count = {
 		u: 0
 	,	uLast: ''
@@ -104,6 +100,10 @@ if (lang == 'ru') la = {
 		free: {
 			desc: 'Писать что угодно'
 		,	draw: 'Рисовать что угодно'
+		}
+	,	drop: {
+			desc: 'Описать что-то новое'
+		,	draw: 'Рисовать что-то новое'
 		}
 	,	change: {
 			any: 'Любое другое задание'
@@ -189,6 +189,10 @@ if (lang == 'ru') la = {
 		free: {
 			draw: 'Draw anything'
 		,	desc: 'Write anything'
+		}
+	,	drop: {
+			desc: 'Describe anything new'
+		,	draw: 'Draw anything new'
 		}
 	,	change: {
 			any: 'Any other task'
@@ -532,7 +536,7 @@ var	r = new XMLHttpRequest();
 				if (k = id('task')) {
 					i = (e = gn('img', k)).length;
 					if (!i == !!img) {
-						k = param.task_keep_prefix + (img?'desc':'draw');
+						k = (param.task_keep_prefix || '?') + (img?'desc':'draw');
 						e = s;
 						error = 1;
 						while (!regTagDivP.test(e.tagName) && (i = e.parentNode)) e = i;
@@ -1913,7 +1917,7 @@ var	t = k.getAttribute('data-t')
 			for (j in a) addTaskMenuBtn(
 				l[i][a[j]]
 			,	{
-					href: (param['task_'+(i == 'free'?'keep':i)+'_prefix'] + a[j]).replace(regREqual, '')
+					href: ('?' + (i == 'free'?'':i+'=') + a[j]).replace(regREqual, '')
 				}
 			,	'task-change-buttons'
 			);

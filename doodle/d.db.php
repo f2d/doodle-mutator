@@ -856,7 +856,7 @@ function data_get_user_info($u) {
 	return $r;
 }
 
-function data_get_full_threads() {
+function data_get_full_threads($get_content = true) {
 	global $room, $room_type, $usernames;
 	$wait = !!$room_type['arch_wait'];
 	$sep = '	';
@@ -867,6 +867,7 @@ function data_get_full_threads() {
 	&&	!($wait && ($t = data_get_last_post_time($match)) && ($t + TRD_ARCH_TIME > T0))
 	&&	is_file($f = $d.$f)
 	) {
+		if (!$get_content) return true;
 		$last_time = 0;
 		$a = array('name' => $f);
 		foreach (get_file_lines($f) as $line) if (false !== mb_strpos($line, $sep)) {
@@ -889,6 +890,7 @@ function data_get_full_threads() {
 		}
 		if ($count === 'f' || !$wait || ($last_time + TRD_ARCH_TIME < T0)) $threads["$last_time-$f"] = $a;
 	}
+	if (!$get_content) return false;
 	ksort($threads);
 	return $threads;
 }
@@ -1613,10 +1615,12 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 	) return $target ?: $new_target;
 
 //* check personal target list:
-	$tt = data_check_my_task(true);
+	$drop = ($change === ARG_DROP ? 'drop' : false);
+	$tt = data_check_my_task($drop ?: true);
 
 	if (POST) return $target;
 
+	if ($tt) list($own, $dropped) = mb_split_filter($tt);
 	if (!$change) $change = ($target['time'] === DATA_U_TASK_CHANGE);
 	$change_from = ($change ? array($own, $dropped, "$i$e") : array());
 	$alt = !!$room_type['alternate_reply_type'];
@@ -1659,8 +1663,10 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 	$dont_count = array('undrawn', 'unknown');
 	foreach ($free_tasks as $k => $v) {
 		$typed = (is_prefix($k, ARG_DESC) || is_prefix($k, ARG_DRAW));
+
 		if (!$alt && $typed) goto dont_count;
 		foreach ($dont_count as $x) if (is_postfix($k, $x)) goto dont_count;
+
 		$counts[$k] = count($v);
 	dont_count:
 		if (
@@ -1669,9 +1675,10 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			: $typed
 		) unset($free_tasks[$k]);
 	}
+	if ($drop) $target = $new_target;
 	$target['count_free_tasks'] = $counts;
 
-	if ($dont_change) return $target;
+	if ($dont_change || $drop) return $target;
 
 //* change task if thread is missing or taken, or enough time passed since taking last task:
 	if (!(
@@ -1679,7 +1686,6 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 	&&	!($change || $change_from)
 	&&	($t = intval($target['time']))
 	&&	(T0 < $t + TARGET_CHANGE_TIME)
-	&&	(list($own, $dropped) = mb_split_filter($tt))
 	&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
 	&&	strlen($i = $m['id'])
 	&&	!(is_array($skip_list) && in_array($i, $skip_list))

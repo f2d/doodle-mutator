@@ -59,6 +59,8 @@ define(ARG_ERROR_SPLIT, '!');
 define(ARG_DENY, 'deny');
 define(ARG_DESC, 'desc');
 define(ARG_DRAW, 'draw');
+define(ARG_DROP, 'drop');
+define(ARG_CHANGE, 'change');
 
 define(LK_MOD_HTA, 'htaccess');
 define(LK_MOD_ACT, 'mod');
@@ -818,7 +820,8 @@ sep_select = '.$sp.$c
 
 				$y = $query[ARG_ERROR];
 				if ($ay = mb_split_filter($y, ARG_ERROR_SPLIT)) unset($ay['trd_arch'], $ay['trd_miss']);
-				$change = (isset($query['change']) ? ($query['change'] ?: true) : false);
+				$drop = isset($query[ARG_DROP]);
+				$change = ($drop || isset($query[ARG_CHANGE]) ? ($query[ARG_DROP] ?: $query[ARG_CHANGE] ?: true) : false);
 				$desc_query = ($change === ARG_DESC || isset($query[ARG_DESC]));
 				$draw_query = ($change === ARG_DRAW || !!array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY));
 				$dont_change = (!$change && (
@@ -830,7 +833,7 @@ sep_select = '.$sp.$c
 
 if (TIME_PARTS) time_check_point('inb4 aim lock');
 				data_aim(
-					$change
+					$drop ? ARG_DROP : $change
 				,	$dont_change		//* <- after POST with error
 				,	$skip_list
 				,	!$u_opts['unknown']
@@ -842,10 +845,11 @@ if (TIME_PARTS) time_check_point('got visible threads data, unlocked all'.($targ
 				exit_if_not_mod(max($t = $target['time'], $visible['last']), $change || $target['changed']);
 				$task_time = ($t ?: T0);	//* <- UTC seconds
 				$x = 'trd_max';
-				if ($t = ($target['task'] ? '
+				$t = '';
+				if ($target['task']) {
+					$t = '
 check_task_post = .?check_task=post
-check_task_keep = .?check_task=keep' : '')
-				) {
+check_task_keep = .?check_task=keep';
 					$post_rel = '_reply';
 					$draw = !$target['pic'];
 					if (!$room_type['alternate_reply_type']) {
@@ -962,12 +966,12 @@ if (TIME_PARTS) time_check_point('done sort + join');
 				} else if (MOD) {
 					$left = (GOD || !NO_MOD?'v':'');
 					$flags = get_flag_vars(array('flags' => array('vgmn', array(1, GOD, MOD, NO_MOD))));
-					$page['content'] = "
+					$page['content'] = "$t
 left = $tmp_empty
 right = $tmp_empty$flags
 
 0,0	$left	v";	//* <- dummy thread for JS drop-down menus
-				}
+				} else $page['content'] = $t;
 
 				$t = $target['task'];
 				if ($draw < 0) {
@@ -1053,6 +1057,12 @@ right = $tmp_empty$flags
 						if ($room_type['lock_taken_task']) {
 							$page['data']['task']['t'] = $task_time;
 						}
+						$a = array();
+						if ($room_type['allow_text_op']) $a[] = ARG_DESC;
+						if ($room_type['allow_image_op']) $a[] = ARG_DRAW;
+						if ($a && data_get_full_threads(false)) {
+							$page['data']['task'][ARG_DROP] = implode(',', $a);
+						}
 					} else {
 						$post_type = ($draw?'text':'image');
 						if ($room_type["allow_$post_type$post_rel"]) {
@@ -1061,7 +1071,7 @@ right = $tmp_empty$flags
 					}
 				}
 				if ($f = $target['count_free_tasks']) {
-					$page['data']['task']['change'] = implode(',', array_keys($f));
+					$page['data']['task'][ARG_CHANGE] = implode(',', array_keys($f));
 				}
 				if ($t) {
 					$page['data']['task']['skip'] = intval($target['thread']);
