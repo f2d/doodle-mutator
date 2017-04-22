@@ -1630,13 +1630,16 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 
 //* scan threads; ignore skipped, full or held by others:
 	foreach (get_dir_contents($d) as $f) if (
-		!in_array($f, $change_from)
-	&&	preg_match(DATA_PAT_TRD_PLAY, $f, $m)
+		preg_match(DATA_PAT_TRD_PLAY, $f, $m)
 	&&	is_file($path = $d.$f)
 	) {
 		$i = $m['id'];
-		if ($m['hold_u'] == $u_num) $u_own[$f] = $i;	//* <- own current target excluded
-		else if (
+		if (
+			$m['hold_u'] == $u_num
+		||	in_array($f, $change_from)
+		) {
+			$u_own[$f] = $i;			//* <- own current target excluded
+		} else if (
 			!(is_array($skip_list) && in_array($i, $skip_list))
 		&&	intval($m['hold_t']) < T0		//* <- other's target expired
 		&&	!data_is_thread_full($m['pics'])
@@ -1675,83 +1678,82 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			: $typed
 		) unset($free_tasks[$k]);
 	}
-	if ($drop) $target = $new_target;
 	$target['count_free_tasks'] = $counts;
 
-	if ($dont_change || $drop) return $target;
+	if ($dont_change) return $target;
 
 //* change task if thread is missing or taken, or enough time passed since taking last task:
+	$f = $own ?: '';
 	if (!(
 		$tt
-	&&	!($change || $change_from)
+	&&	!($change || $change_from || $drop)
 	&&	($t = intval($target['time']))
 	&&	(T0 < $t + TARGET_CHANGE_TIME)
 	&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
 	&&	strlen($i = $m['id'])
 	&&	!(is_array($skip_list) && in_array($i, $skip_list))
 	&&	(
-			is_file($f = $d.$own)
-		||	is_file($f = $d.$dropped)
-		||	is_file($f = "$d$i$e")
+			is_file($path = $d.$own)
+		||	is_file($path = $d.$dropped)
+		||	is_file($path = "$d$i$e")
 		)
-	&&	($room_type['allow_reply_to_self'] || data_get_last_post_u(data_cache($f)) != $u_num)
+	&&	($room_type['allow_reply_to_self'] || data_get_last_post_u(data_cache($path)) != $u_num)
 	)) {
 //* add empty task to selection, unless current is empty:
-		if ($tt && !data_is_thread_cap()) $free_tasks['any'][] = '';
+		if (!$drop && $tt && !data_is_thread_cap()) $free_tasks['any'][] = '';
 
 //* get random target from top-preferred pool:
-		ksort($free_tasks);
-		if (!(
-			($fa = end($free_tasks))
+		if ($drop || !(
+			ksort($free_tasks)
+		&&	($fa = end($free_tasks))
 		&&	($f = array_rand($fa))
 		&&	is_file($path = $d.$f)
 		)) {
 			$target = $new_target;
 			$f = '';
 		}
-		if ($f != $own) {
+		if ($f != $own && strlen($f)) {
 			$target = $new_target;
-			if (strlen($f)) {
-				$i = $fa[$f];
-				$t = trim_bom(data_cache($path));
-				$b = data_get_thread_name_tail($t, false);
+			$i = $fa[$f];
+			$t = trim_bom(data_cache($path));
+			$b = data_get_thread_name_tail($t, false);
 
 //* get target text to display:
-				if ($room_type['single_thread_task']) {
-					if ($p = mb_strpos($t, NL)) $t = mb_substr($t, 0, $p);	//* <- only first post
-				}
-				$last_txt = mb_strrpos_after($t, DATA_MARK_TXT);
-				$last_pic = mb_strrpos_after($t, DATA_MARK_IMG);
-				if ($last_txt < $last_pic) {
-					$target['pic' ] = $t = mb_strpos($p = mb_substr($t, $last_pic), '	');
-					$target['task'] = $p = mb_substr($p, 0, $t);		//* <- only filename
-					$t = T0 + TARGET_DESC_TIME;
-				} else {
-					$p = mb_strrpos_after($t, NL);
-					$p = (false === $p ? $t : mb_substr($t, $p));
-					$target['task'] = mb_substr($t, $last_txt);		//* <- only text
-					$target['post'] = $p;					//* <- full last line
-					$t = T0 + TARGET_DRAW_TIME;
-				}
+			if ($room_type['single_thread_task']) {
+				if ($p = mb_strpos($t, NL)) $t = mb_substr($t, 0, $p);	//* <- only first post
+			}
+			$last_txt = mb_strrpos_after($t, DATA_MARK_TXT);
+			$last_pic = mb_strrpos_after($t, DATA_MARK_IMG);
+			if ($last_txt < $last_pic) {
+				$target['pic' ] = $t = mb_strpos($p = mb_substr($t, $last_pic), '	');
+				$target['task'] = $p = mb_substr($p, 0, $t);		//* <- only filename
+				$t = T0 + TARGET_DESC_TIME;
+			} else {
+				$p = mb_strrpos_after($t, NL);
+				$p = (false === $p ? $t : mb_substr($t, $p));
+				$target['task'] = mb_substr($t, $last_txt);		//* <- only text
+				$target['post'] = $p;				//* <- full last line
+				$t = T0 + TARGET_DRAW_TIME;
+			}
 
 //* rename new target as taken (locked):
-				$t = data_get_thread_name_tail(array($t, $u_num));
-				$taken = "$i$t$e";
-				$dropped = "$i$b$e";
-				$t = $target['thread'] = "$taken/$dropped";
-				data_cache_file_rename($path, $d.$taken);
-				array_unshift($u_task, T0."	$room	$t	$p");
-			}
+			$t = data_get_thread_name_tail(array($t, $u_num));
+			$taken = "$i$t$e";
+			$dropped = "$i$b$e";
+			$t = $target['thread'] = "$taken/$dropped";
+			data_cache_file_rename($path, $d.$taken);
+			array_unshift($u_task, T0."	$room	$t	$p");
 		}
+
+		$target['count_free_tasks'] = $counts;
+	}
+
+	if ($f != $own || !strlen($f) !== !strlen($tt)) {
 
 //* save new target to personal list:
-		if ($f != $own || !strlen($f) !== !strlen($tt)) {
-			if ($t = implode(NL, $u_task)) {
-				data_put($u_t_f, DATA_LOG_START.$t);
-			} else unlink($u_t_f);
-
-			$target['changed'] = 1;
-		}
+		if ($t = implode(NL, $u_task)) {
+			data_put($u_t_f, DATA_LOG_START.$t);
+		} else unlink($u_t_f);
 
 //* rename old targets as dropped (unlocked):
 		if ($u_own && (!strlen($f) || ($f != $own))) foreach ($u_own as $f => $i) {
@@ -1759,8 +1761,9 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			data_cache_file_rename($f, "$d$i$t$e");
 		}
 
-		$target['count_free_tasks'] = $counts;
+		$target['changed'] = 1;
 	}
+
 	return $target;
 }
 
