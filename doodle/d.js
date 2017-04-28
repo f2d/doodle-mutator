@@ -302,19 +302,19 @@ var	o;
 
 function getParentByTagName(e,t) {
 var	p = e, t = t.toLowerCase();
-	while (!(e.tagName && e.tagName.toLowerCase() == t) && (p = e.parentNode)) e = p;
+	while (e && !(e.tagName && e.tagName.toLowerCase() == t) && (p = e.parentNode)) e = p;
 	return e;
 }
 
 function getParentBeforeTagName(e,t) {
 var	p = e, t = t.toLowerCase();
-	while ((e = e.parentNode) && !(e.tagName && e.tagName.toLowerCase() == t)) p = e;
+	while (e && (e = e.parentNode) && !(e.tagName && e.tagName.toLowerCase() == t)) p = e;
 	return p;
 }
 
 function getParentBeforeClass(e,c) {
 var	p = e, r = (c.test?c:getClassReg(c));
-	while ((e = e.parentNode) && !(e.className && r.test(e.className))) p = e;
+	while (e && (e = e.parentNode) && !(e.className && r.test(e.className))) p = e;
 	return p;
 }
 
@@ -401,18 +401,21 @@ function toggleHideNext(e) {
 }
 
 function toggleClass(e,c,keep) {
-var	k = 'className'
-,	old = e[k]
-,	a = (old ? old.split(regSpace) : [])
+var	j = orz(keep)
+,	k = 'className'
+,	old = e[k] || e.getAttribute(k) || ''
+,	a = old.split(regSpace)
 ,	i = a.indexOf(c)
 	;
 	if (i < 0) {
-		if (!(keep < 0)) a.push(c);
+		if (j >= 0) a.push(c);
 	} else {
-		if (!(keep > 0)) a.splice(i, 1);
+		if (j <= 0) a.splice(i, 1);
 	}
-	if (a.length) e[k] = a.join(' ');
-	else if (old) e[k] = '', e.removeAttribute(k);
+	if (a.length) {
+		j = a.join(' ');
+		if (old != j) e[k] = j;
+	} else if (old) e[k] = '', e.removeAttribute(k);
 }
 
 function meta() {toggleClass(id('content') || document.body, 'hide-p');}
@@ -434,6 +437,12 @@ var	i = line.indexOf('=');
 		parseLineTrimVal(line.substr(0,i))
 	,	parseLineTrimVal(line.substr(i).replace(regLEqual, ''))
 	];
+}
+
+function average() {
+var	i = arguments.length, total = 0;
+	while (i > 0) total += arguments[--i];
+	return total;
 }
 
 function orz(n) {return parseInt(n||0)||0;}
@@ -501,23 +510,30 @@ function getFormattedNumUnits(num, unit) {
 //* Room-specific functions *--------------------------------------------------
 
 function checkMyTask(event, e) {
-	if (checking) return;
+	if (checking) return false;
 	checking = 1;
 var	d = 'data-id', f = id(CM), s = id(CS);
 	if (f) del(f);
 	if (e && e.tagName) f = getParentByTagName(e, 'form'); else
-	if (f = s.getAttribute(d)) {
+	if (s && (f = s.getAttribute(d))) {
 		f = id(f), s.removeAttribute(d);
 		if (!regTagForm.test(f.tagName)) f = gn('form', f)[0];
 	}
 	if (event) {
 		if (event.preventDefault) event.preventDefault();
-		if (f && f.checkValidity && !f.checkValidity()) return false;
+		if (f && f.checkValidity && !f.checkValidity()) return checking = 0, false;
 	}
-	s.textContent = la.load+0;
+	if (s) {
+	var	btn = getParentByTagName(s, 'a');
+		toggleClass(btn, 'ready', -1);
+		s.textContent = la.load+0;
+	}
 var	r = new XMLHttpRequest();
 	r.onreadystatechange = function() {
 		if (r.readyState == 4) {
+		var	atf = autoUpdateTaskTimer
+		,	ati = taskTime.autoupdate
+			;
 			if (r.status == 200) {
 			var	k = '\n'
 			,	j = r.responseText.split(k)
@@ -527,6 +543,7 @@ var	r = new XMLHttpRequest();
 					.replace(/<[^>]+>/g, '')
 					.replace(regSpace, ' ')
 					.replace(regTrim, '')
+			,	d = j.match(/\bdeadline=["']*([^"'>\s]*)/i)
 			,	error = j.match(/\bid=["']*([^"'>\s]*)/i)
 			,	message = (error?status:'')
 			,	img = i.match(/<img[^>]+\balt=["']*([^"'>\s]+)/i)
@@ -536,26 +553,29 @@ var	r = new XMLHttpRequest();
 				if (k = id('task')) {
 					i = (e = gn('img', k)).length;
 					if (!i == !!img) {
-						k = (param.task_keep_prefix || '?') + (img?'desc':'draw');
-						e = s;
 						error = 1;
-						while (!regTagDivP.test(e.tagName) && (i = e.parentNode)) e = i;
-						e = cre('b',e,t);
-						e.id = CM;
-						e.className = 'post r';
-						e.innerHTML =
-							'<b class="date-out l">'
-						+		'<b class="report">'
-						+			la.task_mistype.replace(/\s(\S+)$/, ' <a href="'+k+'">$1</a>')
-						+		'</b>'
-						+	'</b>';
+						if (t) e = t.parentNode; else
+						if (e = s) while (e && !regTagDivP.test(e.tagName) && (i = e.parentNode)) e = i;
+						if (e) {
+							k = (param.task_keep_prefix || '?') + (img?'desc':'draw');
+							e = cre('b',e,t);
+							e.id = CM;
+							e.className = 'post r';
+							e.innerHTML =
+								'<b class="date-out l">'
+							+		'<b class="report">'
+							+			la.task_mistype.replace(/\s(\S+)$/, ' <a href="'+k+'">$1</a>')
+							+		'</b>'
+							+	'</b>';
+						}
 					} else
 					if (!img) {
-						if (
-							(e = t || gn('p',k)[1])
-						&&	!((j = e.previousElementSibling) && regTagForm.test(j.tagName))
-						&&	decodeHTMLSpecialChars(e.innerHTML) != decodeHTMLSpecialChars(task)
-						) e.innerHTML = task, error = 1;
+						if (e = t || gn('p',k)[1]) {
+							if (
+								!((j = e.previousElementSibling) && regTagForm.test(j.tagName))
+							&&	decodeHTMLSpecialChars(e.innerHTML) != decodeHTMLSpecialChars(task)
+							) e.innerHTML = task, error = 11;
+						} else error = 10;
 					} else
 					if (i) {
 					var	e = e[0]
@@ -565,8 +585,8 @@ var	r = new XMLHttpRequest();
 						j =	(flag.pixr || (flag.pixr = i.split('/').slice(0, flag.p?-3:-1).join('/')+'/'))
 						+	(flag.p?getPicSubDir(task):'')
 						+	(k?task.replace(/(\.[^.\/;]+);.+$/,'_res$1'):task);
-						if (i != j) e.src = j, e.alt = task, setPicResize(e, k), error = 1;
-					}
+						if (i != j) e.src = j, e.alt = task, setPicResize(e, k), error = 21;
+					} else error = 20;
 				}
 				if (f && f.firstElementChild) {
 					if (!error || confirm(
@@ -577,15 +597,32 @@ var	r = new XMLHttpRequest();
 						)+'\n'+la.send_anyway
 					)) f.submit();
 					else status = la.canceled;
+				} else
+				if (d && (d = orz(d[1])) > 0) {
+					d *= 1000;
+				var	now = taskTime.lastCheckTime = +new Date;
+					if (i = taskTime.interval) clearInterval(i);
+					if (now < d) {
+						taskTime.nextCheckTime = average(now, d);
+						taskTime.deadline = d;
+					} else if (ati) taskTime.nextCheckTime = now + ati;
+					taskTime.interval = setInterval(atf, 1000);
 				}
 			} else {
 				status = la.fail;
 				task = r.status || 0;
 			}
-			s.textContent = status;
-			s.title = new Date()+'\n\n'+task;
+			if (s) {
+				s.textContent = status;
+				(btn || s).title = new Date()+'\n\n'+task;
+				if (btn) {
+					toggleClass(btn, 'ready', 1);
+					toggleClass(btn, 'auto', !ati || error === 1?-1:1);
+				}
+			}
 			checking = 0;
-		} else s.textContent = la.load+r.readyState;
+			if (s && d && atf && !ati) atf();
+		} else if (s) s.textContent = la.load+r.readyState;
 	};
 	r.open('GET', f
 		? (param.check_task_post || param.check_task_auto || '--')
@@ -593,6 +630,55 @@ var	r = new XMLHttpRequest();
 	, true);
 	r.send();
 	if (event) return false;
+}
+
+function autoUpdateTaskTimer(event) {
+	if (checking) return;
+//* all stamps in milliseconds:
+var	a = taskTime.autoupdate
+,	d = taskTime.deadline
+,	i = taskTime.interval
+,	t = taskTime.taken
+,	f = (event && (e = event.type) && e === 'focus')
+,	e = id(CS)
+	;
+	if ((a || e) && d > 0) {
+//* a) automatically check to push deadline away:
+		if (a > 0) {
+		var	now = +new Date
+		,	m = orz(taskTime.lastCheckTime) + 5000
+		,	n = orz(taskTime.nextCheckTime)
+			;
+			if (n > 0) {
+				if (f && now < m && n > m) {
+					taskTime.nextCheckTime = m;
+				} else if (now >= n || (f && now >= m)) checkMyTask();
+			} else {
+				if (f && now > t + Math.min(a, m)) {
+					n = 1;
+				} else
+				if (now < d) {
+					n = average(t, d);
+					if (n <= now) n = average(now, d);
+				} else n = d;
+				taskTime.nextCheckTime = Math.min(n, now + a);
+			}
+		} else
+//* b) countdown to zero, then stop:
+		if (e) {
+		var	statusMsg = (e.textContent || '').replace(regTrim, '')
+		,	now = +new Date
+		,	timeLeft = 0
+			;
+			if (now < d) timeLeft = d - now;
+			else if (i) clearInterval(i);
+			e.textContent = (
+				statusMsg && statusMsg != '?'
+				? statusMsg.replace(/((:)\s+.+|\s*[:\d]*)$/, '$2 ')
+				: ''
+			)+getFormattedHMS(timeLeft);
+		}
+	} else if (i) clearInterval(i);
 }
 
 function skipMyTask(v) {
@@ -1197,7 +1283,7 @@ function showContent(sortOrder) {
 						var	l = v.split(sel)
 						,	m = orz(l.shift())
 							;
-							t = '<select name="'+optPrefix+k
+							t = '<select name="'+param.opt_prefix+k
 							+(
 								l.length > 2
 								? '" onChange="selectLink(this,\''
@@ -1221,7 +1307,7 @@ function showContent(sortOrder) {
 						if (v.indexOf(sep) >= 0) {
 							l = v.split(sep);
 							t = '<input type="text'
-							+	'" name="'+optPrefix+k
+							+	'" name="'+param.opt_prefix+k
 							+	'" value="'+l[0]
 							+	'" placeholder="'+l[1]
 							+	'" onChange="allowApply()">';
@@ -1232,8 +1318,8 @@ function showContent(sortOrder) {
 								var	text = (optionNames[i] || la.toggle[i]).replace(regTrimPun, '');
 									return '<label>'
 									+		'<input type="radio'
-									+			'" name="'+optPrefix+k
-									+			'" value="'+v
+									+			'" name="'+param.opt_prefix+k
+									+			'" value="'+i
 									+			'" onChange="allowApply()"'
 									+			(i == v?' checked':'')
 									+		'>\n<b>'+text+'</b>\n'
@@ -1550,7 +1636,6 @@ var	flagVarNames = ['flag', 'flags']
 ,	dontCollapse = ['full', 'rooms']
 ,	hintOnPostTypes = ['left', 'right']
 ,	reportOnPostTypes = ['reports_on_post', 'reports_on_user']
-,	optPrefix = 'opt_'
 ,	raws = gn('textarea').concat(gn('pre'))
 ,	rawr = []
 ,	pre
@@ -1878,7 +1963,7 @@ if (k = id('task')) {
 		}
 		e = cre('a', e, e.firstElementChild);
 		e.innerHTML = content;
-		if (attr) for (i in attr) e.setAttribute(i, attr[i]);
+		if (attr) for (i in attr) if (attr[i]) e.setAttribute(i, attr[i]);
 		return e;
 	}
 
@@ -1889,7 +1974,11 @@ if (k = id('task')) {
 				a.removeAttribute('id');
 				e = cre('u', a.parentNode, a);
 				e.className = 'menu-head';
-				e.innerHTML = '<u class="menu-top"><u class="menu-hid"><u class="menu-list" id="'+parentId+'"></u></u></u>';
+				e.innerHTML =
+					'<u class="menu-top">'
+				+	'<u class="menu-hid">'
+				+	'<u class="menu-list" id="'+parentId+'">'
+				+	'</u></u></u>';
 				e.insertBefore(a, e.firstElementChild);
 			}
 			cre('br', e = id(parentId), e.firstElementChild);
@@ -1897,11 +1986,14 @@ if (k = id('task')) {
 		} else addTaskBtn(content, attr).id = parentId;
 	}
 
-var	t = k.getAttribute('data-t')
-,	n = (t !== null)
-,	l = la.task
+var	a = orz(k.getAttribute('data-autoupdate'))*1000
+,	d = orz(k.getAttribute('data-deadline'))*1000
+,	t = orz(k.getAttribute('data-taken'))*1000
+,	p = gn('p',k)[0] || k.firstElementChild || k
+,	m,n,l = la.task
 	;
-	if (taskTop = gn('p',k)[0]) {
+	while (p && regTagForm.test(p.tagName)) p = p.parentNode;
+	if (taskTop = p) {
 		if (j = k.getAttribute('data-skip')) {
 			addTaskMenuBtn(
 				'X'
@@ -1912,16 +2004,15 @@ var	t = k.getAttribute('data-t')
 			,	'task-change-buttons'
 			);
 		}
-		for (i in l) if (j = k.getAttribute('data-'+i)) {
-		var	a = j.split(regSplitWord);
-			for (j in a) addTaskMenuBtn(
-				l[i][a[j]]
+		for (i in l) if (j = k.getAttribute('data-'+i)) j.split(regSplitWord).map(function(v) {
+			addTaskMenuBtn(
+				l[i][v]
 			,	{
-					href: ('?' + (i == 'free'?'':i+'=') + a[j]).replace(regREqual, '')
+					href: ('?' + (i == 'free'?'':i+'=') + v).replace(regREqual, '')
 				}
 			,	'task-change-buttons'
 			);
-		}
+		});
 		if (j = k.getAttribute('data-unskip')) {
 			addTaskBtn(
 				la.unskip
@@ -1933,33 +2024,42 @@ var	t = k.getAttribute('data-t')
 				}
 			);
 		}
+		if (t) addTaskBtn(
+			'<span id="'+CS+'">?</span>'
+		,	{
+				href: 'javascript:checkMyTask()'
+			,	title: ''+(t > 0 ? new Date(t) : new Date)+' \r\n'+la.check
+			,	class: (a > 0?'auto ':'')+'ready'
+			}
+		);
 	}
-	if (n) {
+	if (t) {
 		if (
-			(j = orz(t))
-		&&	(i = gi('submit',k)[0])
+			(i = gi('submit',k)[0])
 		&&	(f = getParentByTagName(i, 'form'))
 		) {
 			f.setAttribute('onsubmit', 'return checkMyTask(event, this)');
 		}
-		if (taskTop) {
-			if (j) addTaskBtn(
-				'<span id="'+CS+'">?</span>'
-			,	{
-					href: 'javascript:checkMyTask()'
-				,	title: ''+new Date(j*1000)+' \r\n'+la.check
-				}
-			);
-		}
-		if (
-			(i = gn('img',k)[0])
-		&&	(j = i.alt.indexOf(';')+1)
-		) {
-			i.alt = i.alt
-				.replace(';',', ')
-				.replace('*','x');
-			setPicResize(i,j+1);
-		}
+		f = autoUpdateTaskTimer;
+		taskTime = {
+			autoupdate: a
+		,	deadline: d
+		,	taken: t
+		,	interval: setInterval(f, 1000)
+		};
+		if (a) window.addEventListener('focus', f, false);
+		document.addEventListener('DOMContentLoaded', f, false);
+	}
+//* room task image, set up resize on click:
+	if (
+		(i = gn('img',k)[0])
+	&&	(a = i.alt)
+	&&	(j = a.indexOf(';')+1)
+	) {
+		i.alt = a
+			.replace(';',', ')
+			.replace('*','x');
+		setPicResize(i,j+1);
 	}
 //* archive search:
 	for (i in (j = gi('text',k))) if (

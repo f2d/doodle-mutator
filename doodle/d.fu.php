@@ -2,7 +2,7 @@
 
 //* Constants only for internal use: ------------------------------------------
 
-define(HTML_VERSION, '2017-04-16 04:05');	//* <- change this to autoupdate old browser-cached pages
+define(HTML_VERSION, '2017-04-28 12:44');	//* <- change this to autoupdate old browser-cached pages
 define(HTACCESS_VERSION, '2017-04-16 01:41');	//* <- change this + open index as admin to autoupdate old .htaccess
 
 //* Function argument flags: --------------------------------------------------
@@ -20,6 +20,7 @@ function exit_if_not_mod($t = 0, $change = 0) {
 		'Refresh any page cached before '.HTML_VERSION
 	.NL.	'Or if user key, options or date-related decoration changed: '.ME_VAL
 	.NL.	implode(NL, get_date_class())
+	.NL.	$GLOBALS['target']['deadline']
 	).'"';
 	header("Etag: $q");
 	if (
@@ -117,6 +118,7 @@ $report");
 }
 
 function time_check_point($comment) {$GLOBALS['tcp'][microtime()][] = $comment;}
+function get_print_or_none($v) {return $a ? trim(print_r($a, true)) : 'none';}
 
 //* ---------------------------------------------------------------------------
 //* Always use mb_* for text, but simple str* for non-empty checks,
@@ -238,6 +240,7 @@ function is_url_external($url) {
 function is_deny_arg($k) {return is_prefix($k, ARG_DENY);}
 function is_desc_arg($k) {return is_prefix($k, ARG_DESC);}
 function is_draw_arg($k) {return is_prefix($k, ARG_DRAW);}
+function is_opt_arg($k) {return is_prefix($k, OPT_PRFX);}
 function is_tag_attr($t) {return mb_strpos($t, '<') === mb_strpos($t, '>');}	//* <- if only both === false
 function is_not_dot($path) {return !!trim($path, './\\');}
 function is_not_hidden($room) {

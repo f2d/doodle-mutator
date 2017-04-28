@@ -121,6 +121,7 @@ define(QK_KEEP_AFTER_LOGOUT, false);
 define(QK_EXPIRES, 100200300);	//* <- seconds; renewed with every successful POST, incl.options
 define(POST_PIC_WAIT, 5);	//* <- seconds
 
+define(TARGET_AUTOUPDATE_INTERVAL, 3600);//* 1h
 define(TARGET_CHANGE_TIME, 600);//* 10min
 define(TARGET_DESC_TIME, 1200);	//* 20min
 define(TARGET_DRAW_TIME, 7200);	//* 2h
@@ -168,7 +169,7 @@ $cfg_opts_order = array(
 ,	'check' => array(
 		'head', 'count', 'times', 'names', 'own', 'unknown', 'active'
 	,	'save2common', 'kbox', 'focus', 'modtime304'
-	,	'picprogress', 'capture_altclick', 'capture_textselection'
+	,	'picprogress', 'capture_altclick', 'capture_textselection', 'task_timer'
 	)
 ,	'admin' => array('time_check_points')
 );

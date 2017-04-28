@@ -281,15 +281,14 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 		e.className = i+' a'+(touch?' touch':'');
 		e.innerHTML = '<u>'+h+'</u>';
 	//* top/bottom bar, links to prev/next:
-		h =	'<p class="arr">'
-		+		'<a href="'+prevPage+'">&#8678; '+(orz(prevPage) || '')+'</a>'
-		+		'<a href="'+nextPage+'" class="r">'+orz(nextPage)+' &#8680;</a>'
-		+	'</p>';
+		h =	'<a href="'+prevPage+'" class="al">&#8678; '+(orz(prevPage) || '')+'</a>'
+		+	'<a href="'+nextPage+'" class="ar">'+orz(nextPage)+' &#8680;</a>'
+		+	'<p>'+orz(thisPage)+'</p>';
 		p = p.parentNode, a = [k, p], i = a.length;
 		while (i--) {
 			e = cre('div', e = a[i], e.firstChild);
 			e.parentNode.id = 'task'+(orz(i) || '');
-			e.className = 'task';
+			e.className = 'task arr';
 			e.innerHTML = h;
 		}
 	//* posts content:

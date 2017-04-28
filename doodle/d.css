@@ -130,7 +130,7 @@ a:hover, a.u:hover {
 .task a:hover, .task label:hover, .menu-list a:hover {
 	color: #fff;
 }
-.touch, .touch a, .touch ~ .task a, .touch ~ * .task a {
+.touch, .touch a, .touch ~ .task a, .touch ~ * .task a, .touch ~ * .task.arr p {
 	font-size: 56pt;
 	line-height: 56pt;
 	text-decoration: none;
@@ -158,27 +158,34 @@ a:hover, a.u:hover {
 	background-color: #f77;
 	color: #ff7;
 }
-.arr a, a.a, a.r {
-	text-decoration: none;
-}
 .arr a {
-	display: inline-block;
+	display: block;
 	border: 5px solid transparent;
+	position: absolute;
+	bottom: 0px;
+	top: 0px;
 }
-.arr>a:not(.r):hover {
+.arr .al {
+	left: 0px;
+}
+.arr .ar {
+	right: 0px;
+}
+.arr a.al:hover {
 	border-left-color: #eee;
 }
-.arr a.r:hover, .arr .r a:hover {
+.arr a.ar:hover {
 	border-right-color: #eee;
 }
-.task .arr {
-	padding: 0 !important;
+.arr a, a.a, a.r {
+	text-decoration: none;
 }
 .section .thread {
 	padding: 0;
 }
-.section .task, .section {
+.section .task, .section, .task.arr p {
 	padding: 8px 0;
+	text-align: center;
 }
 .section .task:first-child {
 	padding-top: 0;
@@ -584,6 +591,8 @@ a:hover, a.u:hover {
 	left: 0;
 }
 .post .date-out .report {
+	top: 0;
+	left: 0;
 	background-color: rgba(234, 123, 123, 0.8);
 }
 .post .date-out>b {
@@ -787,6 +796,6 @@ a:hover, a.u:hover {
 small {
 	line-height: 50%;
 }
-*[data-type], .hid, .thread>pre, .hide-p .post p:not(.ref) {
+*[data-type], .hid, .buttons .auto, .thread>pre, .hide-p .post p:not(.ref) {
 	display: none;
 }

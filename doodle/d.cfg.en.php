@@ -115,7 +115,7 @@ $tmp_options_drop = array(
 );
 $tmp_options_first = 'Press %s or <a href="%s">select a room</a> to continue.';
 $tmp_options_flags = 'Status';
-$tmp_options_input = array(	//* cookie key => array(setting description, default value (yes), toggled value (no))
+$tmp_options_input = array(	//* ID => array(setting description, default value (yes), toggled value (no)), or as string 'desc|yes|no'
 	'input' => array(
 		'draw_app'		=> 'Drawing tool variant'
 	,	'draw_max_recovery'	=> 'Drawing autosaved recovery slots'
@@ -137,6 +137,7 @@ $tmp_options_input = array(	//* cookie key => array(setting description, default
 	,	'save2common'		=> 'Draw app save slots|shared for all variants|separate'
 	,	'modtime304'		=> 'When a page has no new content|use your browser cache|reload anyway'
 	,	'unknown'		=> 'Prefer tasks|from unknown threads first|any available'
+	,	'task_timer'		=> 'Task timer while page is open|hide + autoupdate|show + countdown to zero'
 	,	'capture_altclick'	=> 'Capture posts (Ctrl/Shift + click: mark posts, Alt + click: save)'
 	,	'capture_textselection'	=> 'Capture posts with selected text (with buttons around text)'
 	)

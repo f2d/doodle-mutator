@@ -715,7 +715,7 @@ if ($u_key) {
 			'out'	=> array($i, 'name="quit')
 		,	'save'	=> array($j, 'id="unsave" data-keep="'.DRAW_PERSISTENT_PREFIX)
 		,	'skip'	=> array($j, 'id="unskip')
-		,	'pref'	=> array($i, 'name="'.OPT_PRFX.'o')
+		,	'pref'	=> array($i, 'name="'.OPT_PRFX.'reset')
 		) as $k => $v) $d .= $v[0].$tmp_options_drop[$k].'" '.$v[1].'">';
 		if (!$qdir) {
 			if (GOD && WS_NGINX) $page['content'] .= vsprintf('
@@ -728,6 +728,7 @@ if ($u_key) {
 </form><form method="post">'
 .NL.$tmp_options_name.$t.$usernames[$u_num]
 .NL.$tmp_options_qk.$t.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">
+opt_prefix = '.OPT_PRFX.'
 separator = '.$so.'
 sep_select = '.$sp.$c
 .NL.$tmp_options_time.$t.date('e, T, P')
@@ -773,12 +774,16 @@ sep_select = '.$sp.$c
 						die(
 							'<!--'.date(TIMESTAMP, T0).'-->'
 							.NL.'<meta charset="'.ENC.'">'
-							.NL.'<title'.(
+							.NL.'<title'.get_template_attr(array('deadline' => $target['deadline'])).(
 								is_array($t)
 								? '>'.(
 									$sending
 									? $tmp_sending
-									: $tmp_target_status[$t[0]].'. '.$tmp_time_limit.': '.format_time_units($t[1])
+									: $tmp_target_status[$t[0]].(
+										$u_opts['task_timer']
+										? ". $tmp_time_limit: ".format_time_units($t[1])
+										: ''
+									)
 								)
 								: (
 									$sending
@@ -840,7 +845,7 @@ if (TIME_PARTS) time_check_point('inb4 aim lock');
 				);
 				$visible = data_get_visible_threads();
 				data_unlock();
-if (TIME_PARTS) time_check_point('got visible threads data, unlocked all'.($target?', target = '.trim(print_r($target, true)):''));
+if (TIME_PARTS) time_check_point('got visible threads data, unlocked all, target = '.get_print_or_none($target));
 
 				exit_if_not_mod(max($t = $target['time'], $visible['last']), $change || $target['changed']);
 				$task_time = ($t ?: T0);	//* <- UTC seconds
@@ -1048,6 +1053,8 @@ right = $tmp_empty$flags
 							)
 						);
 					}
+					if (!$u_opts['task_timer']) $page['data']['task']['autoupdate'] = TARGET_AUTOUPDATE_INTERVAL;
+					$page['data']['task']['taken'] = T0;
 					if ($t) {
 						if ($target['pic']) {
 							$src = (mb_strpos($t, ';') ? get_pic_resized_path(get_pic_normal_path($t)) : $t);
@@ -1055,7 +1062,8 @@ right = $tmp_empty$flags
 <img src="'.get_pic_url($src).'" alt="'.$t.'">'.$page['subtask'];
 						}
 						if ($room_type['lock_taken_task']) {
-							$page['data']['task']['t'] = $task_time;
+							$page['data']['task']['taken'] = $task_time;
+							$page['data']['task']['deadline'] = $target['deadline'];
 						}
 						$a = array();
 						if ($room_type['allow_text_op']) $a[] = ARG_DESC;
@@ -1263,7 +1271,7 @@ $page['title'] = (
 	)
 ).$top_title.(
 	$qd_opts == 2
-	? S.$tmp_options_input['input']['draw_app']
+	? S.$tmp_draw_app_select
 	: ''
 );
 
@@ -1350,7 +1358,7 @@ if (!$is_report_page) {
 	if (!$u_opts['times'] && $u_key) {
 		define(TOOK, $took = '<!--?-->');
 		if (TIME_PARTS) {
-			time_check_point('inb4 template');
+			time_check_point('inb4 template, u_opts = '.get_print_or_none($u_opts));
 			$took = '<a href="javascript:'.(++$page['js'][0]).',toggleHide(took),took.scrollIntoView()">'.$took.'</a>';
 			foreach ($tcp as $t => $comment) {
 				$t = get_time_elapsed($t);
@@ -1410,13 +1418,14 @@ if ($u_key) {
 		$post_status = 'user_quit';
 		$u_key = $p;
 	} else
-	if (isset($_POST[$p = OPT_PRFX.'o'])) {
+	if ($p = array_filter($_POST, 'is_opt_arg', ARRAY_FILTER_USE_KEY)) {
 		$post_status = 'user_opt';
-		if (mb_strlen($_POST[$p]) > 1) $u_opts = 'default';
-		else {
+		if (isset($p[OPT_PRFX.'reset'])) {
+			$u_opts = 'default';
+		} else {
 			foreach ($cfg_opts_order as $i => $o)
 			foreach ($o as $k) {
-				$v = (isset($_POST[$p = OPT_PRFX.abbr($k)]) ? $_POST[$p] : '');
+				$v = (isset($p[$j = OPT_PRFX.abbr($k)]) ? $p[$j] : '');
 				if ($i === 'input') ${"u_$k"} = $v;
 				else $u_opts[$k] = $v;
 			}

@@ -1556,6 +1556,13 @@ function data_check_my_task($aim = false) {
 			$t = implode(NL, $u_task);
 			return data_put($u_t_f, DATA_LOG_START.$t);
 		}
+		if (
+			$f
+		&&	($own = reset(mb_split_filter($f)))
+		&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
+		) {
+			$target['deadline'] = $m['hold_t'];
+		}
 		return $f;
 	}
 
@@ -1583,7 +1590,7 @@ function data_check_my_task($aim = false) {
 		$tt = $target['time'];
 		$td = ($target['pic'] ? TARGET_DESC_TIME : TARGET_DRAW_TIME);
 		if ($tm && $tt && ($td < $tm - $tt)) $td = TARGET_LONG_TIME;
-		$t = T0 + $td;
+		$t = $target['deadline'] = T0 + $td;
 
 //* rename thread file:
 		$t = data_get_thread_name_tail(array($t, $u_num));
@@ -1735,6 +1742,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 				$target['post'] = $p;				//* <- full last line
 				$t = T0 + TARGET_DRAW_TIME;
 			}
+			$target['deadline'] = $t;
 
 //* rename new target as taken (locked):
 			$t = data_get_thread_name_tail(array($t, $u_num));

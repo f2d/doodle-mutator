@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.68'
-,	INFO_DATE = '2013-04-01 — 2016-09-22'
+,	INFO_VERSION = 'v0.9.69'
+,	INFO_DATE = '2013-04-01 — 2017-04-27'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -159,6 +159,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 ,	regInsideFunc	= /\{[^.]+\.([^(]+)\(/
 ,	regLimit	= /^(\d+)\D+(\d+)$/
 ,	regSpace	= /\s+/g
+,	regVertSpace	= /\r\n|[\f\n\r\v\u2028\u2029]/g
 ,	regTailBrackets	= /[ ]*\([^)]+\)$/
 ,	regTextSize	= /^(\d+)([a-z]+)?$/i
 ,	regTrim		= /^\s+|\s+$/g
@@ -876,7 +877,7 @@ var	sf = select.shapeFlags[select.shape.value];
 		for (i in select.lineCaps) c2s[i] = c2d[i] = select.options[i][select[i].value];
 
 		if ((sf & 32) && (t = id('text-content').value).replace(regTrim, '').length) {
-		var	i = id('text-font'), f = c2d.font = DEFAULT_FONT, s = c2d.strokeStyle, a = draw.textAlign || 'center', t = t.split('\n');
+		var	i = id('text-font'), f = c2d.font = DEFAULT_FONT, s = c2d.strokeStyle, a = draw.textAlign || 'center', t = t.split(regVertSpace);
 			if (k = checkTextStyle(i, 1)) {
 				f = i.value;
 			} else {
