@@ -128,6 +128,7 @@ if (lang == 'ru') la = {
 	}
 ,	load: 'Проверка... '
 ,	fail: 'Ошибка '
+,	empty: 'Ничего нет.'
 ,	hax: '(?)'		//'Неизвестный набор данных.'
 ,	time: 'Нарисовано за'
 ,	using: 'с помощью'
@@ -217,6 +218,7 @@ if (lang == 'ru') la = {
 	}
 ,	load: 'Checking... '
 ,	fail: 'Error '
+,	empty: 'Empty data.'
 ,	hax: '(?)'		//'Unknown data set.'
 ,	time: 'Drawn in'
 ,	using: 'using'
@@ -525,7 +527,7 @@ var	d = 'data-id', f = id(CM), s = id(CS);
 	}
 	if (s) {
 	var	btn = getParentByTagName(s, 'a');
-		toggleClass(btn, 'ready', -1);
+		if (btn) toggleClass(btn, 'ready', -1);
 		s.textContent = la.load+0;
 	}
 var	r = new XMLHttpRequest();
@@ -548,35 +550,33 @@ var	r = new XMLHttpRequest();
 			,	message = (error?status:'')
 			,	img = i.match(/<img[^>]+\balt=["']*([^"'>\s]+)/i)
 			,	task = (img?img[1]:i)
-			,	t = id('task-text')
+			,	eTask = id('task')
+			,	eText = id('task-text')
+			,	eDraw = id('draw-app-select')
 				;
-				if (k = id('task')) {
-					i = (e = gn('img', k)).length;
-					if (!i == !!img) {
-						error = 1;
-						if (t) e = t.parentNode; else
-						if (e = s) while (e && !regTagDivP.test(e.tagName) && (i = e.parentNode)) e = i;
-						if (e) {
-							k = (param.task_keep_prefix || '?') + (img?'desc':'draw');
-							e = cre('b',e,t);
-							e.id = CM;
-							e.className = 'post r';
-							e.innerHTML =
-								'<b class="date-out l">'
-							+		'<b class="report">'
-							+			la.task_mistype.replace(/\s(\S+)$/, ' <a href="'+k+'">$1</a>')
-							+		'</b>'
-							+	'</b>';
-						}
+				if (eTask) {
+					i = (e = gn('img', eTask)).length;
+					if (
+				//* 1-a) image on page with text in task, or vice versa:
+						(!i == !!img)
+				//* 1-b) something on page with nothing in task, or vice versa:
+					||	(!task == !!(i || eText))
+					) {
+						error = 'needs reload';
 					} else
 					if (!img) {
-						if (e = t || gn('p',k)[1]) {
+				//* 2) text in task:
+				//* 2-a) text on page:
+						if (e = eText || gn('p', eTask)[1]) {
 							if (
 								!((j = e.previousElementSibling) && regTagForm.test(j.tagName))
 							&&	decodeHTMLSpecialChars(e.innerHTML) != decodeHTMLSpecialChars(task)
-							) e.innerHTML = task, error = 11;
-						} else error = 10;
+							) e.innerHTML = task, error = 'reloaded text';
+				//* 2-b) no text on page:
+						} else error = 'needs reload';
 					} else
+				//* 3) image in task:
+				//* 3-a) image on page:
 					if (i) {
 					var	e = e[0]
 					,	i = e.getAttribute('src')
@@ -585,8 +585,9 @@ var	r = new XMLHttpRequest();
 						j =	(flag.pixr || (flag.pixr = i.split('/').slice(0, flag.p?-3:-1).join('/')+'/'))
 						+	(flag.p?getPicSubDir(task):'')
 						+	(k?task.replace(/(\.[^.\/;]+);.+$/,'_res$1'):task);
-						if (i != j) e.src = j, e.alt = task, setPicResize(e, k), error = 21;
-					} else error = 20;
+						if (i != j) e.src = j, e.alt = task, setPicResize(e, k), error = 'reloaded image';
+				//* 3-b) no image on page:
+					} else error = 'needs reload';
 				}
 				if (f && f.firstElementChild) {
 					if (!error || confirm(
@@ -608,6 +609,22 @@ var	r = new XMLHttpRequest();
 					} else if (ati) taskTime.nextCheckTime = now + ati;
 					taskTime.interval = setInterval(atf, 1000);
 				}
+				if (error === 'needs reload') {
+					if (eText) e = eText.parentNode; else
+					if (e = btn || s) while (e && !regTagDivP.test(e.tagName) && (i = e.parentNode)) e = i;
+					if (e) {
+						k = (param.task_keep_prefix || '?') + (img || !task?'desc':'draw');
+						e = cre('b', e, eText);
+						e.id = CM;
+						e.className = 'post r';
+						e.innerHTML =
+							'<b class="date-out l">'
+						+		'<b class="report">'
+						+			la.task_mistype.replace(/\s+(\S+)$/, ' <a href="'+k+'">$1</a>')
+						+		'</b>'
+						+	'</b>';
+					}
+				}
 			} else {
 				status = la.fail;
 				task = r.status || 0;
@@ -615,10 +632,7 @@ var	r = new XMLHttpRequest();
 			if (s) {
 				s.textContent = status;
 				(btn || s).title = new Date()+'\n\n'+task;
-				if (btn) {
-					toggleClass(btn, 'ready', 1);
-					toggleClass(btn, 'auto', !ati || error === 1?-1:1);
-				}
+				if (btn) toggleClass(btn, 'ready', 1);
 			}
 			checking = 0;
 			if (s && d && atf && !ati) atf();
@@ -642,7 +656,7 @@ var	a = taskTime.autoupdate
 ,	f = (event && (e = event.type) && e === 'focus')
 ,	e = id(CS)
 	;
-	if ((a || e) && d > 0) {
+	if (a || e) {
 //* a) automatically check to push deadline away:
 		if (a > 0) {
 		var	now = +new Date
@@ -656,16 +670,21 @@ var	a = taskTime.autoupdate
 			} else {
 				if (f && now > t + Math.min(a, m)) {
 					n = 1;
-				} else
-				if (now < d) {
-					n = average(t, d);
-					if (n <= now) n = average(now, d);
-				} else n = d;
-				taskTime.nextCheckTime = Math.min(n, now + a);
+				} else {
+					m = now + a;
+					if (d > 0) {
+						if (now < d) {
+							n = average(t, d);
+							if (n <= now) n = average(now, d);
+						} else n = d;
+						n = Math.min(m, n);
+					} else n = m;
+				}
+				taskTime.nextCheckTime = n;
 			}
 		} else
 //* b) countdown to zero, then stop:
-		if (e) {
+		if (e && d > 0) {
 		var	statusMsg = (e.textContent || '').replace(regTrim, '')
 		,	now = +new Date
 		,	timeLeft = 0
@@ -881,7 +900,10 @@ function clearSaves(e) {
 		if (e.preventDefault) e.preventDefault(), e = e.target;
 		if (v = e.id) {
 		var	v,a = getSaves(v,e), k = a.keys;
-			if (k.length && confirm(la.clear[v].ask+'\n\n'+a.rows.join('\n'))) {
+			if (!k.length) {
+				alert(la.empty);
+			} else
+			if (confirm(la.clear[v].ask+'\n\n'+a.rows.join('\n'))) {
 				for (i in k) {
 					if (v == 'unskip') deleteCookie(k[i]); else
 					if (v == 'unsave') LS.removeItem(k[i]);

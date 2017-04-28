@@ -2,7 +2,7 @@
 
 //* Constants only for internal use: ------------------------------------------
 
-define(HTML_VERSION, '2017-04-28 12:44');	//* <- change this to autoupdate old browser-cached pages
+define(HTML_VERSION, '2017-04-28 22:44');	//* <- change this to autoupdate old browser-cached pages
 define(HTACCESS_VERSION, '2017-04-16 01:41');	//* <- change this + open index as admin to autoupdate old .htaccess
 
 //* Function argument flags: --------------------------------------------------
@@ -484,7 +484,8 @@ function get_draw_app_list($allow_upload = true) {
 		? $tmp_draw_app[$k]
 		: '<a href="?'.$da.'='.$v.'">'.$tmp_draw_app[$k].'</a>'
 	);
-	$a = array('list' => $a.'.');
+	$a = array('list' => '
+<p class="hint" id="draw-app-select">'.indent("$a.").'</p>');
 	if ($n !== DRAW_APP_NONE) {
 		$f = $n;
 		if (false !== ($s = mb_strrpos      ($n, '.'))) $n = mb_substr($n, 0, $s); else $f .= DRAW_APP_DEFAULT_EXT;

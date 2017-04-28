@@ -592,7 +592,6 @@ a:hover, a.u:hover {
 }
 .post .date-out .report {
 	top: 0;
-	left: 0;
 	background-color: rgba(234, 123, 123, 0.8);
 }
 .post .date-out>b {

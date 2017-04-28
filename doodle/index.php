@@ -672,7 +672,7 @@ if (($qd_opts || !$qdir) && GET_Q) {
 <p>'.$tmp_draw_free.':</p>
 <p class="hint">'.$tmp_draw_hint.'</p>'.$n['noscript'];
 	$page['subtask'] = $n['embed'].'
-<div class="task">'.indent('<p class="hint">'.indent($n['list']).'</p>').'</div>';
+<div class="task">'.indent($n['list']).'</div>';
 } else
 
 if ($u_key) {
@@ -998,8 +998,7 @@ right = $tmp_empty$flags
 						);
 						$page['task'] = '
 <p>'.indent($head).'</p>';
-						$hint = '
-<p class="hint">'.indent($n['list']).'</p>';
+						$hint = $n['list'];
 						if ($x = $n['noscript']) {
 							$page['task'] .= $x;
 							$page['subtask'] = $n['embed'].'
