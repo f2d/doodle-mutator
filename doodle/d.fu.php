@@ -617,6 +617,7 @@ function optimize_pic($filepath) {
 		function_exists('exec')
 	&&	($f = $filepath)
 	&&	($ext = get_file_ext($f))
+	&&	is_file($f)
 	) {
 		$out_path = $f.($out = '.out');
 		$bad_path = $f.($bad = '.bad');
@@ -633,7 +634,7 @@ function optimize_pic($filepath) {
 			else if (PIC_OPT_TRY_GLOBAL_EXEC) $p = $program_name;
 			else continue;
 
-			$return_code = 0;
+			$return_code = $size = 0;
 			$output = array('');
 			$cmd = sprintf($command, $p, $f);
 			if ($d !== '/') $cmd = str_replace('/', $d, $cmd);
@@ -666,19 +667,22 @@ function optimize_pic($filepath) {
 			} else
 			if (is_file($bak_path) && ($bak_size = filesize($bak_path))) {
 				$del = (
-					($size = filesize($f))
+					is_file($f)
 					? (
-						($rest = rename($f, $bad_path))
-						? "renamed to *$bad"
-						: 'not renamed'
-					) : (
-						($rest = unlink($f))
-						? 'deleted'
-						: 'not deleted'
-					)
+						($size = filesize($f))
+						? (
+							($rest = rename($f, $bad_path))
+							? "renamed to *$bad"
+							: 'not renamed'
+						) : (
+							($rest = unlink($f))
+							? 'deleted'
+							: 'not deleted'
+						)
+					) : ($rest = 'not found')
 				);
 				if ($rest) $rest = ".\nRestoring from $bak_path = $bak_size bytes, ".(
-					rename($bak_path, $f)
+					!is_file($f) && rename($bak_path, $f)
 					? 'done'
 					: 'failed'
 				);

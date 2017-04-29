@@ -706,6 +706,13 @@ var	f = cre('form', document.body), i = cre('input',f);
 	f.submit();
 }
 
+function formCleanUp(e) {
+	if (e && (e = e.target)) {
+	var	a = gn('input', e), i = a.length;
+		while (i--) if ((e = a[i]) && e.name && !e.value && !e.value.length) e.removeAttribute('name');
+	}
+}
+
 function getPicSubDir(p) {var s = p.split('.'); return s[1][0]+'/'+s[0][0]+'/';}
 function setPicResize(e,i) {
 var	a = e.parentNode, nested = /^a$/i.test(a.tagName);
@@ -2057,11 +2064,11 @@ var	a = orz(k.getAttribute('data-autoupdate'))*1000
 		);
 	}
 	if (
-		t
-	&&	(i = gi('submit',k)[0])
+		(i = gi('submit',k)[0])
 	&&	(f = getParentByTagName(i, 'form'))
 	) {
-		f.setAttribute('onsubmit', 'return checkMyTask(event, this)');
+		if (t) f.setAttribute('onsubmit', 'return checkMyTask(event, this)');
+		else f.addEventListener('submit', formCleanUp, false);
 	}
 	if (t > 0) {
 		f = autoUpdateTaskTimer;
