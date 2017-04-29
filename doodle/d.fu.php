@@ -118,7 +118,7 @@ $report");
 }
 
 function time_check_point($comment) {$GLOBALS['tcp'][microtime()][] = $comment;}
-function get_print_or_none($v) {return $a ? trim(print_r($a, true)) : 'none';}
+function get_print_or_none($a) {return $a ? trim(print_r($a, true)) : 'none';}
 
 //* ---------------------------------------------------------------------------
 //* Always use mb_* for text, but simple str* for non-empty checks,

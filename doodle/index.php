@@ -1078,7 +1078,7 @@ right = $tmp_empty$flags
 					}
 				}
 				if ($f = $target['count_free_tasks']) {
-					$page['data']['task'][ARG_CHANGE] = implode(',', array_keys($f));
+					$page['data']['task'][ARG_CHANGE] = implode(',', array_keys(array_filter($f)));
 				}
 				if ($t) {
 					$page['data']['task']['skip'] = intval($target['thread']);

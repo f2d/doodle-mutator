@@ -1693,17 +1693,17 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 	$f = $own ?: '';
 	if (!(
 		$tt
-	&&	!($change || $change_from || $drop)
-	&&	($t = intval($target['time']))
-	&&	(T0 < $t + TARGET_CHANGE_TIME)
 	&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
 	&&	strlen($i = $m['id'])
 	&&	!(is_array($skip_list) && in_array($i, $skip_list))
-	&&	(
+	&&	($own_exists = (
 			is_file($path = $d.$own)
 		||	is_file($path = $d.$dropped)
 		||	is_file($path = "$d$i$e")
-		)
+		))
+	&&	!($change || $change_from || $drop)
+	&&	($t = intval($target['time']))
+	&&	(T0 < $t + TARGET_CHANGE_TIME)
 	&&	($room_type['allow_reply_to_self'] || data_get_last_post_u(data_cache($path)) != $u_num)
 	)) {
 //* add empty task to selection, unless current is empty:
@@ -1720,6 +1720,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			$f = '';
 		}
 		if ($f != $own && strlen($f)) {
+			if ($own_exists && $target['task']) ++$counts[$target['pic']?'desc':'draw'];
 			$target = $new_target;
 			$i = $fa[$f];
 			$t = trim_bom(data_cache($path));
@@ -1732,17 +1733,18 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			$last_txt = mb_strrpos_after($t, DATA_MARK_TXT);
 			$last_pic = mb_strrpos_after($t, DATA_MARK_IMG);
 			if ($last_txt < $last_pic) {
+				$type = 'desc';
 				$target['pic' ] = $t = mb_strpos($p = mb_substr($t, $last_pic), '	');
 				$target['task'] = $p = mb_substr($p, 0, $t);		//* <- only filename
-				$t = T0 + TARGET_DESC_TIME;
 			} else {
+				$type = 'draw';
 				$p = mb_strrpos_after($t, NL);
 				$p = (false === $p ? $t : mb_substr($t, $p));
 				$target['task'] = mb_substr($t, $last_txt);		//* <- only text
-				$target['post'] = $p;				//* <- full last line
-				$t = T0 + TARGET_DRAW_TIME;
+				$target['post'] = $p;					//* <- full last line
 			}
-			$target['deadline'] = $t;
+			if ($counts[$type] > 0) --$counts[$type];
+			$target['deadline'] = $t = T0 + get_const('TARGET_'.$type.'_TIME');
 
 //* rename new target as taken (locked):
 			$t = data_get_thread_name_tail(array($t, $u_num));
