@@ -135,8 +135,9 @@ function fix_encoding($text) {
 		$fix_encoding_chosen[] = ENC;
 		return $text;
 	}
+	$a = array_filter(explode(',', "$_REQUEST[_charset_],".get_const('ENC_FALLBACK')));
 	if (function_exists('iconv')) {
-		foreach (explode(',', $ef = get_const('ENC_FALLBACK')) as $e) if (
+		foreach ($a as $e) if (
 			strlen($e = trim($e))
 		&&	false !== ($fix = iconv($e, ENC, $text))
 		&&	mb_check_encoding($fix)
@@ -145,7 +146,7 @@ function fix_encoding($text) {
 			return $fix;
 		}
 	}
-	if (false !== ($e = mb_detect_encoding($text, $ef, true))) {
+	if (false !== ($e = mb_detect_encoding($text, implode(',', $a), true))) {
 		$fix_encoding_chosen[] = $e;
 		return mb_convert_encoding($text, ENC, $e);
 	}
@@ -827,7 +828,11 @@ function get_template_form($t) {
 	if (!$GLOBALS['u_opts']['focus']) $attr .= ' autofocus';
 	if ($name) {
 		$name = ' name="'.$name.'"'.$attr.' required';
-		if ($min||$max) $name .= ' pattern="\s*(\S\s*){'.($min ?: 0).','.($max ?: '').'}"';
+		if ($min||$max) $name .= (
+			$textarea
+			? ($min?' minlength="'.$min.'"':'').($max?' maxlength="'.$max.'"':'')
+			: ' pattern="\s*(\S\s*){'.($min ?: 0).','.($max ?: '').'}"'
+		);
 	}
 	if ($head) {
 		$head = NL
@@ -870,9 +875,13 @@ function get_template_form($t) {
 					: ''
 				)
 			).'</b>'.$checkbox.(
-				$submittable && !$GLOBALS['u_key']
-				? NL.'<input type="text" name="pass" value="" placeholder="'.($GLOBALS['tmp_spam_trap'] ?: 'spam').'">'
-				: ''
+				$submittable
+//* about "_charset_": https://www.w3.org/TR/html5/forms.html#naming-form-controls:-the-name-attribute
+				? NL.'<input type="hidden" name="_charset_">'.(
+					$GLOBALS['u_key']
+					? ''
+					: NL.'<input type="text" name="pass" value="" placeholder="'.($GLOBALS['tmp_spam_trap'] ?: 'spam').'">'
+				) : ''
 			)
 		).'</form>'
 		: '<p><b><input type="text"'.$attr.'></b></p>'
@@ -1019,12 +1028,17 @@ function get_template_page($page) {
 
 	if ($a = (array)$anno) {
 		ksort($a);
+		$i = ($page['anno']?'anno':'r');
 		foreach ($a as $k => $v) {
 			$block = '';
 			if (is_array($v)) foreach ($v as $line) {
 				$block .= NL.'<b>'.indent($line).'</b>';
 			}
-			$header .= NL.'<p class="anno'.($k?" $k":'').'">'.indent($block ?: $v).'</p>';
+			$anno_lines .= NL.'<p class="'.$i.($k?" $k":'').'">'.indent($block ?: $v).'</p>';
+		}
+		if ($page['anno']) {
+			$header .= $anno_lines;
+			$anno_lines = '';
 		}
 	}
 	if ($a = $page[$k = 'header']) {
@@ -1052,9 +1066,9 @@ function get_template_page($page) {
 	</$txt>
 </div>";
 		}
-		$task = '<div id="task"'.$attr.'>'.indent($v).'</div>';
+		$task = '<div id="task"'.$attr.'>'.indent($anno_lines.$v).'</div>';
 	} else
-	if ($v = $$txt) $content .= get_template_content($v, $static, $txt);
+	if ($v = $$txt) $content .= get_template_content($anno_lines.$v, $static, $txt);
 	if ($v = $page['footer']) $footer = '<footer>'.indent($v).'</footer>';
 
 	if ($j) foreach ($j as $k => $v) $scripts .= '

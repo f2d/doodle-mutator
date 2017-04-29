@@ -154,9 +154,13 @@ a:hover, a.u:hover {
 	background-color: #999;
 	color: #eee;
 }
-.report {
+.report b, .report {
 	background-color: #f77;
 	color: #ff7;
+}
+.report.r b {
+	display: block;
+	padding: 0 1em;
 }
 .arr a {
 	display: block;
@@ -361,7 +365,7 @@ a:hover, a.u:hover {
 .multi-thread {
 	background-color: #aaa;
 }
-.multi-thread:not(:empty), .thread, .task form:first-child, .task p:first-child, .task div:not(.hid) + p, .task label {
+.multi-thread:not(:empty), .thread, .task form:first-child, .task p:first-child, .task p.r:first-child + p, .task div:not(.hid) + p, .task label {
 	padding-top: 8px;
 }
 .multi-thread, .thread, .welcome, body>footer {

@@ -1391,9 +1391,9 @@ if (!$is_report_page) {
 		? NL.'<table id="took" style="display:none">'.indent($took_list).'</table>'
 		: ''
 	);
-	if ($v = $query[ARG_ERROR]) $page['report'] = $v;
 	$page['anno'] = 1;
 }
+if ($v = $query[ARG_ERROR]) $page['report'] = $v;
 
 die(get_template_page($page));
 

@@ -709,7 +709,12 @@ var	f = cre('form', document.body), i = cre('input',f);
 function formCleanUp(e) {
 	if (e && (e = e.target)) {
 	var	a = gn('input', e), i = a.length;
-		while (i--) if ((e = a[i]) && e.name && !e.value && !e.value.length) e.removeAttribute('name');
+		while (i--) if (
+			(e = a[i])
+		&&	e.name
+		&&	e.name !== '_charset_'
+		&&	!e.value
+		) e.removeAttribute('name');
 	}
 }
 
