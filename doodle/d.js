@@ -35,7 +35,7 @@
 ,	NW = '&#8203;'
 ,	CS = 'checkStatus'
 ,	CM = 'checkMistype'
-,	checking, flag = {}, inputHints = {}, param = {}
+,	checking, taskTime = {}, flag = {}, inputHints = {}, param = {}
 ,	count = {
 		u: 0
 	,	uLast: ''
@@ -2014,6 +2014,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))*1000
 ,	p = gn('p',k)[0] || k.firstElementChild || k
 ,	m,n,l = la.task
 	;
+	if (t && !(a || id('draw-app-select') || id('task-text'))) t = -1;
 	while (p && regTagForm.test(p.tagName)) p = p.parentNode;
 	if (taskTop = p) {
 		if (j = k.getAttribute('data-skip')) {
@@ -2046,7 +2047,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))*1000
 				}
 			);
 		}
-		if (t) addTaskBtn(
+		if (t > 0) addTaskBtn(
 			'<span id="'+CS+'">?</span>'
 		,	{
 				href: 'javascript:checkMyTask()'
@@ -2055,13 +2056,14 @@ var	a = orz(k.getAttribute('data-autoupdate'))*1000
 			}
 		);
 	}
-	if (t) {
-		if (
-			(i = gi('submit',k)[0])
-		&&	(f = getParentByTagName(i, 'form'))
-		) {
-			f.setAttribute('onsubmit', 'return checkMyTask(event, this)');
-		}
+	if (
+		t
+	&&	(i = gi('submit',k)[0])
+	&&	(f = getParentByTagName(i, 'form'))
+	) {
+		f.setAttribute('onsubmit', 'return checkMyTask(event, this)');
+	}
+	if (t > 0) {
 		f = autoUpdateTaskTimer;
 		taskTime = {
 			autoupdate: a
