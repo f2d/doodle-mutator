@@ -512,7 +512,8 @@ function getFormattedNumUnits(num, unit) {
 //* Room-specific functions *--------------------------------------------------
 
 function checkMyTask(event, e) {
-	if (checking) return false;
+var	nothing = (event ? false : void(0));
+	if (checking) return nothing;
 	checking = 1;
 var	d = 'data-id', f = id(CM), s = id(CS);
 	if (f) del(f);
@@ -523,7 +524,7 @@ var	d = 'data-id', f = id(CM), s = id(CS);
 	}
 	if (event) {
 		if (event.preventDefault) event.preventDefault();
-		if (f && f.checkValidity && !f.checkValidity()) return checking = 0, false;
+		if (f && f.checkValidity && !f.checkValidity()) return checking = 0, nothing;
 	}
 	if (s) {
 	var	btn = getParentByTagName(s, 'a');
@@ -546,13 +547,13 @@ var	r = new XMLHttpRequest();
 					.replace(regSpace, ' ')
 					.replace(regTrim, '')
 			,	d = j.match(/\bdeadline=["']*([^"'>\s]*)/i)
-			,	error = j.match(/\bid=["']*([^"'>\s]*)/i)
-			,	message = (error?status:'')
+			,	sending = j.match(/\bid=["']*([^"'>\s]*)/i)
+			,	message = (sending?status:'')
 			,	img = i.match(/<img[^>]+\balt=["']*([^"'>\s]+)/i)
 			,	task = (img?img[1]:i)
+			,	error = 0
 			,	eTask = id('task')
 			,	eText = id('task-text')
-			,	eDraw = id('draw-app-select')
 				;
 				if (eTask) {
 					i = (e = gn('img', eTask)).length;
@@ -643,7 +644,7 @@ var	r = new XMLHttpRequest();
 		: (param.check_task_keep || param.check_task_manual || '-')
 	, true);
 	r.send();
-	if (event) return false;
+	return nothing;
 }
 
 function autoUpdateTaskTimer(event) {

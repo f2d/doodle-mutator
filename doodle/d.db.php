@@ -1716,11 +1716,19 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 		&&	($f = array_rand($fa))
 		&&	is_file($path = $d.$f)
 		)) {
-			$target = $new_target;
 			$f = '';
 		}
-		if ($f != $own && strlen($f)) {
-			if ($own_exists && $target['task']) ++$counts[$target['pic']?'desc':'draw'];
+
+//* return own back to counts:
+		if ($f != $own && $own_exists && $target['task']) {
+			++$counts[$target['pic']?'desc':'draw'];
+		}
+
+//* forget the old:
+		if (!strlen($f)) {
+			$target = $new_target;
+		} else
+		if ($f != $own) {
 			$target = $new_target;
 			$i = $fa[$f];
 			$t = trim_bom(data_cache($path));
