@@ -1058,7 +1058,7 @@ right = $tmp_empty$flags
 						if ($target['pic']) {
 							$src = (mb_strpos($t, ';') ? get_pic_resized_path(get_pic_normal_path($t)) : $t);
 							$page['subtask'] = '
-<img src="'.get_pic_url($src).'" alt="'.$t.'">'.$page['subtask'];
+<img src="'.get_pic_url($src).'" alt="'.$t.'" id="task-img">'.$page['subtask'];
 						}
 						if ($room_type['lock_taken_task']) {
 							$page['data']['task']['taken'] = $task_time;

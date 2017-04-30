@@ -554,14 +554,15 @@ var	r = new XMLHttpRequest();
 			,	error = 0
 			,	eTask = id('task')
 			,	eText = id('task-text')
+			,	eImg = id('task-img')
 				;
 				if (eTask) {
-					i = (e = gn('img', eTask)).length;
+					e = eImg || gn('img', eTask)[0];
 					if (
 				//* 1-a) image on page with text in task, or vice versa:
-						(!i == !!img)
+						(!e == !!img)
 				//* 1-b) something on page with nothing in task, or vice versa:
-					||	(!task == !!(i || eText))
+					||	(!task == !!(e || eText))
 					) {
 						error = 'needs reload';
 					} else
@@ -578,9 +579,8 @@ var	r = new XMLHttpRequest();
 					} else
 				//* 3) image in task:
 				//* 3-a) image on page:
-					if (i) {
-					var	e = e[0]
-					,	i = e.getAttribute('src')
+					if (e) {
+					var	i = e.getAttribute('src')
 					,	k = task.indexOf(';')+1
 						;
 						j =	(flag.pixr || (flag.pixr = i.split('/').slice(0, flag.p?-3:-1).join('/')+'/'))
@@ -2027,7 +2027,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))*1000
 ,	p = gn('p',k)[0] || k.firstElementChild || k
 ,	m,n,l = la.task
 	;
-	if (t && !(a || id('draw-app-select') || id('task-text'))) t = -1;
+	if (t && !(a || id('task-img') || id('task-text'))) t = -1;
 	while (p && regTagForm.test(p.tagName)) p = p.parentNode;
 	if (taskTop = p) {
 		if (j = k.getAttribute('data-skip')) {
@@ -2089,7 +2089,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))*1000
 	}
 //* room task image, set up resize on click:
 	if (
-		(i = gn('img',k)[0])
+		(i = id('task-img') || gn('img',k)[0])
 	&&	(a = i.alt)
 	&&	(j = a.indexOf(';')+1)
 	) {
