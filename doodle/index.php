@@ -864,7 +864,8 @@ check_task_keep = .?check_task=keep';
 				} else {
 					$post_rel = '_op';
 					if (
-						!in_array($x, $ay)
+				//		!in_array($x, $ay)
+						!($full_threads = data_get_full_threads(false))
 					&&	data_is_thread_cap()
 					) {
 						$draw = -1;
@@ -1067,7 +1068,7 @@ right = $tmp_empty$flags
 						$a = array();
 						if ($room_type['allow_text_op']) $a[] = ARG_DESC;
 						if ($room_type['allow_image_op']) $a[] = ARG_DRAW;
-						if ($a && data_get_full_threads(false)) {
+						if ($a && ($full_threads ?? data_get_full_threads(false))) {
 							$page['data']['task'][ARG_DROP] = implode(',', $a);
 						}
 					} else {
