@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2017-01-21'
+,	INFO_DATE = '2014-07-16 — 2017-05-07'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -1220,7 +1220,7 @@ function rgb2hex(v, i) {
 	if (!reg255.test(v)) return false;
 	v = v.split(reg255split);
 var	h = '#', i, j;
-	for (i in v) h += ((j = parseInt(v[i]).toString(16)).length == 1) ? '0'+j : j;
+	for (i in v) h += ((j = Math.min(255, parseInt(v[i])).toString(16)).length == 1) ? '0'+j : j;
 	return h;
 }
 
@@ -1930,9 +1930,9 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 		if (dest == 4) {
 		var	dt = draw.time, a = t.split('-'), t = a.slice(0,2).map(orz), i = t[1], c = unixDateToHMS(i,0,1);
 			if (a.length > 2) used.read = a.slice(2).join('-');
-			if (dt.all[0] < t[0]) dt.all[0] = t[0];
-			if (dt.all[1] > t[1]) {
-				dt[1] = t[1];
+			if (dt.all[0] > t[0]) dt.all[0] = t[0];
+			if (dt.all[1] < t[1]) {
+				dt.all[1] = t[1];
 				a = id('saveTime');
 				a.title = new Date(i);
 				a.textContent = c.split(' ',2)[1];

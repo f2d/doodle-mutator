@@ -3,7 +3,7 @@
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
 ,	INFO_VERSION = 'v0.9.69'
-,	INFO_DATE = '2013-04-01 — 2017-04-27'
+,	INFO_DATE = '2013-04-01 — 2017-05-06'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -1373,7 +1373,7 @@ var	t = tools[i || 0]
 	if (regInt3.test(v)) {
 	var	a = (t.color = v).split(regCommaSplit);
 		v = '#';
-		for (i in a) v += ((a[i] = parseInt(a[i]).toString(16)).length == 1) ? '0'+a[i] : a[i];
+		for (i in a) v += ((a[i] = Math.min(255, parseInt(a[i])).toString(16)).length == 1) ? '0'+a[i] : a[i];
 	} else
 	if (v = hex2fix(v)) {
 		if (value != '') t.color =
