@@ -187,7 +187,7 @@ function str_replace_first($what, $to, $where) {
 }
 
 function trim_bom($str) {return trim(str_replace(BOM, '', $str));}
-function trim_post($p, $len = 456) {
+function trim_post($p, $len = 0) {
 	$s = trim(preg_replace('~\s+~u', ' ', $p));
 	if ($len > 0) $s = mb_substr($s, 0, $len);
 	return POST ? htmlspecialchars($s) : $s;

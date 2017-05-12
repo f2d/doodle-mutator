@@ -1495,8 +1495,10 @@ if ($u_key) {
 
 	if (isset($_POST[$k = 'describe'])) {
 		$post_status = 'text_short';
-		if (mb_strlen($x = $ptx = trim_post($_POST[$k], DESCRIBE_MAX_LENGTH)) >= DESCRIBE_MIN_LENGTH) {
-			$unlim = trim($_POST[$k]);
+		$trim_len = mb_strlen($x = $ptx = trim_post($_POST[$k], DESCRIBE_MAX_LENGTH));
+		if ($trim_len >= DESCRIBE_MIN_LENGTH) {
+			$full_len = mb_strlen($unlim = trim_post($_POST[$k]));
+			if ($full_len > $trim_len) data_log_action("full post length = $full_len > $trim_len, full text", $unlim);
 			$n = mb_strlen($delim = '/');
 			if (
 				mb_substr($unlim, 0, $n) == $delim
