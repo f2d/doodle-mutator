@@ -248,7 +248,9 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 	,	a = gn('link')
 	,	i = a.length
 	,	d = document.body
+	,	pre = p
 		;
+		window.addEventListener('load', function() {del(pre);}, false);
 		if (k = id('task')) {
 			thisPage = orz(k.textContent);
 			while (e = k.lastChild) k.removeChild(e);

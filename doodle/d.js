@@ -347,6 +347,8 @@ function cre(e,p,b) {
 }
 
 function del(e,p) {
+	if (!e) return;
+	if (e.map) e.map(del); else
 	if (p?p:p = e.parentNode) p.removeChild(e);
 	return p;
 }
@@ -1673,10 +1675,12 @@ var	flagVarNames = ['flag', 'flags']
 ,	reportOnPostTypes = ['reports_on_post', 'reports_on_user']
 ,	raws = gn('textarea').concat(gn('pre'))
 ,	rawr = []
+,	rawToDelete = []
 ,	pre
 	;
 	for (var r_i in raws) if ((pre = e = raws[r_i]) && (t = e.getAttribute('data-type'))) {
 
+	//* already have generated content:
 		if ((p = e.previousElementSibling) && (h = p.threadsHTML)) {
 		var	i = p.threadsLastSortIndex || 0;
 			if (sortOrder === 'last') {
@@ -1700,6 +1704,7 @@ var	flagVarNames = ['flag', 'flags']
 			continue;
 		}
 
+	//* generate first:
 	var	raw = e.value || e.innerHTML
 	,	dtp = o0(t, regSpace, 1)	//* <- split into object properties
 	,	sectionCount = 0
@@ -1904,13 +1909,13 @@ var	flagVarNames = ['flag', 'flags']
 					}
 				).join('')];
 		//* sorted content:
-				if (linesToSort.length) for (i in (j = ['sort','reverse'])) {
+				if (linesToSort.length) ['sort','reverse'].map(function(v) {
 					h.push(
 						'<div class="thread">'
-					+		getThreadHTML(linesToSort[j[i]]().join('\n'))
+					+		getThreadHTML(linesToSort[v]().join('\n'))
 					+	'</div>'
 					);
-				}
+				});
 				for (i = 0, j = h.length; i < j; i++) if (h[i]) h[i] += afterThreadsBar;
 				e.className = 'multi-thread';
 				e.threadsHTML = h;
@@ -1968,12 +1973,20 @@ var	flagVarNames = ['flag', 'flags']
 			+	a+'r">'+count.o.join(j)+c+e.outerHTML;
 		}
 
-		for (i in (a = gn('noscript', p))) del(a[i]);
+		del(gn('noscript', p));
 
 		if (p.lastElementChild) {
 			if (touch) toggleClass(p, 'wider', 1);
+			rawToDelete.push(pre);
 		} else del(p);
 	}
+
+	if (rawToDelete.length) window.addEventListener('load', function() {
+		rawToDelete.map(function(e) {
+			e.textContent = '';	//* <- clean up raw data, but keep element in DOM
+		});
+	}, false);
+
 	if (rawr.length) return rawr;
 }
 
@@ -1985,7 +1998,10 @@ bnw.adorn = function(i) {
 	});
 };
 
-for (i in (a = gn('time'))) if ((e = a[i]) && (t = e.getAttribute('data-t')) && t > 0) e.outerHTML = getFormattedTime(t);
+gn('time').map(function(e) {
+var	t = e.getAttribute('data-t');
+	if (t && t > 0) e.outerHTML = getFormattedTime(t);
+});
 
 if (k = id('task')) {
 //* room task:
