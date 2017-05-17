@@ -23,6 +23,7 @@
 ,	regNaNa = /\D+/g
 ,	regSpace = /\s+/g
 ,	regSpaceHTML = /\s|&nbsp;|&#8203;/gi
+,	regSplitLineBreak = /\r\n|\r|\n/g
 ,	regSplitWord = /\W+/g
 ,	regTrim = getTrimReg('\\s')
 ,	regTrimPun = getTrimReg(':,.')
@@ -541,7 +542,7 @@ var	r = new XMLHttpRequest();
 			;
 			if (r.status == 200) {
 			var	k = '\n'
-			,	j = r.responseText.split(k)
+			,	j = r.responseText.split(regSplitLineBreak)
 			,	i = j.pop()
 			,	j = j.join(k)
 			,	status = j
@@ -961,16 +962,16 @@ var	form = getParentByTagName(e, 'form')
 ,	row = e = form.firstElementChild
 ,	n = 1
 	;
-	while (e = e.nextElementSibling) ++n;
+	while ((e = e.nextElementSibling) && !e.type) ++n;
 	if (!max || n < max) {
-		n = cre(row.tagName, form);
-		n.innerHTML = row.innerHTML;
-		if (e = gn('select', n)[0]) e.onchange();
-		if (e = gi('submit', n)[0]) {
+	var	nextRow = cre(row.tagName, form, e);
+		nextRow.innerHTML = row.innerHTML;
+		if (e = gn('select', nextRow)[0]) e.onchange();
+		if (e = gi('submit', nextRow)[0]) {
 			e = e.parentNode;
 			e.className = 'rem';
 			e.innerHTML =
-				'<span>&minus; <a href="javascript:void this" onClick="removeSearchTerm(this)">'
+				'<span>&minus; <a href="javascript:void '+(n+1)+'" onClick="removeSearchTerm(this)">'
 			+		la.search_remove
 			+	'</a></span>';
 		}
@@ -983,7 +984,7 @@ function removeSearchTerm(e) {
 
 function setSearchType(e) {
 var	i = gi('text', getParentBeforeTagName(e, 'form'));
-	if (i = i[0]) i.placeholder = inputHints[i.name = e.value] || '';
+	if (i = i[0]) i.title = i.placeholder = inputHints[i.name = e.value] || '';
 }
 
 function restoreSearch(e) {
@@ -1619,7 +1620,7 @@ function showContent(sortOrder) {
 	,	imgPost = 0
 	,	alt = 1
 	,	tableRow = []
-	,	lines = threadText.split('\n')
+	,	lines = threadText.split(regSplitLineBreak)
 	,	line,s,t
 		;
 		for (var l_i in lines) if (isNotEmpty(line = lines[l_i])) threadHTML += getLineHTML(line);
@@ -1716,7 +1717,7 @@ var	flagVarNames = ['flag', 'flags']
 	,	thread
 		;
 		if (dtp.users) {
-		var	lines = raw.split('\n')
+		var	lines = raw.split(regSplitLineBreak)
 		,	lastDay = ''
 		,	threadsByDay = []
 			;
@@ -1737,7 +1738,7 @@ var	flagVarNames = ['flag', 'flags']
 			raw = threadsByDay.join('\n');
 		}
 		if (dtp.reflinks) {
-		var	lines = raw.split('\n')
+		var	lines = raw.split(regSplitLineBreak)
 		,	domainNames = []
 		,	threadsByDomain = {}
 			;
@@ -2117,17 +2118,18 @@ var	a = orz(k.getAttribute('data-autoupdate'))*1000
 //* archive search:
 	for (i in (j = gi('text',k))) if (
 		(e = j[i])
-	&&	(n = (e.getAttribute('data-select') || e.name).replace(regTrim, ''))
-	&&	n.indexOf('\n') >= 0
+	&&	(n = (e.getAttribute(m = 'data-select') || e.name).replace(regTrim, ''))
+	&&	regSplitLineBreak.test(n)
 	) {
+		e.removeAttribute(m);
 	var	max = 0
 	,	o = {}
 		;
-		for (n in (lines = n.split('\n'))) if (line = lines[n].replace(regTrim, '')) {
+		for (n in (lines = n.split(regSplitLineBreak))) if (line = lines[n].replace(regTrim, '')) {
 		var	a = line.split('\t')
-		,	inputName =	a.shift().replace(regTrim, '')
-		,	optionText =	a.shift().replace(regTrim, '')
-		,	inputHint =	a.join(' ').replace(regTrim, '')
+		,	inputName = a.shift().replace(regTrim, '')
+		,	optionText = a.shift().replace(regTrim, '')
+		,	inputHint = a.join(' ').replace(regTrim, '')
 			;
 			if (inputName.length && optionText.length) {
 				o[inputName] = optionText, ++max;
