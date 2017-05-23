@@ -290,7 +290,7 @@ if ($qdir) {
 $top_title = (false !== ($k = array_search($r_type, $cfg_game_type_dir)) ? $tmp_room_types_title[$k] : $tmp_title);
 
 define(MOD, GOD || $u_flag['mod'] || $u_flag["mod_$room"]);
-define(NO_MOD, !$room_type['mod']);
+define(NO_MOD, !$room_type['mod'] || $u_flag['nor']);
 define(FROZEN_HELL, data_global_announce('stop'));	//* <- after $room is defined
 
 if (FROZEN_HELL && !(MOD || $qd_arch || ($qd_opts && $u_key))) {
@@ -881,7 +881,7 @@ check_task_keep = .?check_task=keep';
 				}
 
 				if ($vts = $visible['threads']) {
-					if (MOD || !(NO_MOD || $u_flag['nor'])) $t = (
+					if (MOD || !NO_MOD) $t = (
 						MOD ? "
 left = $tmp_mod_post_hint
 right = $tmp_mod_user_hint"
@@ -957,7 +957,7 @@ if (TIME_PARTS) $li += count($lines);
 								}
 							}
 							$tsv .= NL.(
-								$postnum > 0 || $u_flag['nor'] || (NO_MOD && !MOD)
+								$postnum > 0 || (!MOD && NO_MOD)
 								? ''
 								: end(explode('/', $tid)).','
 							).implode('	', $tabs);
@@ -1082,7 +1082,11 @@ right = $tmp_empty$flags
 					$page['data']['task'][ARG_CHANGE] = implode(',', array_keys(array_filter($f)));
 				}
 				if ($t) {
-					$page['data']['task']['skip'] = intval($target['thread']);
+					$page['data']['task']['skip'] = $t = intval($target['thread']);
+					if (!NO_MOD) {
+						$p = intval($target['posts']) ?: 1;
+						$page['data']['task']['report'] = "$t-$p-0";
+					}
 				} else
 				if ($s = count($skip_list)) {
 					$page['data']['task']['unskip'] = $s;
@@ -1466,7 +1470,7 @@ if ($u_key) {
 
 //* report problem in active room ---------------------------------------------
 
-	if (isset($_POST[$k = 'report']) && ($postID = $query['report_post'] ?: $etc) && (MOD || !(NO_MOD || $u_flag['nor']))) {
+	if (isset($_POST[$k = 'report']) && ($postID = $query['report_post'] ?: $etc) && (MOD || !NO_MOD)) {
 		$post_status = 'no_path';
 		if (preg_match(PAT_REPORT, $postID, $r)) {
 			$post_status = 'text_short';

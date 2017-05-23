@@ -119,6 +119,7 @@ if (lang == 'ru') la = {
 ,	send_new_thread: 'Будет создана новая нить.'
 ,	send_anyway: 'Всё равно отправить?'
 ,	canceled: 'Отправка отменена'
+,	report: 'Пожаловаться на это задание'
 ,	skip: 'Пропустить'
 ,	skip_hint: 'Пропускать задания из этой нити до её завершения.'
 ,	unskip: 'Сбросить пропуски'
@@ -209,6 +210,7 @@ if (lang == 'ru') la = {
 ,	send_new_thread: 'Sending will make a new thread.'
 ,	send_anyway: 'Send anyway?'
 ,	canceled: 'Sending canceled'
+,	report: 'Report a problem with this task'
 ,	skip: 'Skip'
 ,	skip_hint: 'Skip any task from this thread from now on.'
 ,	unskip: 'Unskip'
@@ -434,7 +436,7 @@ function parseLineKeyVal(line) {
 	function parseLineTrimVal(v) {
 		v = v.replace(regTrim, '');
 		if (v.length && v[0] == '"' && v.slice(-1) == '"') return v.slice(1, -1);
-		return v;
+		return decodeHTMLSpecialChars(v);
 	}
 
 var	i = line.indexOf('=');
@@ -708,6 +710,21 @@ function skipMyTask(v) {
 var	f = cre('form', document.body), i = cre('input',f);
 	f.setAttribute('method', 'post'), i.type = 'hidden', i.name = 'skip', i.value = v;
 	f.submit();
+}
+
+function openReportForm(i) {
+	if (i && i.indexOf && i.lastIndexOf('-') > 0) {
+	var	k = param.report_to
+	,	n = 'Report'
+	,	w = 'width=656,height=300'
+		;
+	} else {
+	var	k = param.left_link
+	,	n = 'Info'
+	,	w = 'width=400,height=400'
+		;
+	}
+	window.open(decodeHTMLSpecialChars(k || '')+i, n, w);
 }
 
 function formCleanUp(e) {
@@ -1568,11 +1585,7 @@ function showContent(sortOrder) {
 								editPostData
 							)+'"';
 						} else {
-							m += ' onClick="window.open(\''+(
-								dtp.users
-								? (param.left_link || '')+userID+'\',\'Info\',\'width=400,height=400'
-								: (param.report_to || '')+postID+'\',\'Report\',\'width=656,height=300'
-							)+'\')"';
+							m += ' onClick="openReportForm(\''+(dtp.users ? userID : postID)+'\')"';
 						}
 					}
 					if (b = param[hintOnPostTypes[i]]) {
@@ -2042,7 +2055,8 @@ var	a = orz(k.getAttribute('data-autoupdate'))*1000
 ,	d = orz(k.getAttribute('data-deadline'))*1000
 ,	t = orz(k.getAttribute('data-taken'))*1000
 ,	p = gn('p',k)[0] || k.firstElementChild || k
-,	m,n,l = la.task
+,	m = 'task-change-buttons'
+,	n,l = la.task
 	;
 	if (t && !(a || id('task-img') || id('task-text'))) t = -1;
 	while (p && regTagForm.test(p.tagName)) p = p.parentNode;
@@ -2054,7 +2068,16 @@ var	a = orz(k.getAttribute('data-autoupdate'))*1000
 					href: 'javascript:skipMyTask('+j+')'
 				,	title: la.skip_hint
 				}
-			,	'task-change-buttons'
+			,	m
+			);
+		}
+		if (j = k.getAttribute('data-report')) {
+			addTaskMenuBtn(
+				la.report
+			,	{
+					href: 'javascript:openReportForm(\''+j+'\')'
+				}
+			,	m
 			);
 		}
 		for (i in l) if (j = k.getAttribute('data-'+i)) j.split(regSplitWord).map(function(v) {
@@ -2063,7 +2086,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))*1000
 			,	{
 					href: ('?' + (i == 'free'?'':i+'=') + v).replace(regREqual, '')
 				}
-			,	'task-change-buttons'
+			,	m
 			);
 		});
 		if (j = k.getAttribute('data-unskip')) {

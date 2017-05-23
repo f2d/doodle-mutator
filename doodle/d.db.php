@@ -480,6 +480,11 @@ function data_log_report($a) {	//* <- write to user report logs, filename by thr
 		&&	(
 				MOD
 //* cannot report invisible:
+			||	(
+					preg_match(DATA_PAT_TRD_PLAY, $match['active'], $m)
+				&&	($u = intval($m['hold_u'])) > 0
+				&&	$u == $u_num
+				)
 			||	data_thread_has_posts_by($f, $u_num)
 			)
 		) {
@@ -1538,6 +1543,7 @@ function data_check_my_task($aim = false) {
 			if (!$target || !$target['task']) $target = array(
 				'time'	=> $t
 			,	'thread'=> $f
+			,	'posts'	=> ($f && count($c = mb_split_filter($f)) > 2 ? $c[2] : 0)
 			,	'post'	=> $p
 			,	'pic'	=> (false === ($i = mb_strrpos_after($p, $sep)))
 			,	'task'	=> ($i ? mb_substr($p, $i) : $p)
@@ -1572,7 +1578,7 @@ function data_check_my_task($aim = false) {
 
 	if (!(
 		$f && $p
-	&&	(list($own, $dropped) = mb_split_filter($f))
+	&&	(list($own, $dropped, $c) = mb_split_filter($f))
 	&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
 	)) return 'no_task';
 
@@ -1598,7 +1604,7 @@ function data_check_my_task($aim = false) {
 		rename($f, $d.$taken);
 
 //* update user task list:
-		$f = $target['thread'] = "$taken/$dropped";
+		$f = $target['thread'] = "$taken/$dropped/$c";
 		array_unshift($u_task, "$tt	$room	$f	$p");
 		$t = implode(NL, $u_task);
 		data_put($u_t_f, DATA_LOG_START.$t);
@@ -1733,6 +1739,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			$i = $fa[$f];
 			$t = trim_bom(data_cache($path));
 			$b = data_get_thread_name_tail($t, false);
+			$c = $target['posts'] = mb_substr_count($t, DATA_MARK_IMG) + mb_substr_count($t, DATA_MARK_TXT);
 
 //* get target text to display:
 			if ($room_type['single_thread_task']) {
@@ -1758,7 +1765,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			$t = data_get_thread_name_tail(array($t, $u_num));
 			$taken = "$i$t$e";
 			$dropped = "$i$b$e";
-			$t = $target['thread'] = "$taken/$dropped";
+			$t = $target['thread'] = "$taken/$dropped/$c";
 			data_cache_file_rename($path, $d.$taken);
 			array_unshift($u_task, T0."	$room	$t	$p");
 		}
