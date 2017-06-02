@@ -9,6 +9,7 @@
 
 ,	regClassPost = getClassReg('post')
 ,	regClassThread = getClassReg('thread')
+,	regBytes = /([;,]\s*)?\d+\s*B$/i
 ,	regNaN = /\D+/
 ,	regSpace = /\s+/g
 ,	regTrim = /^\s+|\s+$/g
@@ -164,6 +165,7 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 	var	tab = line[i].split(t)
 	,	post = '<br>'
 	,	m = getFTimeIfTime(tab[0], 1)
+	,	res_link = 0
 	,	res = 0
 		;
 		tab[0] = getFTimeIfTime(tab[0]);
@@ -201,18 +203,22 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 				k = post.split(j);
 				for (i in k) if (l = k[i]) {
 					m = l.split(regSpace, 1)[0].substr(1).toLowerCase();
-					if (m == 'a') k[i] += '" class="res" target="_blank'; else
+					if (m == 'a') k[i] += '" class="res" target="_blank', res_link = 1; else
 					if (m == 'img') k[i] += '" alt="'+l.substr(l.lastIndexOf('/')+1)+', '+tab[3]+'" title="'+tab[3];
 				}
 				post = k.join(j);
-				if (res) {
+				if (res_link) {
 					j = post.split(l = '>');
 					k = j.pop()
 						.replace(regTrim, '')
+						.replace(regBytes, '')
 						.replace(regLNaN, '')
 						.replace(regNaN, 'x');
 					post = j.join(l).replace(regImgTitle, ' $1, '+k+'"')+l;
 					tab[0] += '<br>'+post.replace(regImgTag, k);
+				} else
+				if (res) {
+					post = post.substr(0, post.lastIndexOf('>')+1);
 				}
 			}
 			if (img) alt = (alt?'':' alt');

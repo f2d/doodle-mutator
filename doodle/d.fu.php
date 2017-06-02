@@ -37,6 +37,12 @@ function exit_if_not_mod($t = 0, $change = 0) {
 	header("Last-Modified: $t");
 }
 
+function exit_redirect($new_path) {
+	header('HTTP/1.1 303 Redirect: path fix');
+	header("Location: $new_path");
+	exit;
+}
+
 function rewrite_htaccess($write_to_file = 1) {
 	$start_mark = '# 8<-- start mark: '.NAMEPRFX.', version: ';
 	$end_mark = '# 8<-- end mark: '.NAMEPRFX.', placed automatically: ';
@@ -167,6 +173,8 @@ function mb_split_filter($s, $by = '/', $limit = 0) {
 	, $s, $limit, PREG_SPLIT_NO_EMPTY);
 }
 
+function mb_substr_before($where, $what, $offset = 0) {return mb_substr($where, 0, mb_strpos($where, $what, $offset));}
+function mb_substr_after ($where, $what, $offset = 0) {return mb_substr($where, mb_strrpos_after($where, $what, $offset));}
 function mb_strpos_after ($where, $what, $offset = 0) {return false !== ($pos = mb_strpos ($where, $what, $offset)) ? $pos + mb_strlen($what) : $pos;}
 function mb_strrpos_after($where, $what, $offset = 0) {return false !== ($pos = mb_strrpos($where, $what, $offset)) ? $pos + mb_strlen($what) : $pos;}
 function mb_str_replace($what, $to, $where) {return implode($to, preg_split('/('.mb_escape_regex($what).')/u', $where));}
@@ -429,13 +437,22 @@ function get_dir_top_filemtime($d) {
 function get_pic_url($p) {return ROOTPRFX.(PIC_SUB ? get_pic_subpath($p) : DIR_PICS.get_file_name($p));}
 function get_pic_normal_path($p) {return preg_replace('~(^|[\\/])([^._-]+)[^._-]*(\.[^.,;]+)([;,].*$)?~u', '$2$3', $p);}
 function get_pic_resized_path($p) {$s = '_res'; return (false === ($i = mb_strrpos($p, '.')) ? $p.$s : mb_substr($p,0,$i).$s.mb_substr($p,$i));}
-function get_pic_subpath($p, $mk = false) {
+function get_pic_subpath($p) {
 	$p = get_pic_normal_path(get_file_name($p));
 	$i = mb_strpos_after($p, '.');
 	$e = mb_substr($p,$i,1);
 	$n = mb_substr($p,0,1);
 	$p = DIR_PICS."$e/$n/$p";
-	return ($mk ? mkdir_if_none($p) : $p);
+	return $p;
+}
+
+function get_first_arg($text, $before = '"', $after = '"') {
+	if ($i = mb_strpos_after($text, $before)) return (
+		false !== ($j = mb_strpos($text, $after, $i))
+		? mb_substr($text, $i, $j-$i)
+		: mb_substr($text, $i)
+	);
+	return $text;
 }
 
 function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for archive pages; default = current date
@@ -1022,7 +1039,7 @@ function get_template_page($page) {
 .($canon?'
 <link rel="canonical" href="'.$canon.'">':'')
 .($R || ME_VAL?'
-<link rel="index" href="//'.$_SERVER['SERVER_NAME'].ROOTPRFX.($room?'" data-room="'.$room:'').'">':'')
+<link rel="index" href="//'.$_SERVER['SERVER_NAME'].ROOTPRFX.($R || $room?'" data-room="'.($room ?: $page['room'] ?: $page['title']):'').'">':'')
 .(($v = $page['head'])?NL.$v:'')
 .(($v = $page['title'])?NL."<title>$v</title>":'');
 

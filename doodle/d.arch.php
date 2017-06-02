@@ -1,5 +1,16 @@
 <?php
 
+define(ARCH_P_BF, '~(?:^|[;,\s]+)');
+define(ARCH_P_AF, '(?=[;,]|$)~ui');
+define(ARCH_PAT_POST_PIC_BYTES, ARCH_P_BF.'(\d+)\s*B'.ARCH_P_AF);
+define(ARCH_PAT_POST_PIC_WDXHD, ARCH_P_BF.'(\d+)\D(\d+)'.ARCH_P_AF);
+define(ARCH_PAT_POST_PIC, '~
+	(?P<open><a\s+[^>]+>)?
+	(?P<image><img\s+[^>]+?(?P<w>\s+width="\d+")?(?P<h>\s+height="\d+")?(?:\s+[^>]+?)?>)
+	(?P<close></a>)?
+	(?P<csv>(?:[;,]\s*[^;,]+)+\s+B)
+~uix');
+
 function data_get_visible_archives($type = '') {
 	$last = 0;
 	$a = array();
@@ -14,6 +25,20 @@ function data_get_visible_archives($type = '') {
 		'last' => $last
 	,	'list' => $a
 	) : $a;
+}
+
+function data_get_archive_images($room = '') {
+	$a = array();
+	$d = DIR_ARCH;
+	$rooms = ($room ? (array)$room : get_dir_rooms($d));
+	foreach ($rooms as $r) if (is_dir($s = "$d$r/")) {
+		foreach (get_dir_contents($s) as $f) if (is_file($path = $s.$f)) {
+			foreach (data_get_thread_images($path) as $i) {
+				if (false === array_search($i, $a)) $a[] = $i;
+			}
+		}
+	}
+	return $a;
 }
 
 function data_get_thumb($src, $xMax = 0, $yMax = 0) {
@@ -64,17 +89,69 @@ function data_put_thumb($src, $dest, $xMax = 0, $yMax = 0) {
 */	return imagePNG($data['imgdata'], $dest);
 }
 
-function data_get_line_fix_time($line) {
-	global $line_time_min, $line_time_max;
-	$before_tab = mb_substr($line, 0, $i = mb_strpos($line, '	'));
+function data_get_fixed_content_line($line) {
+	global $recheck_img, $line_time_min, $line_time_max;
+	$not_found = '<img src="'.ROOTPRFX.PIC_404.'">';
+	$sep = '	';
+	$tab = mb_split($sep, $line);
+
+//* timestamp:
+	$t = $tab[0];
 	$t = (
-		preg_match('~\sdata-t=[\'"](\d+)~i', $before_tab, $match)
+		preg_match('~\sdata-t=[\'"](\d+)~i', $t, $match)
 		? intval($match[1])
-		: strtotime($before_tab)
-	) ?: intval($before_tab);
+		: strtotime($t)
+	) ?: intval($t);
 	if (!$line_time_min || $line_time_min > $t) $line_time_min = $t;
 	if (!$line_time_max || $line_time_max < $t) $line_time_max = $t;
-	return $t.','.date(DATE_ATOM, $t).mb_substr($line, $i);
+	$tab[0] = $t.','.date(DATE_ATOM, $t);
+
+//* image/link:
+	if (
+		count($tab) > 3
+	&&	false !== mb_strpos($p = $tab[2], '<img')
+	&&	(
+			$recheck_img
+		||	!(
+				preg_match(ARCH_PAT_POST_PIC, $p, $match)
+			&&	preg_match(ARCH_PAT_POST_PIC_BYTES, $match['csv'])
+			&&	preg_match(ARCH_PAT_POST_PIC_WDXHD, $match['csv'])
+			)
+		)
+	) {
+		$a = mb_split($b = '>', $p);
+		$csv = array_pop($a);
+		if ($csv.$b == $not_found) $csv = array_pop($a);
+		$full_path = $p = get_pic_subpath(get_first_arg($a[0]));
+		$full_url = get_pic_url($p);
+		if (is_file($p)) {
+			$full_res = getImageSize($full_path);
+			$full_bytes = filesize($full_path);
+			$full_bytes_f = format_filesize($full_bytes);
+			$csv = "$full_res[0]*$full_res[1], $full_bytes_f, $full_bytes B";
+		} else {
+			$csv = implode(', ', mb_split_filter($csv, '[;,]\\s*'));
+		}
+		if ($full_res && $full_res[0] > DRAW_PREVIEW_WIDTH) {
+			$resized_path = $p = get_pic_resized_path($full_path);
+			$resized_url = get_pic_url($p);
+			if (is_file($p)) {
+				$resized_res = getImageSize($resized_path);
+			}
+			$p = '<a href="'.$full_url.'">'
+			.	'<img src="'.$resized_url.($resized_res ? '" width="'.$resized_res[0].'" height="'.$resized_res[1] : '').'">'
+			.'</a>';
+		} else {
+			$p = '<img src="'.$full_url.($full_res ? '" width="'.$full_res[0].'" height="'.$full_res[1] : '').'">';
+		}
+		if ($csv) $p .= "; $csv";
+		if ($recheck_img && !is_file($full_path)) {
+			$p = "<!--$p-->$not_found";
+		}
+		$tab[2] = $p;
+	}
+
+	return implode($sep, $tab);
 }
 
 function data_is_a_content_line($line) {return (false !== mb_strpos($line, '	'));}
@@ -86,7 +163,7 @@ function data_get_archive_page_html($room, $num, $tsv) {
 	$n = $num+1;
 	$lines = mb_split_filter(trim($tsv), NL);
 	$lines = array_filter($lines, 'data_is_a_content_line');
-	$lines = array_map('data_get_line_fix_time', $lines);
+	$lines = array_map('data_get_fixed_content_line', $lines);
 	sort($lines);
 	return get_template_page(
 		array(
@@ -150,8 +227,9 @@ function data_archive_full_threads($threads) {
 	);
 }
 
-function data_archive_rewrite() {
-	global $date_classes, $line_time_min, $line_time_max;
+function data_archive_rewrite($check = false) {
+	global $recheck_img, $date_classes, $line_time_min, $line_time_max;
+	$recheck_img = $check;
 	$a = 0;
 	$d = DIR_ARCH;
 	$elen = -strlen(PAGE_EXT);
@@ -225,10 +303,10 @@ function data_archive_rename_last_pic($old, $new, $n_last_pages = 0) {
 	return $done;
 }
 
-function data_get_archive_search_terms() {
-	global $tmp_archive_find_by, $query;
+function data_get_archive_search_terms($query) {
+	global $tmp_archive_find_by;
 	$terms = array();
-	if ($query) {
+	if ($query && is_array($query)) {
 		foreach ($tmp_archive_find_by as $k => $v) if (
 			array_key_exists($k, $query)
 		&&	strlen($q = $query[$k])
@@ -237,31 +315,53 @@ function data_get_archive_search_terms() {
 			$terms[$k] = $q;
 		}
 	}
-	return $terms;
+	return data_get_archive_search_ranges($terms);
 }
 
-function data_archive_find_by($where, $what = '', $caseless = 1) {
-	global $r_type, $room;
-if (TIME_PARTS) time_check_point('inb4 archive search prep');
+function data_get_archive_search_ranges($where, $what = '') {
 	$where = array_filter(is_array($where) ? $where : array($where => $what), 'strlen');
-	if ($t = $where['time']) {
-		$time_ranges = array();
-		$signs = array('<','>','-');
+	$signs = array('<','>','-');
+	$before = '^(?P<before>\D*?)(?P<minus>-)?';
+	$pat_oom = '~'.SUBPAT_OOM_LETTERS.'~iu';
+	$patterns = array(
+		'(?P<number>\d+)'
+			=> array('width', 'height')
+	,	'(?P<number>\d+)((?P<float>[,.]\d+)?\s*(?P<oom>'.SUBPAT_OOM_LETTERS.'))?'
+			=> array('bytes')
+	,	'(?P<csv>\d+(:+\d+)*)'
+			=> array('time')
+	);
+	foreach ($patterns as $subpattern => $keys)
+	foreach ($keys as $key) if (strlen($t = $where[$key])) {
+		$sub_ranges = array();
 		$min = false;
-		while (preg_match('~^(\D*?)(-)?(\d+(:+\d+)*)~', $t, $match)) {
+		while (preg_match("~$before$subpattern~iux", $t, $match)) {
 			$t = substr($t, strlen($match[0]));
-			$prefix = $match[1];
-			$minus = $match[2];
-			if ($minus && !$prefix && false !== $min) {$prefix = '-'; $minus = '';}
-			$v = get_time_seconds($minus.$match[3]);
+			$prefix = $match['before'] ?: '';
+			$minus = $match['minus'] ?: '';
+			if (strlen($minus) && !strlen($prefix) && false !== $min) {$prefix = '-'; $minus = '';}
+			if (strlen($v = $match['csv'])) {
+				$v = get_time_seconds($x = "$minus$v");
+			} else {
+				$v = intval($match['number']);
+				$x = "$minus$v";
+				if (($oom = $match['oom']) && preg_match($pat_oom, $oom, $m)) {
+					$v = (float)"$x$match[float]";
+					$x = "$v$oom";
+					$i = 0;
+					do { $v *= 1024; } while (!$m[$i++] && $i < 255);
+				} else {
+					$v = intval($x);
+				}
+			}
 			$k = '';
-			foreach ($signs as $sign) if (false !== mb_strpos($prefix, $sign)) {$k = $sign; break;}
+			if (strlen($prefix)) foreach ($signs as $sign) if (false !== mb_strpos($prefix, $sign)) {$k = $sign; break;}
 			if ('-' === $k && false !== $min) {
-				array_pop($time_ranges);
-				$time_ranges[] = (
+				array_pop($sub_ranges);
+				$sub_ranges[] = (
 					$min < $v
-					? array('min' => $min, 'max' => $v)
-					: array('min' => $v, 'max' => $min)
+					? array('min' => $min, 'max' => $v, 'min_arg' => $min_arg, 'max_arg' => $x)
+					: array('min' => $v, 'max' => $min, 'min_arg' => $x, 'max_arg' => $min_arg)
 				);
 				$min = false;
 			} else {
@@ -269,16 +369,46 @@ if (TIME_PARTS) time_check_point('inb4 archive search prep');
 				else {
 					$k = '=';
 					$min = $v;
+					$min_arg = $x;
 				}
-				$time_ranges[] = array(
+				$sub_ranges[] = array(
 					'operator' => $k
+				,	'argument' => $x
 				,	'value' => $v
 				);
 			}
 		}
-		if (!$time_ranges) unset($where['time']);
+		if ($sub_ranges) $where[$key] = $sub_ranges;
+		else unset($where[$key]);
 	}
-	if (!$where) return false;
+	return $where;
+}
+
+function data_get_archive_search_array_item($v) {
+	if ($v['min_arg']) return "$v[min_arg]-$v[max_arg]";
+	if ($v['min']) return "$v[min]-$v[max]";
+	if (($o = $v['operator']) && $o !== '=') return "$v[operator] $v[argument]";
+	return "$v[argument]";
+}
+
+function data_get_archive_search_value($v) {
+	if (is_array($v)) return implode(', ', array_map('data_get_archive_search_array_item', $v));
+	return $v;
+}
+
+function data_get_archive_search_url($terms) {
+	$q = array();
+	if (is_array($terms)) foreach ($terms as $k => $v) {
+		if ($k === '_charset_' && $v === ENC) continue;
+		if (strlen($v = data_get_archive_search_value($v))) $q[] = URLencode($k).'='.URLencode($v);
+	}
+	return implode('&', $q);
+}
+
+function data_archive_find_by($terms, $caseless = 1) {
+	global $r_type, $room;
+	if (!$terms) return false;
+if (TIME_PARTS) time_check_point('inb4 archive search prep');
 	$d = DIR_ARCH;
 	$elen = -strlen(PAGE_EXT);
 	$rooms = (array)($room ?: get_dir_rooms($d, '', F_NATSORT | F_HIDE, $r_type));
@@ -297,55 +427,69 @@ if (TIME_PARTS) time_check_point(count($files)." files in $dr");
 		) {
 			$n_check = '';
 			foreach (mb_split_filter($match['content'], NL) as $line) {
-				$draw_time = '';
 				$tab = mb_split('	', $line);
-				foreach ($where as $type => $what) {
-					$found = $draw_time_check = $t = '';
+				foreach ($terms as $type => $what) {
+					$found = $t = '';
+
+				//* get values from relevant post field:
 					if ($type == 'name') {
 						$t = $tab[1];		//* <- username
 					} else
 					if ($type == 'post') {
+						if (count($tab) > 3) continue 2;
 						$t = $tab[2];		//* <- text-only post content
 						if (false !== mb_strpos($t, '<')) {
 							$t = preg_replace('~<[^>]+>~u', '', mb_str_replace('<br>', NL, $t));
 						}
 					} else
+					if (count($tab) < 4) continue 2; else
 					if ($type == 'file') {
 						$t = mb_split('"', $tab[2]);
 						$t = array_filter($t, 'is_tag_attr');
 						$t = array_map('get_file_name', $t);
+					} else
+					if ($type == 'width' || $type == 'height' || $type == 'bytes') {
+						$t = $tab[2];
+						$pat = ($type == 'bytes' ? ARCH_PAT_POST_PIC_BYTES : ARCH_PAT_POST_PIC_WDXHD);
+						if (preg_match($pat, mb_substr_after($t, '>'), $match)) {
+							$t = intval($match[$type == 'height'?2:1]);
+						} else continue 2;
+					} else
+					if ($type == 'time') {
+						if (preg_match('~^[\d:-]+~i', $tab[3], $match)) {
+							$t = $match[0];
+							if (mb_strrpos($t, '-')) {
+								$t1 = $t0 = false;
+								foreach (mb_split('-', $t) as $n) if (strlen($n)) {
+									if (false === $t0) $t0 = $n;
+									$t1 = $n;
+								}
+								$t = intval(($t1-$t0)/1000);	//* <- msec. from JS
+							} else {
+								$t = get_time_seconds($t);
+							}
+						} else continue 2;
 					} else {
 						$t = $tab[3];		//* <- what was used to draw
-						if ($type == 'time') {
-							$draw_time_check = 1;
-							if (preg_match('~^[\d:-]+~i', $t, $t)) {
-								$t = $t[0];
-								if (mb_strrpos($t, '-')) {
-									$t1 = $t0 = false;
-									foreach (mb_split('-', $t) as $n) if (strlen($n)) {
-										if (false === $t0) $t0 = $n;
-										$t1 = $n;
-									}
-									$t = intval(($t1-$t0)/1000);	//* <- msec. from JS
-								} else {
-									$t = get_time_seconds($t);
-								}
-								foreach ($time_ranges as $cond) if (
-									array_key_exists($k = 'operator', $cond)
-									? (
-										($cond[$k] == '=' && $t == $cond['value'])
-									||	($cond[$k] == '<' && $t < $cond['value'])
-									||	($cond[$k] == '>' && $t > $cond['value'])
-									)
-									: ($t >= $cond['min'] && $t <= $cond['max'])
-								) {
-									$found = $draw_time = "(drawn in $t sec.)";
-									break;
-								}
-							}
-						}
 					}
-					if (!$draw_time_check) {
+
+				//* compare:
+					if (is_array($what)) {
+						foreach ($what as $cond) if (
+							array_key_exists($k = 'operator', $cond)
+							? (
+								($cond[$k] == '=' && $t == $cond['value'])
+							||	($cond[$k] == '<' && $t < $cond['value'])
+							||	($cond[$k] == '>' && $t > $cond['value'])
+							)
+							: ($t >= $cond['min'] && $t <= $cond['max'])
+						) {
+							if ($type == 'time') {
+								$found = "drawn in $t sec.";
+							} else $found = "found $t";
+							break;
+						}
+					} else {
 						$is_regex = preg_match(PAT_REGEX_FORMAT, $what);
 						$lowhat = ($caseless ? mb_strtolower($what) : $what);
 						foreach ((array)$t as $v) if (strlen($v)) {
@@ -359,14 +503,31 @@ if (TIME_PARTS) time_check_point(count($files)." files in $dr");
 					if (!$found) continue 2;
 				}
 				if ($found) {
+					$cleanup = 0;
 					if (mb_strpos($tab[0], ',')) {
 						$tab[0] = intval($tab[0]);
-						$line = implode('	', $tab);
+						++$cleanup;
 					}
+					if (
+						mb_strpos($t = $tab[2], ',')
+					&&	($cut = strlen($v = mb_substr_after($t, '>')))
+					) {
+						$t = substr($t, 0, -$cut);
+						if (
+							preg_match(ARCH_PAT_POST_PIC_WDXHD, $v, $match)
+						&&	intval($match[1]) > DRAW_PREVIEW_WIDTH
+						) {
+							$t .= preg_replace(ARCH_PAT_POST_PIC_BYTES, '', $v);
+						}
+						$tab[2] = $t;
+						++$cleanup;
+					}
+					if ($cleanup) $line = implode('	', $tab);
 					$content .= ($n_found || $room?'':($content?NL:'')."
 room = $r").($n_check?'':"
 t = $i").NL.$line;
-					$n_check .= '='.(++$n_found).$draw_time;
+					++$n_found;
+					$n_check .= "=$n_found: $found";
 				}
 			}
 if (TIME_PARTS) time_check_point("done $i$n_check");

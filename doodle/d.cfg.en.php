@@ -20,13 +20,25 @@ $tmp_archive_find_by = array(
 		'select'	=> 'file name'
 	,	'placeholder'	=> 'Enter part of a file name here, e.g.: 0123abcdef.png, jpg, res, etc.'
 	)
+,	'bytes' => array(
+		'select'	=> 'file size (bytes)'
+	,	'placeholder'	=> 'List file size ranges here, e.g.: > 0, < 123kb, 4m-5mb, = 67890, etc.'
+	)
+,	'width' => array(
+		'select'	=> 'image width (pixels)'
+	,	'placeholder'	=> 'List image width ranges here, e.g.: > 0, < 640, 640-800, = 800, etc.'
+	)
+,	'height' => array(
+		'select'	=> 'image height (pixels)'
+	,	'placeholder'	=> 'List image height ranges here, e.g.: > 0, < 360, 360-800, = 800, etc.'
+	)
+,	'time' => array(
+		'select'	=> 'drawn in time (seconds)'
+	,	'placeholder'	=> 'List time ranges here, e.g.: > 0, < 10:20:30, 40-50, = 60, etc.'
+	)
 ,	'used' => array(
 		'select'	=> 'used to draw'
 	,	'placeholder'	=> 'Enter used feature here, e.g.: app name, undo, read file, text, etc.'
-	)
-,	'time' => array(
-		'select'	=> 'drawn in time'
-	,	'placeholder'	=> 'Enter time in seconds here, e.g.: > 0, < 10:20:30, 40-50, = 60, etc.'
 	)
 ,	'name' => array(
 		'select'	=> 'author name'
@@ -76,8 +88,10 @@ $tmp_me = 'Name yourself';
 $tmp_me_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters. Also you may enter your old key here.';
 $tmp_me_submit = $tmp_rooms_submit = 'Enter';
 $tmp_mod_files = array(
-	'arch' =>		'Rewrite arch with newest template.'
-,	'img2subdir' =>		'Pics to subfolders.'
+	'arch' =>		'Rewrite all archives with newest template.'
+,	'arch_404_pix' =>	'Rewrite all archives, replacing not found images with placeholder, or vice versa.'
+,	'img2orphan' =>		'Move pics not used in any room thread or archive to separate backup folder.'
+,	'img2subdir' =>		'Move pics in pic folder root to subfolders.'
 ,	'users' =>		'Convert old user data to current format.'
 ,	'logs' =>		'Convert old report logs to current format.'
 ,	'room_list_reset' =>	'Clear cached post counts for room list.'
@@ -168,6 +182,7 @@ $tmp_post_err = array(
 ,	'trd_arch'	=> 'Room archive has been updated.'
 ,	'trd_max'	=> 'Too much threads.'
 ,	'trd_miss'	=> 'Thread miss, posting into new thread.'
+,	'trd_n_a'	=> 'Specified thread is not accessible.'
 ,	'unkn_req'	=> 'Unexpected error: invalid request.'
 ,	'unkn_res'	=> 'Unexpected error: invalid result.'
 );

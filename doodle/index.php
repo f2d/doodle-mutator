@@ -4,7 +4,7 @@ $t = microtime();
 
 function is_prefix($s, $p) {return substr($s, 0, strlen($p)) === $p;}
 function is_postfix($s, $p) {return substr($s, -strlen($p)) === $p;}
-function exit_403($why) {
+function exit_no_access($why) {
 	header('HTTP/1.1 403 Forbidden');
 	die("Error 403: Forbidden. Reason: $why.");
 }
@@ -13,7 +13,7 @@ header('Cache-Control: max-age=0; must-revalidate; no-cache');
 header('Expires: Mon, 12 Sep 2016 00:00:00 GMT');
 header('Pragma: no-cache');
 if (function_exists($f = 'header_remove')) $f('Vary');
-if ($_REQUEST['pass']) exit_403('pass');		//* <- ignore spam bot requests
+if ($_REQUEST['pass']) exit_no_access('pass');		//* <- ignore spam bot requests
 
 define(NAMEPRFX, 'd');
 
@@ -26,7 +26,7 @@ mb_regex_encoding(ENC);
 define(ROOTPRFX, mb_substr($s = $_SERVER['PHP_SELF'] ?: $_SERVER['SCRIPT_NAME'] ?: '/', 0, mb_strrpos($s, '/')+1));
 
 if (!is_prefix($s = URLdecode($p = $_SERVER['REQUEST_URI']), ROOTPRFX)) {
-	exit_403('"'.ROOTPRFX.'" path does not match "'.$s.'"');
+	exit_no_access('"'.ROOTPRFX.'" path does not match "'.$s.'"');
 }
 
 //* source: http://php.net/security.magicquotes.disabling#91653
@@ -41,7 +41,7 @@ define(ME_VAL, $_POST[ME] ?? $_COOKIE[ME] ?? '');	//* <- don't rely on $_REQUEST
 define(POST, 'POST' == $_SERVER['REQUEST_METHOD']);
 
 if (POST) {
-	if (!ME_VAL) exit_403('post');			//* <- ignore anonymous posting
+	if (!ME_VAL) exit_no_access('post');		//* <- ignore anonymous posting
 	ignore_user_abort(true);
 }
 
@@ -152,7 +152,7 @@ $query = array();
 $qpath = array();
 
 if (false !== GET_Q) {
-	if ($q = ltrim(substr($p, GET_Q), '?')) {
+	if ($q = $query_in_url = ltrim(substr($p, GET_Q), '?')) {
 		foreach (explode('&', $q) as $chain) {
 			$a = explode('=', $chain);
 			$v = (count($a) > 1 ? array_pop($a) : '');
@@ -202,11 +202,7 @@ if ($a = mb_split_filter($p)) {
 
 $qfix = ROOTPRFX.encode_URL_parts($qpath).($query ? "?$q" : '');
 
-if (!POST && $qfix !== $_SERVER['REQUEST_URI'] && !$query[LK_MOD_ACT]) {
-	header('HTTP/1.1 303 Redirect: path fix');
-	header("Location: $qfix");
-	exit;
-}
+if (!POST && $qfix !== $_SERVER['REQUEST_URI'] && !$query[LK_MOD_ACT]) exit_redirect($qfix);
 
 time_check_point('done location check');
 
@@ -449,20 +445,42 @@ if (TIME_PARTS) time_check_point('ignore user abort');
 				,	get_dir_contents()
 				)));
 			} else
-			if ($do === 'arch') {
-				require_once(NAMEPRFX.'.arch.php');
-				$t = data_archive_rewrite();
-			} else
 			if ($do === 'room_list_reset') {
 				$t = data_post_refresh(true);
 			} else
 			if ($do === 'img2subdir') {
+				$i = 0;
 				foreach (get_dir_contents($d = DIR_PICS) as $f) if (is_file($old = $d.$f)) {
-					$new = get_pic_subpath($f, true);
+					$new = get_pic_subpath($f);
 					$t .=
-NL.(++$a)."	$old => $new	".($old === $new?'same':(rename($old, $new)?'OK':'fail'));
+NL.(++$i)."	$old => $new	".($old === $new?'same':(rename($old, mkdir_if_none($new))?'OK':'fail'));
 				}
-if (TIME_PARTS && $a) time_check_point("done $a pics");
+if (TIME_PARTS && $i) time_check_point("done $i pics");
+			} else
+			if ($do === 'img2orphan') {
+				require_once(NAMEPRFX.'.arch.php');
+				$i = 0;
+				$links = array_unique(array_merge(data_get_visible_images(), data_get_archive_images()));
+				$files = array();
+
+				function move_leftover_files($d) {
+					global $links, $files, $t, $i;
+					if (!is_dir($d)) return;
+					foreach (get_dir_contents($d) as $f) if (is_file($old = "$d$f")) {
+						$files[$old] = $f;
+						if (false === array_search($f, $links)) {
+							$j = 0;
+							while (is_file($new = DIR_PICS_ORPHAN.$f.($j++?"_$j":'')));
+							$t .=
+NL.(++$i)."	$old => $new	".($old === $new?'same':(rename($old, mkdir_if_none($new))?'OK':'fail'));
+						}
+					} else if (($old .= '/') != DIR_PICS_ORPHAN) {
+						move_leftover_files($old);
+					}
+				}
+
+				move_leftover_files(DIR_PICS);
+if (TIME_PARTS && $i) time_check_point("done $i pics");
 			} else
 			if ($do === 'nginx') {
 				$last = 0;
@@ -480,6 +498,10 @@ if (TIME_PARTS && $a) time_check_point("done $a pics");
 $x
 # End of example. #";
 				}
+			} else
+			if (substr($do, 0,4) === 'arch') {
+				require_once(NAMEPRFX.'.arch.php');
+				$t = data_archive_rewrite(substr($do, -3) === 'pix');
 			} else
 			if (substr($do, 0,3) === 'hta') {
 				$t = rewrite_htaccess(substr($do, -5) === 'write');
@@ -554,7 +576,8 @@ $t";
 
 if ($qd_arch) {
 	require_once(NAMEPRFX.'.arch.php');
-	$search = data_get_archive_search_terms();
+	$q = data_get_archive_search_url($search = data_get_archive_search_terms($query));
+	if (strlen($query_in_url) && $q !== $query_in_url) exit_redirect(ROOTPRFX.encode_URL_parts($qpath)."?$q");
 
 //* archive threads list ------------------------------------------------------
 
@@ -635,7 +658,7 @@ $n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
 				.	'<a name="'.$k.'">'
 				.	($t ? "$t: " : '')
 				.		'<span>'
-				.			htmlspecialchars($v)
+				.			htmlspecialchars(data_get_archive_search_value($v))
 				.		'</span>'
 				.	'</a>';
 			}
@@ -1479,7 +1502,7 @@ if ($u_key) {
 				$r['freeze'] = ($_POST['freeze'] || $_POST['stop'] || $_POST['check']);
 				$r['report'] = $t;
 				$r = data_log_report($r);
-				$post_status = ($r > 0?OK:'unkn_res');
+				$post_status = ($r > 0?OK:'trd_n_a');
 				data_unlock();
 			}
 		}
@@ -1639,13 +1662,13 @@ file: $upload[name]";
 				: md5($file_content)
 			))
 		&&	($fn = "$hash.$ext")
-		&&	is_file($pic_final_path = get_pic_subpath($fn, true))
+		&&	is_file($pic_final_path = get_pic_subpath($fn))
 		) {
 			$post_status = 'file_dup';
 			$log = $fn;
 		} else {
 	//* save pic file:
-			if (!$upload && ($log = file_put_contents($f = $pic_final_path, $file_content)) != $x) {
+			if (!$upload && ($log = file_put_contents(mkdir_if_none($f = $pic_final_path), $file_content)) != $x) {
 				$x = 0;
 				$post_status = 'file_put';
 			} else

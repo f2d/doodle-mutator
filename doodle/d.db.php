@@ -33,7 +33,7 @@ define(DATA_MARK_TXT, '		');
 define(DATA_MARK_IMG, '	<	');
 
 define(DATA_DERE, mb_escape_regex(DATA_LOG_EXT));
-define(DATA_PAT_IMG, '~(<img src="[^>]*/|'.DATA_MARK_IMG.')([^/">	]+)[	"]~is');
+define(DATA_PAT_IMG, '~(?P<before><img\\s+src="?|'.DATA_MARK_IMG.')(?P<path>[^">\\t]+)(?=[">\\t]|$)~iu');
 define(DATA_PAT_TRD_PLAY, '~^
 (?P<id>\d+)
 (?P<etc>(?:\.(?:
@@ -45,7 +45,7 @@ define(DATA_PAT_TRD_PLAY, '~^
 	.+
 ))+)?
 (?P<ext>'.DATA_DERE.')
-$~ix');
+$~iux');
 
 define(DATA_PAT_TRD_MOD, '~^
 (?P<active>
@@ -57,7 +57,7 @@ define(DATA_PAT_TRD_MOD, '~^
 	(?P<stopped>s)top|
 	(?P<deleted>d)el
 ))+)?
-$~ix');
+$~iux');
 
 //* Function argument flags: --------------------------------------------------
 
@@ -651,6 +651,13 @@ function data_is_thread_last_post_pic($t) {
 }
 
 function data_get_thread_content($t) {return (false === mb_strpos($t, '	') ? data_cache($t) : $t);}
+function data_get_thread_images($t, $full_path = false) {
+	if (preg_match_all(DATA_PAT_IMG, file_get_contents($t), $match)) {
+		return array_map($full_path ? 'get_pic_subpath' : 'get_file_name', $match['path']);
+	}
+	return array();
+}
+
 function data_get_thread_name_tail($t, $count_pics = true) {
 	global $room_type;
 	$tt = !!$room_type['lock_taken_task'];
@@ -928,13 +935,13 @@ function data_del_thread($f, $del_pics = false) {
 	global $room;
 	$count = array();
 	if (is_file($f)) {
-		if ($del_pics && preg_match_all(DATA_PAT_IMG, file_get_contents($f), $m)) {
+		if ($del_pics && ($files = data_get_thread_images($f, true))) {
 			$k = (
 				($to_trash = (1 == $del_pics))
 				? 'pics moved to trash'
 				: 'pics erased'
 			);
-			foreach ($m[2] as $p) if (data_del_pic(get_pic_subpath($p), $to_trash)) $count[$k]++;
+			foreach ($files as $path) if (data_del_pic($path, $to_trash)) $count[$k]++;
 		}
 		if (unlink($f)) {
 			$count['files']++;
@@ -1287,10 +1294,11 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 			$a[$k] = 0;
 			$a[DIR_ARCH.$room] = $del_pics;
 			$ok .= data_replace_u_flag(0, "mod_$room");
+			$room = '';
 		}
 
-		foreach ($a as $k => $v) $count[$k] = data_del_tree($k, $v);
-		if ($count) $ok .= 'deleted counts: '.print_r($count, true);
+		foreach ($a as $k => $v) $count[$k] = data_del_tree($k, $v) ?: 'none';
+		if ($count) $ok .= NL.'deleted counts: '.print_r($count, true);
 
 		global $data_cache_d, $data_cache_t;
 		unset($data_cache_d, $data_cache_t);
@@ -1308,6 +1316,22 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 }
 
 //* END mod actions. ----------------------------------------------------------
+
+function data_get_visible_images($room = '') {
+	$a = array();
+	$d = DATA_DIR_ROOM;
+	$rooms = ($room ? (array)$room : get_dir_rooms($d));
+	foreach ($rooms as $r) if (is_dir($s = "$d$r/".DATA_SUB_TRD)) {
+		data_lock($lk = LK_ROOM.$r);
+		foreach (get_dir_contents($s) as $f) if (is_file($path = $s.$f)) {
+			foreach (data_get_thread_images($path) as $i) {
+				if (false === array_search($i, $a)) $a[] = $i;
+			}
+		}
+		data_unlock($lk);
+	}
+	return $a;
+}
 
 function data_get_visible_rooms($type = '') {
 	global $u_flag;

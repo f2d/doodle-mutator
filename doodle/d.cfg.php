@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 //* ---------------------------------------------------------------------------
 //* There is no fallback for most part.
@@ -28,6 +28,7 @@ define(GAME_TYPE_DEFAULT, reset($cfg_game_type_dir));	//* <- if this or none of 
 define(BOARD_LINK, '/board/');	//* <- prepend ROOTPRFX (the script folder) here for a relative link
 define(DIR_PICS, 'i/');		//* <- real folder
 define(DIR_PICS_DEL, DIR_PICS.'deleted/');
+define(DIR_PICS_ORPHAN, DIR_PICS.'orphan/');
 define(DIR_THUMB, 'th/');	//* <- subfolder in each room archive
 define(PIC_404, 'err.png');	//* <- filename for htaccess and nginx cfg example
 
@@ -144,6 +145,7 @@ define(ENC_FALLBACK, '
 ,	Shift_JIS');		//* <- comma-separated list (whitespace is ignored), to convert search requests from weird browsers into ENC
 define(NOR, '&mdash;');		//* <- static placeholder for no request, remains in content
 define(NB, '&#8203;');//&nbsp;	//* <- dynamic placeholder for empty table fields
+define(SUBPAT_OOM_LETTERS, '(?:([kк])|([mм])|([gг])|([tт])|([pп])|([eэе])|([zз])|([yий]))[bб]*');	//* <- orders of magnitude for archive search
 
 define(HINT_REGEX_FORMAT, '/%s/imsu');
 define(HINT_REGEX_LINK, 'http://php.net/manual/%s/pcre.pattern.php');
