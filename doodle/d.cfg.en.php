@@ -90,6 +90,7 @@ $tmp_me_submit = $tmp_rooms_submit = 'Enter';
 $tmp_mod_files = array(
 	'arch' =>		'Rewrite all archives with newest template.'
 ,	'arch_404_pix' =>	'Rewrite all archives, replacing not found images with placeholder, or vice versa.'
+,	'img2orphan_check' =>	'Find pics not used in any room thread or archive.'
 ,	'img2orphan' =>		'Move pics not used in any room thread or archive to separate backup folder.'
 ,	'img2subdir' =>		'Move pics in pic folder root to subfolders.'
 ,	'users' =>		'Convert old user data to current format.'

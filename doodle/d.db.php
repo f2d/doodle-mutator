@@ -33,7 +33,7 @@ define(DATA_MARK_TXT, '		');
 define(DATA_MARK_IMG, '	<	');
 
 define(DATA_DERE, mb_escape_regex(DATA_LOG_EXT));
-define(DATA_PAT_IMG, '~(?P<before><img\\s+src="?|'.DATA_MARK_IMG.')(?P<path>[^">\\t]+)(?=[">\\t]|$)~iu');
+define(DATA_PAT_IMG, '~(?P<before>(?:<a\\s+href|<img\\s+src)="?|'.DATA_MARK_IMG.')(?P<path>[^">\\t]+)(?=[">\\t]|$)~iu');
 define(DATA_PAT_TRD_PLAY, '~^
 (?P<id>\d+)
 (?P<etc>(?:\.(?:
@@ -652,10 +652,20 @@ function data_is_thread_last_post_pic($t) {
 
 function data_get_thread_content($t) {return (false === mb_strpos($t, '	') ? data_cache($t) : $t);}
 function data_get_thread_images($t, $full_path = false) {
-	if (preg_match_all(DATA_PAT_IMG, file_get_contents($t), $match)) {
-		return array_map($full_path ? 'get_pic_subpath' : 'get_file_name', $match['path']);
+	$a = array();
+	$t = file_get_contents($t);
+	if (preg_match(PAT_CONTENT, $t, $match)) $t = $match['content'];
+	if (preg_match_all(DATA_PAT_IMG, $t, $match)) {
+		$m = array_map($full_path ? 'get_pic_subpath' : 'get_file_name', $match['path']);
+		foreach ($m as $path) {
+			if (($i = mb_strpos($path, ';')) !== false) {
+				$a[] = get_pic_resized_path($path = mb_substr($path, 0, $i));
+			}
+			$a[] = $path;
+		}
+		return array_unique($a);
 	}
-	return array();
+	return $a;
 }
 
 function data_get_thread_name_tail($t, $count_pics = true) {

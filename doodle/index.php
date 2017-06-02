@@ -457,30 +457,34 @@ NL.(++$i)."	$old => $new	".($old === $new?'same':(rename($old, mkdir_if_none($ne
 				}
 if (TIME_PARTS && $i) time_check_point("done $i pics");
 			} else
-			if ($do === 'img2orphan') {
+			if (substr($do, 0,6) === 'img2or') {
 				require_once(NAMEPRFX.'.arch.php');
-				$i = 0;
-				$links = array_unique(array_merge(data_get_visible_images(), data_get_archive_images()));
-				$files = array();
+				$i = $k = 0;
+				$c = count($links = array_unique(array_merge($r = data_get_visible_images(), $a = data_get_archive_images())));
+				$check = (substr($do, -5) === 'check');
 
 				function move_leftover_files($d) {
-					global $links, $files, $t, $i;
+					global $check, $links, $t, $i, $k;
 					if (!is_dir($d)) return;
 					foreach (get_dir_contents($d) as $f) if (is_file($old = "$d$f")) {
-						$files[$old] = $f;
 						if (false === array_search($f, $links)) {
-							$j = 0;
-							while (is_file($new = DIR_PICS_ORPHAN.$f.($j++?"_$j":'')));
-							$t .=
+							if ($check) {
+								$t .=
+NL.(++$i)."	$old => ".DIR_PICS_ORPHAN;
+							} else {
+								$j = 0;
+								while (is_file($new = DIR_PICS_ORPHAN.$f.($j++?"_$j":'')));
+								$t .=
 NL.(++$i)."	$old => $new	".($old === $new?'same':(rename($old, mkdir_if_none($new))?'OK':'fail'));
-						}
-					} else if (($old .= '/') != DIR_PICS_ORPHAN) {
+							}
+						} else ++$k;
+					} else if (($old .= '/') != DIR_PICS_ORPHAN && $old != DIR_PICS_DEL) {
 						move_leftover_files($old);
 					}
 				}
 
 				move_leftover_files(DIR_PICS);
-if (TIME_PARTS && $i) time_check_point("done $i pics");
+if (TIME_PARTS && $i) time_check_point("done $i orphan pics, $k linked / $c links");
 			} else
 			if ($do === 'nginx') {
 				$last = 0;
@@ -1701,7 +1705,7 @@ file: $upload[name]";
 			} else $x = 0;
 	//* ready to save post:
 			if ($x > 0) {
-				if ($upload && !rename($f, $pic_final_path)) {
+				if ($upload && !rename($f, mkdir_if_none($pic_final_path))) {
 					$x = 0;
 					$post_status = 'file_put';
 				} else {
