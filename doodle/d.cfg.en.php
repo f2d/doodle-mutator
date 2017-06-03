@@ -22,7 +22,7 @@ $tmp_archive_find_by = array(
 	)
 ,	'bytes' => array(
 		'select'	=> 'file size (bytes)'
-	,	'placeholder'	=> 'List file size ranges here, e.g.: > 0, < 123kb, 4m-5mb, = 67890, etc.'
+	,	'placeholder'	=> 'List file size ranges here, e.g.: > 0, < 123kb, 4m-4.5mb, = 67890, etc.'
 	)
 ,	'width' => array(
 		'select'	=> 'image width (pixels)'

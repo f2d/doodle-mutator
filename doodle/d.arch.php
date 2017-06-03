@@ -350,7 +350,7 @@ function data_get_archive_search_ranges($where, $what = '') {
 					$v = (float)"$x$match[float]";
 					$x = "$v$oom";
 					$i = 0;
-					do { $v *= 1024; } while (!$m[$i++] && $i < 255);
+					do { $v *= 1024; } while (!$m[++$i] && $i < 255);
 				} else {
 					$v = intval($x);
 				}
