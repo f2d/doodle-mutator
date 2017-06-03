@@ -139,7 +139,7 @@ function fix_encoding($text) {
 	global $fix_encoding_chosen;
 	if (mb_check_encoding($text)) {
 		$fix_encoding_chosen[] = ENC;
-		return $text;
+		goto normalize;
 	}
 	$a = array_filter(explode(',', "$_REQUEST[_charset_],".get_const('ENC_FALLBACK')));
 	if (function_exists('iconv')) {
@@ -149,14 +149,18 @@ function fix_encoding($text) {
 		&&	mb_check_encoding($fix)
 		) {
 			$fix_encoding_chosen[] = $e;
-			return $fix;
+			$text = $fix;
+			goto normalize;
 		}
 	}
 	if (false !== ($e = mb_detect_encoding($text, implode(',', $a), true))) {
 		$fix_encoding_chosen[] = $e;
-		return mb_convert_encoding($text, ENC, $e);
+		$text = mb_convert_encoding($text, ENC, $e);
+		goto normalize;
 	}
 	return $text;
+normalize:
+	return function_exists($f = 'normalizer_normalize') ? $f($text) : $text;
 }
 
 function get_const($name) {return defined($s = mb_strtoupper($name)) ? constant($s) : '';}
@@ -195,8 +199,8 @@ function str_replace_first($what, $to, $where) {
 }
 
 function trim_bom($str) {return trim(str_replace(BOM, '', $str));}
-function trim_post($p, $len = 0) {
-	$s = trim(preg_replace('~\s+~u', ' ', $p));
+function trim_post($text, $len = 0) {
+	$s = trim(preg_replace('~\s+~u', ' ', fix_encoding($text)));
 	if ($len > 0) $s = mb_substr($s, 0, $len);
 	return POST ? htmlspecialchars($s) : $s;
 }
@@ -1039,7 +1043,7 @@ function get_template_page($page) {
 .($canon?'
 <link rel="canonical" href="'.$canon.'">':'')
 .($R || ME_VAL?'
-<link rel="index" href="//'.$_SERVER['SERVER_NAME'].ROOTPRFX.($R || $room?'" data-room="'.($room ?: $page['room'] ?: $page['title']):'').'">':'')
+<link rel="index" href="//'.$_SERVER['SERVER_NAME'].ROOTPRFX.($R || $room?'" data-room="'.($R?($page['room'] ?: $page['title']):$room):'').'">':'')
 .(($v = $page['head'])?NL.$v:'')
 .(($v = $page['title'])?NL."<title>$v</title>":'');
 

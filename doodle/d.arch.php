@@ -161,10 +161,11 @@ function data_get_archive_page_html($room, $num, $tsv) {
 	if ($num <= 0) return false;
 	$p = $num-1;
 	$n = $num+1;
-	$lines = mb_split_filter(trim($tsv), NL);
+	$lines = mb_split_filter(trim(fix_encoding($tsv)), NL);
 	$lines = array_filter($lines, 'data_is_a_content_line');
 	$lines = array_map('data_get_fixed_content_line', $lines);
 	sort($lines);
+	$tsv = NL.implode(NL, $lines);
 	return get_template_page(
 		array(
 			'title' => $room
@@ -174,7 +175,7 @@ function data_get_archive_page_html($room, $num, $tsv) {
 					'<link rel="next" href="'.$n.PAGE_EXT.'">'
 		,	'body' => get_date_class($line_time_min, $line_time_max)
 		,	'task' => ($p ? '<a href="'.$p.PAGE_EXT.'" title="previous">'.$num.'</a>' : $num)
-		,	'content' => NL.implode(NL, $lines)
+		,	'content' => $tsv
 		,	'js' => array('capture' => 1, 'arch' => 1)
 		)
 	);

@@ -520,9 +520,10 @@ $x
 		exit_if_not_mod();				//* <- never exits, to check HTTP_IF_MODIFIED_SINCE, etc
 		$sort = (substr($q, -4) === 'sort');
 		$headers = headers_list();
-		$t =	'strip magic slashes = '.($gpc?'on':'off').NL
-		.	'DATE_RFC822 = '	.gmdate(DATE_RFC822, T0).NL
+		$t =	'DATE_RFC822 = '	.gmdate(DATE_RFC822, T0).NL
 		.	'DATE_RFC2822 = '	.gmdate('r', T0).NL
+		.	'strip magic slashes = '.($gpc?'on':'off').NL
+		.	($f = 'normalizer_normalize').' = '.function_exists($f).NL
 		;
 		$v = '
 			ROOTPRFX, NAMEPRFX, DATA_VERSION, HTML_VERSION, HTACCESS_VERSION
