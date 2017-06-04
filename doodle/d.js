@@ -539,8 +539,8 @@ var	d = 'data-id', f = id(CM), s = id(CS);
 var	r = new XMLHttpRequest();
 	r.onreadystatechange = function() {
 		if (r.readyState == 4) {
-		var	atf = autoUpdateTaskTimer
-		,	ati = taskTime.autoupdate
+		var	ttf = autoUpdateTaskTimer
+		,	tti = taskTime.intervalMax
 			;
 			if (r.status == 200) {
 			var	k = '\n'
@@ -604,16 +604,19 @@ var	r = new XMLHttpRequest();
 						)+'\n'+la.send_anyway
 					)) f.submit();
 					else status = la.canceled;
-				} else
-				if (d && (d = orz(d[1])) > 0) {
-					d *= 1000;
-				var	now = taskTime.lastCheckTime = +new Date;
-					if (i = taskTime.interval) clearInterval(i);
-					if (now < d) {
-						taskTime.nextCheckTime = average(now, d);
-						taskTime.deadline = d;
-					} else if (ati) taskTime.nextCheckTime = now + ati;
-					taskTime.interval = setInterval(atf, 1000);
+				} else {
+				var	now = taskTime.lastCheckTime = +new Date
+				,	m = now + taskTime.intervalMin
+				,	i = now + tti
+				,	n = Math.max(m, i)
+					;
+					if (d && (d = orz(d[1])) > 0) {
+						taskTime.deadline = d *= 1000;
+						if (now < d && (d = average(now, d)) < n) n = Math.max(m, d);
+						if (i = taskTime.interval) clearInterval(i);
+						taskTime.interval = setInterval(ttf, taskTime.intervalCheck);
+					}
+					taskTime.nextCheckTime = n;
 				}
 				if (error === 'needs reload') {
 					if (eText) e = eText.parentNode; else
@@ -641,7 +644,7 @@ var	r = new XMLHttpRequest();
 				if (btn) toggleClass(btn, 'ready', 1);
 			}
 			checking = 0;
-			if (s && d && atf && !ati) atf();
+			if (s && d && ttf && !tti) ttf();
 		} else if (s) s.textContent = la.load+r.readyState;
 	};
 	r.open('GET', f
@@ -655,10 +658,10 @@ var	r = new XMLHttpRequest();
 function autoUpdateTaskTimer(event) {
 	if (checking) return;
 //* all stamps in milliseconds:
-var	a = taskTime.autoupdate
+var	t = taskTime.taken
 ,	d = taskTime.deadline
 ,	i = taskTime.interval
-,	t = taskTime.taken
+,	a = taskTime.intervalMax
 ,	f = (event && (e = event.type) && e === 'focus')
 ,	e = id(CS)
 	;
@@ -666,25 +669,24 @@ var	a = taskTime.autoupdate
 //* a) automatically check to push deadline away:
 		if (a > 0) {
 		var	now = +new Date
-		,	m = orz(taskTime.lastCheckTime) + 5000
+		,	i = taskTime.intervalMin
+		,	m = orz(taskTime.lastCheckTime) + i
 		,	n = orz(taskTime.nextCheckTime)
 			;
 			if (n > 0) {
-				if (f && now < m && n > m) {
+				if (f && now < m && m < n) {
 					taskTime.nextCheckTime = m;
-				} else if (now >= n || (f && now >= m)) checkMyTask();
+				} else
+				if ((f && now >= m) || now >= n) checkMyTask();
 			} else {
-				if (f && now > t + Math.min(a, m)) {
+				if (f && now > Math.min(m, t + a)) {
 					n = 1;
 				} else {
-					m = now + a;
+					n = now + Math.max(i, a);
 					if (d > 0) {
-						if (now < d) {
-							n = average(t, d);
-							if (n <= now) n = average(now, d);
-						} else n = d;
+						m = (now < d ? average(Math.max(now, t), d) : d);
 						n = Math.min(m, n);
-					} else n = m;
+					}
 				}
 				taskTime.nextCheckTime = n;
 			}
@@ -2118,11 +2120,15 @@ var	a = orz(k.getAttribute('data-autoupdate'))*1000
 	}
 	if (t > 0) {
 		f = autoUpdateTaskTimer;
+		i = 1000;
+		m = 5000;
 		taskTime = {
-			autoupdate: a
+			taken: t
 		,	deadline: d
-		,	taken: t
-		,	interval: setInterval(f, 1000)
+		,	intervalMin: m
+		,	intervalMax: a
+		,	intervalCheck: i
+		,	interval: setInterval(f, i)
 		};
 		if (a) window.addEventListener('focus', f, false);
 		document.addEventListener('DOMContentLoaded', f, false);
