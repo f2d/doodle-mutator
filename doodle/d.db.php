@@ -1476,19 +1476,19 @@ if (TIME_PARTS) time_check_point("done scan: $c files in $td, inb4 thread iterat
 		is_file($path = $td.$fn)
 	&&	($f = data_cache($path))
 	) {
-		$pn = preg_match(DATA_PAT_TRD_MOD, $fn, $n);
-		$pp = preg_match(DATA_PAT_TRD_PLAY, $fn, $p);
-		if (!$pn && !$pp) continue;
+		$adm = preg_match(DATA_PAT_TRD_MOD, $fn, $m_adm);
+		$act = preg_match(DATA_PAT_TRD_PLAY, $fn, $m_act);
+		if (!$adm && !$act) continue;
 
-		$not = ($pn && $n['inactive']);
-		$frz = ($pn && $n['stopped']);
-		$i = $n['id'];
+		$i = $m_adm['id'];
+		$frz = !!$m_adm['stopped'];
+		$repf = "$tr$i$g";
 		if (
 			GOD
-	//	||	(MOD && $frz)				//* <- only own or "frozen" for mods
-		||	($u_flag['see'] && !$not)		//* <- any active for seers
+		||	(MOD && ($frz || ($act && is_file($repf))))	//* <- frozen/reported for mods
+		||	($act && $u_flag['see'])			//* <- any active for seers
 		||	(
-				($pp || ($frz && NOT_MOD_SEE_STOPPED_TRD))
+				($act || ($frz && NOT_MOD_SEE_STOPPED_TRD))
 			&&	($show_unknown || data_thread_has_posts_by($f, $u_num))
 			)
 		) {
@@ -1524,12 +1524,12 @@ if (TIME_PARTS) time_check_point("done scan: $c files in $td, inb4 thread iterat
 				if (count($tab) > 5) $t['browser'] = $tab[5];
 				$posts[] = $t;
 			}
-			$f = $n['deleted'] ?: $n['stopped'] ?: (data_is_thread_full($p['pics'])?'f':'');
+			$f = $m_adm['deleted'] ?: $m_adm['stopped'] ?: (data_is_thread_full($m_act['pics'])?'f':'');
 			$threads[$tid = "$last_post_time/$i$f"] = $posts;
 
-			if ((MOD || $frz || NOT_MOD_SEE_ACTIVE_TRD_REPORTS) && is_file($f = "$tr$i$g")) {
+			if ((MOD || $frz || NOT_MOD_SEE_ACTIVE_TRD_REPORTS) && is_file($repf)) {
 				$repl = array();
-				foreach (get_file_lines($f) as $line) if (
+				foreach (get_file_lines($repf) as $line) if (
 					trim_bom($line)
 				&&	count($tab = mb_split($sep, $line, 4)) > 3
 				) {
@@ -1541,7 +1541,7 @@ if (TIME_PARTS) time_check_point("done scan: $c files in $td, inb4 thread iterat
 					[$t]		//* <- time
 					= $tab[3];	//* <- content
 				}
-				$reports[$tid] = $repl;
+				if ($repl) $reports[$tid] = $repl;
 			}
 		}
 if (TIME_PARTS) time_check_point("done trd $fn, last = $last");
