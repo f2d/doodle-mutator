@@ -989,6 +989,7 @@ function get_template_page($page) {
 				$anno[$e_class[$v] ?: 'report'][] = $tmp_post_err[$v] ?: $v;
 			}
 		}
+		if (($t = $page['mod_act_log']) && ($a = data_get_mod_log($t))) $anno['mod_act_log al'] = (array)$a;
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
 		if ($d = get_date_class()) $class = array_merge($class, $d);
 	}

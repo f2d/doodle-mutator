@@ -63,6 +63,7 @@ define(ARG_DROP, 'drop');
 define(ARG_CHANGE, 'change');
 
 define(LK_MOD_HTA, 'htaccess');
+define(LK_MOD_ACT_LOG, 'done');
 define(LK_MOD_ACT, 'mod');
 define(LK_MOD_OPT, 'opt');
 define(LK_PIC_OPT, 'pic');
@@ -861,6 +862,7 @@ sep_select = '.$sp.$c
 					$desc_query
 				||	$draw_query
 				||	$ay
+				||	$query[LK_MOD_ACT_LOG]
 				));
 				$skip_list = get_room_skip_list();
 
@@ -1326,6 +1328,7 @@ if (!$is_report_page) {
 		: $v.(mb_substr($v, -1) == '.'?'':'.')
 	).'</a>';
 
+	if (MOD && ($t = $query[LK_MOD_ACT_LOG])) $page['mod_act_log'] = $t;
 	if (GOD) {
 		define(M, A.'.?'.LK_MOD_ACT);
 		foreach ($tmp_mod_pages as $k => &$v) $mod_list .= M.'='.$k.'">'.$v.'</a><br>';
@@ -1466,49 +1469,53 @@ if ($u_key) {
 
 //* admin/mod actions ---------------------------------------------------------
 
-	if (isset($_POST['mod']) && MOD && (($qd_room && $room) || (GOD && ($query[LK_MOD_ACT] === LK_USERLIST || $etc === '3')))) {
-		$d = 'abcdefg';
-		$k = array();
-		$result = array();
-		$done = 0;
-		$failed = 0;
-		foreach ($_POST as $i => $a) if (preg_match('~^m\d+_(\d+)_(\d+)_(\d+)$~i', $i, $m)) {
-			$m[0] = $a;
-			$act[$k[] = str_replace_first('_', $d[substr_count($a, '+')], $i)] = $m;
-		}
-		if ($act) {
-			natsort($k);
-
-			data_lock(LK_MOD_ACT);
-			data_lock(LK_ROOM.$room);
-			foreach (array_reverse($k) as $i) {
-				$m = data_mod_action($act[$i]);	//* <- act = array(option name, thread, row, column)
-				if ($m) {
-					if (array_key_exists($m, $tmp_post_err)) ++$result[$m];
-					else ++$done;
-				} else ++$failed;
+	if (isset($_POST['mod'])) {
+		if (MOD && (($qd_room && $room) || (GOD && ($query[LK_MOD_ACT] === LK_USERLIST || $etc === '3')))) {
+			$d = 'abcdefg';
+			$k = array();
+			$result = array();
+			$done = 0;
+			$failed = 0;
+			foreach ($_POST as $i => $a) if (preg_match('~^m\d+_(\d+)_(\d+)_(\d+)$~i', $i, $m)) {
+				$m[0] = $a;
+				$act[$k[] = str_replace_first('_', $d[substr_count($a, '+')], $i)] = $m;
 			}
-			data_unlock();
+			if ($act) {
+				natsort($k);
 
-			if ($result) $post_status = implode(ARG_ERROR_SPLIT, array_keys($result));
-			else $post_status = ($done && !$failed?OK:'unkn_res');
+				data_lock(LK_MOD_ACT);
+				data_lock(LK_ROOM.$room);
+				foreach (array_reverse($k) as $i) {
+					$m = data_mod_action($act[$i]);	//* <- act = array(option name, thread, row, column)
+					if ($m) {
+						if (array_key_exists($m, $tmp_post_err)) ++$result[$m];
+						else ++$done;
+					} else ++$failed;
+				}
+				data_unlock();
+
+				if ($result) $post_status = implode(ARG_ERROR_SPLIT, array_keys($result));
+				else $post_status = ($done && !$failed?OK:'unkn_res');
+			}
 		}
 	} else
 	if (!$qd_room || !$room); else	//* <- no posting outside room
 
 //* report problem in active room ---------------------------------------------
 
-	if (isset($_POST[$k = 'report']) && ($postID = $query['report_post'] ?: $etc) && (MOD || !NO_MOD)) {
-		$post_status = 'no_path';
-		if (preg_match(PAT_REPORT, $postID, $r)) {
-			$post_status = 'text_short';
-			if (mb_strlen($t = trim_post($_POST[$k], REPORT_MAX_LENGTH)) >= REPORT_MIN_LENGTH) {
-				data_lock(LK_ROOM.$room);
-				$r['freeze'] = ($_POST['freeze'] || $_POST['stop'] || $_POST['check']);
-				$r['report'] = $t;
-				$r = data_log_report($r);
-				$post_status = ($r > 0?OK:'trd_n_a');
-				data_unlock();
+	if (isset($_POST[$k = 'report'])) {
+		if ((MOD || !NO_MOD) && ($report_post_ID = $query['report_post'] ?: $etc)) {
+			$post_status = 'no_path';
+			if (preg_match(PAT_REPORT, $report_post_ID, $r)) {
+				$post_status = 'text_short';
+				if (mb_strlen($t = trim_post($_POST[$k], REPORT_MAX_LENGTH)) >= REPORT_MIN_LENGTH) {
+					data_lock(LK_ROOM.$room);
+					$r['freeze'] = ($_POST['freeze'] || $_POST['stop'] || $_POST['check']);
+					$r['report'] = $t;
+					$r = data_log_report($r);
+					$post_status = ($r > 0?OK:'trd_n_a');
+					data_unlock();
+				}
 			}
 		}
 	} else
@@ -1882,10 +1889,11 @@ if ($OK) {
 	} else unset($query);
 } else {
 	$query = array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY);
-	if ($_POST['report'] && $postID) $query['report_post'] = $postID;
+	if ($report_post_ID) $query['report_post'] = $report_post_ID;
 	if ($p) $query[ARG_ERROR] = $p;
 }
 
+if (MOD && $_POST['mod']) $query[LK_MOD_ACT_LOG] = T0;
 if ($query && is_array($query)) {
 	$q = '';
 	ksort($query);

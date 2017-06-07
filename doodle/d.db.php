@@ -509,7 +509,7 @@ function data_get_mod_log_file($f, $mt = false) {	//* <- (full_file_path, 1|0)
 }
 
 function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
-	global $room;
+	global $room, $u_num;
 //* single list of reflinks:
 	if ($t === LK_REF_LIST) {
 		$t = data_get_mod_log_file(DATA_REF_LIST, $mt);
@@ -552,6 +552,7 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 	}
 //* logs for single picked day:
 	if ($t) {
+		if (false === mb_strpos($t, '-')) $t = date('Y-m-d', $t0 = $t);
 		$a = ($mt ? 0 : array());
 		foreach ($rooms as $r) if (
 			($p = ($r ? "$d$r/" : DATA_DIR))
@@ -567,11 +568,22 @@ preg_replace('~\h+~u', ' ',
 preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1	',	//* <- keep multiline entries atomic
 preg_replace('~\v+~u', '<br>',
 NL.htmlspecialchars($v)))));
-				$a[$k] = $v;
+				if ($t0) {
+					$v = mb_split(NL, $v);
+					$v = array_filter(array_map(function($line) use ($t0, $u_num) {
+						$tab = mb_split('	\D*', $line, 3);
+						return (
+							intval($tab[0]) == $t0
+						&&	intval($tab[1]) == $u_num
+						) ? $tab[2] : '';
+					}, $v));
+					$a = array_merge($a, $v);
+				} else $a[$k] = $v;
 //* find last mod.time:
 			} else if ($a < $v) $a = $v;
 		}
 		if (!$mt) {
+			if ($t0) return $a;
 			ksort($a);
 			return implode(NL, $a);
 		}

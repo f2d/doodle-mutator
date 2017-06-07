@@ -148,7 +148,7 @@ a:hover, a.u:hover {
 .anno b {
 	display: block;
 	font-weight: normal;
-	margin: 8px 22px;
+	margin: 8px 0px;
 }
 .at, a.at {
 	background-color: #999;
