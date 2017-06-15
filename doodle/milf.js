@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2017-05-07'
+,	INFO_DATE = '2014-07-16 — 2017-06-09'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -1955,8 +1955,15 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 			if (dest == 5) a = readPic(a);
 			else {
 				try {
-					if (readSavedLayers(b = JSON.parse(a.data))) a = a.name;
-					else if (confirm(lang.bad_data+' \r\n'+lang.confirm.reprint)) {
+					if (
+						(b = a.data)
+					&&	(i = b.indexOf('{')) >= 0
+					&&	(j = b.lastIndexOf('}')) >= 0
+					&&	(b = b.slice(i, j+1))
+					&&	readSavedLayers(JSON.parse(b))
+					) {
+						a = a.name;
+					} else if (confirm(lang.bad_data+' \r\n'+lang.confirm.reprint)) {
 						b = JSON.stringify(b, null, '\t');
 						saveDL(b);
 					}

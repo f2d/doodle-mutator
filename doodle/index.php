@@ -133,7 +133,7 @@ if (!POST) {
 	$r = array($_SERVER['HTTP_REFERER']);
 	if (
 		($v = $_SERVER['HTTP_USER_AGENT'])
-	&&	preg_match_all('~(?<=^|\s|\+)(\w+:/+\S+)~i', $v, $m)
+	&&	preg_match_all('~(?<=^|[\W_])([a-z]+:/+\S+)~i', $v, $m)
 	) {
 		foreach ($m[1] as $v) {
 			if (false === strpos($v, '(')) $v = trim($v, ')');
