@@ -115,7 +115,7 @@ function data_log($file_path, $line, $n = DATA_LOG_START, $report_errors = true)
 			&&	($written = file_put_contents($file_path, ($old_size?file_get_contents($old):'').$line))
 			) {
 				$del = (unlink($old)?'deleted':'cannot delete');
-				$log .= NL."Copied $old_size + $written bytes to new file, $del $old";
+				$log .= NL."Renamed to $old ($old_size bytes, $del), made new file ($written bytes)";
 			}
 		} else $log = "Cannot create $file_path (possibly wrong dir permissions, or not enough space)";
 	}

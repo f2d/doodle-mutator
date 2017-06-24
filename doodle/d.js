@@ -31,6 +31,7 @@
 ,	regTrimWord = getTrimReg('\\W')
 
 ,	splitSec = 60
+,	splitSort = 500
 ,	TOS = ['object','string']
 ,	NB = '&nbsp;'
 ,	NW = '&#8203;'
@@ -399,6 +400,30 @@ var	o = param.open || 0
 	+	'<div'+getTagAttrIfNotEmpty('class', c)+'>'
 	+		param.content
 	+	'</div>';
+}
+
+function getDropdownMenuHTML(head, list, id) {
+	return	'<u class="menu-head">'
+	+		(head || '')
+	+	'<u class="menu-top">'
+	+	'<u class="menu-hid">'
+	+	'<u class="menu-list"'+getTagAttrIfNotEmpty('id', id || '')+'>'
+	+		(list || '')
+	+	'</u></u></u></u>';
+}
+
+function addDropdownMenuWrapper(a, id) {
+var	p = a.parentNode
+,	t = cre('u')
+	;
+	t.innerHTML = getDropdownMenuHTML('', '', id);
+var	m = t.firstElementChild
+,	f = m.firstElementChild
+	;
+	p.insertBefore(m, a);
+	m.insertBefore(a, f);
+	del(t);
+	return m;
 }
 
 function toggleHide(e,d) {e.style.display = (e.style.display != (d?d:d='')?d:'none');}
@@ -1698,7 +1723,9 @@ var	flagVarNames = ['flag', 'flags']
 
 	//* already have generated content:
 		if ((p = e.previousElementSibling) && (h = p.threadsHTML)) {
-		var	i = p.threadsLastSortIndex || 0;
+		var	i = p.threadsLastSortIndex || 0
+		,	k = p.threadsSortIndexKeys || []
+			;
 			if (sortOrder === 'last') {
 				if (!p.innerHTML && (p.innerHTML = h[i])) {
 					bnw.adorn();
@@ -1708,6 +1735,7 @@ var	flagVarNames = ['flag', 'flags']
 			} else {
 			var	n = 0;
 				if (typeof sortOrder !== 'undefined') {
+					if ((j = k.indexOf(sortOrder)) >= 0) n = j; else
 					if (sortOrder > 0) n = 1; else
 					if (sortOrder < 0) n = 2; else h = '';
 				}
@@ -1832,6 +1860,7 @@ var	flagVarNames = ['flag', 'flags']
 			,	m = ''
 			,	n = '<br>'
 			,	sep = ', '
+			,	splitRanges = {}
 				;
 				for (i in la.groups) if (dtp[i]) {a = la.groups[i]; break;}
 				o.left.push(
@@ -1840,24 +1869,48 @@ var	flagVarNames = ['flag', 'flags']
 				+	'</a>'
 				);
 				if (flag.c) for (i in count) if (k = count[i]) {
-					k = (
-						dtp.reflinks || (dtp.users && i[0] != 'u')
-						? '<a href="javascript:showContent('+(l[i]?1:-1)+')">'+(
+					if (dtp.reflinks || (dtp.users && i[0] != 'u')) {
+					var	sign = (l[i]?'+':'-')
+					,	neg = (sign === '-')
+					,	k_i = sign+'Infinity'
+					,	l_i
+					,	l_min = 1
+					,	l_max = linesToSort.length-1
+					,	m = []
+						;
+						if (sign == '-') {
+							for (l_i = l_max-splitSort+1; l_i > l_min; l_i -= splitSort) m.push(l_i);
+							if (l_i <= l_min) m.push(l_i);
+						} else {
+							for (l_i = splitSort; l_i < l_max; l_i += splitSort) m.push(l_i);
+							if (l_i >= l_max) m.push(l_i);
+						}
+						j = (	l[i] ? l.total :
+						(	dtp.reflinks ? (l.lastr || l.last) :
+							l.last
+						));
+						j = '<a href="javascript:showContent(\''+k_i+'\')">'+j+'</a>';
+						if (m) {
+							m = splitRanges[k_i] = m.map(function(v) {
+							var	a = Math.max(l_min, neg ? v : v-splitSort+1)
+							,	b = Math.min(l_max, neg ? v+splitSort-1 : v)
+								;
+								return neg ? b+'-'+a : a+'-'+b;
+							});
+							j = getDropdownMenuHTML(j, m.map(function(v) {
+								return	'<a href="javascript:showContent(\''+v+'\')">'
+								+		v.replace('-', ' &mdash; ')
+								+	'</a>';
+							}).join(n));
+						}
+					} else {
+						j = (	!l[i] ? l.last :
+						(	dtp.users && i == 'u' ? l.self :
+						(	dtp.found && i == 'o' ? l.total+' '+l.posts :
 							l[i]
-							? l.total
-							: (
-								dtp.reflinks
-								? (l.lastr || l.last)
-								: l.last
-							)
-						)+'</a>'
-						: (
-							l[i] ? (
-								dtp.users && i == 'u' ? l.self : (
-								dtp.found && i == 'o' ? l.total+' '+l.posts : l[i]
-							)) : l.last
-						)
-					)+': '+k;
+						)));
+					}
+					k = j+': '+k;
 					if (i == 'img') o.left.push(k);
 					else if (l[i]) o.right.push(k);
 					else o.right[o.right.length-1] += sep+k;
@@ -1925,13 +1978,40 @@ var	flagVarNames = ['flag', 'flags']
 					}
 				).join('')];
 		//* sorted content:
-				if (linesToSort.length) ['sort','reverse'].map(function(v) {
-					h.push(
-						'<div class="thread">'
-					+		getThreadHTML(linesToSort[v]().join('\n'))
-					+	'</div>'
-					);
-				});
+				if ((j = linesToSort) && (l = j.length)) {
+				var	aik = new Array(h.length)
+				,	r = splitRanges
+					;
+					['sort','reverse'].map(function(v) {
+
+						function addSortedLinesHTML(lines, key) {
+							aik[h.length] = key;
+							h.push(
+								'<div class="thread">'
+							+		getThreadHTML(lines.join('\n'))
+							+	'</div>'
+							);
+						}
+
+					var	s = (v === 'sort')
+					,	k = (s?'+':'-')+'Infinity'
+						;
+						addSortedLinesHTML(j[v](), k);
+		//* sorted content parts:
+						if (r && (v = r[k])) for (var i = 0, n = v.length; i < n; i++) {
+						var	k = v[i]
+						,	a,b = k.split('-').map(orz)
+							;
+							if (s) {
+								a = b[0], b = b[1]+1;
+							} else {
+								a = l-b[0]-1, b = l-b[1];
+							}
+							addSortedLinesHTML(j.slice(a, b), k);
+						}
+					});
+					e.threadsSortIndexKeys = aik;
+				}
 				for (i = 0, j = h.length; i < j; i++) if (h[i]) h[i] += afterThreadsBar;
 				e.className = 'multi-thread';
 				e.threadsHTML = h;
@@ -2039,14 +2119,7 @@ if (k = id('task')) {
 		if (a = e) {
 			if (a.href) {
 				a.removeAttribute('id');
-				e = cre('u', a.parentNode, a);
-				e.className = 'menu-head';
-				e.innerHTML =
-					'<u class="menu-top">'
-				+	'<u class="menu-hid">'
-				+	'<u class="menu-list" id="'+parentId+'">'
-				+	'</u></u></u>';
-				e.insertBefore(a, e.firstElementChild);
+				addDropdownMenuWrapper(a, parentId);
 			}
 			cre('br', e = id(parentId), e.firstElementChild);
 			addTaskBtn(content, attr, e);

@@ -80,6 +80,7 @@ body, .task input:not([type="checkbox"]), .task select {
 	border: 1px solid #aaa;
 	background-color: rgba(85, 85, 85, 0.8);
 	text-align: left;
+	white-space: nowrap;
 }
 .r .menu-list {
 	text-align: right;
