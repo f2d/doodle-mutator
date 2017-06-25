@@ -133,9 +133,9 @@ if (!POST) {
 	$r = array($_SERVER['HTTP_REFERER']);
 	if (
 		($v = $_SERVER['HTTP_USER_AGENT'])
-	&&	preg_match_all('~(?<=^|[\W_])([a-z]+:/+\S+)~i', $v, $m)
+	&&	preg_match_all('~\b\w+:/+\S+~i', $v, $m)
 	) {
-		foreach ($m[1] as $v) {
+		foreach ($m[0] as $v) {
 			if (false === strpos($v, '(')) $v = trim($v, ')');
 			if (
 				($v = trim($v))
@@ -212,6 +212,7 @@ time_check_point('done location check');
 //* mb strings are not expected here without escape/encoding or user meddling;
 //* ---------------------------------------------------------------------------
 
+$u_flag = array();
 $u_opts = array();
 $opt_sufx = 'aoprui';
 $opt_name = array('opta', 'opti', 'trd_per_page', 'draw_max_recovery', 'draw_max_undo', 'draw_time_idle');
@@ -238,7 +239,7 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 		$key_value_pairs = $a;
 	}
 	if (($reg = trim($_POST[ME])) && $u_qk != $reg) $u_qk = $reg;
-	if ($u_qk && data_check_u($u_qk, $reg)) {
+	if ($u_qk && data_check_user($u_qk, $reg)) {
 		if (LOG_IP) data_log_ip();
 		if ($u_flag['ban']) die(get_template_page(array(
 			'title' => $tmp_ban
@@ -270,7 +271,10 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 }
 define(GOD, !!$u_flag['god']);
 define(TIME_PARTS, !POST && GOD && !$u_opts['time_check_points']);	//* <- profiling
-if (TIME_PARTS) time_check_point('done user settings, GOD = '.GOD); else unset($tcp);
+if (TIME_PARTS) time_check_point('done user settings, GOD = '.GOD
+	.NL.'u_flag = '.get_print_or_none($u_flag)
+	.NL.'u_opts = '.get_print_or_none($u_opts)
+); else unset($tcp);
 
 //* Location access check *----------------------------------------------------
 
@@ -1393,7 +1397,7 @@ if (!$is_report_page) {
 	if (!$u_opts['times'] && $u_key) {
 		define(TOOK, $took = '<!--?-->');
 		if (TIME_PARTS) {
-			time_check_point('inb4 template, u_opts = '.get_print_or_none($u_opts));
+			time_check_point('inb4 template');
 			$took = '<a href="javascript:'.(++$page['js'][0]).',toggleHide(took),took.scrollIntoView()">'.$took.'</a>';
 			foreach ($tcp as $t => $comment) {
 				$t = get_time_elapsed($t);
@@ -1895,10 +1899,10 @@ if ($OK) {
 
 if (MOD && $_POST['mod']) $query[LK_MOD_ACT_LOG] = T0;
 if ($query && is_array($query)) {
-	$q = '';
+	$q = array();
 	ksort($query);
-	foreach ($query as $k => $v) $q .= ($q?'&':'?').$k.(strlen($v)?"=$v":'');
-	$l .= $q;
+	foreach ($query as $k => $v) $q[] = (strlen($v) ? "$k=$v" : $k);
+	$l .= '?'.implode('&', $q);
 }
 
 //* show pic processing progress ----------------------------------------------

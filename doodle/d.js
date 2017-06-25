@@ -748,7 +748,7 @@ function openReportForm(i) {
 	} else {
 	var	k = param.left_link
 	,	n = 'Info'
-	,	w = 'width=400,height=400'
+	,	w = 'width=800,height=600'
 		;
 	}
 	window.open(decodeHTMLSpecialChars(k || '')+i, n, w);
@@ -1873,35 +1873,38 @@ var	flagVarNames = ['flag', 'flags']
 					var	sign = (l[i]?'+':'-')
 					,	neg = (sign === '-')
 					,	k_i = sign+'Infinity'
-					,	l_i
-					,	l_min = 1
-					,	l_max = linesToSort.length-1
-					,	m = []
+					,	l_i = linesToSort.length
 						;
-						if (sign == '-') {
-							for (l_i = l_max-splitSort+1; l_i > l_min; l_i -= splitSort) m.push(l_i);
-							if (l_i <= l_min) m.push(l_i);
-						} else {
-							for (l_i = splitSort; l_i < l_max; l_i += splitSort) m.push(l_i);
-							if (l_i >= l_max) m.push(l_i);
-						}
 						j = (	l[i] ? l.total :
 						(	dtp.reflinks ? (l.lastr || l.last) :
 							l.last
 						));
 						j = '<a href="javascript:showContent(\''+k_i+'\')">'+j+'</a>';
-						if (m) {
-							m = splitRanges[k_i] = m.map(function(v) {
-							var	a = Math.max(l_min, neg ? v : v-splitSort+1)
-							,	b = Math.min(l_max, neg ? v+splitSort-1 : v)
-								;
-								return neg ? b+'-'+a : a+'-'+b;
-							});
-							j = getDropdownMenuHTML(j, m.map(function(v) {
-								return	'<a href="javascript:showContent(\''+v+'\')">'
-								+		v.replace('-', ' &mdash; ')
-								+	'</a>';
-							}).join(n));
+						if (l_i > splitSort) {
+						var	l_min = 1
+						,	l_max = l_i-1
+						,	m = []
+							;
+							if (neg) {
+								for (l_i = l_max-splitSort+1; l_i > l_min; l_i -= splitSort) m.push(l_i);
+								if (l_i <= l_min) m.push(l_i);
+							} else {
+								for (l_i = splitSort; l_i < l_max; l_i += splitSort) m.push(l_i);
+								if (l_i >= l_max) m.push(l_i);
+							}
+							if (m) {
+								m = splitRanges[k_i] = m.map(function(v) {
+								var	a = Math.max(l_min, neg ? v : v-splitSort+1)
+								,	b = Math.min(l_max, neg ? v+splitSort-1 : v)
+									;
+									return neg ? b+'-'+a : a+'-'+b;
+								});
+								j = getDropdownMenuHTML(j, m.map(function(v) {
+									return	'<a href="javascript:showContent(\''+v+'\')">'
+									+		v.replace('-', ' &mdash; ')
+									+	'</a>';
+								}).join(n));
+							}
 						}
 					} else {
 						j = (	!l[i] ? l.last :

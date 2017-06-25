@@ -390,10 +390,24 @@ if (TIME_PARTS && $i) time_check_point("done $i changes, $old -> $new");
 
 //* ---------------------------------------------------------------------------
 
-function data_check_u($u, $reg = false) {
+function data_get_user_flags($u_num) {
+	$r = array();
+	if ($u_num) {
+		$d = DATA_DIR_USER;
+		$e = DATA_U_FLAG;
+		$sep = '	';
+
+		data_lock(LK_USER.$u_num, false);
+		foreach (get_file_lines("$d$e/$u_num.$e") as $line) {
+			$a = mb_split($sep, $line);
+			$r[end($a)] = reset($a);
+		}
+	}
+	return $r;
+}
+
+function data_check_user($u, $reg = false) {
 	global $u_key, $u_num, $u_flag, $usernames, $last_user;
-	$d = DATA_DIR_USER;
-	$e = DATA_U_FLAG;
 	$sep = '	';
 
 	data_lock($lk = LK_USERLIST, false);
@@ -406,8 +420,7 @@ function data_check_u($u, $reg = false) {
 			$u_num = $i;
 			if ($reg) break;
 
-			data_lock(LK_USER.$i);	//* <- ex: only one request from one user at a time
-			foreach (get_file_lines("$d$e/$u_num.$e") as $k) $u_flag[$k] = $k;
+			$u_flag = data_get_user_flags($u_num);
 		}
 		if (!$reg) $usernames[$i] = $name;
 	}
@@ -423,11 +436,7 @@ function data_log_user($u_key, $u_name) {
 
 	data_lock($lk = LK_USERLIST);
 	$r = data_log(DATA_USERLIST, "$u_num	$u_key	$t	$u_name");
-	if ($r && !$last_user) {
-		$d = DATA_DIR_USER;
-		$e = DATA_U_FLAG;
-		data_put("$d$e/$u_num.$e", 'god');	//* <- 1st registered = top supervisor
-	}
+	if ($r && !$last_user) data_set_u_flag($u_num, 'god', 1);	//* <- 1st registered = top supervisor
 	data_unlock($lk);
 
 	return $r;
@@ -527,9 +536,12 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 		$t = data_get_mod_log_file(DATA_USERLIST, $mt);
 		if (!$mt) {
 			$e = DATA_U_FLAG;
-			foreach (get_dir_contents($d = DATA_DIR_USER."$e/") as $f) if (get_file_ext($f) == $e) {
-				$i = intval(get_file_name($f));
-				$f = preg_replace('~\s+~u', ', ', trim_bom(file_get_contents($d.$f)));
+			foreach (get_dir_contents(DATA_DIR_USER.$e) as $f) if (
+				(get_file_ext($f) == $e)
+			&&	($i = intval(get_file_name($f)))
+			&&	($f = data_get_user_flags($i))
+			&&	($f = implode(', ', array_keys($f)))
+			) {
 				$t = preg_replace("~^$i\t\\S+~mu", '$0: '.$f, $t);
 			}
 			$t = preg_replace(
@@ -802,14 +814,18 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 	}
 
 //* modify user flags:
-	if (!$u) return 0;
+	if (!$u || !$name) return 0;
 
-	data_lock(LK_USER.$u);
 	$d = DATA_DIR_USER;
 	$e = DATA_U_FLAG;
-	if (is_file($f = "$d$e/$u.$e")) {
-		$flags = array();
-		foreach (get_file_lines($f) as $k) $flags[$k] = $k;
+	$f = "$d$e/$u.$e";
+	$replace = ($on && $on !== true && $on !== intval($on) && $on !== $name ? $on : '');
+	$add = ($on && !$replace);
+	$text = T0.'+'.M0.'	'.($replace ?: $name);
+	$flags = data_get_user_flags($u);
+
+	data_lock(LK_USER.$u);
+	if ($flags) {
 //* check if can:
 		if (
 			!GOD
@@ -830,46 +846,45 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 		) return -$u;
 //* check if set:
 		foreach ($flags as $k => $v) if ($k == $name) {
-			if ($on) return $u;		//* <- add, exists
+			if ($add) return $u;		//* <- add, exists
 			unset($flags[$k]);		//* <- remove
-			++$rem;
+			++$removed;
 		}
-		if ($on) data_log($f, $name, '');	//* <- add
-		else if (!$rem) return 0;		//* <- remove, not exists
-		else if ($flags) data_put($f, implode(NL, $flags));
-		else unlink($f);
-	} else if ($on) data_put($f, $name);		//* <- add, new file
+//* modify:
+		if ($add) data_log($f, $text, '');	//* <- add
+		else if (!$removed) return 0;		//* <- remove, did not exist
+		else if ($text = data_get_flags_text_from_array($flags).($replace ? NL.$text : '')) data_put($f, $text);
+		else unlink($f);			//* <- removed all, nothing left
+	} else if ($add) data_put($f, $text);		//* <- add, new file
 	else $u = 0;
 	return $u;
 }
 
+function data_get_flags_text_from_array($a) {
+	$r = array();
+	foreach ($a as $k => $v) $r[] = ($k == $v ? $k : "$v	$k");
+	return implode(NL, $r);
+}
+
 function data_replace_u_flag($f, $from, $to = '') {
-	if (!$from) return;
+	if (!$from || $from === $to) return;
 	$d = DATA_DIR_USER;
 	$e = DATA_U_FLAG;
 	if ($f) {
-		$u = intval($f = get_file_name($f));
-
-		data_lock($lk = LK_USER.$u);
-		if (
-			($a = get_file_lines($f = "$d$e/$u.$e"))
-		&&	false !== ($i = array_search($from, $a))
-		) {
-			if ($to) {
-				$a[$i] = $to;
-			} else {
-				unset($a[$i]);
-				$to = 'unset';
-			}
-			if ($a) file_put_contents($f, implode(NL, $a)); else unlink($f);
+		$u = intval(get_file_name($f));
+		if ($u = data_set_u_flag($u, $from, $to)) {
 			$log = NL."$from -> $to: user ID = $u";
 		}
-		data_unlock($lk);
 	} else
-	foreach (get_dir_contents("$d$e") as $f) if ($f) {
+	foreach (get_dir_contents("$d$e") as $f) if (get_file_ext($f) == $e) {
 		$log .= data_replace_u_flag($f, $from, $to);
 	}
 	return $log;
+}
+
+function data_prepend_line_time($match) {
+	$t = get_time_html($match[1]);
+	return "$t	$match[0]";
 }
 
 function data_get_user_info($u) {
@@ -884,7 +899,9 @@ function data_get_user_info($u) {
 	) as $e => $v) if (
 		is_file($f = "$d$e/$u.$e")
 	&&	($f = trim_bom(file_get_contents($f)))
-	) $r[$v] = $f;
+	) {
+		$r[$v] = preg_replace_callback('~^(\d{10,})\D~m', 'data_prepend_line_time', $f);
+	}
 	data_unlock($lk);
 
 	return $r;
@@ -1221,8 +1238,8 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 
 	if ($o == 'ban'			) $ok = data_set_u_flag($a, 'ban', !$un); else
 	if ($o == 'can report'		) $ok = data_set_u_flag($a, 'nor', $un); else
-	if ($o == 'give mod'		) $ok = data_set_u_flag($a, "mod_$room", !$un); else
-	if (substr($o,0,4) == 'hara'	) $ok = data_set_u_flag($u_num, "mod_$room", 0, 1); else
+	if ($o == 'give mod'		) $ok = data_set_u_flag($a, $room? "mod_$room":'mod', !$un); else
+	if (substr($o,0,4) == 'hara'	) $ok = data_set_u_flag($u_num, $room?"mod_$room":'mod', 0, 1); else
 
 	if (!GOD && $o != 'room announce') return 0; else
 
@@ -1476,7 +1493,7 @@ function data_get_visible_threads() {
 	$r = DATA_DIR_ROOM."$room/";
 	$td = $r.DATA_SUB_TRD;
 	$tr = $r.DATA_SUB_REP;
-	$u_chars = array('ban', 'god', 'mod', "mod_$room", 'nor');
+	$u_marks = array('ban', 'god', 'mod', "mod_$room", 'nor');
 	$threads = array();
 	$reports = array();
 	$last = 0;
@@ -1518,11 +1535,13 @@ if (TIME_PARTS) time_check_point("done scan: $c files in $td, inb4 thread iterat
 				if (!$f && MOD) {		//* <- mods see other's status as color
 					if (!isset($data_cache_u[$u])) {
 						$data_cache_u[$u] = 0;
-						data_lock($k = LK_USER.$u, false);
-						if (is_file($f = "$d$e/$u.$e") && ($f = get_file_lines($f))) {
-							foreach ($u_chars as $c) if (in_array($c, $f)) {$data_cache_u[$u] = $c[0]; break;}
+						if ($flags = data_get_user_flags($u)) {
+							foreach ($u_marks as $k) if (isset($flags[$k])) {
+								$data_cache_u[$u] = $k[0];
+								break;
+							}
 						}
-						data_unlock($k);
+						data_unlock(LK_USER.$u);
 					}
 					$f = $data_cache_u[$u];
 				}
