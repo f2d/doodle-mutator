@@ -118,10 +118,10 @@ var	n = 'menu_'+p.id
 		,	o: (
 				leftSide ? (
 					ngm?'':(
-					(v?'':'в архив+готово+нет|замороз.нить+отм.'+(g?'+скрыть':'')+'|удалить сообщения||удалить нить'
-				+	(g?'+файлы+стереть с диска':'')+'|удалить пост (но не файл)|уд.файл+обнулить'
-				+	(g?'+стереть с диска':'')+'|доб.пост+перед+изменить||слить сюда+отсюда|разделить нить отсюда'+(g?'|':''))
-				+	(g?'уд.комн.+файлов+архива|переназ.комн.'+(v?'':'+коп.нить в'):'')
+					(v?'':'в архив+готово+нет|замороз.нить+отм.'+(g?'+скрыть':'')+'|удалить сообщения||уд.нить'
+				+	(g?'+и файлы+и стереть файлы с диска':'')+'|удалить пост (но не файл)|уд.файл+обнулить'
+				+	(g?'+стереть с диска':'')+'|доб.пост+перед+изменить||слить нити сюда+отсюда вниз|разделить нить отсюда вниз'+(g?'|':''))
+				+	(g?'уд.комн.+и стер.файлы+и архив и метаданные|переимен.комн.'+(v?'':'+копир.нить в комнату'):'')
 				)) : (
 					ngm?'комнатное объявление':(
 					(v?'':'закрыть доступ+открыть|может жаловаться+нет|'
@@ -161,10 +161,10 @@ var	n = 'menu_'+p.id
 	var	o = (
 			leftSide ? (
 				ngm?'':(
-				(v?'':'archive+ready+wait|freeze tr.+warm up'+(g?'+hide':'')+'|delete comments||delete thread'
-			+	(g?'+pics+erase from disk':'')+'|delete post (but not pic)|delete pic+nullify'
-			+	(g?'+erase from disk':'')+'|add post+before+edit||merge thread target+source|split thread from here'+(g?'|':''))
-			+	(g?'nuke room+pics+arch|rename room'+(v?'':'+copy trd to'):'')
+				(v?'':'archive+ready+wait|freeze trd.+warm up'+(g?'+hide':'')+'|delete comments||delete thread'
+			+	(g?'+& pics+& erase pics from disk':'')+'|delete post (but not pic)|delete pic+nullify'
+			+	(g?'+erase from disk':'')+'|add post+before+edit||merge trd. target+source down from here|split thread down from here'+(g?'|':''))
+			+	(g?'nuke room+& er.pics+& archive and metadata|rename room'+(v?'':'+copy trd. to room'):'')
 			)) : (
 				ngm?'room announce':(
 				(v?'':'ban+lift|can report+not|'
