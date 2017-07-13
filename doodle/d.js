@@ -660,6 +660,10 @@ var	r = new XMLHttpRequest();
 					}
 				}
 			} else {
+				if (ttf && tti) {
+				var	now = taskTime.lastCheckTime = +new Date;
+					taskTime.nextCheckTime = now + Math.min(tti, taskTime.intervalFail);
+				}
 				status = la.fail;
 				task = r.status || 0;
 			}
@@ -2129,9 +2133,9 @@ if (k = id('task')) {
 		} else addTaskBtn(content, attr).id = parentId;
 	}
 
-var	a = orz(k.getAttribute('data-autoupdate'))*1000
-,	d = orz(k.getAttribute('data-deadline'))*1000
-,	t = orz(k.getAttribute('data-taken'))*1000
+var	a = orz(k.getAttribute('data-autoupdate'))
+,	d = orz(k.getAttribute('data-deadline'))
+,	t = orz(k.getAttribute('data-taken'))
 ,	p = gn('p',k)[0] || k.firstElementChild || k
 ,	m = 'task-change-buttons'
 ,	n,l = la.task
@@ -2196,14 +2200,13 @@ var	a = orz(k.getAttribute('data-autoupdate'))*1000
 	}
 	if (t > 0) {
 		f = autoUpdateTaskTimer;
-		i = 1000;
-		m = 5000;
 		taskTime = {
-			taken: t
-		,	deadline: d
-		,	intervalMin: m
-		,	intervalMax: a
-		,	intervalCheck: i
+			taken:		1000*t
+		,	deadline:	1000*d
+		,	intervalFail:	1000*600
+		,	intervalMin:	1000*5
+		,	intervalMax:	1000*a
+		,	intervalCheck:	(i = 1000)
 		,	interval: setInterval(f, i)
 		};
 		if (a) window.addEventListener('focus', f, false);
