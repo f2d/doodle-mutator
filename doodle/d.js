@@ -1731,11 +1731,8 @@ var	flagVarNames = ['flag', 'flags']
 		,	k = p.threadsSortIndexKeys || []
 			;
 			if (sortOrder === 'last') {
-				if (!p.innerHTML && (p.innerHTML = h[i])) {
-					bnw.adorn();
-					if (i = id('filter')) i.onchange(null, i);
-				}
 				rawr.push(p);
+				i = !!(!p.innerHTML && (p.innerHTML = h[i]));
 			} else {
 			var	n = 0;
 				if (typeof sortOrder !== 'undefined') {
@@ -1747,7 +1744,11 @@ var	flagVarNames = ['flag', 'flags']
 					h = (i == n && p.innerHTML?'':h[n]);
 					p.threadsLastSortIndex = n;
 				}
-				if (p.innerHTML = h) bnw.adorn();
+				i = !!(p.innerHTML = h);
+			}
+			if (i) {
+				bnw.adorn();
+				if (i = id('filter')) i.onchange(null, i);
 			}
 			continue;
 		}
