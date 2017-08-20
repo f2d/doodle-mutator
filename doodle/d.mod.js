@@ -240,7 +240,10 @@ var	n = 'menu_'+p.id
 			for (j in b) {
 				v1 += '+'+v[j];
 			var	checkList = getCheckList(v1) || k;
-				b[j] = '</label><label title="'+b[j]+joinCheckList(checkList, '\r\n - ', ': ')+'">'
+				b[j] = '</label><label title="'
+				+		b[j]
+		//		+		joinCheckList(checkList, '\r\n - ', ': ')
+				+	'">'
 				+	(leftSide?'':b[j])
 				+	c
 				+	joinCheckList(checkList)
@@ -249,16 +252,20 @@ var	n = 'menu_'+p.id
 				+	(leftSide?b[j]:'');
 			}
 			checkList = getCheckList(v0) || k;
-			m += '<label title="'+b0+joinCheckList(checkList, '\r\n - ', ': ')+'">'
-			+(b0
-				?	(leftSide?'':b0)
+			m += '<label title="'
+			+		b0
+		//	+		joinCheckList(checkList, '\r\n - ', ': ')
+			+	'">'
+			+	(b0?
+					(leftSide?'':b0)
 				+	c
 				+	joinCheckList(checkList)
 				+	l+v0
 				+	'">'
 				+	(leftSide?b0:'')
-				:''
-			)+b.join('')+'</label>';
+				:'')
+			+	b.join('')
+			+	'</label>';
 			m += '</div>';
 		} else {
 			m += '</div><div class="block">';
