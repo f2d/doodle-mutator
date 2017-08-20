@@ -174,50 +174,86 @@ var	n = 'menu_'+p.id
 				:'||room announce')
 			))
 		).split('|')
+//* warning message dialogs:
 	,	check = {
+//* for each functionality type:
 			confirm: {
-				nuke: ['arch']
-			,	wipe: ['nuke room+']
+//* get first phrase ID, where button fits any criteria from array:
+				erase_trd: [/\berase pics\b/]
+			,	erase_pic: [/\bnullify\b/, /\berase\b/]
+			,	wipe_all: [/^.+archive\b/]
+			,	wipe_active: [/^nuke room/]
 			,	rename: ['rename room']
 			}
-		,	text: {
-				require: ['add post+', 'rename', 'rename room', 'rename room+']
-			,	enable: ['room announce', 'global announce', 'room freeze', 'global freeze']
+		,	textarea: {
+				require: [/^add post/, /^rename/]
+			,	enable: [/ announce$/, / freeze$/]
 			}
 		}
 	,	a = (la.o?la.o.split('|'):o)
 	,	m = ''
 		;
 
-		function checkFeature(f) {
-		var	i,j,r = '';
-			for (i in check)
-			for (j in check[i]) if (check[i][j].indexOf(f) >= 0) {r += '" data-'+i+'="'+j; break;}
+		function getCheckList(buttonID) {
+		var	criteria, j,k,r = {};
+		type:	for (j in check)
+		phrase:	for (k in check[j]) {
+			var	a = check[j][k]
+			,	i = a.length
+				;
+		fit:		while (i--) if (
+					(criteria = a[i]).test
+					? criteria.test(buttonID)
+					: (criteria === buttonID)
+				) {
+					r[j] = k;
+					break phrase;
+				}
+			}
+			return r;
+		}
+
+		function joinCheckList(a, before, between, after) {
+		var	pad = [
+				before || '" data-'
+			,	between || '="'
+			,	after || ''
+			]
+		,	i,r = ''
+			;
+			for (i in a) r += pad[0]+i+pad[1]+a[i]+pad[2];
 			return r;
 		}
 
 		for (i in a) if (a[i]) {
-		var	b = a[i].split('+'), b0 = b.shift()
-		,	v = o[i].split('+'), v0 = v.shift(), v1 = v0
-		,	k = checkFeature(v0+'+')
+		var	b = a[i].split('+')
+		,	v = o[i].split('+')
+		,	b0 = b.shift()
+		,	v0 = v.shift()
+		,	v1 = v0
+		,	k = getCheckList(v0+'+')
 		,	l = '" value="'
 		,	c = '<input type="checkbox" onChange="menuRowCheck(this)" name="'
 			+	p.id.replace('m', 'm'+i)
 			;
 			m += '<div class="row">';
-			for (j in b) b[j] = '</label><label title="'+b[j]+'">'
+			for (j in b) {
+				v1 += '+'+v[j];
+			var	checkList = getCheckList(v1) || k;
+				b[j] = '</label><label title="'+b[j]+joinCheckList(checkList, '\r\n - ', ': ')+'">'
 				+	(leftSide?'':b[j])
 				+	c
-				+	(checkFeature(v[j]) || k)
-				+	l+(v1 += '+'+v[j])
+				+	joinCheckList(checkList)
+				+	l+v1
 				+	'">'
 				+	(leftSide?b[j]:'');
-
-			m += '<label title="'+b0+'">'
+			}
+			checkList = getCheckList(v0) || k;
+			m += '<label title="'+b0+joinCheckList(checkList, '\r\n - ', ': ')+'">'
 			+(b0
 				?	(leftSide?'':b0)
 				+	c
-				+	(checkFeature(v0) || k)
+				+	joinCheckList(checkList)
 				+	l+v0
 				+	'">'
 				+	(leftSide?b0:'')
@@ -263,7 +299,7 @@ var	e = target
 var	opening = (d == target);
 	if (k) {
 		e = target;
-		if (!e.getAttribute('data-text')) k = 0;
+		if (!e.getAttribute('data-textarea')) k = 0;
 		do {if (e = e.parentNode) a = e;} while (!regTagDivP.test(e.tagName));
 		a = gi('checkbox', a), i = a.length;
 		while (i--) if ((e = a[i]) != target) e.checked = 0;
@@ -275,20 +311,24 @@ var	count = {checked: 0, text: 0, req: 0}
 ,	la
 	;
 	if (lang == 'ru') la = {
-		wipe: 'Всё активное содержимое комнаты будет уничтожено, восстановление невозможно.'
-	,	nuke: 'Комната будет уничтожена, восстановление невозможно.'
+		wipe_active: 'Всё активное содержимое комнаты будет уничтожено, восстановление невозможно.'
+	,	wipe_all: 'Комната будет уничтожена, восстановление невозможно.'
+	,	erase_pic: 'Выбранные рисунки будут уничтожены, восстановление невозможно.'
+	,	erase_trd: 'В нитях, выбранных к удалению, все рисунки будут уничтожены, восстановление невозможно.'
 	,	rename: 'Комната сменит адрес, возможны конфликты данных.'
 	,	sure: 'Вы уверены?'
 	}; else la = {
-		wipe: 'All active content of the room will be deleted, this cannot be reverted.'
-	,	nuke: 'The room will be deleted, this cannot be reverted.'
+		wipe_active: 'All active content of the room will be deleted, this cannot be reverted.'
+	,	wipe_all: 'The room will be deleted, this cannot be reverted.'
+	,	erase_pic: 'Selected images will be deleted, this cannot be reverted.'
+	,	erase_trd: 'Images will be deleted from threads, selected for deletion, this cannot be reverted.'
 	,	rename: 'The room will be renamed, this can possibly cause conflicts in data.'
 	,	sure: 'Are you sure?'
 	};
 	while (i--) if ((e = a[i]) && e.checked) {
 		count.checked++;
 		if (t = e.getAttribute('data-confirm')) j.push(la[t]);
-		if (t = e.getAttribute('data-text')) {
+		if (t = e.getAttribute('data-textarea')) {
 			if (t == 'enable') count.text++;
 			if (t == 'require') count.req++;
 		}

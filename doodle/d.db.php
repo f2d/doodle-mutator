@@ -519,6 +519,7 @@ function data_get_mod_log_file($f, $mt = false) {	//* <- (full_file_path, 1|0)
 
 function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 	global $room, $u_num;
+
 //* single list of reflinks:
 	if ($t === LK_REF_LIST) {
 		$t = data_get_mod_log_file(DATA_REF_LIST, $mt);
@@ -531,6 +532,7 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 		}
 		return $t;
 	}
+
 //* single list of users:
 	if ($t === LK_USERLIST) {
 		$t = data_get_mod_log_file(DATA_USERLIST, $mt);
@@ -552,6 +554,7 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 		}
 		return $t;
 	}
+
 //* logs by date:
 	$d = DATA_DIR_ROOM;
 	$s = DATA_SUB_ACT;
@@ -562,15 +565,17 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 		$rooms = get_dir_rooms($d);
 		$rooms[] = '';
 	}
-//* logs for single picked day:
+//* for a single day:
 	if ($t) {
-		if (false === mb_strpos($t, '-')) $t = date('Y-m-d', $t0 = $t);
 		$a = ($mt ? 0 : array());
+//* for a single timestamp:
+		if (false === mb_strpos($t, '-')) $t = date('Y-m-d', $t0 = $t);
+//* for selected rooms:
 		foreach ($rooms as $r) if (
 			($p = ($r ? "$d$r/" : DATA_DIR))
 		&&	($v = data_get_mod_log_file("$p$s$t$e", $mt))
 		) {
-//* show contents:
+//* a) get contents to show:
 			if (!$mt) {
 				$k = $r ?: '*';
 				$v = "
@@ -580,6 +585,8 @@ preg_replace('~\h+~u', ' ',
 preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1	',	//* <- keep multiline entries atomic
 preg_replace('~\v+~u', '<br>',
 NL.htmlspecialchars($v)))));
+
+//* check each message author and timestamp:
 				if ($t0) {
 					$v = mb_split(NL, $v);
 					$v = array_filter(array_map(function($line) use ($t0, $u_num) {
@@ -590,9 +597,12 @@ NL.htmlspecialchars($v)))));
 						) ? $tab[2] : '';
 					}, $v));
 					$a = array_merge($a, $v);
-				} else $a[$k] = $v;
-//* find last mod.time:
-			} else if ($a < $v) $a = $v;
+				} else {
+					$a[$k] = $v;
+				}
+			} else
+//* b) find last mod.time:
+			if ($a < $v) $a = $v;
 		}
 		if (!$mt) {
 			if ($t0) return $a;

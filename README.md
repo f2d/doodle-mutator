@@ -3,7 +3,7 @@
 ## EN:
 
 Parallel turn-based multiplayer online drawing game.
-Server-side scripts in PHP and client-side in JS.
+Server-side scripts in PHP (7.0 and later) and client-side in JS (ES5 and later).
 URL-rewriting is currently required to work (Apache htaccess is added automatically, Nginx example is available).
 An optional board for user feedback is available [here](https://github.com/f2d/bakareha) (uses Perl).
 
