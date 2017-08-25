@@ -242,7 +242,6 @@ var	n = 'menu_'+p.id
 			var	checkList = getCheckList(v1) || k;
 				b[j] = '</label><label title="'
 				+		b[j]
-		//		+		joinCheckList(checkList, '\r\n - ', ': ')
 				+	'">'
 				+	(leftSide?'':b[j])
 				+	c
@@ -254,7 +253,6 @@ var	n = 'menu_'+p.id
 			checkList = getCheckList(v0) || k;
 			m += '<label title="'
 			+		b0
-		//	+		joinCheckList(checkList, '\r\n - ', ': ')
 			+	'">'
 			+	(b0?
 					(leftSide?'':b0)
@@ -275,19 +273,28 @@ var	n = 'menu_'+p.id
 	,	i = '" title="'
 	,	j = p.id.split('_').slice(1).join('-')
 	,	t = la.tip.join('\r\n')
+	,	align = (leftSide?'l':'r')
+	,	rep = (
+			!g && (ngm || u || v)
+			? ''
+			: '<a href="javascript:openReportForm(\''+j+'\')" class="report-button" title="'
+			+	la.r
+			+ '">'
+			+	la.r
+			+ '</a>'
+		)
 	,	i = '<div title="'+t+'">'
-		+	(ngm || u || v?'':
-			'<div class="block">'
-		+		'[ <a href="javascript:void window.open(\''+j+'\',\'Report\',\'width=656,height=280\')">'+la.r+'</a> ]'
-		+	'</div>'
-			)
 		+	'<div class="block">'+m+'</div>'
 		+'</div>'
 		+'<textarea name="'+p.id.replace('m', 't')+i+la.i+'" placeholder="'+la.t+'"></textarea>'
-		+'<div>'
-		+	'<input type="submit" value="'+la.go+i+t+'">&ensp;'
-		+	b+'x'+i+la.x+c+'this)">'
-		+	b+'&gt;&lt;'+i+la.z+c+')">'
+		+'<div class="button-row a'+align+'">'
+		+	'<div class="'+align+'">'
+		+		(rep && leftSide?'':rep)
+		+		'<input type="submit" value="'+la.go+i+t+'">&ensp;'
+		+		b+'x'+i+la.x+c+'this)">'
+		+		b+'&gt;&lt;'+i+la.z+c+')">'
+		+		(rep && !leftSide?'':rep)
+		+	'</div>'
 		+'</div>'
 		;
 		m = cre('div', p);
@@ -403,7 +410,7 @@ var	count = {checked: 0, text: 0, req: 0}
 	if (e) {
 		if (j.length) j.push(la.sure), j = j.join('\n');
 		else j = '';
-		e.onsubmit = (j ? (function() { return confirm(j); }) : null);
+		e.onsubmit = (j ? (function() { return confirmAgainInterval(j); }) : null);
 	}
 }
 

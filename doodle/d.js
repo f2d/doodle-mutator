@@ -138,6 +138,7 @@ if (lang == 'ru') la = {
 ,	using_file_upload: 'файл'
 ,	resized: 'Размер'	//'\nИзображение уменьшено.\nРазмер'
 ,	resized_hint: 'Кликните для просмотра изображения в полном размере.'
+,	confirm_again: 'Защита от случайного нажатия: 5 секунд.\nПроверьте, что не ошиблись.'
 ,	bottom: {
 		close: 'Закрыть.'
 	,	hide: 'Скрыть поля.'
@@ -229,6 +230,7 @@ if (lang == 'ru') la = {
 ,	using_file_upload: 'file'
 ,	resized: 'Full size'	//'\nShown image is resized.\nFull size'
 ,	resized_hint: 'Click to view full size image.'
+,	confirm_again: 'Accidental click safety: 5 seconds.\nPlease check that you are certain.'
 ,	bottom: {
 		close: 'Close.'
 	,	hide: 'Hide asides.'
@@ -268,6 +270,21 @@ if (lang == 'ru') la = {
 };
 
 //* Utility functions *--------------------------------------------------------
+
+function confirmAgainInterval(text, wait, again) {
+var	t = +new Date
+,	d = orz(wait)
+,	a = orz(again)
+	;
+	if (d <= 0) d = 5000;
+	return (
+		confirm(a ? la.confirm_again+(a > 1?' ['+a+']':'')+'\n\n'+text : text)
+	&&	(
+			(+new Date)-t > d
+		||	confirmAgainInterval(text, d, a+1)
+		)
+	);
+}
 
 function decodeHTMLSpecialChars(t) {
 	return String(t)
@@ -747,7 +764,7 @@ function openReportForm(i) {
 	if (i && i.indexOf && i.lastIndexOf('-') > 0) {
 	var	k = param.report_to
 	,	n = 'Report'
-	,	w = 'width=656,height=300'
+	,	w = 'width=656,height=316'
 		;
 	} else {
 	var	k = param.left_link

@@ -877,6 +877,23 @@ function get_template_form($t) {
 		.		indent("$a[label]:".NL.'<input type="checkbox"'.$n.$r.'>')
 		.	'</label>';
 	}
+	if (($a = $radiogroup) && is_array($a)) {
+		if (($o = $a['options']) && is_array($o)) {
+			$n = $a['name'];
+		} else {
+			$o = $a;
+		}
+		$radiogroup = '';
+		$checked = ' checked';
+		$n = ' name="'.($n ?: 'radio').'"';
+		foreach ($o as $k => $v) {
+			$radiogroup .= NL
+			.	'<label>'
+			.		indent($v.NL.'&mdash;<input type="radio"'.$n.' value="'.$k.'"'.$checked.'>')
+			.	'</label>';
+			$checked = '';
+		}
+	}
 	$submittable = ($submit || $method);
 	return $head.NL.(
 		$name || $method
@@ -895,14 +912,21 @@ function get_template_form($t) {
 					? NL.'<b><input type="submit" value="'.($submit ?: $GLOBALS['tmp_submit']).'"></b>'
 					: ''
 				)
-			).'</b>'.$checkbox.(
-				$submittable
+			).'</b>'
+			.$checkbox
+			.(
+				$radiogroup
+				? NL.'<div class="r">'.indent($radiogroup).'</div>'
+				: ''
+			).(
 //* about "_charset_": https://www.w3.org/TR/html5/forms.html#naming-form-controls:-the-name-attribute
+				$submittable
 				? NL.'<input type="hidden" name="_charset_">'.(
 					$GLOBALS['u_key']
 					? ''
 					: NL.'<input type="text" name="pass" value="" placeholder="'.($GLOBALS['tmp_spam_trap'] ?: 'spam').'">'
-				) : ''
+				)
+				: ''
 			)
 		).'</form>'
 		: '<p><b><input type="text"'.$attr.'></b></p>'

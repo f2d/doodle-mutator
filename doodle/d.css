@@ -8,7 +8,7 @@ body, body>*, body>form>*, .content>* {
 	max-width: 1000px;
 	text-align: center;
 }
-body, .task input:not([type="checkbox"]), .task select {
+body, .task input:not([type="checkbox"]):not([type="radio"]), .task select {
 	font-family: Arial, Helvetica, "Nimbus Sans L", "Liberation Sans", FreeSans, sans-serif;
 	line-height: 28px;
 	font-size: 21px;
@@ -314,6 +314,12 @@ a:hover, a.u:hover {
 .task .r {
 	padding-bottom: 0;
 }
+.task .r label {
+	display: block;
+	white-space: nowrap;
+	margin: 0;
+	padding: 0;
+}
 .task label.r {
 	margin-left: 22px;
 }
@@ -333,14 +339,17 @@ a:hover, a.u:hover {
 	color: #fff;
 	background-color: #555;
 }
-.task form>:not(label) {
+.task form>.r {
+	margin: 8px 0 0 8px;
+}
+.task form>:not(label):not(.l):not(.r) {
 	display: table;
 	width: 100%;
 }
-.task form>:not(label)>* {
+.task form>:not(label):not(.l):not(.r)>* {
 	display: table-cell;
 }
-.task form>:not(label)>:not(:first-child) {
+.task form>:not(label):not(.l):not(.r)>:not(:first-child) {
 	width: 150px;
 	text-align: right;
 }
@@ -611,6 +620,20 @@ a:hover, a.u:hover {
 }
 .post .mod-menu .row:hover {
 	background-color: rgba(255, 255, 255, 0.3);
+}
+.post .mod-menu .button-row {
+	white-space: nowrap;
+	overflow: hidden;
+}
+.post .mod-menu .button-row a {
+	display: inline-block;
+	height: 26px;
+	line-height: 26px;
+	margin: 0 4px;
+	padding: 0 4px;
+}
+.post .mod-menu .button-row a:hover {
+	background-color: #fff;
 }
 .post .mod-menu input:not([type="checkbox"]) {
 	display: inline-block;

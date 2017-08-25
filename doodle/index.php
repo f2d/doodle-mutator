@@ -475,7 +475,7 @@ if (TIME_PARTS && $i) time_check_point("done $i pics");
 						if (false === array_search($f, $links)) {
 							if ($check) {
 								$t .=
-NL.(++$i)."	$old => ".DIR_PICS_ORPHAN;
+NL.(++$i)."	$old => ".DIR_PICS_ORPHAN.' ?';
 							} else {
 								$j = 0;
 								while (is_file($new = DIR_PICS_ORPHAN.$f.($j++?"_$j":'')));
@@ -846,9 +846,16 @@ sep_select = '.$sp.$c
 					,	'min' =>	REPORT_MIN_LENGTH
 					,	'max' =>	REPORT_MAX_LENGTH
 					,	'textarea' =>	($is_report_page = 1)
-					,	'checkbox' =>	array(
+				/*	,	'checkbox' =>	array(
 							'name' => 'freeze'
 						,	'label' => $tmp_report_freeze
+						)*/
+					,	'radiogroup' => array(
+							'name' => 'freeze'
+						,	'options' => array(
+								0 => $tmp_report_hotfix
+							,	1 => $tmp_report_freeze
+							)
 						)
 					)
 				);
