@@ -839,6 +839,7 @@ sep_select = '.$sp.$c
 
 //* report form ---------------------------------------------------------------
 
+				$icon_ice = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAAAxQTFRFAAAAC1nJfNn/////gu5rjwAAAAF0Uk5TAEDm2GYAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMTZEaa/1AAAARUlEQVR42n3PUQoAIAhEQVfvf+fURdSg+uoNUSbyWMDVpthtOsXboSU6oCQ7gcImpIBbMo801CUF/QxhDhKwR1XD/3O9Dn+AAO+CgfZkAAAAAElFTkSuQmCC">';
 				$page['task'] = get_template_form(
 					array(
 						'method' =>	'post'
@@ -853,8 +854,8 @@ sep_select = '.$sp.$c
 					,	'radiogroup' => array(
 							'name' => 'freeze'
 						,	'options' => array(
-								0 => $tmp_report_hotfix
-							,	1 => $tmp_report_freeze
+								1 => array($tmp_report_freeze, $icon_ice)
+							,	0 => $tmp_report_hotfix
 							)
 						)
 					)

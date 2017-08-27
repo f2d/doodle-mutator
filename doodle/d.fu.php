@@ -887,9 +887,16 @@ function get_template_form($t) {
 		$checked = ' checked';
 		$n = ' name="'.($n ?: 'radio').'"';
 		foreach ($o as $k => $v) {
+			$i = '&mdash;<input type="radio"'.$n.' value="'.$k.'"'.$checked.'>';
+			if (is_array($v)) {
+				array_splice($v, 1, 0, $i);
+				$v = implode(NL, $v);
+			} else {
+				$v .= NL.$i;
+			}
 			$radiogroup .= NL
 			.	'<label>'
-			.		indent($v.NL.'&mdash;<input type="radio"'.$n.' value="'.$k.'"'.$checked.'>')
+			.		indent($v)
 			.	'</label>';
 			$checked = '';
 		}

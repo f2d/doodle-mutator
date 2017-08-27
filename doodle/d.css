@@ -320,6 +320,13 @@ a:hover, a.u:hover {
 	margin: 0;
 	padding: 0;
 }
+.task .r label img {
+	float: left;
+	padding-top: 4px;
+}
+.task .r label :not(:checked) + img {
+	visibility: hidden;
+}
 .task label.r {
 	margin-left: 22px;
 }

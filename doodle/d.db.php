@@ -473,7 +473,7 @@ function data_log_action($text, $dump = '') {	//* <- write to logs of administra
 	return data_log($f, "$t	$u	$text", DATA_LOG_START, false);
 }
 
-function data_log_report($a) {	//* <- write to user report logs, filename by thread
+function data_log_report($a) {			//* <- write to user report logs, filename by thread
 	global $u_num, $room;
 	$d = ($room ? DATA_DIR_ROOM."$room/" : DATA_DIR);
 //* find matching file:
@@ -498,14 +498,25 @@ function data_log_report($a) {	//* <- write to user report logs, filename by thr
 			)
 		) {
 //* write changes:
-			if (!$match['inactive'] && ($a['freeze'] || $a['stop'])) rename($f, "$f.stop");
+			$act = 'report';
+			if ($a['freeze'] || $a['stop']) {
+				$act = 'freeze: '.(
+					$match['inactive']
+					? 'done before'
+					: (
+						rename($f, "$f.stop")
+						? 'done'
+						: 'failed'
+					)
+				).", $act";
+			}
 			$t = T0.'+'.M0;
-			$p = $a['post'] ?: $a['row'];
-			$s = $a['side'] ?: $a['column'];
+			$p = $a['post'] ?: $a['row'] ?: 0;
+			$s = $a['side'] ?: $a['column'] ?: 0;
 			$f = $d.DATA_SUB_REP.$i.DATA_LOG_EXT;
 			if (data_log($f, "$t	$p	$s	$text")) {
 				data_post_refresh();
-				return data_log_action("$a[0]	$text");
+				return data_log_action("$a[0]	$act: $text");
 			}
 		}
 		break;
