@@ -764,7 +764,7 @@ function openReportForm(i) {
 	if (i && i.indexOf && i.lastIndexOf('-') > 0) {
 	var	k = param.report_to
 	,	n = 'Report'
-	,	w = 'width=656,height=316'
+	,	w = 'width=680,height=360'
 		;
 	} else {
 	var	k = param.left_link

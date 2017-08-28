@@ -887,16 +887,13 @@ function get_template_form($t) {
 		$checked = ' checked';
 		$n = ' name="'.($n ?: 'radio').'"';
 		foreach ($o as $k => $v) {
-			$i = '&mdash;<input type="radio"'.$n.' value="'.$k.'"'.$checked.'>';
-			if (is_array($v)) {
-				array_splice($v, 1, 0, $i);
-				$v = implode(NL, $v);
-			} else {
-				$v .= NL.$i;
-			}
+			$v = (array)$v;
+		//	foreach ($v as &$t) $t = "<span>$t</span>";
+			array_unshift($v, '<input type="radio"'.$n.' value="'.$k.'"'.$checked.'>');
+			array_push($v, '&mdash;');
 			$radiogroup .= NL
 			.	'<label>'
-			.		indent($v)
+			.		indent(implode(NL, $v))
 			.	'</label>';
 			$checked = '';
 		}
@@ -923,7 +920,7 @@ function get_template_form($t) {
 			.$checkbox
 			.(
 				$radiogroup
-				? NL.'<div class="r">'.indent($radiogroup).'</div>'
+				? NL.'<div class="r radiogroup">'.indent($radiogroup).'</div>'
 				: ''
 			).(
 //* about "_charset_": https://www.w3.org/TR/html5/forms.html#naming-form-controls:-the-name-attribute

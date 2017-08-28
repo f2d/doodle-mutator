@@ -57,7 +57,7 @@ body, .task input:not([type="checkbox"]):not([type="radio"]), .task select {
 }
 .menu-head>a::before {
 	line-height: 50%;
-	content: '\25BE\A0';
+	content: "\25BE\A0";
 }
 .menu-top {
 	display: none;
@@ -314,17 +314,27 @@ a:hover, a.u:hover {
 .task .r {
 	padding-bottom: 0;
 }
-.task .r label {
+.task .radiogroup {
+	margin: 8px 0 0 8px;
+}
+.task .radiogroup label {
 	display: block;
 	white-space: nowrap;
 	margin: 0;
 	padding: 0;
 }
-.task .r label img {
+.task .radiogroup img {
 	float: left;
 	padding-top: 4px;
 }
-.task .r label :not(:checked) + img {
+.task .radiogroup input[type="radio"] {
+	float: right;
+	margin-top: 8px;
+}
+.task .radiogroup input[type="radio"]:checked ~ span {
+	background-color: #777;
+}
+.task .radiogroup input[type="radio"]:not(:checked) ~ img {
 	visibility: hidden;
 }
 .task label.r {
@@ -346,9 +356,6 @@ a:hover, a.u:hover {
 	color: #fff;
 	background-color: #555;
 }
-.task form>.r {
-	margin: 8px 0 0 8px;
-}
 .task form>:not(label):not(.l):not(.r) {
 	display: table;
 	width: 100%;
@@ -361,7 +368,7 @@ a:hover, a.u:hover {
 	text-align: right;
 }
 .task form>input {
-	display: none;
+	display: none !important;
 }
 .task form input[type="submit"], .task form select {
 	width: 142px;
