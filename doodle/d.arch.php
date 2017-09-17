@@ -504,26 +504,32 @@ if (TIME_PARTS) time_check_point(count($files)." files in $dr");
 					if (!$found) continue 2;
 				}
 				if ($found) {
-					$cleanup = 0;
-					if (mb_strpos($tab[0], ',')) {
-						$tab[0] = intval($tab[0]);
-						++$cleanup;
-					}
-					if (
-						mb_strpos($t = $tab[2], ',')
-					&&	($cut = strlen($v = mb_substr_after($t, '>')))
-					) {
-						$t = substr($t, 0, -$cut);
-						if (
-							preg_match(ARCH_PAT_POST_PIC_WDXHD, $v, $match)
-						&&	intval($match[1]) > DRAW_PREVIEW_WIDTH
-						) {
-							$t .= preg_replace(ARCH_PAT_POST_PIC_BYTES, '', $v);
+
+				//* reformat image post:
+					if (count($tab) > 3) {
+						$cleanup = 0;
+						if (mb_strpos($tab[0], ',')) {
+							$tab[0] = intval($tab[0]);
+							++$cleanup;
 						}
-						$tab[2] = $t;
-						++$cleanup;
+						if (
+							mb_strpos($t = $tab[2], ',')
+						&&	($cut = strlen($v = mb_substr_after($t, '>')))
+						) {
+							$t = substr($t, 0, -$cut);
+							if (
+								preg_match(ARCH_PAT_POST_PIC_WDXHD, $v, $match)
+							&&	intval($match[1]) > DRAW_PREVIEW_WIDTH
+							) {
+								$t .= preg_replace(ARCH_PAT_POST_PIC_BYTES, '', $v);
+							}
+							$tab[2] = $t;
+							++$cleanup;
+						}
+						if ($cleanup) $line = implode('	', $tab);
 					}
-					if ($cleanup) $line = implode('	', $tab);
+
+				//* add post to result output:
 					$content .= ($n_found || $room?'':($content?NL:'')."
 room = $r").($n_check?'':"
 t = $i").NL.$line;

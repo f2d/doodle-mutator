@@ -1910,7 +1910,7 @@ if ($query && is_array($query)) {
 	$q = array();
 	ksort($query);
 	foreach ($query as $k => $v) $q[] = (strlen($v) ? "$k=$v" : $k);
-	$l .= '?'.implode('&', $q);
+	$l .= (false === strpos($l, '?') ? '?' : '&').implode('&', $q);
 }
 
 //* show pic processing progress ----------------------------------------------
