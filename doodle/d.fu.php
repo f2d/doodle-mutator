@@ -2,8 +2,8 @@
 
 //* Constants only for internal use: ------------------------------------------
 
-define(HTML_VERSION, '2017-05-23 23:13');	//* <- change this to autoupdate old browser-cached pages
-define(HTACCESS_VERSION, '2017-04-16 01:41');	//* <- change this + open index as admin to autoupdate old .htaccess
+define(HTML_VERSION, '2017-10-27 23:23');	//* <- change this to autoupdate old browser-cached pages
+define(HTACCESS_VERSION, '2017-10-27 23:23');	//* <- change this + open index as admin to autoupdate old .htaccess
 
 //* Function argument flags: --------------------------------------------------
 
@@ -60,9 +60,9 @@ function rewrite_htaccess($write_to_file = 1) {
 		$new = $new_mark.' -- Do not touch these marks. Only delete them along with the whole block.
 <IfModule rewrite_module>
 	RewriteEngine On
-	RewriteBase '.ROOTPRFX.($dd?'
+	RewriteBase '.ROOTPRFX.'
 
-# hide data:
+# hide data files from browsing:'.($dd?'
 	RewriteRule ^'.$dd.' . [L,R]':'').'
 
 # expand simple image path:
@@ -274,6 +274,10 @@ function mkdir_if_none($file_path) {
 	&&	!is_file($d)
 	) mkdir($d, 0755, true);
 	return $file_path;
+}
+
+function file_put_mkdir($file_path, $content = '') {
+	return file_put_contents(mkdir_if_none($file_path), $content);
 }
 
 function get_dir_contents($path = '.', $flags = 0) {
@@ -824,6 +828,32 @@ function get_template_welcome_interleave($c = '', $t = '') {
 	return "<tr$c>".indent("$a$b$d$b$d$b$a").'</tr>';
 }
 
+function get_template_welcome($a) {
+	$i = '<br><img src="'.ROOTPRFX.NAMEPRFX.'.demo';
+	$e = '.png">';
+	$sdo = get_template_welcome_see_do($v = 'other', $a[$v]);
+	$sdu = get_template_welcome_see_do($v = 'you', $u = $a[$v]
+	,	array(
+			"$u[pic_see]:	$i.1a$e"
+		,	"$u[desc_see]:	$i.2a$e"
+		,	"$u[pic_see]:	$i.3a$e"
+		)
+	,	array(
+			"$u[pic_do]	$i.1b$e"
+		,	"$u[desc_do]	$i.2b$e"
+		,	"$u[pic_do]	$i.3b$e"
+		)
+	);
+	return (($i = $a['header']) ? "<p>$i</p>".NL : '')
+	.'<table>'.indent(
+		get_template_welcome_interleave('prev', $a['head']).$sdo
+	.	get_template_welcome_interleave('prev').$sdu
+	.	get_template_welcome_interleave('next').$sdo
+	.	get_template_welcome_interleave('next', $a['tail'])
+	).'</table>'
+	.(($i = $a['footer']) ? NL."<p>$i</p>" : '');
+}
+
 function get_template_form($t) {
 	if (is_array($t)) {
 		foreach ($t as $k => $v) $$k = $v ?: '';
@@ -986,7 +1016,7 @@ $k = $v$p";
 }
 
 function get_template_page($page) {
-	global $lang, $tmp_announce, $tmp_post_err, $room;
+	global $cfg_langs, $lang, $tmp_announce, $tmp_post_err, $room;
 	if (!is_array($j = $page['js'] ?: array())) $j = array($j => 1);
 	$R = !!$j['arch'];
 	$RL = $page['link'] ?? '';
@@ -1021,42 +1051,26 @@ function get_template_page($page) {
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
 		if ($d = get_date_class()) $class = array_merge($class, $d);
 	}
+	if ($a = $page[$k = 'welcome']) {
+		if (is_array($a) ? ($a = get_template_welcome($a)) : $a) {
+			$$k = '<div class="'.$k.'">'.indent($a).'</div>';
+		}
+	}
+	if ($a = $page[$k = 'profile']) {
+		$$k = '<div class="'.$k.'">'.indent($a).'</div>';
+	}
 	if ($a = $page[$k = 'content']) {
 		$attr = get_template_attr($page['data'][$k]);
 		if ($LN) {
-			foreach ((array)$a as $k => $v) $content .= ($content?NL:'').NL.$k.$LN.$v;
+			if (is_array($LN)) {
+				$NL = $LN['next-item'] ?? NL;
+				$LN = $LN['key-value'] ?? NL;
+			} else $NL = NL;
+			foreach ((array)$a as $k => $v) $content .= ($content ? $NL : '').$k.$LN.$v;
 			$content = "
 <pre$attr>$content
 </pre>";
 		} else $content = get_template_content($a, $static, '', $attr);
-	}
-	if ($a = $page[$k = 'welcome']) {
-		if (is_array($a)) {
-			$i = '<br><img src="'.ROOTPRFX.NAMEPRFX.'.demo';
-			$e = '.png">';
-			$sdo = get_template_welcome_see_do($v = 'other', $a[$v]);
-			$sdu = get_template_welcome_see_do($v = 'you', $u = $a[$v]
-			,	array(
-					"$u[pic_see]:	$i.1a$e"
-				,	"$u[desc_see]:	$i.2a$e"
-				,	"$u[pic_see]:	$i.3a$e"
-				)
-			,	array(
-					"$u[pic_do]	$i.1b$e"
-				,	"$u[desc_do]	$i.2b$e"
-				,	"$u[pic_do]	$i.3b$e"
-				)
-			);
-			$$k = (($i = $a['header']) ? "<p>$i</p>".NL : '')
-			.'<table>'.indent(
-				get_template_welcome_interleave('prev', $a['head']).$sdo
-			.	get_template_welcome_interleave('prev').$sdu
-			.	get_template_welcome_interleave('next').$sdo
-			.	get_template_welcome_interleave('next', $a['tail'])
-			).'</table>'
-			.(($i = $a['footer']) ? NL."<p>$i</p>" : '');
-		} else $$k = $a;
-		if ($$k) $$k = '<div class="'.$k.'">'.indent($$k).'</div>';
 	}
 	if ($RL || !ME_VAL) {
 		$k = $GLOBALS['cfg_link_schemes'] ?? '';
@@ -1125,7 +1139,7 @@ function get_template_page($page) {
 <script src="'.$N.($v = ($k?".$k":'').'.js').($L?'?'.filemtime(NAMEPRFX.$v):'').'"></script>';
 
 	return '<!doctype html>
-<html lang="'.($page['lang'] ?: $lang ?: 'en').'">
+<html lang="'.($page['lang'] ?: $lang ?: $cfg_langs[0] ?: 'en').'">
 <head>'
 .indent($head)
 .'</head>
@@ -1133,9 +1147,10 @@ function get_template_page($page) {
 .indent($header, 1)
 .indent($task, 1)
 .indent($welcome, 1)
+.indent($profile, 1)
 .indent($content, 1).(($t =
  indent($footer, 1)
-.indent($scripts, 1)) && ($k = get_const('TOOK'))?str_replace($k, round(get_time_elapsed(), 9), $t):$t)
+.indent($scripts, 1)) && ($k = get_const('TOOK')) ? str_replace($k, round(get_time_elapsed(), 9), $t) : $t)
 .'</body>
 </html>';
 }

@@ -122,10 +122,15 @@ $tmp_no_play_hint = 'Game playing turned off for you (no taking targets).';
 $tmp_not_supported = 'This function is not supported.';
 $tmp_options = 'Options. About';
 $tmp_options_apply = 'Apply';
+$tmp_options_area = array(
+	'user' => 'Your personal info'
+,	'view' => 'Site options'
+,	'save' => 'Available save data'
+);
 $tmp_options_drop = array(
-	'out'	=> 'Log out'
-,	'save'	=> 'Delete save data'
-,	'skip'	=> 'Reset skipped threads'
+	'out'	=> 'Log out (quit)'
+,	'save'	=> 'Delete autosaved drawings from memory'
+,	'skip'	=> 'Forget task skipping'
 ,	'pref'	=> 'Reset options'
 );
 $tmp_options_first = 'Press %s or <a href="%s">select a room</a> to continue.';
@@ -160,9 +165,16 @@ $tmp_options_input = array(	//* ID => array(setting description, default value (
 		'time_check_points'	=> 'Work time check points in footer|show|hide'
 	)
 );
-$tmp_options_name = 'Your signature';
-$tmp_options_qk = 'Your key to login';
+$tmp_options_email = 'E-mail';
+$tmp_options_email_hint = 'your@mail.box';
+$tmp_options_email_show = 'visible to people';
+$tmp_options_name = 'Name';
+$tmp_options_profile = 'After applying changes';
+$tmp_options_profile_link = 'Go to check your profile page.';
+$tmp_options_qk = 'Key to login';
 $tmp_options_qk_hint = 'Double click to select it all for copying. Use in place of name at login form.';
+$tmp_options_self_intro = 'Tell about yourself, if you wish';
+$tmp_options_self_intro_hint = 'Your text here, http://links, [http://pictures left|right|center].';
 $tmp_options_time = 'Default time zone';
 $tmp_options_time_client = 'Your time zone';
 $tmp_options_warning = array('Warning: check your server configuration first!', 'See example.');
@@ -282,6 +294,10 @@ $tmp_time_units = array(
 );
 $tmp_title = 'Doodle Mutator';
 $tmp_took = ', took %s sec.';
+$tmp_user = 'User profile';
+$tmp_user_about = 'About';
+$tmp_user_email = $tmp_options_email;
+$tmp_user_name = $tmp_options_name;
 $tmp_welcome_parts = array(
 	'header'	=> 'How to play:'
 ,	'footer'	=> 'Come anytime, leave anytime. There is no ending.'

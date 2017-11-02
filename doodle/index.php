@@ -76,6 +76,7 @@ define(COUNT_ARCH, 'arch');
 define(COUNT_ROOM, 'room');
 define(COUNT_POST, 'post');
 
+$s = '@#?<>()\[\]\s\\\\/';				//* <- characters not allowed in email parts; keep it simple, for browser-side check
 define(NL, "\n");
 define(BOM, pack('CCC', 239, 187, 191));		//* <- UTF-8 Byte Order Mark
 define(B64_PRFX, 'base64:');
@@ -85,6 +86,7 @@ define(PAT_DATE, '~(?P<ym>(?P<y>\d+)-(?P<m>\d+))-(?P<d>\d+)~');
 define(PAT_REPORT, '~^(?P<thread>\d+)\D+(?P<post>\d+)\D+(?P<side>\d+)$~');
 define(PAT_CONTENT, '~^(?P<before>.*?<pre>)(?P<content>.*?\S)(?P<after>\s*</pre>.*)$~uis');
 define(PAT_REGEX_FORMAT, '~^/.+/[imsu]*$~u');
+define(PAT_EMAIL_FORMAT, "^.*?([^$s]+@[^$s.]+\\.[^$s]+).*?$");
 
 //* Start buffering to clean up included output, like BOMs: *------------------
 
@@ -171,29 +173,38 @@ if ($a = mb_split_filter($p)) {
 	if (in_array($d, $cfg_dir)) {
 		$etc = '';
 		$qredir = ($qpath['dir'] = $qdir = $d).'s';
-		foreach ($cfg_dir as $k => $v) if ($qdir == $v) {${"qd_$k"} = 1; break;}
+		foreach ($cfg_dir as $k => $v) if ($qdir == $v) {
+			${"qd_$k"} = 1;
+			break;
+		}
+//* 2) user profile/number, first non-zero found:
+		if ($qd_user) {
+			foreach ($a as $v) if ($v = intval($v)) $etc = $v;
+			$a = array();
+		} else {
 //* 2) if recognized room type found in path parts, next after it be the room name, last part optional, anything else thrown away:
-		foreach ($a as $v) {
-			if ($qroom) $etc = $v; else
-			if ($qr_type) $qroom = $v; else
-			if (in_array($v, $cfg_game_type_dir)) $qr_type = $v;
-		}
+			foreach ($a as $v) {
+				if ($qroom) $etc = $v; else
+				if ($qr_type) $qroom = $v; else
+				if (in_array($v, $cfg_game_type_dir)) $qr_type = $v;
+			}
 //* 3) if no valid room type, assume the default one, take 1st part to be room name, last part optional, all other thrown away:
-		if (!$qr_type && $a) {
-			$qr_type = GAME_TYPE_DEFAULT;
-			$qroom = array_shift($a);
-			if ($a) $etc = array_pop($a);
-		}
-		if (isset($qr_type)) $r_type = $qr_type;
-		if ($r_type) $qpath['room_type'] = $r_type;
-		if ($r_type || !GAME_TYPE_DEFAULT) {
+			if (!$qr_type && $a) {
+				$qr_type = GAME_TYPE_DEFAULT;
+				$qroom = array_shift($a);
+				if ($a) $etc = array_pop($a);
+			}
+			if (isset($qr_type)) $r_type = $qr_type;
+			if ($r_type) $qpath['room_type'] = $r_type;
+			if ($r_type || !GAME_TYPE_DEFAULT) {
 //* 4) validate and fix room name:
-			if (
-				($room = trim_room($qroom))
-			&&	get_room_name_length($room)
-			) {
-				$qpath['room_name'] = $room;
-			} else $etc = $room = '';
+				if (
+					($room = trim_room($qroom))
+				&&	get_room_name_length($room)
+				) {
+					$qpath['room_name'] = $room;
+				} else $etc = $room = '';
+			}
 		}
 //* 5) this will be either "/last-part" (kept for legacy requests) or just a trailing "/" before optional "?query":
 		if ($etc && !preg_match('~^[-\d]+$~', $etc)) $etc = '';
@@ -240,6 +251,7 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 	}
 	if (($reg = trim($_POST[ME])) && $u_qk != $reg) $u_qk = $reg;
 	if ($u_qk && data_check_user($u_qk, $reg)) {
+		$u_name = $usernames[$u_num];
 		if (LOG_IP) data_log_ip();
 		if ($u_flag['ban']) die(get_template_page(array(
 			'title' => $tmp_ban
@@ -304,7 +316,7 @@ if (FROZEN_HELL && !(MOD || $qd_arch || ($qd_opts && $u_key))) {
 		,	'task' => $tmp_stop_all
 		,	'anno' => 1
 		,	'header' => array(
-				'<a href="'.ROOTPRFX.'">'.$t.'.</a>'
+				'<a href="'.ROOTPRFX.'">'.$top_title.'.</a>'
 			, 'r' =>
 				'<a href="'.ROOTPRFX.DIR_ARCH.'">'.$tmp_archive.'.</a>'.NL.
 				'<a href="'.ROOTPRFX.DIR_OPTS.'">'.$tmp_options.'.</a>'
@@ -357,7 +369,10 @@ if (GOD && (
 				), $a)
 				: $tmp_empty
 			)
-		,	'listing' => ':'.NL
+		,	'listing' => array(
+				'key-value' => ':'.NL
+			,	'next-item' => NL.'<hr>'
+			)
 		)));
 	}
 	$lnk = $t = '';
@@ -465,7 +480,7 @@ if (TIME_PARTS && $i) time_check_point("done $i pics");
 			if (substr($do, 0,6) === 'img2or') {
 				require_once(NAMEPRFX.'.arch.php');
 				$i = $k = 0;
-				$c = count($links = array_unique(array_merge($r = data_get_visible_images(), $a = data_get_archive_images())));
+				$c = count($links = array_unique(array_merge($r = data_get_visible_images(), $a = data_archive_get_images())));
 				$check = (substr($do, -5) === 'check');
 
 				function move_leftover_files($d) {
@@ -582,11 +597,69 @@ $t";
 <p$attr>$mod_page:</p>$lnk";
 } else
 
+//* user profile page ---------------------------------------------------------
+
+if ($qd_user) {
+	if (
+		($i = intval($etc))
+	&&	($a = data_get_user_profile($i))
+	) {
+		$name = $usernames[$i] ?: '[? unknown ?]';
+		$r = array();
+		if (($t = $a['email']) && $t['show']) {
+			$r['email'] = "<p>$tmp_user_email: $t[addr]</p>";
+		}
+		if ($t = $a['about'] ?: '') {
+			$p = 'https?';	//* <- protocols allowed in links
+			$s = '\s<>';	//* <- characters not allowed in links
+			$pat = "~
+				(?P<a>(?:$p)://[^$s/][^$s]*?)(?=[,.]*(?:[$s]|$))
+			|	\[\s*(?P<img>(?:$p)://[^$s/][^$s]*?)(?:\s+(?P<align>left|right|center)|)?\s*\]
+			~iux";
+
+			function format_profile_links($a) {
+				if ($m = $a['a']) return '<a href="'.$m.'" rel="nofollow">'.$m.'</a>';
+				if ($m = $a['img']) {
+					return (
+						'<a href="'.$m.'" rel="nofollow">'
+						.	'<img src="'.$m.'" alt="'.$m.'" class="'
+						.	(
+								($m = ($a['align'] ?: '')[0])
+							&&	($m == 'l' || $m == 'r')
+								? $m
+								: 'center'
+							).'">'
+						.'</a>'
+					);
+				}
+				return $a[0];
+			}
+
+			$t = preg_replace_callback($pat, 'format_profile_links', $t);
+			$t = preg_replace('~(<br>)+~u', '$0'.NL, "$tmp_user_about:<br><br>$t");
+			$r['about'] = '<p>'.indent($t).'</p>';
+		}
+		if ($r) {
+			array_unshift($r, "<p>$tmp_user_name: $name</p>");
+			$page['task'] = "<p>$tmp_user:</p>";
+			$page['profile'] = (
+				'<div class="al">'
+				.	indent(implode(NL, $r))
+				.'</div>'
+			);
+		}
+	}
+	if (!$page['profile']) {
+		$page['task'] =
+		$page['profile'] = $tmp_empty;
+	}
+} else
+
 //* archived threads ----------------------------------------------------------
 
 if ($qd_arch) {
 	require_once(NAMEPRFX.'.arch.php');
-	$q = data_get_archive_search_url($search = data_get_archive_search_terms($query));
+	$q = data_archive_get_search_url($search = data_archive_get_search_terms($query));
 	if (strlen($query_in_url) && $q !== $query_in_url) exit_redirect(ROOTPRFX.encode_URL_parts($qpath)."?$q");
 
 //* archive threads list ------------------------------------------------------
@@ -616,7 +689,7 @@ last = <a href="'.$thread_count.'.htm">'.$thread_count.'</a><!-- static link for
 
 //* archive rooms list --------------------------------------------------------
 
-	if ($visible = data_get_visible_archives($r_type)) {
+	if ($visible = data_archive_get_visible_rooms($r_type)) {
 		exit_if_not_mod($visible['last']);
 
 		if (!$search) {
@@ -668,7 +741,7 @@ $n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
 				.	'<a name="'.$k.'">'
 				.	($t ? "$t: " : '')
 				.		'<span>'
-				.			htmlspecialchars(data_get_archive_search_value($v))
+				.			htmlspecialchars(data_archive_get_search_value($v))
 				.		'</span>'
 				.	'</a>';
 			}
@@ -717,6 +790,43 @@ if ($u_key) {
 		$so = '|';
 		$sp = ';';
 		$t = ':	';
+
+//* personal info -------------------------------------------------------------
+
+		$u_profile = data_get_user_profile($u_num);
+		$u_email = ($u_profile['email'] ?? array());
+		$f = ($u_flag ? NL.$tmp_options_flags.$t.implode(', ', $u_flag) : '');
+		$b = '" onChange="allowApply(\'user\')">';
+		$b =
+NL.$tmp_options_name.$t.(
+	$u_profile
+	? '<a href="'.ROOTPRFX.DIR_USER.$u_num.'">'
+	.	preg_replace('~\s+~u', '&nbsp;', $u_name)
+	.'</a>'
+	: $u_name
+).$f
+.NL.$tmp_options_qk.$t.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">'
+.NL.$tmp_options_email.',<label><input type="checkbox"'
+.(
+	$u_email['show'] ? ' checked' : ''
+).' name="email_show'.$b.$tmp_options_email_show.':</label>	<input type="text" name="email" id="email" value="'
+.(
+	$u_email['addr'] ?: ''
+).(
+	$u_email['verified'] ? '" data-verified="1' : ''
+).'" pattern="'.PAT_EMAIL_FORMAT.'" placeholder="'
+.$tmp_options_email_hint.'" title="'
+.$tmp_options_email_hint.$b
+.NL.$tmp_options_self_intro.$t.'<textarea name="about" placeholder="'
+.$tmp_options_self_intro_hint.'" title="'
+.$tmp_options_self_intro_hint.$b
+.(
+	$u_profile['about'] ?: ''
+).'</textarea>	';
+
+//* site view options ---------------------------------------------------------
+
+		$c = $d = '';
 		$draw_app = implode($sp, array(
 			(array_search($u_draw_app, $cfg_draw_app) ?: 0)
 		,	implode($so, $tmp_draw_app)
@@ -724,7 +834,6 @@ if ($u_key) {
 		,	DRAW_APP_NONE
 		,	'?draw_app=*'
 		));
-		$c = $d = '';
 		foreach ($tmp_options_input as $i => $o)
 		foreach ($o as $k => $l) {
 			$r = abbr($k).'='.(
@@ -740,35 +849,53 @@ if ($u_key) {
 			if ($i === 'admin') $l = '<span class="gloom">'.$l.'</span>';
 			$c .= NL.$l.$t.$r;
 		}
+		$c .= 
+NL.$tmp_options_time.$t.date('e, T, P')
+.NL.$tmp_options_time_client.$t.'<time id="time-zone"></time>';
+
+//* manage save data, log off, etc --------------------------------------------
+
 		$i = '
 |<input type="submit" value="';
 		$j = '
+-
 |<input type="button" value="';
 		foreach (array(
-			'out'	=> array($i, 'name="quit')
-		,	'save'	=> array($j, 'id="unsave" data-keep="'.DRAW_PERSISTENT_PREFIX)
-		,	'skip'	=> array($j, 'id="unskip')
+			'save'	=> array($j, 'id="unsave" data-keep="'.DRAW_PERSISTENT_PREFIX)
 		,	'pref'	=> array($i, 'name="'.OPT_PRFX.'reset')
-		) as $k => $v) $d .= $v[0].$tmp_options_drop[$k].'" '.$v[1].'">';
+		,	'skip'	=> array($j, 'id="unskip')
+		,	'out'	=> array($i, 'name="quit')
+		) as $k => $v) {
+			$d .= $v[0].$tmp_options_drop[$k].'" '.$v[1].'">';
+		}
 		if (!$qdir) {
 			if (GOD && WS_NGINX) $page['content'] .= vsprintf('
 ||<b class="anno report">%s<br><a href=".?'.LK_MOD_ACT.'=files&'.LK_MOD_OPT.'=nginx">%s</a></b>', $tmp_options_warning);
 			$page['content'] .= '
 ||<b class="anno">'.sprintf($tmp_options_first, $tmp_options_apply, $room_list_href).'</b>';
 		}
+		$a = '" class="apply" name="'.OPT_PRFX.'apply_';
+		$j = ':
+apply_change = ';
+		$k = '
+		';
+
+//* compile sections ----------------------------------------------------------
+
 		$page['content'] .= '
-<form method="post">'.$d.'
-</form><form method="post">'
-.NL.$tmp_options_name.$t.$usernames[$u_num]
-.NL.$tmp_options_qk.$t.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">
 opt_prefix = '.OPT_PRFX.'
 separator = '.$so.'
-sep_select = '.$sp.$c
-.NL.$tmp_options_time.$t.date('e, T, P')
-.NL.$tmp_options_time_client.$t.'<time id="time-zone"></time>'
-.($u_flag ? NL.$tmp_options_flags.$t.implode(', ', $u_flag) : '')
-.$i.$tmp_options_apply.'" id="apply"'.($qdir?' disabled':'').'>
+sep_select = '.$sp.'
+<form method="post">'
+.$k.$tmp_options_area['user'].$j.'user'.$b.$i.$tmp_options_apply.$a.'user" disabled>'
+//.NL.$tmp_options_profile.$t.'<a href="'.ROOTPRFX.DIR_USER.$u_num.'">'.$tmp_options_profile_link.'</a>'
+.$k.$tmp_options_area['view'].$j.'view'.$c.$i.$tmp_options_apply.$a.'view"'.($qdir?' disabled':'').'>
+</form><form method="post">'
+.$k.$tmp_options_area['save'].':'.$d.'
 </form>';
+
+//* rules in task bar ---------------------------------------------------------
+
 		foreach ($tmp_rules as $head => $hint) {
 			if (is_array($hint)) {
 				$s = '';
@@ -1467,14 +1594,68 @@ if ($u_key) {
 	} else
 	if ($p = array_filter($_POST, 'is_opt_arg', ARRAY_FILTER_USE_KEY)) {
 		$post_status = 'user_opt';
+
+//* user-side settings --------------------------------------------------------
+
 		if (isset($p[OPT_PRFX.'reset'])) {
 			$u_opts = 'default';
 		} else {
-			foreach ($cfg_opts_order as $i => $o)
-			foreach ($o as $k) {
-				$v = (isset($p[$j = OPT_PRFX.abbr($k)]) ? $p[$j] : '');
-				if ($i === 'input') ${"u_$k"} = $v;
-				else $u_opts[$k] = $v;
+			if (isset($p[OPT_PRFX.'apply_view'])) {
+				foreach ($cfg_opts_order as $i => $o)
+				foreach ($o as $k) {
+					$v = (isset($p[$j = OPT_PRFX.abbr($k)]) ? $p[$j] : '');
+					if ($i === 'input') ${"u_$k"} = $v;
+					else $u_opts[$k] = $v;
+				}
+			}
+
+//* server-side user profile content ------------------------------------------
+
+			if (isset($p[OPT_PRFX.'apply_user'])) {
+				$old = data_get_user_profile($u_num);
+				$new = array();
+				if ($t = $_POST['email'] ?: '') {
+				//	$t = filter_var($t, FILTER_SANITIZE_EMAIL);
+					$pat = '~'.PAT_EMAIL_FORMAT.'~u';
+					if (
+						preg_match($pat, $t, $match)
+					&&	$t = trim(mb_strtolower(fix_encoding($match[1])))
+					) {
+						$was = ($old['email'] ?? array());
+						$new['email'] = array_filter(array(
+							'addr' => $t
+						,	'show' => (
+								$_POST['email_show'] 
+								? 'show'
+								: ''
+							)
+						,	'verified' => (
+								$was['verified']
+							&&	$was['addr'] === $t
+								? 'verified'
+								: ''
+							)
+						));
+					}
+				}
+				if ($t = $_POST['about'] ?: '') {
+					
+					//* optimize text blob for storage.
+					//* links and other templates can better be added later dynamically.
+					
+					$t = fix_encoding($t);
+					$t = trim($t);
+					$t = preg_replace('~\r\n|\v~u', NL, $t);	//* <- normalize line breaks
+					$t = preg_replace('~\v{3,}~u', NL.NL, $t);	//* <- 1 max empty line
+					$t = htmlspecialchars($t);			//* <- no HTML code allowed
+					$t = nl2br($t, false);				//* <- prepare HTML line breaks for display
+					$t = preg_replace('~\v+~u', '', $t);		//* <- collapse into one line for simpler storage
+					$t = preg_replace('~\s+~u', ' ', $t);		//* <- normalize any other whitespace, same for display
+					if ($t = trim($t)) {
+						$new['about'] = $t;
+					}
+				}
+				$u_profile = data_save_user_profile($new);
 			}
 		}
 	} else
@@ -1692,7 +1873,7 @@ file: $upload[name]";
 			$log = $fn;
 		} else {
 	//* save pic file:
-			if (!$upload && ($log = file_put_contents(mkdir_if_none($f = $pic_final_path), $file_content)) != $x) {
+			if (!$upload && ($log = file_put_mkdir($f = $pic_final_path, $file_content)) != $x) {
 				$x = 0;
 				$post_status = 'file_put';
 			} else
@@ -1821,6 +2002,9 @@ if ($OK && isset($_POST['report'])) die(get_template_page(array(
 
 header("HTTP/1.1 303 Refresh after POST: $p");
 
+if ($u_profile) {
+	$l = ROOTPRFX.DIR_USER.$u_num;
+} else
 if ($query[LK_MOD_ACT]) {
 	$l = $qfix;
 } else {

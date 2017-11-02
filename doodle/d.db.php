@@ -23,6 +23,7 @@ define(DATA_DIR_USER, DATA_DIR.'users/');	//* <- per user files
 define(DATA_USERLIST, DATA_DIR.'users'.DATA_LOG_EXT);		//* <- user list filename
 define(DATA_REF_LIST, DATA_DIR.'reflinks'.DATA_LOG_EXT);	//* <- reflinks list filename
 
+define(DATA_U_ABOUT, 'about');
 define(DATA_U_FLAG, 'flag');
 define(DATA_U_IP, 'ip');
 define(DATA_U_TASK, 'task');
@@ -97,10 +98,6 @@ function data_post_refresh($r = '') {
 		}
 	}
 	return $report;
-}
-
-function data_put($file_path, $content = '') {
-	return file_put_contents(mkdir_if_none($file_path), $content);
 }
 
 function data_log($file_path, $line, $n = DATA_LOG_START, $report_errors = true) {
@@ -230,7 +227,7 @@ function data_fix($what = '') {
 				time_check_point($v = "version check, $f: $v -> $n");
 				$report = data_fix(true) ?: 'no change';
 				data_log_action($a = 'automatic data fix', $v.NL.$report);
-				data_put($f, $n);
+				file_put_mkdir($f, $n);
 				time_check_point("done $a");
 			}
 			data_lock($lk, false);
@@ -247,7 +244,7 @@ function data_fix($what = '') {
 		data_lock($t);
 		if (is_dir($old)) {
 			$d = "$old/u";
-			$data_types = array(DATA_U_FLAG, DATA_U_IP, DATA_U_TASK);
+			$data_types = array(DATA_U_ABOUT, DATA_U_FLAG, DATA_U_IP, DATA_U_TASK);
 			if ($files = glob("$d/*$e", GLOB_NOSORT) ?: glob("$d?*$e", GLOB_NOSORT)) {
 				natcasesort($files);	//* <- to keep file write dates in ascending order alongside IDs
 				$i = 0;
@@ -636,7 +633,7 @@ NL.htmlspecialchars($v)))));
 function data_put_count($i = 0, $type = COUNT_ROOM, $r = '') {
 	if ($r || ($r = $GLOBALS['room'])) {
 		$f = DATA_DIR_ROOM."$r/$type".DATA_COUNT_EXT;
-		return data_put($f, $i);
+		return file_put_mkdir($f, $i);
 	}
 }
 
@@ -741,7 +738,7 @@ function data_get_thread_name_tail($t, $count_pics = true) {
 }
 
 function data_put_thread_rename_if_free($f, $t = '', $m = '') {
-	if (!data_put($f, $t)) return false;
+	if (!file_put_mkdir($f, $t)) return false;
 	if (is_array($m)) {
 //* if task is free:
 		if ($m['pics'] || strpos($m['etc'], 'p') || mb_substr_count($t, DATA_MARK_IMG) >= TRD_MAX_POSTS) {
@@ -823,7 +820,7 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 						$report = "$u already has this name: $old";
 					} else {
 						$line = mb_substr($line, 0, $i).$name;
-						$s = (data_put($f, implode(NL, $a)) ? 'renamed' : 'rename failed');
+						$s = (file_put_mkdir($f, implode(NL, $a)) ? 'renamed' : 'rename failed');
 						$report = "$u $s: $old -> $name";
 					}
 					break;
@@ -874,9 +871,9 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 //* modify:
 		if ($add) data_log($f, $text, '');	//* <- add
 		else if (!$removed) return 0;		//* <- remove, did not exist
-		else if ($text = data_get_flags_text_from_array($flags).($replace ? NL.$text : '')) data_put($f, $text);
+		else if ($text = data_get_flags_text_from_array($flags).($replace ? NL.$text : '')) file_put_mkdir($f, $text);
 		else unlink($f);			//* <- removed all, nothing left
-	} else if ($add) data_put($f, $text);		//* <- add, new file
+	} else if ($add) file_put_mkdir($f, $text);	//* <- add, new file
 	else $u = 0;
 	return $u;
 }
@@ -908,17 +905,18 @@ function data_prepend_line_time($match) {
 	return "$t	$match[0]";
 }
 
-function data_get_user_info($u) {
+function data_get_user_info($u_num) {
 	$r = array();
 	$d = DATA_DIR_USER;
 
-	data_lock($lk = LK_USER.$u, false);
+	data_lock($lk = LK_USER.$u_num, false);
 	foreach (array(
-		DATA_U_FLAG	=> 'Flags'
-	,	DATA_U_IP	=> 'IPs'
+		DATA_U_ABOUT	=> 'About'
+	,	DATA_U_FLAG	=> 'Flags'
 	,	DATA_U_TASK	=> 'Tasks'
+	,	DATA_U_IP	=> 'IPs'
 	) as $e => $v) if (
-		is_file($f = "$d$e/$u.$e")
+		is_file($f = "$d$e/$u_num.$e")
 	&&	($f = trim_bom(file_get_contents($f)))
 	) {
 		$r[$v] = preg_replace_callback('~^(\d{10,})\D~m', 'data_prepend_line_time', $f);
@@ -926,6 +924,73 @@ function data_get_user_info($u) {
 	data_unlock($lk);
 
 	return $r;
+}
+
+function data_get_user_profile($u_num, $array = true) {
+	$d = DATA_DIR_USER;
+	$e = DATA_U_ABOUT;
+	$f = "$d$e/$u_num.$e";
+	
+	if (!$array) return is_file($f);
+
+	$sep = '	';
+	$r = array();
+
+	data_lock($lk = LK_USER.$u_num, false);
+	$a = get_file_lines($f);
+	data_unlock($lk);
+
+	foreach ($a as $line) {
+		$tab = mb_split_filter($line, $sep);
+		$k = array_shift($tab);
+		$k = trim($k, '[]():. =->');
+		if ($k == 'email') {
+			$v = array('addr' => array_shift($tab));
+			foreach ($tab as $i) $v[$i] = $i;
+		} else {
+			$v = (count($tab) > 1 ? $tab : $tab[0]);
+		}
+		$r[$k] = $v;
+	}
+	return $r;
+}
+
+function data_save_user_profile($a, $write = true) {
+	global $u_num;
+	$t = T0.'+'.M0;
+	$h = DIR_USER;
+	$d = DATA_DIR_USER;
+	$e = DATA_U_ABOUT;
+	$f = "$d$e/$u_num.$e";
+
+	if (is_array($m = $a['email'] ?? '')) $a['email'] = implode('	', $m);
+
+	$new = (
+		$a
+		? BOM."
+last modified:	$t
+email:	$a[email]
+about:	$a[about]
+"
+		: ''
+	);
+	if ($write) {
+		if ($old = (
+			is_file($f)
+			? trim_bom(file_get_contents($f))
+			: ''
+		)) {
+			$old = preg_replace('~(
+last modified:	)\V*~u', '$1'.$t, $old);
+		}
+		if ($old !== $new) {
+			data_lock($lk = LK_USER.$u_num);
+			if ($new) file_put_mkdir($f, $new);
+			else if ($old) unlink($f);
+			data_unlock($lk);
+		}
+	}
+	return $new;
 }
 
 function data_get_full_threads($get_content = true) {
@@ -1166,7 +1231,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 				$lst .= implode(NL, $q);
 				$t = data_get_thread_name_tail($fst);
 				data_put_count($ok = data_get_count()+1);
-				data_put("$d$ok$t$e$m[inactive]", $fst);	//* <- put 1st half into new thread, un/frozen like old
+				file_put_mkdir("$d$ok$t$e$m[inactive]", $fst);	//* <- put 1st half into new thread, un/frozen like old
 				data_put_thread_rename_if_free($f, $lst, $m);	//* <- put 2nd half into old thread, to keep people's target
 				data_post_refresh();
 			} else $ok .= ' post not found';
@@ -1282,7 +1347,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 		$f = ($r ? DATA_DIR_ROOM."$room/" : DATA_DIR).($n?'anno':'stop').DATA_STATIC_EXT;
 		$ok = (
 			($n?$msg:!$un)
-			? ((data_put($f, $msg) === strlen($msg))?($msg ?: '-'):0)
+			? ((file_put_mkdir($f, $msg) === strlen($msg)) ? ($msg ?: '-') : 0)
 			: (is_file($f) && unlink($f))
 		);
 	} else
@@ -1646,7 +1711,7 @@ function data_check_my_task($aim = false) {
 		if ($aim === DATA_U_TASK_CHANGE && $f && $p) array_unshift($u_task, "$aim	$room	$f	$p");
 		if ($aim === DATA_U_TASK_CHANGE || !intval($aim)) {
 			$t = implode(NL, $u_task);
-			return data_put($u_t_f, DATA_LOG_START.$t);
+			return file_put_mkdir($u_t_f, DATA_LOG_START.$t);
 		}
 		if (
 			$f
@@ -1693,7 +1758,7 @@ function data_check_my_task($aim = false) {
 		$f = $target['thread'] = "$taken/$dropped/$c";
 		array_unshift($u_task, "$tt	$room	$f	$p");
 		$t = implode(NL, $u_task);
-		data_put($u_t_f, DATA_LOG_START.$t);
+		file_put_mkdir($u_t_f, DATA_LOG_START.$t);
 
 		return array($status, $td);
 	}
@@ -1863,7 +1928,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 
 //* save new target to personal list:
 		if ($t = implode(NL, $u_task)) {
-			data_put($u_t_f, DATA_LOG_START.$t);
+			file_put_mkdir($u_t_f, DATA_LOG_START.$t);
 		} else unlink($u_t_f);
 
 //* rename old targets as dropped (unlocked):

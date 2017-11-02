@@ -6,6 +6,9 @@
 ,	regClassPost = getClassReg('post')
 ,	regClassThread = getClassReg('thread')
 ,	regClassSkipFilter = getClassReg('anno|x3')
+,	regCountSkip = /(Time|Layers)$/
+,	regCountTail = /\s*:+[\s\d]*(\([^()]*\))?$/
+,	regLinkProtocol = /^(\w*:)?(\/*)/
 ,	regTagDiv = /^div$/i
 ,	regTagDivP = /^(div|p)$/i
 ,	regTagForm = /^form$/i
@@ -25,6 +28,7 @@
 ,	regSpaceHTML = /\s|&nbsp;|&#8203;/gi
 ,	regSplitLineBreak = /\r\n|\r|\n/g
 ,	regSplitWord = /\W+/g
+,	regTextAreaBR = /(<|&lt;)br[ /]*(>|&gt;)/gi
 ,	regTrim = getTrimReg('\\s')
 ,	regTrimPun = getTrimReg(':,.')
 ,	regTrimSlash = getTrimReg('\\/')
@@ -120,6 +124,7 @@ if (lang == 'ru') la = {
 ,	send_new_thread: 'Будет создана новая нить.'
 ,	send_anyway: 'Всё равно отправить?'
 ,	canceled: 'Отправка отменена'
+,	comment: 'комментарий'
 ,	report: 'Пожаловаться на это задание'
 ,	skip: 'Пропустить'
 ,	skip_hint: 'Пропускать задания из этой нити до её завершения.'
@@ -212,6 +217,7 @@ if (lang == 'ru') la = {
 ,	send_new_thread: 'Sending will make a new thread.'
 ,	send_anyway: 'Send anyway?'
 ,	canceled: 'Sending canceled'
+,	comment: 'comment'
 ,	report: 'Report a problem with this task'
 ,	skip: 'Skip'
 ,	skip_hint: 'Skip any task from this thread from now on.'
@@ -936,12 +942,13 @@ var	t = id(i) || (showContent(), id(i))
 function getSaves(v,e) {
 var	keep = (e?e.getAttribute('data-keep'):0) || ''
 ,	room = (e?e.getAttribute('data-room'):0) || ''
+,	c = []
 ,	j = []
 ,	k = []
 ,	l = keep.length
 	;
 	if (v == 'unskip') {
-	var	m,n,b = 'base64:'
+	var	m,n,q,b = 'base64:'
 	,	a = document.cookie.split(/;\s*/)
 	,	i = a.length
 	,	g = b.length
@@ -954,8 +961,9 @@ var	keep = (e?e.getAttribute('data-keep'):0) || ''
 		&&	(!keep || keep !== m[1].substr(0,l))
 		&&	(!room || room === n)
 		) {
+			c.push(q = m[3].split('/').length);
+			j.push(n+': '+getFormattedNumUnits(q, la.clear[v].unit));
 			k.push(m[1]);
-			j.push(n+': '+getFormattedNumUnits(m[3].split('/').length, la.clear[v].unit));
 		}
 	} else
 	if (v == 'unsave' && LS && (i = LS.length)) {
@@ -964,16 +972,36 @@ var	keep = (e?e.getAttribute('data-keep'):0) || ''
 		&&	(m !== 'lang')
 		&&	(!keep || keep !== m.substr(0,l))
 		) {
+			c.push(q = LS.getItem(m).length);
+			j.push(m+': '+getFormattedNumUnits(q, la.clear[v].unit));
 			k.push(m);
-			j.push(m+': '+getFormattedNumUnits(LS.getItem(m).length, la.clear[v].unit));
 		}
 	}
-	return {rows: j.sort(), keys: k.sort()};
+	return {
+		counts: c.sort()
+	,	rows: j.sort()
+	,	keys: k.sort()
+	};
 }
 
 function checkSaves(e) {
-	if (e.target) var v = (e = e.target).id; else e = id(v = e);
-	if (e) e.disabled = !(getSaves(v,e).keys.length);
+	if (e.target) v = (e = e.target).id; else e = id(v = e);
+	if (e) {
+	var	a = getSaves(v,e)
+	,	i = a.keys.length
+	,	j = 0
+	,	k = 0
+		;
+		while (i--) {
+			j++;
+			k += a.counts[i];
+		}
+		if (v == 'unsave') {
+			j = a.keys.filter(function(v) {return !regCountSkip.test(v);}).length;
+		}
+		e.disabled = !j;
+		e.value = e.value.replace(regCountTail, '')+': '+(j ? j+' ('+getFormattedNumUnits(k, la.clear[v].unit)+')' : j);
+	}
 }
 
 function clearSaves(e) {
@@ -990,19 +1018,52 @@ function clearSaves(e) {
 					if (v == 'unsave') LS.removeItem(k[i]);
 				}
 				if (e.getAttribute('data-room')) del(e), document.location.reload(true);
-				else e.disabled = true;
+				else checkSaves(e.id);
 			}
 		}
 	}
 	return false;
 }
 
-function allowApply(n) {
-var	e = id('apply');
-	if (e) e.disabled = (n < 0);
+function allowApply(v) {
+	if (e = id('apply')) {
+		e.disabled = (v < 0);
+	} else {
+	var	e,a = gc('apply')
+	,	i = a.length
+	,	j = (v ? 'apply_'+v : '')
+	,	k = (v ? param.opt_prefix+j : '')
+		;
+		while (i--) if (
+			(e = a[i])
+		&&	(
+				!v
+			||	((!j && !e.id  ) || e.id   === j)
+			||	((!k && !e.name) || e.name === k)
+			)
+		) {
+			e.disabled = false;
+			if (n = e.name || e.id) {
+			var	o = (n.indexOf(param.opt_prefix) == 0 ? n : param.opt_prefix + n)
+			,	n = e.nextElementSibling
+				;
+				if (
+					!n
+				||	!n.name
+				||	(n.name !== o)
+				) {
+					n = cre('input', e.parentNode, n);
+					n.type = 'hidden';
+					n.name = o;
+					n.value = 1;
+					if (e.name) e.removeAttribute('name');
+				}
+			}
+		}
+	}
 }
 
-function selectLink(e,no,r,t) {
+function selectLink(e,aa,no,r,t) {
 var	i = e.name+'_link'
 ,	a = id(i)
 ,	v = e.value || ''
@@ -1010,7 +1071,7 @@ var	i = e.name+'_link'
 ,	t = (r ? (t || la.draw_test) : '')
 	;
 	if (a) {
-		a.href = r, a.textContent = t, allowApply();
+		a.href = r, a.textContent = t, allowApply(aa);
 	} else {
 		e = e.parentNode.nextSibling;
 		e = cre('div', e.parentNode, e);
@@ -1357,6 +1418,9 @@ function showContent(sortOrder) {
 					} else
 					if (dtp.reflinks) {
 						try {d = decodeURIComponent(t);} catch (e) {d = t;}
+						if (!(m = t.match(regLinkProtocol)) || !m[1]) {
+							t = 'http://'+t.replace(regLinkProtocol, '');
+						}
 						t = '<a href="'+t+'">'+d+'</a>';
 					} else
 				//* rooms:
@@ -1375,11 +1439,13 @@ function showContent(sortOrder) {
 					} else
 				//* options:
 					if (dtp.options && t[0] != '<' && (i = t.indexOf('=')) >= 0) {
-					var	sep = sep || ','
-					,	sel = param.sep_select || ';'
-					,	i = parseLineKeyVal(t)
+					var	i = parseLineKeyVal(t)
 					,	k = i[0]
 					,	v = i[1]
+					,	sep = sep || ','
+					,	sel = param.sep_select || ';'
+					,	t = param.apply_change || ''
+					,	t = (t?"'"+t+"'":'')
 						;
 				//* drop-down select:
 						if (v.indexOf(sel) >= 0) {
@@ -1389,7 +1455,7 @@ function showContent(sortOrder) {
 							t = '<select name="'+param.opt_prefix+k
 							+(
 								l.length > 2
-								? '" onChange="selectLink(this,\''
+								? '" onChange="selectLink(this,'+t+",'"
 								+(l[2] || 'no')+"','"
 								+(l[3] || '*')
 								+(l.length > 4 ? "','"+l[4] : '')
@@ -1405,15 +1471,18 @@ function showContent(sortOrder) {
 							+		(l[i]?l:k)[i]
 							+	'</option>';
 							t += '</select>';
-						} else
+						} else if (
+				//* add trigger to activate submit button:
+							(t = '" onChange="allowApply('+t+')"'),
 				//* text field:
-						if (v.indexOf(sep) >= 0) {
+							(v.indexOf(sep) >= 0)
+						) {
 							l = v.split(sep);
 							t = '<input type="text'
 							+	'" name="'+param.opt_prefix+k
 							+	'" value="'+l[0]
 							+	'" placeholder="'+l[1]
-							+	'" onChange="allowApply()">';
+							+	t+'>';
 						} else {
 				//* toggle box:
 							t = '['+[0,1].map(
@@ -1422,8 +1491,7 @@ function showContent(sortOrder) {
 									return '<label>'
 									+		'<input type="radio'
 									+			'" name="'+param.opt_prefix+k
-									+			'" value="'+i
-									+			'" onChange="allowApply()"'
+									+			'" value="'+i+t
 									+			(i == v?' checked':'')
 									+		'>\n<b>'+text+'</b>\n'
 									+	'</label>';
@@ -1609,7 +1677,8 @@ function showContent(sortOrder) {
 								d = c.indexOf(':');
 								j +=	'<span class="report">'
 								+		getFormattedTime(c.slice(0, d))
-								+		c.slice(d)
+								+		' '+la.comment+':<br>'
+								+		c.slice(d+1)
 								+	'</span>';
 							}
 							param[k] = '';
@@ -2058,6 +2127,15 @@ var	flagVarNames = ['flag', 'flags']
 			}
 			for (i in (a = gn('select', e))) if (a[i].onchange) a[i].onchange();
 		} else del(e);
+		
+		if (dtp.options) {
+		var	a = gn('textarea')
+		,	i = a.length
+			;
+			while (i--) if ((e = a[i]) && (v = e.value) && v.length) {
+				e.value = v.replace(regTextAreaBR, '\n');
+			}
+		}
 
 		if (dtp.pages && param && (e = id('task'))) {
 		var	t = document.title
@@ -2321,7 +2399,9 @@ if (e = id('filter')) {
 		filterPrefix(h.replace(/^#+/, ''));
 	}
 }
+
 bnw.adorn(1);
+
 for (i in la.clear) if (e = id(i)) {
 	e.onclick = clearSaves;
 	if (!e.href) e.disabled = true, (e.onmouseover = checkSaves)(i);

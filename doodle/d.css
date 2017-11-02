@@ -13,7 +13,7 @@ body, .task input:not([type="checkbox"]):not([type="radio"]), .task select {
 	line-height: 28px;
 	font-size: 21px;
 }
-.header::after, .task::after, .thread::after, .post::after, .post .image-num::after, .hint::after {
+.header::after, .task::after, .thread::after, .post::after, .post .image-num::after, .hint::after, .profile p::after {
 	content: "";
 	display: block;
 	clear: both;
@@ -489,11 +489,24 @@ a:hover, a.u:hover {
 	max-width: 70%;
 	max-height: 28px;
 }
+.post .center textarea {
+	width: 480px;
+	min-width: 480px;
+	max-width: 480px;
+	height: 6em;
+	min-height: 1.5em;
+	max-height: 480px;
+}
+.post .center input[type="checkbox"] {
+	vertical-align: middle;
+	line-height: 50%;
+}
+.post .center input[name="email"],
+.post .center:hover input[type="text"][readonly] {
+	width: 240px;
+}
 .post input[type="text"][readonly] {
 	color: #777;
-}
-.post .center:hover input[type="text"][readonly] {
-	width: 225px;
 }
 .post input[type="text"], .post select {
 	height: 14px;
@@ -772,7 +785,7 @@ a:hover, a.u:hover {
 .welcome tr:not(:first-child):not(:last-child) td.thread {
 	background-color: #ddd;
 }
-.welcome p,
+.welcome p, .profile p,
 .welcome tr.you,
 .welcome tr.you td {
 	color: inherit;
@@ -816,6 +829,21 @@ a:hover, a.u:hover {
 	top: 0;
 	left: 0;
 	height: 100%;
+}
+.profile .center {
+	display: block;
+	margin: 0 auto;
+}
+.profile .center:not(img) {
+	width: 500px;
+	min-width: 500px;
+	max-width: 1000px;
+}
+.profile img {
+	max-width: 956px;
+}
+.profile p {
+	padding: 8px 22px;
 }
 #task>.res:not(:last-child)::after,
 #task>img:not(:last-child)::after {

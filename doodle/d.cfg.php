@@ -11,6 +11,7 @@ $cfg_dir = array(
 //* Format: ID => subfolder
 //* real folder with accessible static files:
 	'arch' => 'archive'
+,	'user' => 'profile'
 //* not real, interpreted by script after URL rewrite:
 ,	'opts' => 'options'
 ,	'room' => 'room'

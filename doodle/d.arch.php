@@ -11,7 +11,7 @@ define(ARCH_PAT_POST_PIC, '~
 	(?P<csv>(?:[;,]\s*[^;,]+)+\s+B)
 ~uix');
 
-function data_get_visible_archives($type = '') {
+function data_archive_get_visible_rooms($type = '') {
 	$last = 0;
 	$a = array();
 	foreach (get_dir_rooms(DIR_ARCH, '', F_NATSORT | F_HIDE, $type) as $r) if ($mt = data_get_mtime(COUNT_ARCH, $r)) {
@@ -27,7 +27,7 @@ function data_get_visible_archives($type = '') {
 	) : $a;
 }
 
-function data_get_archive_images($room = '') {
+function data_archive_get_images($room = '') {
 	$a = array();
 	$d = DIR_ARCH;
 	$rooms = ($room ? (array)$room : get_dir_rooms($d));
@@ -41,7 +41,7 @@ function data_get_archive_images($room = '') {
 	return $a;
 }
 
-function data_get_thumb($src, $xMax = 0, $yMax = 0) {
+function data_archive_get_thumb($src, $xMax = 0, $yMax = 0) {
 	if (!is_file($src)) return false;
 
 	ob_start();
@@ -79,8 +79,8 @@ function data_get_thumb($src, $xMax = 0, $yMax = 0) {
 	return $data;
 }
 
-function data_put_thumb($src, $dest, $xMax = 0, $yMax = 0) {
-	if (!is_array($data = data_get_thumb($src, $xMax, $yMax))) return false;
+function data_archive_put_thumb($src, $dest, $xMax = 0, $yMax = 0) {
+	if (!is_array($data = data_archive_get_thumb($src, $xMax, $yMax))) return false;
 /*	switch ($data['mime']) {
 		case 'image/jpg': case 'image/jpeg': case 'image/pjpeg':
 					return imageJPEG($data['imgdata'], $dest);
@@ -89,7 +89,7 @@ function data_put_thumb($src, $dest, $xMax = 0, $yMax = 0) {
 */	return imagePNG($data['imgdata'], $dest);
 }
 
-function data_get_fixed_content_line($line) {
+function data_archive_get_fixed_content_line($line) {
 	global $recheck_img, $line_time_min, $line_time_max;
 	$not_found = '<img src="'.ROOTPRFX.PIC_404.'">';
 	$sep = '	';
@@ -154,16 +154,16 @@ function data_get_fixed_content_line($line) {
 	return implode($sep, $tab);
 }
 
-function data_is_a_content_line($line) {return (false !== mb_strpos($line, '	'));}
-function data_get_archive_page_html($room, $num, $tsv) {
+function data_archive_is_a_content_line($line) {return (false !== mb_strpos($line, '	'));}
+function data_archive_get_page_html($room, $num, $tsv) {
 	global $cfg_langs, $line_time_min, $line_time_max;
 	$line_time_min = $line_time_max = 0;
 	if ($num <= 0) return false;
 	$p = $num-1;
 	$n = $num+1;
 	$lines = mb_split_filter(trim(fix_encoding($tsv)), NL);
-	$lines = array_filter($lines, 'data_is_a_content_line');
-	$lines = array_map('data_get_fixed_content_line', $lines);
+	$lines = array_filter($lines, 'data_archive_is_a_content_line');
+	$lines = array_map('data_archive_get_fixed_content_line', $lines);
 	sort($lines);
 	$tsv = NL.implode(NL, $lines);
 	return get_template_page(
@@ -199,7 +199,7 @@ function data_archive_full_threads($threads) {
 	foreach ($threads as $a) {
 		++$i;
 		if (
-			file_put_contents("$d$i$e", data_get_archive_page_html($room, $i, $a['content']))
+			file_put_contents("$d$i$e", data_archive_get_page_html($room, $i, $a['content']))
 	//	&&	unlink($a['name'])
 		&&	data_del_thread($a['name'])	//* <- clean up comments, etc
 		) {
@@ -207,7 +207,7 @@ function data_archive_full_threads($threads) {
 			if (
 				($f = $a['thumb'])
 			&&	is_file($f)
-			&&	data_put_thumb($f, $t, THUMB_MAX_WIDTH, THUMB_MAX_HEIGHT)
+			&&	data_archive_put_thumb($f, $t, THUMB_MAX_WIDTH, THUMB_MAX_HEIGHT)
 			) {
 				optimize_pic($t);
 			} else copy($icon, $t);
@@ -255,7 +255,7 @@ function data_archive_rewrite($check = false) {
 					$new .= $i.get_pic_url($n).mb_substr($y, $q);		//* <- new web path
 				}
 			}
-			$new = data_get_archive_page_html($room, intval($fn), $new);
+			$new = data_archive_get_page_html($room, intval($fn), $new);
 			if ($old == $new) $x = 'same';
 			else if (!$new) $x = 'error';
 			else {
@@ -304,7 +304,7 @@ function data_archive_rename_last_pic($old, $new, $n_last_pages = 0) {
 	return $done;
 }
 
-function data_get_archive_search_terms($query) {
+function data_archive_get_search_terms($query) {
 	global $tmp_archive_find_by;
 	$terms = array();
 	if ($query && is_array($query)) {
@@ -316,10 +316,10 @@ function data_get_archive_search_terms($query) {
 			$terms[$k] = $q;
 		}
 	}
-	return data_get_archive_search_ranges($terms);
+	return data_archive_get_search_ranges($terms);
 }
 
-function data_get_archive_search_ranges($where, $what = '') {
+function data_archive_get_search_ranges($where, $what = '') {
 	$where = array_filter(is_array($where) ? $where : array($where => $what), 'strlen');
 	$signs = array('<','>','-');
 	$before = '^(?P<before>\D*?)(?P<minus>-)?';
@@ -385,23 +385,23 @@ function data_get_archive_search_ranges($where, $what = '') {
 	return $where;
 }
 
-function data_get_archive_search_array_item($v) {
+function data_archive_get_search_array_item($v) {
 	if ($v['min_arg']) return "$v[min_arg]-$v[max_arg]";
 	if ($v['min']) return "$v[min]-$v[max]";
 	if (($o = $v['operator']) && $o !== '=') return "$v[operator] $v[argument]";
 	return "$v[argument]";
 }
 
-function data_get_archive_search_value($v) {
-	if (is_array($v)) return implode(', ', array_map('data_get_archive_search_array_item', $v));
+function data_archive_get_search_value($v) {
+	if (is_array($v)) return implode(', ', array_map('data_archive_get_search_array_item', $v));
 	return $v;
 }
 
-function data_get_archive_search_url($terms) {
+function data_archive_get_search_url($terms) {
 	$q = array();
 	if (is_array($terms)) foreach ($terms as $k => $v) {
 		if ($k === '_charset_' && $v === ENC) continue;
-		if (strlen($v = data_get_archive_search_value($v))) $q[] = URLencode($k).'='.URLencode($v);
+		if (strlen($v = data_archive_get_search_value($v))) $q[] = URLencode($k).'='.URLencode($v);
 	}
 	return implode('&', $q);
 }
