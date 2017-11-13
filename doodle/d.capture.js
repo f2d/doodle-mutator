@@ -59,7 +59,7 @@ var	f,e = id('content') || document.body
 		if (lang == 'ru') t += (t?n+'Или в':'В')+'ыделить текст нужных постов и появится кнопка сохранения.';
 		else t += (t?n+'Or s':'S')+'elect text across posts to capture, then a save button appears.';
 	}
-	if (!(a = gc('multi-thread', e)).length) a = gc('content');
+	if (!(a = gc('threads', e)).length) a = gc('content');
 	i = n = a.length;
 	while (i--) if (e = a[i]) e.title = t;
 
@@ -432,7 +432,7 @@ var	la;
 				e = e.firstChild;
 				do {
 					if (
-						!((t = e.tagName) && t.toLowerCase() === 'p')
+						!((t = e.tagName) && t.toLowerCase() === 'aside')
 					&&	!((t = e.className) && regClassCapsBtn.test(t))
 					&&	(t = e.textContent) && t.length
 					&&	(t = t.replace(regTrim, '')).length

@@ -1837,7 +1837,7 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 		}
 		break;
 //* load file
-	case 4:	
+	case 4:
 		if ((a = lsid) || ((outside.read || (outside.read = id('read'))) && (a = outside.read.value))) {
 			draw.time.act(1);
 			used.read = 'Read File: '+readPic(a);

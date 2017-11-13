@@ -2,50 +2,73 @@ body.april-fools {	background-image: url("d.41.png");}
 body.cirno-day	{	background-image: url("d.9.png");}
 body.leap-year	{	background-image: url("d.ly.png");}
 body.new-year	{	background-image: url("d.ny.png");}
-body, body>*, body>form>*, .content>* {
+body,
+body > *,
+body > form > *,
+.content > * {
 	margin: 8px auto;	/* <- centered */
 	min-width: 656px;
 	max-width: 1000px;
 	text-align: center;
 }
-body, .task input:not([type="checkbox"]):not([type="radio"]), .task select {
+body,
+.task input:not([type="checkbox"]):not([type="radio"]),
+.task select {
 	font-family: Arial, Helvetica, "Nimbus Sans L", "Liberation Sans", FreeSans, sans-serif;
-	line-height: 28px;
 	font-size: 21px;
+	line-height: 28px;
 }
-.header::after, .task::after, .thread::after, .post::after, .post .image-num::after, .hint::after, .profile p::after {
+body > * {
+	margin: 24px 0;
+}
+.header,
+.header + *,
+.header > *,
+.anno > * {
+	margin: 8px 0;
+}
+.header::after,
+.task::after,
+.thread::after,
+.post .image-num::after,
+.post::after,
+.hint::after,
+.profile p::after {
 	content: "";
 	display: block;
-	clear: both;
+	clear: both;		/* <- keep bottom line below side-floats */
 }
-.header>* {
+.header > * {
 	display: table;
 	width: 100%;
-	margin: 8px 0;
 	text-align: left;
 }
-.header>*>* {
+.header > * > * {
 	display: table-row;
 	padding: 0 22px;
 	vertical-align: top;
 }
-.header>*>u {
+.header > * > u {
 	display: table-cell;
 }
-.header>*>u:not(:first-child) {
+.header > * > u:not(:first-child) {
 	padding-left: 4px;
 }
-.header>*>u:not(:last-child) {
+.header > * > u:not(:last-child) {
 	padding-right: 4px;
 }
-.header u, .toggle, #task a[onclick], #task a[href*="javascript:"] {
+.header u,
+.toggle,
+#task a[onclick],
+#task a[href*="javascript:"] {
 	text-decoration: none;
 }
-.header.a>*>* {
+.header.a > * > * {
 	width: 25%;
 	text-align: center;
 }
-.header a, .buttons a {
+.header a,
+.buttons a {
 	white-space: nowrap;
 }
 .header ~ footer .hint {
@@ -55,7 +78,7 @@ body, .task input:not([type="checkbox"]):not([type="radio"]), .task select {
 	display: inline-block;
 	position: relative;
 }
-.menu-head>a::before {
+.menu-head > :first-child::before {
 	line-height: 50%;
 	content: "\25BE\A0";
 }
@@ -63,13 +86,15 @@ body, .task input:not([type="checkbox"]):not([type="radio"]), .task select {
 	display: none;
 	position: relative;
 }
-.menu-top:hover, .menu-head:hover .menu-top, #task-text {
+.menu-top:hover,
+.menu-head:hover .menu-top,
+#task-text {
 	display: block;
 }
 .menu-hid {
 	display: block;
 	position: absolute;
-	z-index: 999;
+	z-index: 888;
 	top: 0;
 	left: 0;
 	min-width: 100%;
@@ -85,24 +110,28 @@ body, .task input:not([type="checkbox"]):not([type="radio"]), .task select {
 .r .menu-list {
 	text-align: right;
 }
-.r .menu-hid, .r .menu-head>a::before {
+.r .menu-head > :first-child::before,
+.r .menu-hid {
 	left: inherit;
 	right: 0;
 }
 .buttons.r .menu-hid {
 	right: -9px;
 }
-.buttons>*, .buttons a, .a.buttons {
+.buttons > *,
+.buttons a,
+.a.buttons {
 	display: inline-block;
 	text-decoration: none;
 	background-color: #777;
 	margin: 0;
 }
-.buttons>*:not(:first-child) {
+.buttons > *:not(:first-child) {
 	margin-left: 0.5em;
 }
-.buttons .menu-head>a::before {
+.buttons .menu-head > :first-child::before {
 	position: absolute;
+	display: block;
 	line-height: 0;
 	bottom: 12px;
 	left: 4px;
@@ -113,32 +142,70 @@ body, .task input:not([type="checkbox"]):not([type="radio"]), .task select {
 .buttons .menu-list a~a {
 	margin-top: 8px;
 }
-.buttons a, .a.buttons {
+.buttons a,
+.a.buttons {
 	padding: 0 1em;
 }
 .buttons a:hover {
 	background-color: #aaa;
 }
-a, .a {
+.post .menu-head > :first-child::before {
+	display: none;
+}
+.post .menu-wrap:hover,
+.post .menu-head:hover,
+.post .menu-top,
+.post .menu-hid,
+.post .menu-list {
+	background-color: inherit;
+	border-color: inherit;
+}
+/*
+.post .menu-list {
+	border-top-color: transparent;
+}*/
+.post .menu-head a {
+	display: block;
+	padding: 0 2px;
 	color: #888;
 }
-a:hover, a.u:hover {
+.post .menu-head a:hover {
+	color: #fff;
+	background-color: rgba(85, 85, 85, 0.4);
+}
+a,
+.a {
+	color: #888;
+}
+a:hover,
+a.u:hover {
 	color: #000;
 }
-.task a, .task .a, .task label, .menu-list a {
+.task a,
+.task .a,
+.task label,
+.menu-list a {
 	color: #bbb;
 }
-.task a:hover, .task label:hover, .menu-list a:hover {
+.task a:hover,
+.task label:hover,
+.menu-list a:hover {
 	color: #fff;
 }
-.touch, .touch a, .touch ~ .task a, .touch ~ * .task a, .touch ~ * .task.arr p {
+.touch,
+.touch a,
+.touch ~ .task a,
+.touch ~ * .task a,
+.touch ~ * .task.next-prev p {
 	font-size: 56pt;
 	line-height: 56pt;
 	text-decoration: none;
 }
-.thread .anno {
+.thread .anno,
+.task.next-prev p {
 	font-weight: normal;
 	padding: 8px 22px;
+	text-align: center;
 }
 .anno {
 	white-space: normal;
@@ -149,13 +216,14 @@ a:hover, a.u:hover {
 .anno b {
 	display: block;
 	font-weight: normal;
-	margin: 8px 0px;
 }
-.at, a.at {
+.at,
+a.at {
 	background-color: #999;
 	color: #eee;
 }
-.report b, .report {
+.report,
+.report b {
 	background-color: #f77;
 	color: #ff7;
 }
@@ -163,40 +231,30 @@ a:hover, a.u:hover {
 	display: block;
 	padding: 0 1em;
 }
-.arr a {
+.next-prev a {
 	display: block;
 	border: 5px solid transparent;
 	position: absolute;
-	bottom: 0px;
-	top: 0px;
+	margin: 0;
+	bottom: 0;
+	top: 0;
 }
-.arr .al {
-	left: 0px;
+.next-prev .al {
+	left: 0;
 }
-.arr .ar {
-	right: 0px;
+.next-prev .ar {
+	right: 0;
 }
-.arr a.al:hover {
+.next-prev a.al:hover {
 	border-left-color: #eee;
 }
-.arr a.ar:hover {
+.next-prev a.ar:hover {
 	border-right-color: #eee;
 }
-.arr a, a.a, a.r {
+.next-prev a,
+a.a,
+a.r {
 	text-decoration: none;
-}
-.section .thread {
-	padding: 0;
-}
-.section .task, .section, .task.arr p {
-	padding: 8px 0;
-	text-align: center;
-}
-.section .task:first-child {
-	padding-top: 0;
-}
-.section .task:last-child {
-	padding-bottom: 0;
 }
 .room-title {
 	padding: 0 8px;
@@ -231,13 +289,15 @@ a:hover, a.u:hover {
 	content: attr(data-index);
 	background-color: rgba(160, 160, 160, 0.6);
 }
-#thumbs a:hover, .welcome a:hover {
+#thumbs a:hover,
+.welcome a:hover {
 	border-color: #09f;
 }
 #took {
 	clear: both;
 }
-#took, #took td {
+#took,
+#took td {
 	margin: 0;
 	padding: 0;
 	border: none;
@@ -250,37 +310,47 @@ a:hover, a.u:hover {
 #took td:nth-child(2) {
 	text-align: right;
 }
-#took, .task label, #task .rem, .hint, li {
+#took,
+#task .rem,
+.task label,
+.hint,
+li {
 	font-size: 13px;
 }
-#task, .thread {
+#task,
+.task,
+.thread,
+.threads {
 	padding: 8px 0;
 	background-color: #aaa;
 }
-#task>.res {
+#task > .res {
 	cursor: move;
 }
-#task>.res>img[src*=res] {
+#task > .res img[src*=res] {
 	padding: 0 2px;
 	border: 2px dashed #ccc;
 	border-top: none;
 	border-bottom: none;
 }
-#task>.res:hover>img {
+#task > .res:hover img {
 	border-color: #eee;
 }
-#task>.res>img, #task>img, #task .dump {
+#task > img
+#task > .res img
+#task .dump {
 	margin: 8px;
-	vertical-align: bottom;		/* <- removes extra bottom space (sub-baseline) */
+	vertical-align: bottom;	/* <- removes extra bottom space (sub-baseline) */
 }
-#task>.res:last-child>img, #task>img:last-child, #task .dump:last-child {
+#task > :last-child img,
+#task > :last-child {
 	margin-bottom: 0;
 }
 #task .rem {
 	font-weight: normal;
 	text-align: left;
 }
-#task .rem>* {
+#task .rem > * {
 	margin-left: 8px;
 }
 #task .dump {
@@ -307,7 +377,7 @@ a:hover, a.u:hover {
 	display: block;
 	left: 50%;
 }
-.task .center>* {
+.task .center > * {
 	margin-left: -50%;
 	background-color: #555;
 }
@@ -346,79 +416,108 @@ a:hover, a.u:hover {
 	max-width: 950px;
 	max-height: 950px;
 }
-.task form:not(:empty), .task p, .task ul, .task ol {
+.task form,
+.task p,
+.task ul,
+.task ol {
 	text-align: left;
 	padding: 0 22px 8px 22px;
-}
-.task form, .task p, .task ul, .task ol {
-	line-height: 26px;
 	margin: 0;
+	line-height: 26px;
 	color: #fff;
 	background-color: #555;
 }
-.task form>:not(label):not(.l):not(.r) {
+.task form > :not(label):not(.l):not(.r) {
 	display: table;
 	width: 100%;
 }
-.task form>:not(label):not(.l):not(.r)>* {
+.task form > :not(label):not(.l):not(.r) > * {
 	display: table-cell;
 }
-.task form>:not(label):not(.l):not(.r)>:not(:first-child) {
+.task form > :not(label):not(.l):not(.r) > :not(:first-child) {
 	width: 150px;
 	text-align: right;
 }
-.task form>input {
+.task form > input {
 	display: none !important;
 }
-.task form input[type="submit"], .task form select {
+.task form input[type="submit"],
+.task form select {
 	width: 142px;
 }
-.task input[type="text"], .task input[type="file"] {
+.task input[type="text"],
+.task input[type="file"] {
 	width: 100%;
 }
 .task li {
 	margin: 0 0 12px 22px;
 }
-.task p>b {
+.task p > b {
 	display: block;
 	padding-right: 6px;
 }
 .task p.r.hint + p.r.hint {
 	padding-right: 0;
 }
-.multi-thread {
-	background-color: #aaa;
+#task .task,
+.threads:empty,
+.threads .task,
+.task.next-prev {
+	padding: 0;
+	margin: 0;
 }
-.multi-thread:not(:empty), .thread, .task form:first-child, .task p:first-child, .task p.r:first-child + p, .task div:not(.hid) + p, .task label {
+.thread
+.task form:first-child,
+.task p:first-child,
+.task p.r:first-child + p,
+.task div:not(.hid) + p,
+.task label {
 	padding-top: 8px;
 }
-.multi-thread, .thread, .welcome, body>footer {
-	margin-top: 24px;
-}
-.multi-thread .thread {
+.threads .thread {
 	margin: 0;
 	padding-top: 0;
 }
-.post, .post.p p .report, #task-text {
+.combined .thread {
+	padding: 0;
+}
+.post,
+.post.pad aside .report,
+#task-text {
 	word-wrap: break-word;
 }
-.post {	background-color: #f5f5f5;} body,
-.alt {	background-color: #eee;}
-.dust {	background-color: #d4d4d4;}
-.warn {	background-color: #fc7;} .burnt-hell,
-.burnt .post {	background-color: #fdd;} .post .burnt, .hot,
-.burnt .alt {	background-color: #ecc;} .post:target, .ok,
-.full .post {	background-color: #dfd;} .post .full, .ok.alt, .green,
-.full .alt {	background-color: #cec;} .frozen-hell,
-.frozen .post {	background-color: #def;} .post .frozen, .cold,
-.frozen .alt {	background-color: #cde;} .new,
-.twilight {	background-color: #59e;} .mod,
-.post.born p:hover {	border-color:	#f00; background-color: #fdc;}
-.post.burn p:hover {	border-color:	#900; background-color: #f55;} .gloom,
-.post.goo p:hover {	border-color:	#b0f; background-color: #dcf;}
-.post.ice p:hover {	border-color:	#ace; background-color: #cdf;}
-.post.me p:hover {	border-color:	#4e7; background-color: #cfd;}
-.post.null p:hover {	border-color:	#888; background-color: #bbb;}
+.post {		background-color: #f5f5f5;}
+body,
+.alt {		background-color: #eee;}
+.dust {		background-color: #d4d4d4;}
+.warn {		background-color: #fc7;}
+.burnt-hell,
+.burnt .post {	background-color: #fdd;}
+.post .burnt,
+.hot,
+.burnt .alt {	background-color: #ecc;}
+.post:target,
+.ok,
+.full .post {	background-color: #dfd;}
+.post .full,
+.ok.alt,
+.green,
+.full .alt {	background-color: #cec;}
+.frozen-hell,
+.frozen .post {	background-color: #def;}
+.post .frozen,
+.cold,
+.frozen .alt {	background-color: #cde;}
+.new,
+.twilight {	background-color: #59e;}
+.mod,
+.post.born aside:hover {border-color: #f00; background-color: #fdc;}
+.post.burn aside:hover {border-color: #900; background-color: #f55;}
+.gloom,
+.post.goo aside:hover {	border-color: #b0f; background-color: #dcf;}
+.post.ice aside:hover {	border-color: #ace; background-color: #cdf;}
+.post.me aside:hover {	border-color: #4e7; background-color: #cfd;}
+.post.null aside:hover {border-color: #888; background-color: #bbb;}
 .post .center {
 	margin: 0 auto;
 	max-width: 500px;
@@ -430,7 +529,7 @@ a:hover, a.u:hover {
 	display: inline-block;
 	margin: -8px 0;
 }
-.post .center p {
+.post .center aside {
 	line-height: 28px;
 	min-width: 0;
 }
@@ -449,7 +548,7 @@ a:hover, a.u:hover {
 .post .center input[type="radio"] {
 	display: none;
 }
-.post .center input[type="radio"]:not(:checked)+* {
+.post .center input[type="radio"]:not(:checked) + * {
 	color: #aaa;
 	text-decoration: underline;
 }
@@ -465,7 +564,7 @@ a:hover, a.u:hover {
 	max-width: 640px;
 	vertical-align: bottom;
 }
-.post p {
+.post aside {
 	margin: 0;
 	padding: 0 4px;
 	min-width: 165px;
@@ -473,19 +572,21 @@ a:hover, a.u:hover {
 	border-left: 4px solid #eee;
 	border-right: none;
 }
-.post p.r {
+.post aside.r {
 	border-left: none;
 	border-right: 4px solid #eee;
 }
-.post p, .l {
+.post aside,
+.l {
 	text-align: left;
 	float: left;
 }
-.post p.r, .r {
+.post aside.r,
+.r {
 	text-align: right;
 	float: right;
 }
-.post p.ref {
+.post aside.ref {
 	max-width: 70%;
 	max-height: 28px;
 }
@@ -508,7 +609,8 @@ a:hover, a.u:hover {
 .post input[type="text"][readonly] {
 	color: #777;
 }
-.post input[type="text"], .post select {
+.post input[type="text"],
+.post select {
 	height: 14px;
 	width: 99px;
 	margin: 0;
@@ -516,59 +618,115 @@ a:hover, a.u:hover {
 	border-width: 1px;
 	vertical-align: middle;
 }
-.post input[type="submit"], .post input[type="button"], .post select {
+.post input[type="submit"],
+.post input[type="button"],
+.post select {
 	height: 20px;
 	line-height: 10px;
 }
-.post.p input[type="text"] {
+.post.hover-menu input[type="text"] {
 	width: 159px;
 }
-.post.p textarea {
+.post.hover-menu textarea {
 	max-width: 161px;
 	min-width: 161px;
 	min-height: 48px;
 }
-.post.p {
-	padding-bottom: 8px;
+.post.hover-menu aside .menu-wrap {
+	position: relative;
 }
-.post.p p {
-	padding: 0 2px;
+.post.hover-menu aside .menu-wrap,
+.post.hover-menu aside .menu-head,
+.post.hover-menu aside .stub {
+	white-space: nowrap;
+	background-color: inherit;
+	margin: 0;
+	padding: 0;
 }
-.post.p p, .post p.ref, .room-title::after {
+.post.hover-menu aside,
+.post.hover-menu aside .stub {
+	white-space: nowrap;
+	padding: 0;
+}
+.post.hover-menu aside .menu-head {
+	border: none;
+	position: absolute;
+	top: 0;
+}
+.post.hover-menu aside:not(.r) .menu-head {
+	left: 0;
+}
+.post.hover-menu aside.r .menu-head {
+	right: 0;
+}
+.post.hover-menu aside .menu-head:hover .stub {
+	padding: 4px;
+	z-index: 999;
+}
+.post.hover-menu aside .menu-head:hover {
+	border: 1px solid transparent;
+	border-color: inherit;
+	top: -5px;
+}
+.post.hover-menu aside:not(.r) .menu-head:hover {
+	left: -5px;
+}
+.post.hover-menu aside.r .menu-head:hover {
+	right: -5px;
+}
+.post.hover-menu aside:not(:hover) .stub,
+.post aside.ref,
+.room-title::after {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;	/* <- requires max-width */
 }
-.post.p p[onclick], button:not(:disabled), input:not(:disabled):not([type="text"]), label {
+.post.hover-menu aside[onclick],
+button:not(:disabled),
+input:not(:disabled):not([type="text"]),
+label {
 	cursor: pointer;
 }
-.post.p p[onclick]:hover {
-	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwQAADsEBuJFr7QAAABl0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMC4xMK0KCsAAAADhSURBVEhL7ZTbCoMwEETtjV7ovf3/b+0c6kJYNqkaA31w4ECM607rZuwW/Ys2YvtdttdRvHtYN9VavIQZsmavmc7CzAz2moiZeTOjyTxvwgxMds29WbUX1hw4pZDuUTOLVuIh0uaRITXUVusk0saw6/H71FbJx8DIGVbHJIoBHHqie5NjUopByRAmxeQuombArKLZGjw7Sj4GUxgcE472U0RNxkCPQTEpvaqx/IwJYY5i4OHo++BH0Iu6rC4ietCDYekUp2T/Je87/UDPAXPkA5EVpvwijGu5iqLZokUD1HUf6oQRrO99Q8cAAAAASUVORK5CYII=");
-	background-repeat: no-repeat;
-	background-position: top right;
-}
-.post.p p[onclick].r:hover {
-	background-position: top left;
-}
-.post.p.menu p:not([onclick]):hover {
+.post.click-menu aside:hover .mod-menu {
 	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKEAAAFoBAMAAADN74ZNAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABl0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMC4xMK0KCsAAAAASUExURQAAAAAAAAAAAAAAAAAAAAAAAOArGaIAAAAGdFJOUwAEBQ4PFDsktNsAAAJWSURBVHja7dm7bStRDEVRQWABbsI5m2Bug2D/rbzAevZImrnfHZ6bawH7gIkwt9vYu3/f4GdJi5/1AYtRDkdXJR1dcHZUsdn3qqpveEZ4yKhis+9VcLb9iMneTqH3Ew/R4Wgw+380lx2/oqO3A96P/YlJR0PZh2go245isrdD3U88iQ5HI9nP0UR2vIiO3g5yP/YqJh29nf0WvZ1t72Kyt7N9PyfRm9l2JiYdvZcdp6LDM24NeR69kx0XosPRG9l2JSY94/KQl9HL2XYtJh29mh0N0eEZF4dsRa9lR1N0OHop29pi0jMuDNmJXsi2nph09Hx2dEWHZ5wesh89mx0DosPRk9k2IiY949SQQ9FT2TYmJh09kx2DosPRE9mj0ePZMSw6ejsT92PjYtLRg9kT0YPZNiMmezuj9xNTosPRQ9lz0SPZMSk6ejtD92OzYtLR3ezp6G62zYvJ3k7/fmJBdDi6k70S3c6OJdHR2+ncj62JSUc3shejG9m2KiZ7O437WY6+zLZ1Menoq+zYEB2e8WLInejz7NgSHY4+zbY9MekZT4bcjD7Jtl0x6ej37NgWHZ7xbcj96NfsAESHo1+yjRCTnvFpSCT6KdsYMenoY3ZAosMzHoakov+yAxMdjv7NNk5MesbHkGD0I9tIMenon+xARYejq5KObv6la//wa+E7l0SJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChRokSJEiVKlChR4vH9AxZaBQZurMB6AAAAAElFTkSuQmCC");
 	background-repeat: repeat-y;
 	background-position: top;
 }
-.post.p p, .post>p:not(.ref), .post .date-out>* {
+.warn-mark {
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwQAADsEBuJFr7QAAABl0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMC4xMK0KCsAAAADhSURBVEhL7ZTbCoMwEETtjV7ovf3/b+0c6kJYNqkaA31w4ECM607rZuwW/Ys2YvtdttdRvHtYN9VavIQZsmavmc7CzAz2moiZeTOjyTxvwgxMds29WbUX1hw4pZDuUTOLVuIh0uaRITXUVusk0saw6/H71FbJx8DIGVbHJIoBHHqie5NjUopByRAmxeQuombArKLZGjw7Sj4GUxgcE472U0RNxkCPQTEpvaqx/IwJYY5i4OHo++BH0Iu6rC4ietCDYekUp2T/Je87/UDPAXPkA5EVpvwijGu5iqLZokUD1HUf6oQRrO99Q8cAAAAASUVORK5CYII=");
+	background-repeat: no-repeat;
+	background-position: top right;
+}
+.r .warn-mark {
+	background-position: top left;
+}
+.post .date-out > *,
+.post > aside:not(.ref),
+.post.pad aside,
+.post.hover-menu aside:not(:hover) .stub {
 	width: 170px;
 }
-.post.p p .report {
+.post.hover-menu aside .stub {
+	min-width: 165px;
+}
+.post.pad aside .report {
 	display: block;
 	margin-bottom: 4px;
 	padding: 4px;
 	white-space: normal;
 }
-.post.p p div, .post .date-out, .log {
+.post .mod-menu,
+.post .date-out,
+.log {
 	font-size: 11px;
 	line-height: normal;
 }
-.post.p.res, .post.p.res>p {
+.post.pad {
+	padding-bottom: 8px;
+}
+.post.pad.res aside .menu-wrap,
+.post.pad.res aside,
+.post.pad.res {
 	min-height: 56px;
 }
 .post.x3 {
@@ -578,7 +736,7 @@ a:hover, a.u:hover {
 	position: relative;
 	right: 0;
 }
-.post .caps-btn>* {
+.post .caps-btn > * {
 	position: absolute;
 	right: 0;
 	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAATBAMAAAB8awA1AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMTJDBGvsAAAAMFBMVEUAAACqzO4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADcNH1TAAAAEHRSTlMAAAECAwQGBwsMDg8REhMU4+CFkgAAAJlJREFUGNNjEEQGDAIM6xdYvv//bzLXLwZGMG89w///vyC8vv8w8IKRQeLDh///Whki3gO5jQxyQPJq9rttsUD6IYP8////IoCsVqDkRxDvRz6Q960fyvu6H8j7HQ/lfQCZ8I8fxgObz49V5Y96IO87zJR/HkBeC8yG/0eq/2/3+Q/igdwCc9lDBsn/CDCRQWgenPNSkQHF7wDVQa3w7TSI5QAAAABJRU5ErkJggg==");
@@ -590,11 +748,11 @@ a:hover, a.u:hover {
 	white-space: nowrap;
 }
 .post #caps-btn-top,
-.post #caps-btn-top>* {
+.post #caps-btn-top > * {
 	top: 0;
 }
 .post #caps-btn-bottom,
-.post #caps-btn-bottom>* {
+.post #caps-btn-bottom > * {
 	bottom: 0;
 }
 .post .caps-btn * {
@@ -611,31 +769,31 @@ a:hover, a.u:hover {
 	z-index: 1;
 	width: 0;
 }
-.post .date-out>* {
+.post .date-out > * {
 	display: block;
 	position: relative;
 }
-.post .date-out.l>* {
+.post .date-out.l > * {
 	top: -28px;
 	left: -178px;
 }
-.post .date-out.r>* {
+.post .date-out.r > * {
 	top: -28px;
 	left: 170px;
 	text-align: left;
 }
-.post .date-out>p {
+.post .date-out > aside {
 	border: none;
 	left: 500px;
 }
-.post .date-out>p.r {
+.post .date-out > aside.r {
 	left: 0;
 }
 .post .date-out .report {
 	top: 0;
 	background-color: rgba(234, 123, 123, 0.8);
 }
-.post .date-out>b {
+.post .date-out > b {
 	text-align: center;
 	padding: 1px;
 }
@@ -670,6 +828,14 @@ a:hover, a.u:hover {
 	padding: 0;
 	vertical-align: top;
 }
+.post .mod-menu input[type="checkbox"] {
+	vertical-align: middle;
+	margin-top: 1px;
+}
+.post .mod-menu label {
+	display: inline-block;
+	padding-top: 2px;
+}
 .post .image-num {
 	display: inline-block;
 	margin-bottom: 4px;
@@ -701,10 +867,11 @@ a:hover, a.u:hover {
 	vertical-align: top;
 	font-style: italic;
 }
-.hint .poem, .hint .cite {
+.hint .poem,
+.hint .cite {
 	display: inline-block;
 	border: 1px dashed #888;
-	padding: 0px 8px;
+	padding: 0 8px;
 }
 .hint .poem {
 	padding: 8px 12px;
@@ -716,7 +883,7 @@ a:hover, a.u:hover {
 }
 .al {	text-align: left;}
 .ar {	text-align: right;}
-.hide-p .post .res img {
+.hide-aside .post .res img {
 	border-color: #ddd;
 }
 .content:not(.saving) .post.selected.alt {
@@ -728,7 +895,7 @@ a:hover, a.u:hover {
 	border-top: none;
 	border-bottom: none;
 }
-.content:not(.saving) .post.selected p {
+.content:not(.saving) .post.selected aside {
 	border: none;
 }
 .toggle::after {
@@ -785,7 +952,8 @@ a:hover, a.u:hover {
 .welcome tr:not(:first-child):not(:last-child) td.thread {
 	background-color: #ddd;
 }
-.welcome p, .profile p,
+.profile p,
+.welcome p,
 .welcome tr.you,
 .welcome tr.you td {
 	color: inherit;
@@ -799,8 +967,8 @@ a:hover, a.u:hover {
 	background-color: #fff;
 	vertical-align: top;
 }
-#task>.res:not(:last-child)::after,
-#task>img:not(:last-child)::after,
+#task > .res:not(:last-child)::after,
+#task > img:not(:last-child)::after,
 .welcome tr.prev td.thread::after,
 .welcome tr.next td.thread::before,
 .welcome td.then::before {
@@ -830,6 +998,23 @@ a:hover, a.u:hover {
 	left: 0;
 	height: 100%;
 }
+.welcome a {
+	display: inline-block;
+	border: 2px solid #ddd;
+}
+.welcome a img {
+	display: block;
+	vertical-align: bottom;
+}
+#task > .res:not(:last-child)::after,
+#task > img:not(:last-child)::after {
+	display: block;
+	margin-top: 8px;
+	opacity: 0.25;
+}
+#task > .res:not(:last-child)::after {
+	margin: 0 0 8px 0;
+}
 .profile .center {
 	display: block;
 	margin: 0 auto;
@@ -845,26 +1030,13 @@ a:hover, a.u:hover {
 .profile p {
 	padding: 8px 22px;
 }
-#task>.res:not(:last-child)::after,
-#task>img:not(:last-child)::after {
-	display: block;
-	margin-top: 8px;
-	opacity: 0.25;
-}
-#task>.res:not(:last-child)::after {
-	margin: 0 0 8px 0;
-}
-.welcome a {
-	display: inline-block;
-	border: 2px solid #ddd;
-}
-.welcome a img {
-	display: block;
-	vertical-align: bottom;
-}
 small {
 	line-height: 50%;
 }
-*[data-type], .hid, .buttons .auto, .thread>pre, .hide-p .post p:not(.ref) {
+*[data-type],
+.hid,
+.buttons .auto,
+.thread > pre,
+.hide-aside .post aside:not(.ref) {
 	display: none;
 }

@@ -59,7 +59,7 @@ $tmp_describe_hint = 'At least '.DESCRIBE_MIN_LENGTH.' letters.\\
 	[r poem|\\
 		Like this,
 		or more than once
-		
+
 		for a blank line.
 	]
 	To write poem blocks, start and end the whole text and each line with a fully spaced slash.
@@ -114,11 +114,12 @@ $tmp_mod_pages = array(
 ,	'welcome' =>	'Welcome page'
 );
 $tmp_mod_panel = 'Mod panel';
-$tmp_mod_post_hint = 'Modify this post or thread.';
-$tmp_mod_user_hint = 'Modify this user.';
+$tmp_mod_post_hint = 'Options for this post or thread.';
+$tmp_mod_user_hint = 'Options for this user.';
 $tmp_mod_user_info = 'Check flags of this user.';
 $tmp_no_change = 'No change.';
 $tmp_no_play_hint = 'Game playing turned off for you (no taking targets).';
+$tmp_not_found = 'Not found.';
 $tmp_not_supported = 'This function is not supported.';
 $tmp_options = 'Options. About';
 $tmp_options_apply = 'Apply';
@@ -174,7 +175,7 @@ $tmp_options_profile_link = 'Go to check your profile page.';
 $tmp_options_qk = 'Key to login';
 $tmp_options_qk_hint = 'Double click to select it all for copying. Use in place of name at login form.';
 $tmp_options_self_intro = 'Tell about yourself, if you wish';
-$tmp_options_self_intro_hint = 'Your text here, http://links, [http://pictures left|right|center].';
+$tmp_options_self_intro_hint = 'Your text here, http://links, [http://pictures], [http://picture left,right,center].';
 $tmp_options_time = 'Default time zone';
 $tmp_options_time_client = 'Your time zone';
 $tmp_options_warning = array('Warning: check your server configuration first!', 'See example.');

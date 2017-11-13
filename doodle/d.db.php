@@ -33,31 +33,49 @@ define(DATA_LOG_START, BOM.NL);
 define(DATA_MARK_TXT, '		');
 define(DATA_MARK_IMG, '	<	');
 
-define(DATA_DERE, mb_escape_regex(DATA_LOG_EXT));
-define(DATA_PAT_IMG, '~(?P<before>(?:<a\\s+href|<img\\s+src)="?|'.DATA_MARK_IMG.')(?P<path>[^">\\t]+)(?=[">\\t]|$)~iu');
+define(DATA_RE_LE, mb_escape_regex(DATA_LOG_EXT));
+define(DATA_RE_MI, mb_escape_regex(DATA_MARK_IMG, '~', '\\s'));
+
+define(DATA_PAT_IMG, '~
+	(?P<before>
+		(?:<a\\s+href|<img\\s+src)="?
+	|	'.DATA_RE_MI.'
+	)
+	(?P<path>[^">\\t]+)
+	(?=[">\\t]|$)
+~iux');
+
 define(DATA_PAT_TRD_PLAY, '~^
-(?P<id>\d+)
-(?P<etc>(?:\.(?:
-	p(?P<pics>\d+|f)|
-	l(?P<last_t>\d+)|
-	a(?P<last_u>\d+)|
-	t(?P<hold_t>\d+)|
-	u(?P<hold_u>\d+)|
-	.+
-))+)?
-(?P<ext>'.DATA_DERE.')
+	(?P<id>\d+)
+	(?P<etc>
+		(?:\.
+			(?:
+				p(?P<pics>\d+|f)
+			|	l(?P<last_t>\d+)
+			|	a(?P<last_u>\d+)
+			|	t(?P<hold_t>\d+)
+			|	u(?P<hold_u>\d+)
+			|	.+
+			)
+		)+
+	)?
+	(?P<ext>'.DATA_RE_LE.')
 $~iux');
 
 define(DATA_PAT_TRD_MOD, '~^
-(?P<active>
-	(?P<id>\d+)
-	(?P<etc>\..+)?
-	(?P<ext>'.DATA_DERE.')
-)
-(?P<inactive>(?:\.(?:
-	(?P<stopped>s)top|
-	(?P<deleted>d)el
-))+)?
+	(?P<active>
+		(?P<id>\d+)
+		(?P<etc>\..+)?
+		(?P<ext>'.DATA_RE_LE.')
+	)
+	(?P<inactive>
+		(?:\.z
+			(?:
+				(?P<stopped>s)top
+			|	(?P<deleted>d)el
+			)
+		)+
+	)?
 $~iux');
 
 //* Function argument flags: --------------------------------------------------
@@ -545,14 +563,32 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 	if ($t === LK_USERLIST) {
 		$t = data_get_mod_log_file(DATA_USERLIST, $mt);
 		if (!$mt) {
-			$e = DATA_U_FLAG;
-			foreach (get_dir_contents(DATA_DIR_USER.$e) as $f) if (
-				(get_file_ext($f) == $e)
-			&&	($i = intval(get_file_name($f)))
-			&&	($f = data_get_user_flags($i))
-			&&	($f = implode(', ', array_keys($f)))
-			) {
-				$t = preg_replace("~^$i\t\\S+~mu", '$0: '.$f, $t);
+			foreach (array(
+				DATA_U_FLAG => array(
+					'func' => 'data_get_user_flags'
+				,	'before' => ': '
+				)
+			,	DATA_U_ABOUT => array(
+					'func' => 'data_get_user_profile'
+				,	'before' => ' ['
+				,	'after' => ']'
+				,	'exclude' => 'last modified'
+				)
+			) as $e => $a) {
+				foreach (get_dir_contents(DATA_DIR_USER.$e) as $f) if (
+					(get_file_ext($f) == $e)
+				&&	($i = intval(get_file_name($f)))
+				&&	($f = $a['func'])
+				&&	($f = $f($i))
+				&&	($f = array_keys($f))
+				&&	($f = trim(implode(', ',
+						($x = $a['exclude'])
+						? array_diff($f, (array)$x)
+						: $f
+					)))
+				) {
+					$t = preg_replace("~^$i	[^	]+~mu", "$0$a[before]$f$a[after]", $t);
+				}
 			}
 			$t = preg_replace(
 				'~(\V+)(	\V+)	(\V+)\+\V+(	\V+?)~Uu'
@@ -930,7 +966,7 @@ function data_get_user_profile($u_num, $array = true) {
 	$d = DATA_DIR_USER;
 	$e = DATA_U_ABOUT;
 	$f = "$d$e/$u_num.$e";
-	
+
 	if (!$array) return is_file($f);
 
 	$sep = '	';
@@ -950,7 +986,7 @@ function data_get_user_profile($u_num, $array = true) {
 		} else {
 			$v = (count($tab) > 1 ? $tab : $tab[0]);
 		}
-		$r[$k] = $v;
+		if ($v && trim_bom("$v")) $r[$k] = $v;
 	}
 	return $r;
 }

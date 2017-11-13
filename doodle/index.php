@@ -570,6 +570,8 @@ $x
 		if ($t = data_get_mod_log($q)) {
 			if ($q === LK_USERLIST) {
 				$page['content'] .= "
+archives = $arch_list_href
+profiles = ".ROOTPRFX.DIR_USER."
 left_link = .?$qmod=$q&$qid=
 left = $tmp_mod_user_info
 right = $tmp_mod_user_hint
@@ -604,33 +606,48 @@ if ($qd_user) {
 		($i = intval($etc))
 	&&	($a = data_get_user_profile($i))
 	) {
-		$name = $usernames[$i] ?: '[? unknown ?]';
+		exit_if_not_mod($a['last modified']);
+
+		$name = $usernames[$i] ?: $tmp_not_found;
 		$r = array();
 		if (($t = $a['email']) && $t['show']) {
 			$r['email'] = "<p>$tmp_user_email: $t[addr]</p>";
 		}
 		if ($t = $a['about'] ?: '') {
 			$p = 'https?';	//* <- protocols allowed in links
-			$s = '\s<>';	//* <- characters not allowed in links
+			$s = '"\s<>';	//* <- characters not allowed in links
+			$s_name = "//$_SERVER[SERVER_NAME]";
+			$protocol = strtolower($_SERVER['REQUEST_SCHEME'] ?: 'http');
+			$internal = '//\\*/+';
+			$pat_int = "~^$internal~u";
 			$pat = "~
-				(?P<a>(?:$p)://[^$s/][^$s]*?)(?=[,.]*(?:[$s]|$))
+				(?P<a>(?:$internal|(?:$p)://[^$s/]/*)[^$s]*?)(?=[,.]*(?:[$s]|$))
 			|	\[\s*(?P<img>(?:$p)://[^$s/][^$s]*?)(?:\s+(?P<align>left|right|center)|)?\s*\]
 			~iux";
 
+			function fix_internal_link_and_text($url) {
+				global $pat_int, $s_name, $protocol;
+				$i = preg_replace($pat_int, '/', $url);
+				return (
+					($i != $url)
+					? array($i, "$protocol:$s_name$i")
+					: array($url, $url)
+				);
+			}
+
 			function format_profile_links($a) {
-				if ($m = $a['a']) return '<a href="'.$m.'" rel="nofollow">'.$m.'</a>';
-				if ($m = $a['img']) {
-					return (
-						'<a href="'.$m.'" rel="nofollow">'
-						.	'<img src="'.$m.'" alt="'.$m.'" class="'
-						.	(
-								($m = ($a['align'] ?: '')[0])
-							&&	($m == 'l' || $m == 'r')
-								? $m
-								: 'center'
-							).'">'
-						.'</a>'
-					);
+				if ($m = $a['a'] ?: $a['img']) {
+					list($url, $text) = fix_internal_link_and_text($m);
+					if ($a['img']) {
+						$text = '<img src="'.$url.'" alt="'.$text.'" class="'
+						.(
+							($m = ($a['align'] ?: '')[0])
+						&&	($m == 'l' || $m == 'r')
+							? $m
+							: 'center'
+						).'">';
+					}
+					return '<a href="'.$url.'" rel="nofollow">'.$text.'</a>';
 				}
 				return $a[0];
 			}
@@ -748,7 +765,9 @@ $n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
 			$page['task'] .= '
 <p class="hint" id="research">'.indent($tmp_archive_found.$research).'</p>';
 			if ($found = data_archive_find_by($search)) {
-				$page['content'] = '
+				$page['content'] = "
+archives = $arch_list_href
+profiles = ".ROOTPRFX.DIR_USER.'
 page_ext = '.PAGE_EXT.get_flag_vars(
 					array(
 						'flags' => array(
@@ -849,7 +868,7 @@ NL.$tmp_options_name.$t.(
 			if ($i === 'admin') $l = '<span class="gloom">'.$l.'</span>';
 			$c .= NL.$l.$t.$r;
 		}
-		$c .= 
+		$c .=
 NL.$tmp_options_time.$t.date('e, T, P')
 .NL.$tmp_options_time_client.$t.'<time id="time-zone"></time>';
 
@@ -981,7 +1000,7 @@ sep_select = '.$sp.'
 					,	'radiogroup' => array(
 							'name' => 'freeze'
 						,	'options' => array(
-								1 => array($tmp_report_freeze, $icon_ice)
+								1 => array($icon_ice, $tmp_report_freeze)
 							,	0 => $tmp_report_hotfix
 							)
 						)
@@ -1057,9 +1076,11 @@ right = $tmp_mod_user_hint"
 						: "
 left = $tmp_report_post_hint
 right = $tmp_report_user_hint"
-					).'
-report_to = .?report_post='.$t;
-					$t .= '
+					)."
+report_to = .?report_post=$t";
+					$t .= "
+archives = $arch_list_href
+profiles = ".ROOTPRFX.DIR_USER.'
 images = '.ROOTPRFX.DIR_PICS;
 					$t .= get_flag_vars(
 						array(
@@ -1079,11 +1100,22 @@ images = '.ROOTPRFX.DIR_PICS;
 					$page['content'] = $t.NL;
 					$a = array();
 					$b = '<br>';
+					$u_profiles = array();
+
+					function u_profile_exists($u_num) {
+						return (
+							$u_profiles[$u_num] ?? (
+							$u_profiles[$u_num] = data_get_user_profile($u_num, false)
+							)
+						);
+					}
+
 if (TIME_PARTS) time_check_point('inb4 vts -> tsv'.NL);
 					foreach ($vts as $tid => $posts) {
 						$tsv = '';
 if (TIME_PARTS) $pi = $ri = $li = 0;
 						foreach ($posts as $postnum => $post) {
+							$uid_append = '';
 							if ($t = $post['time']) {
 								if ($u_opts['times']) {
 									$l = mb_split($b, $t, 2);
@@ -1094,11 +1126,14 @@ if (TIME_PARTS) $pi = $ri = $li = 0;
 							if ($t = $post['user']) {
 								$r = mb_split($b, $t, 2);
 								$uid = $r[0];
-								$r[0] = (
-									!$u_opts['names'] && array_key_exists($uid, $usernames)
-									? $usernames[$uid]
-									: NB
-								);
+								if (!$u_opts['names'] && array_key_exists($uid, $usernames)) {
+									if (u_profile_exists($uid)) {
+										$uid_append .= '@';
+									}
+									$r[0] = $usernames[$uid];
+								} else {
+									$r[0] = NB;
+								}
 								$r = implode($b, $r);
 							} else $r = NB;
 							$tabs = array(
@@ -1112,8 +1147,11 @@ if (TIME_PARTS) $pi = $ri = $li = 0;
 if (TIME_PARTS) ++$pi;
 							}
 							if (GOD) {
-								$tabs['color'] .= '#'.$uid;
+								$uid_append .= '#';
 								if ($t = $post['browser']) $tabs['browser'] = $t;
+							}
+							if ($uid_append) {
+								$tabs['color'] .= $uid_append[0].$uid;
 							}
 							if (is_array($r = $visible['reports'][$tid][$postnum])) {
 if (TIME_PARTS) $ri += count($r);
@@ -1222,8 +1260,10 @@ right = $tmp_empty$flags
 							)
 						);
 					}
-					if (!$u_opts['task_timer']) $page['data']['task']['autoupdate'] = TARGET_AUTOUPDATE_INTERVAL;
-					$page['data']['task']['taken'] = T0;
+					if (!$u_flag['nop']) {
+						if (!$u_opts['task_timer']) $page['data']['task']['autoupdate'] = TARGET_AUTOUPDATE_INTERVAL;
+						$page['data']['task']['taken'] = T0;
+					}
 					if ($t) {
 						if ($target['pic']) {
 							$src = (mb_strpos($t, ';') ? get_pic_resized_path(get_pic_normal_path($t)) : $t);
@@ -1442,6 +1482,10 @@ $page['title'] = (
 			)
 		)
 	)
+).(
+	$qd_user
+	? "$tmp_user: $name".S
+	: ''
 ).$top_title.(
 	$qd_opts == 2
 	? S.$tmp_draw_app_select
@@ -1625,7 +1669,7 @@ if ($u_key) {
 						$new['email'] = array_filter(array(
 							'addr' => $t
 						,	'show' => (
-								$_POST['email_show'] 
+								$_POST['email_show']
 								? 'show'
 								: ''
 							)
@@ -1639,10 +1683,10 @@ if ($u_key) {
 					}
 				}
 				if ($t = $_POST['about'] ?: '') {
-					
+
 					//* optimize text blob for storage.
 					//* links and other templates can better be added later dynamically.
-					
+
 					$t = fix_encoding($t);
 					$t = trim($t);
 					$t = preg_replace('~\r\n|\v~u', NL, $t);	//* <- normalize line breaks
@@ -1651,6 +1695,7 @@ if ($u_key) {
 					$t = nl2br($t, false);				//* <- prepare HTML line breaks for display
 					$t = preg_replace('~\v+~u', '', $t);		//* <- collapse into one line for simpler storage
 					$t = preg_replace('~\s+~u', ' ', $t);		//* <- normalize any other whitespace, same for display
+					$t = preg_replace("~\bhttps?://+$_SERVER[SERVER_NAME](/+\.+)*/*~u", '//*/', $t); //* <- internal links
 					if ($t = trim($t)) {
 						$new['about'] = $t;
 					}

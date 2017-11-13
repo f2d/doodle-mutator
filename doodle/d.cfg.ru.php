@@ -67,7 +67,7 @@ $tmp_describe_hint = 'Не менее '.DESCRIBE_MIN_LENGTH.' букв.\\
 	[r poem|\\
 		Например так,
 		или дважды
-		
+
 		для пустой строки.
 	]
 	Для блоков стихов начните и завершите весь текст и каждую строку косой чертой, полностью отделённой пробелами.
@@ -127,7 +127,8 @@ $tmp_mod_user_hint = 'Операции на этого пользователя.
 $tmp_mod_user_info = 'Информация на этого пользователя.';
 $tmp_no_change = 'Нет изменений.';
 $tmp_no_play_hint = 'Ваше участие в игре отключено (не отбирать цели).';
-$tmp_not_supported = 'Эта функция не доступна.';
+$tmp_not_found = 'Не найдено.';
+$tmp_not_supported = 'Эта функция недоступна.';
 $tmp_options = 'Настройки. О сайте';
 $tmp_options_apply = 'Применить';
 $tmp_options_area = array(
@@ -182,7 +183,7 @@ $tmp_options_profile_link = 'Проверьте страницу профиля.
 $tmp_options_qk = 'Ключ для входа';
 $tmp_options_qk_hint = 'Кликните дважды, чтобы выделить целиком для копирования. Используйте при входе вместо имени.';
 $tmp_options_self_intro = 'Немного о себе, если хотите';
-$tmp_options_self_intro_hint = 'Ваш текст тут, http://ссылки, [http://картинки left|right|center].';
+$tmp_options_self_intro_hint = 'Ваш текст тут, http://ссылки, [http://картинки], слева, справа, по центру - [http://картинка left,right,center].';
 $tmp_options_time = 'Общий часовой пояс';
 $tmp_options_time_client = 'Ваш часовой пояс';
 $tmp_options_warning = array('Предупреждение: сначала проверьте настройки сервера!', 'Смотреть пример.');

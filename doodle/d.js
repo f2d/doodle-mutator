@@ -16,6 +16,7 @@
 ,	regImgTag = /<img [^>]+>/i
 ,	regImgTitle = /\s+(title="[^"]+)"/i
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
+,	regPostUID = /^(.*?)([@#]+)([^@#]+)$/
 ,	regTimeDrawn = /^((\d+)-(\d+)(?:[^\d:,=-]+(\d+)-(\d+))?|[\d:]+)(?:=(-?\d+))?,(.*)$/m
 ,	regTimeBreak = /^\d+(<|>|,|$)/
 ,	regLineBreak = /^(\r\n|\r|\n)/gm
@@ -25,7 +26,7 @@
 ,	regNaN = /\D+/
 ,	regNaNa = /\D+/g
 ,	regSpace = /\s+/g
-,	regSpaceHTML = /\s|&nbsp;|&#8203;/gi
+,	regSpaceHTML = /\s|&(nbsp|#8203|#x200B);?/gi
 ,	regSplitLineBreak = /\r\n|\r|\n/g
 ,	regSplitWord = /\W+/g
 ,	regTextAreaBR = /(<|&lt;)br[ /]*(>|&gt;)/gi
@@ -37,8 +38,10 @@
 ,	splitSec = 60
 ,	splitSort = 500
 ,	TOS = ['object','string']
+,	NA = ['&#8203;', '&#x200B;', '\x20\x0B', '\u200B']
 ,	NB = '&nbsp;'
 ,	NW = '&#8203;'
+,	dropDownArrow = '&#x25BE;'
 ,	CS = 'checkStatus'
 ,	CM = 'checkMistype'
 ,	checking, taskTime = {}, flag = {}, inputHints = {}, param = {}
@@ -144,6 +147,13 @@ if (lang == 'ru') la = {
 ,	resized: 'Размер'	//'\nИзображение уменьшено.\nРазмер'
 ,	resized_hint: 'Кликните для просмотра изображения в полном размере.'
 ,	confirm_again: 'Защита от случайного нажатия: 5 секунд.\nПроверьте, что не ошиблись.'
+,	post_menu: {
+		arch_room: 'Найти в архиве комнаты'
+	,	arch_all: 'Найти во всех архивах'
+	,	report: 'Сообщить или ответить'
+	,	user: 'Все данные пользователя'
+	,	mod: 'Меню модерации'
+	}
 ,	bottom: {
 		close: 'Закрыть.'
 	,	hide: 'Скрыть поля.'
@@ -237,6 +247,13 @@ if (lang == 'ru') la = {
 ,	resized: 'Full size'	//'\nShown image is resized.\nFull size'
 ,	resized_hint: 'Click to view full size image.'
 ,	confirm_again: 'Accidental click safety: 5 seconds.\nPlease check that you are certain.'
+,	post_menu: {
+		arch_room: 'Search in room archive'
+	,	arch_all: 'Search in all archives'
+	,	report: 'Add a comment or report'
+	,	user: 'List all data of this user'
+	,	mod: 'Mod menu'
+	}
 ,	bottom: {
 		close: 'Close.'
 	,	hide: 'Hide asides.'
@@ -425,21 +442,25 @@ var	o = param.open || 0
 	+	'</div>';
 }
 
-function getDropdownMenuHTML(head, list, id) {
-	return	'<u class="menu-head">'
+function getDropdownMenuHTML(head, list, tag, id) {
+var	t = tag || 'u'
+,	a = '<'+t+' class="'
+,	b = '</'+t+'>'
+	;
+	return	a+'menu-head">'
 	+		(head || '')
-	+	'<u class="menu-top">'
-	+	'<u class="menu-hid">'
-	+	'<u class="menu-list"'+getTagAttrIfNotEmpty('id', id || '')+'>'
+	+	a+'menu-top">'
+	+	a+'menu-hid">'
+	+	a+'menu-list"'+getTagAttrIfNotEmpty('id', id || '')+'>'
 	+		(list || '')
-	+	'</u></u></u></u>';
+	+	b+b+b+b;
 }
 
 function addDropdownMenuWrapper(a, id) {
 var	p = a.parentNode
 ,	t = cre('u')
 	;
-	t.innerHTML = getDropdownMenuHTML('', '', id);
+	t.innerHTML = getDropdownMenuHTML('', '', '', id);
 var	m = t.firstElementChild
 ,	f = m.firstElementChild
 	;
@@ -473,7 +494,7 @@ var	j = orz(keep)
 	} else if (old) e[k] = '', e.removeAttribute(k);
 }
 
-function meta() {toggleClass(id('content') || document.body, 'hide-p');}
+function meta() {toggleClass(id('content') || document.body, 'hide-aside');}
 function fit() {
 var	e = (id('content') || document.body).style, w = maxWidth;
 	e.maxWidth = w[e.maxWidth != w[1]?1:0];
@@ -622,7 +643,7 @@ var	r = new XMLHttpRequest();
 					if (!img) {
 				//* 2) text in task:
 				//* 2-a) text on page:
-						if (e = eText || gn('p', eTask)[1]) {
+						if (e = eText || gn('aside', eTask)[1]) {
 							if (
 								!((j = e.previousElementSibling) && regTagForm.test(j.tagName))
 							&&	decodeHTMLSpecialChars(e.innerHTML) != decodeHTMLSpecialChars(task)
@@ -878,7 +899,7 @@ var	f_type = e.getAttribute('data-filter') || ''
 						while (e && e.firstElementChild == (c = e.lastElementChild)) e = c;
 						if (e && c) {
 							if (f_num > 1) e = c; else
-							if (f_num > 0) e = gn('p', e).filter(function(p) {return p.parentNode == e;}).slice(-1)[0];
+							if (f_num > 0) e = gn('aside', e).filter(function(p) {return p.parentNode == e;}).slice(-1)[0];
 						}
 						c = (e ? getNormalizedText((e.firstChild || e).textContent) : '');
 					}
@@ -1076,7 +1097,7 @@ var	i = e.name+'_link'
 		e = e.parentNode.nextSibling;
 		e = cre('div', e.parentNode, e);
 		e.className = insideOut;
-		e.innerHTML = '<p class="l"><a href="'+r+'" id="'+i+'">'+t+'</a></p>';
+		e.innerHTML = '<aside class="l"><a href="'+r+'" id="'+i+'">'+t+'</a></aside>';
 	}
 }
 
@@ -1203,7 +1224,8 @@ function showContent(sortOrder) {
 		function getLineHTML(line, noShrink) {
 		var	lineHTML = ''
 		,	postAttr = ''
-		,	postMenu = 0
+		,	postClickMenu = 0
+		,	postHoverMenu = 0
 		,	imgRes = 0
 		,	alter = 0
 			;
@@ -1270,7 +1292,11 @@ function showContent(sortOrder) {
 			var	t,a,b,c,d,i,j,k
 			,	u = ''
 			,	userID = ''
+			,	userLink = ''
+			,	userName = ''
+			,	userNameHidden = 0
 			,	report = ''
+			,	postID = ''
 			,	editPostData = ''
 			,	marks = ''
 			,	tab = line.split('\t')
@@ -1281,7 +1307,7 @@ function showContent(sortOrder) {
 				var	optionNames = [];
 				} else
 				if (dtp.rooms) {
-				var	classNames = []
+				var	roomClasses = []
 				,	roomDates = {}
 					;
 				} else
@@ -1293,11 +1319,13 @@ function showContent(sortOrder) {
 					}
 				} else
 				if (dtp.threads) {
-					u = tab.shift();
-					if (u.indexOf(sep = '#') >= 0) {
-						j = u.split(sep);
-						userID = j.pop();
-						u = j.join(sep);
+					u = tab.shift(), m = u.match(regPostUID);
+					if (m) {
+						u = m[1];
+						userID = m[3];
+						if (m[2].indexOf('@') >= 0) {
+							userLink = (param.profiles || '')+userID;
+						}
 					}
 					if (u.indexOf(sep = ',') >= 0) {
 						j = u.split(sep);
@@ -1332,7 +1360,11 @@ function showContent(sortOrder) {
 						if (selfID === userID) u = 'u';
 						tab[0] = j.join(sep);
 					}
-					threadNum = (tab.length > 2?1:0);
+					if (threadNum = (tab.length > 2?1:0)) {
+						if (tab[2].indexOf('[') >= 0) {
+							userLink = (param.profiles || '')+userID;
+						}
+					}
 					modEnabled = 1;
 				}
 				if (roomCount && isNotEmpty(t = tab[2]) && t.indexOf(sep) >= 0) {
@@ -1346,10 +1378,22 @@ function showContent(sortOrder) {
 					} else
 				//* user's default room or mod status:
 					if ((b = k[i].replace(regTrimWord, '')).length > 0) {
-						if (b === 'mod') classNames.push('u'); else
-						if (b === 'home') classNames.push(b);
+						if (b === 'mod') roomClasses.push('u'); else
+						if (b === 'home') roomClasses.push(b);
 					}
 					for (i in reportClass) if (a[i]) marks += a[i]+sep;
+				}
+			//* crutch for menus:
+				i = 2;
+				while (i--) if (
+					!isNotEmpty(t = tab[i])
+				&&	(
+						modEnabled
+					||	(i > 0 && userLink)
+					)
+				) {
+					if (i > 0 && NA.indexOf(t) >= 0) userNameHidden = 1;
+					tab[i] = dropDownArrow;
 				}
 			//* left:
 				if (tab.length > 0 && isNotEmpty(t = tab[0])) {
@@ -1406,6 +1450,7 @@ function showContent(sortOrder) {
 				}
 			//* right:
 				if (tab.length > 1 && isNotEmpty(t = tab[1])) {
+					userName = t;
 					if (!regTagPre.test(pre.tagName)) {
 						t = encodeHTMLSpecialChars(t);	//* <- fix for textarea source and evil usernames
 					}
@@ -1413,6 +1458,12 @@ function showContent(sortOrder) {
 						t =	'<a href="?name='+encodeURIComponent(decodeHTMLSpecialChars(t))
 						+	'" title="'+la.search_hint.name
 						+	'">'
+						+		t
+						+	'</a>';
+					} else
+					if (dtp.threads || dtp.users) {
+						if (userLink)
+						t =	'<a href="'+userLink+'">'
 						+		t
 						+	'</a>';
 					} else
@@ -1518,12 +1569,12 @@ function showContent(sortOrder) {
 						t = userID+'. '+(u == 'u'?t:'<span class="a">'+t+'</span>');
 					} else
 					if (dtp.rooms) {
-						j = (param.type?param.type+'/':''), k = classNames, a = '';
+						j = (param.type?param.type+'/':''), a = '';
 						postAttr += '" data-filter-value="'+(j || '/')+t;
 				//* room hidden:
-						if (t[0] == '.') k.push('gloom');
+						if (t[0] == '.') roomClasses.push('gloom');
 				//* room frozen:
-						if (tab.length > 4) a = tab[4], k.push('frozen');
+						if (tab.length > 4) a = tab[4], roomClasses.push('frozen');
 				//* room announce:
 						if (tab.length > 3 && (isNotEmpty(a) || isNotEmpty(a = tab[3]))) {
 							a = encodeHTMLSpecialChars(
@@ -1534,11 +1585,14 @@ function showContent(sortOrder) {
 							a =	'" title="'+a
 							+	'" data-title="'+a.substr(a.indexOf(': '));
 						}
-						if (a) k.unshift('room-title');
+						if (a) roomClasses.unshift('room-title');
 						t = '<a href="'
 						+	j+t+'/'
-						+	(k.length?'" class="'+k.join(' '):'')+a
-						+ '">'+t+'</a>';
+						+	a+'"'
+						+	getTagAttrIfNotEmpty('class', roomClasses)
+						+ '>'
+						+	t
+						+ '</a>';
 					} else
 				//* image post:
 					if (tab.length > 3 && isNotEmpty(a = tab[3])) {
@@ -1662,13 +1716,109 @@ function showContent(sortOrder) {
 				var	k = (insideOut?' class="'+insideOut+'"':'');
 					for (i in roomDates) lineHTML +=
 						'<div'+k+'>'
-					+		'<p class="'+i+'">'
+					+		'<aside class="'+i+'">'
 					+			roomDates[i]
-					+		'</p>'
+					+		'</aside>'
 					+	'</div>';
 				}
+			//* left & right wrap:
 				i = 2;
 				while (i--) if (isNotEmpty(t = tab[i])) {
+				var	asideAttr = '';
+					if (modEnabled) {
+						postID = threadNum+'-'+postNum+'-'+i;
+					}
+					if (
+						dtp.threads
+					//||	dtp.found	//* <- TODO later
+					||	(dtp.users && i > 0)
+					) {
+					var	m = ''
+					,	j = param.archives || rootPath+'archive/'
+					,	k = param.room || room
+					,	a = (
+							userNameHidden
+							? ''
+							: encodeURIComponent(decodeHTMLSpecialChars(userName))
+						)
+					,	b = (
+							dtp.users
+							? userID
+							: postID
+						)
+					,	c = (
+							dtp.users
+							? userID+'_'+threadNum+'_3'
+							: postID.replace(regNaNa, '_')
+						)
+					,	a = {
+							arch_room: (
+								i > 0 && a.length > 0 && j && k && (!dtp.users || threadNum)
+								? (
+									j+k+'/'
+								+	'?name='
+								+	a
+								) : ''
+							)
+						,	arch_all: (
+								i > 0 && a.length > 0 && j && (!dtp.users || threadNum)
+								? (
+									j
+								+	'?name='
+								+	a
+								) : ''
+							)
+						,	report: (
+								modEnabled && dtp.threads
+								? (
+									'javascript:openReportForm(\''
+								+		b
+								+	'\')'
+								) : ''
+							)
+						,	user: (
+								modEnabled && dtp.users
+								? (
+									'javascript:openReportForm(\''
+								+		b
+								+	'\')'
+								) : ''
+							)
+						,	mod: (
+								modEnabled && bnw.menu
+								? (
+									(postClickMenu = 1)
+								,	(asideAttr += ' id="m_'+(
+										c
+									)+'"')
+								,	(asideAttr += ' data-post="'+encodeHTMLSpecialChars(
+										editPostData
+									)+'"')
+								,	'javascript:menuOpen(\''
+								+		c
+								+	'\')" class="warn-mark" id="b_'
+								+		c
+								) : ''
+							)
+						}
+						;
+						for (k in a) if (j = a[k]) {
+							m +=	'<a href="'+j+'">'
+							+		la.post_menu[k]
+							+	'</a>';
+						}
+						if (m) {
+							postHoverMenu = 1;
+							t =	'<div class="menu-wrap">'
+							+		getDropdownMenuHTML(
+										'<div class="stub">'
+									+		t
+									+	'</div>'
+									, m, 'div')
+							+		'&nbsp;'
+							+	'</div>';
+						}
+					}
 					if (dtp.threads) {
 						j = '';
 						if (b = param[k = reportOnPostTypes[i]]) {
@@ -1683,34 +1833,25 @@ function showContent(sortOrder) {
 							}
 							param[k] = '';
 						}
-						if (j) t +=
+						if (j) t =
 							'<span class="date-out '+'rl'[i]+'">'
 						+		j
-						+	'</span>';
+						+	'</span>'
+						+	t;
 					}
-				var	m = (i > 0 ? ' class="'+(dtp.reflinks?'ref':'r')+'"' : '');
-					if (modEnabled) {
-					var	postID = threadNum+'-'+postNum+'-'+i;
-						if (bnw.menu && (i > 0 || !dtp.users)) {
-							postMenu = 1;
-							m += ' id="m_'+(
-								dtp.users
-								? userID+'_'+threadNum+'_3'
-								: postID.replace(regNaNa, '_')
-							)+'"';
-							if (i == 0 && editPostData) m += ' data-post="'+encodeHTMLSpecialChars(
-								editPostData
-							)+'"';
-						} else {
-							m += ' onClick="openReportForm(\''+(dtp.users ? userID : postID)+'\')"';
-						}
+					c = [];
+					if (i > 0) {
+						c.push(dtp.reflinks ? 'ref' : 'r');
 					}
 					if (b = param[hintOnPostTypes[i]]) {
-						m += ' title="'+b+'"';
+						asideAttr += ' title="'+b+'"';
 					}
-					tab[i] = '<p'+m+'>'
+					tab[i] = '<aside'
+					+		getTagAttrIfNotEmpty('class', c)
+					+		asideAttr
+					+	'>'
 					+		t
-					+	'</p>';
+					+	'</aside>';
 				}
 				lineHTML += tab.slice(0,3).filter(isNotEmpty).join('');
 			}
@@ -1725,9 +1866,10 @@ function showContent(sortOrder) {
 				if (alter) alt = !alt;
 				lineHTML =
 					'<div class="post'
-				+		(dtp.found || dtp.threads?' p':'')
-				+		(dtp.users?' al p':'')
-				+		(postMenu?' menu':'')
+				+		(dtp.found || dtp.threads || dtp.users?' pad':'')
+				+		(dtp.users?' al':'')
+				+		(postHoverMenu?' hover-menu':'')
+				+		(postClickMenu?' click-menu':'')
 				+		(modEnabled?' '+userClass[isNaN(u)?u:0]:'')
 				+		(alt?' alt':'')
 				+		(imgRes?' res':'')
@@ -1932,7 +2074,7 @@ var	flagVarNames = ['flag', 'flags']
 		if (threadsHTML.length) {
 		var	e = cre('div', p, e);
 			if (sectionCount) {
-				e.className = 'multi-thread section';
+				e.className = 'threads combined';
 				e.threadsHTML = e.innerHTML = threadsHTML.map(
 					function(v) {return '<div class="thread">'+v+'</div>';}
 				).join('');
@@ -2043,8 +2185,8 @@ var	flagVarNames = ['flag', 'flags']
 				for (i in o) o[i] = o[i].join(n);
 				if (j = o.marks) o[dtp.found?'right':'left'] += n+j;
 				if (j = o.right) o.right = '<span class="r">'+j+'</span>';
-				b = cre('div', p, e);
-				b.className = 'thread task';
+				b = cre('div', document.body, getParentBeforeTagName(e, 'body'));
+				b.className = 'task';
 				b.innerHTML =
 					'<p class="hint">'
 				+		centerButtons
@@ -2107,7 +2249,7 @@ var	flagVarNames = ['flag', 'flags']
 					e.threadsSortIndexKeys = aik;
 				}
 				for (i = 0, j = h.length; i < j; i++) if (h[i]) h[i] += afterThreadsBar;
-				e.className = 'multi-thread';
+				e.className = 'threads';
 				e.threadsHTML = h;
 		//* show open threads on page load only if option set:
 				if (flag.a) e.innerHTML = h[0];
@@ -2127,7 +2269,7 @@ var	flagVarNames = ['flag', 'flags']
 			}
 			for (i in (a = gn('select', e))) if (a[i].onchange) a[i].onchange();
 		} else del(e);
-		
+
 		if (dtp.options) {
 		var	a = gn('textarea')
 		,	i = a.length
@@ -2159,9 +2301,9 @@ var	flagVarNames = ['flag', 'flags']
 		}
 
 		if ((e = id('total-counts')) && count.o.length) {
-		var	a = '<p class="a '
+		var	a = '<aside class="a '
 		,	b = '<div'+(insideOut?' class="'+insideOut+'"':'')+'>'+a
-		,	c = '</p>'
+		,	c = '</aside>'
 		,	d = c+'</div>'
 		,	j = param.separator || ','
 			;

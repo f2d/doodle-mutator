@@ -2,7 +2,7 @@
 
 //* Constants only for internal use: ------------------------------------------
 
-define(HTML_VERSION, '2017-10-27 23:23');	//* <- change this to autoupdate old browser-cached pages
+define(HTML_VERSION, '2017-11-13 03:00');	//* <- change this to autoupdate old browser-cached pages
 define(HTACCESS_VERSION, '2017-10-27 23:23');	//* <- change this + open index as admin to autoupdate old .htaccess
 
 //* Function argument flags: --------------------------------------------------
@@ -15,7 +15,11 @@ define(F_NATSORT, 8);
 //* ---------------------------------------------------------------------------
 
 function exit_if_not_mod($t = 0, $change = 0) {
-	$t = gmdate('r', $t ? max(data_global_announce('last'), $t) : T0);
+	$t = gmdate('r',
+		$t
+		? max(intval($t), data_global_announce('last'))
+		: T0
+	);
 	$q = 'W/"'.md5(
 		'Refresh any page cached before '.HTML_VERSION
 	.NL.	'Or if user key, options or date-related decoration changed: '.ME_VAL
@@ -60,9 +64,9 @@ function rewrite_htaccess($write_to_file = 1) {
 		$new = $new_mark.' -- Do not touch these marks. Only delete them along with the whole block.
 <IfModule rewrite_module>
 	RewriteEngine On
-	RewriteBase '.ROOTPRFX.'
+	RewriteBase '.ROOTPRFX.($dd?'
 
-# hide data files from browsing:'.($dd?'
+# hide data files from browsing:
 	RewriteRule ^'.$dd.' . [L,R]':'').'
 
 # expand simple image path:
@@ -165,7 +169,7 @@ normalize:
 
 function get_const($name) {return defined($s = mb_strtoupper($name)) ? constant($s) : '';}
 function abbr($a, $sep = '_') {foreach ((is_array($a) ? $a : mb_split_filter($a, $sep)) as $word) $r .= mb_substr($word,0,1); return $r;}
-function mb_escape_regex($s, $delim = '/') {return preg_replace("~[.:?*^$\\\\|\\$delim\\[\\](){}-]~u", '\\\\$0', $s);}
+function mb_escape_regex($s, $delim = '/', $extend = '') {return preg_replace("~[\\\\|\\$delim$extend\\[\\](){}^$.:?*+-]~u", '\\\\$0', $s);}
 function mb_normalize_slash($s) {return mb_str_replace('\\', '/', $s);}
 function mb_sanitize_filename($s) {return strtr($s, array('"' => "'", ':' => '_', '?' => '_', '*' => '_', '<' => '_', '>' => '_'));}
 function mb_str_split($s) {return preg_split('//u', $s);}

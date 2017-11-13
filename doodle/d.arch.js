@@ -38,7 +38,7 @@ function gc(n,p) {try {return TOS.slice.call((p || document).getElementsByClassN
 function gn(n,p) {try {return TOS.slice.call((p || document).getElementsByTagName(n) || []);} catch(e) {return [];}}
 function id(i) {return document.getElementById(i);}
 function fit() {v.content = 'width='+(d.maxWidth = w[d.maxWidth != w[1]?1:0]).replace(regNaN,'');}
-function meta() {toggleClass(document.body, 'hide-p');}
+function meta() {toggleClass(document.body, 'hide-aside');}
 function getClassReg(c) {return new RegExp('(^|\\s)('+c+')($|\\s)', 'i');}
 function toggleClass(e,c,keep) {
 var	k = 'className'
@@ -233,12 +233,13 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 		}
 		k = 2;
 		while (k--) post =
-			'<p'+(k?' class="r"':'')+'>'
+			'<aside'+(k?' class="r"':'')+'>'
 		+		tab[k]
-		+	'</p>'+post;
+		+	'</aside>'+post;
 
 		threadHTML += '<div class="post'
-		+	(num?' p'+(res?' res':''):'')
+		+	(num?' p':'')
+		+	(res?' res':'')
 		+	alt
 		+	'">'
 		+		post
@@ -296,7 +297,7 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 		while (i--) {
 			e = cre('div', e = a[i], e.firstChild);
 			e.parentNode.id = 'task'+(orz(i) || '');
-			e.className = 'task arr';
+			e.className = 'task next-prev';
 			e.innerHTML = h;
 		}
 	//* posts content:
