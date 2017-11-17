@@ -642,6 +642,23 @@ function format_filesize($b = 0, $frac = 2) {
 	return "$b $m[0]";
 }
 
+function format_matched_link($a) {
+	if ($m = $a['a'] ?: $a['img']) {
+		$url = $text = $m;
+		if ($a['img']) {
+			$text = '<img src="'.$url.'" alt="'.$text.'" class="'
+			.(
+				($m = ($a['align'] ?: '')[0])
+			&&	($m == 'l' || $m == 'r')
+				? $m
+				: 'center'
+			).'">';
+		}
+		return '<a href="'.$url.'" rel="nofollow">'.$text.'</a>';
+	}
+	return $a[0];
+}
+
 function optimize_pic($filepath) {
 	if (
 		function_exists('exec')
@@ -856,6 +873,24 @@ function get_template_welcome($a) {
 	.	get_template_welcome_interleave('next', $a['tail'])
 	).'</table>'
 	.(($i = $a['footer']) ? NL."<p>$i</p>" : '');
+}
+
+function get_template_profile_text($t) {
+	$p = strtolower($_SERVER['REQUEST_SCHEME'] ?: 'http');
+	return mb_str_replace(RELATIVE_LINK_PREFIX, "$p://$_SERVER[SERVER_NAME]/", $t);
+}
+
+function get_template_profile_html($t) {
+	$p = 'https?';	//* <- protocols allowed in links
+	$s = '"\s<>';	//* <- characters not allowed in links
+	$pat = "~
+		(?P<a>(?:$p)://[^$s/]/*[^$s]*?)(?=[,.]*(?:[$s]|$))
+	|	\[\s*(?P<img>(?:$p)://[^$s/][^$s]*?)(?:\s+(?P<align>left|right|center)|)?\s*\]
+	~iux";
+	$t = get_template_profile_text($t);
+	$t = preg_replace_callback($pat, 'format_matched_link', $t);
+	$t = preg_replace('~(<br>)+~u', '$0'.NL, $t);
+	return $t;
 }
 
 function get_template_form($t) {

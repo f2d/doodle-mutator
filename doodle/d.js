@@ -1773,7 +1773,7 @@ function showContent(sortOrder) {
 								? (
 									'javascript:openReportForm(\''
 								+		b
-								+	'\')'
+								+	'\')" class="warn-mark'
 								) : ''
 							)
 						,	user: (

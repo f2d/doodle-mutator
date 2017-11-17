@@ -87,6 +87,7 @@ define(PAT_REPORT, '~^(?P<thread>\d+)\D+(?P<post>\d+)\D+(?P<side>\d+)$~');
 define(PAT_CONTENT, '~^(?P<before>.*?<pre>)(?P<content>.*?\S)(?P<after>\s*</pre>.*)$~uis');
 define(PAT_REGEX_FORMAT, '~^/.+/[imsu]*$~u');
 define(PAT_EMAIL_FORMAT, "^.*?([^$s]+@[^$s.]+\\.[^$s]+).*?$");
+define(RELATIVE_LINK_PREFIX, 'http://*/');
 
 //* Start buffering to clean up included output, like BOMs: *------------------
 
@@ -614,47 +615,8 @@ if ($qd_user) {
 			$r['email'] = "<p>$tmp_user_email: $t[addr]</p>";
 		}
 		if ($t = $a['about'] ?: '') {
-			$p = 'https?';	//* <- protocols allowed in links
-			$s = '"\s<>';	//* <- characters not allowed in links
-			$s_name = "//$_SERVER[SERVER_NAME]";
-			$protocol = strtolower($_SERVER['REQUEST_SCHEME'] ?: 'http');
-			$internal = '//\\*/+';
-			$pat_int = "~^$internal~u";
-			$pat = "~
-				(?P<a>(?:$internal|(?:$p)://[^$s/]/*)[^$s]*?)(?=[,.]*(?:[$s]|$))
-			|	\[\s*(?P<img>(?:$p)://[^$s/][^$s]*?)(?:\s+(?P<align>left|right|center)|)?\s*\]
-			~iux";
-
-			function fix_internal_link_and_text($url) {
-				global $pat_int, $s_name, $protocol;
-				$i = preg_replace($pat_int, '/', $url);
-				return (
-					($i != $url)
-					? array($i, "$protocol:$s_name$i")
-					: array($url, $url)
-				);
-			}
-
-			function format_profile_links($a) {
-				if ($m = $a['a'] ?: $a['img']) {
-					list($url, $text) = fix_internal_link_and_text($m);
-					if ($a['img']) {
-						$text = '<img src="'.$url.'" alt="'.$text.'" class="'
-						.(
-							($m = ($a['align'] ?: '')[0])
-						&&	($m == 'l' || $m == 'r')
-							? $m
-							: 'center'
-						).'">';
-					}
-					return '<a href="'.$url.'" rel="nofollow">'.$text.'</a>';
-				}
-				return $a[0];
-			}
-
-			$t = preg_replace_callback($pat, 'format_profile_links', $t);
-			$t = preg_replace('~(<br>)+~u', '$0'.NL, "$tmp_user_about:<br><br>$t");
-			$r['about'] = '<p>'.indent($t).'</p>';
+			$t = get_template_profile_html($t);
+			$r['about'] = '<p>'.indent("$tmp_user_about:<br><br>$t").'</p>';
 		}
 		if ($r) {
 			array_unshift($r, "<p>$tmp_user_name: $name</p>");
@@ -840,7 +802,7 @@ NL.$tmp_options_name.$t.(
 .$tmp_options_self_intro_hint.'" title="'
 .$tmp_options_self_intro_hint.$b
 .(
-	$u_profile['about'] ?: ''
+	get_template_profile_text($u_profile['about']) ?: ''
 ).'</textarea>	';
 
 //* site view options ---------------------------------------------------------
@@ -1695,7 +1657,7 @@ if ($u_key) {
 					$t = nl2br($t, false);				//* <- prepare HTML line breaks for display
 					$t = preg_replace('~\v+~u', '', $t);		//* <- collapse into one line for simpler storage
 					$t = preg_replace('~\s+~u', ' ', $t);		//* <- normalize any other whitespace, same for display
-					$t = preg_replace("~\bhttps?://+$_SERVER[SERVER_NAME](/+\.+)*/*~u", '//*/', $t); //* <- internal links
+					$t = preg_replace("~\bhttps?://+$_SERVER[SERVER_NAME](/+\.+)*/*~u", RELATIVE_LINK_PREFIX, $t);
 					if ($t = trim($t)) {
 						$new['about'] = $t;
 					}
