@@ -88,6 +88,7 @@ define(PAT_CONTENT, '~^(?P<before>.*?<pre>)(?P<content>.*?\S)(?P<after>\s*</pre>
 define(PAT_REGEX_FORMAT, '~^/.+/[imsu]*$~u');
 define(PAT_EMAIL_FORMAT, "^.*?([^$s]+@[^$s.]+\\.[^$s]+).*?$");
 define(RELATIVE_LINK_PREFIX, 'http://*/');
+define(ARCH_TERM_NAME, 'fullname');
 
 //* Start buffering to clean up included output, like BOMs: *------------------
 
@@ -215,7 +216,11 @@ if ($a = mb_split_filter($p)) {
 
 $qfix = ROOTPRFX.encode_URL_parts($qpath).($query ? "?$q" : '');
 
-if (!POST && $qfix !== $_SERVER['REQUEST_URI'] && !$query[LK_MOD_ACT]) exit_redirect($qfix);
+if (
+	!POST
+&&	!$query[LK_MOD_ACT]
+&&	!is_url_equivalent($qfix, $_SERVER['REQUEST_URI'])
+) exit_redirect($qfix);
 
 time_check_point('done location check');
 
@@ -639,7 +644,12 @@ if ($qd_user) {
 if ($qd_arch) {
 	require_once(NAMEPRFX.'.arch.php');
 	$q = data_archive_get_search_url($search = data_archive_get_search_terms($query));
-	if (strlen($query_in_url) && $q !== $query_in_url) exit_redirect(ROOTPRFX.encode_URL_parts($qpath)."?$q");
+	if (
+		strlen($query_in_url)
+	&&	!is_url_equivalent($q, $query_in_url)
+	) {
+		exit_redirect(ROOTPRFX.encode_URL_parts($qpath)."?$q");
+	}
 
 //* archive threads list ------------------------------------------------------
 
@@ -728,9 +738,10 @@ $n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
 <p class="hint" id="research">'.indent($tmp_archive_found.$research).'</p>';
 			if ($found = data_archive_find_by($search)) {
 				$page['content'] = "
+arch_term_name = ".ARCH_TERM_NAME."
 archives = $arch_list_href
-profiles = ".ROOTPRFX.DIR_USER.'
-page_ext = '.PAGE_EXT.get_flag_vars(
+profiles = ".ROOTPRFX.DIR_USER."
+page_ext = ".PAGE_EXT.get_flag_vars(
 					array(
 						'flags' => array(
 							'ac', array(
@@ -947,7 +958,6 @@ sep_select = '.$sp.'
 
 //* report form ---------------------------------------------------------------
 
-				$icon_ice = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAAAxQTFRFAAAAC1nJfNn/////gu5rjwAAAAF0Uk5TAEDm2GYAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMTZEaa/1AAAARUlEQVR42n3PUQoAIAhEQVfvf+fURdSg+uoNUSbyWMDVpthtOsXboSU6oCQ7gcImpIBbMo801CUF/QxhDhKwR1XD/3O9Dn+AAO+CgfZkAAAAAElFTkSuQmCC">';
 				$page['task'] = get_template_form(
 					array(
 						'method' =>	'post'
@@ -962,7 +972,7 @@ sep_select = '.$sp.'
 					,	'radiogroup' => array(
 							'name' => 'freeze'
 						,	'options' => array(
-								1 => array($icon_ice, $tmp_report_freeze)
+								1 => $tmp_report_freeze
 							,	0 => $tmp_report_hotfix
 							)
 						)
@@ -1041,9 +1051,10 @@ right = $tmp_report_user_hint"
 					)."
 report_to = .?report_post=$t";
 					$t .= "
+arch_term_name = ".ARCH_TERM_NAME."
 archives = $arch_list_href
-profiles = ".ROOTPRFX.DIR_USER.'
-images = '.ROOTPRFX.DIR_PICS;
+profiles = ".ROOTPRFX.DIR_USER."
+images = ".ROOTPRFX.DIR_PICS;
 					$t .= get_flag_vars(
 						array(
 							'flags' => array(
@@ -1224,7 +1235,7 @@ right = $tmp_empty$flags
 					}
 					if (!$u_flag['nop']) {
 						if (!$u_opts['task_timer']) $page['data']['task']['autoupdate'] = TARGET_AUTOUPDATE_INTERVAL;
-						$page['data']['task']['taken'] = T0;
+						if ($t) $page['data']['task']['taken'] = T0;
 					}
 					if ($t) {
 						if ($target['pic']) {

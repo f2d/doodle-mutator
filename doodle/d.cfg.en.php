@@ -41,8 +41,12 @@ $tmp_archive_find_by = array(
 	,	'placeholder'	=> 'Enter used feature here, e.g.: app name, undo, read file, text, etc.'
 	)
 ,	'name' => array(
-		'select'	=> 'author name'
+		'select'	=> 'author name (part)'
 	,	'placeholder'	=> 'Enter part of a post author name here.'
+	)
+,	ARCH_TERM_NAME => array(
+		'select'	=> 'author name (exact)'
+	,	'placeholder'	=> 'Enter full author name here.'
 	)
 );
 $tmp_archive_found = 'Search results for';

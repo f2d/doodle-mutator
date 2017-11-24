@@ -245,6 +245,18 @@ function decode_opt_value($v) {
 	return $v;
 }
 
+function is_url_equivalent($a, $b) {
+	$funcs = array('', 'URLdecode', 'rawURLdecode');
+	foreach ($funcs as $f)
+	foreach ($funcs as $g) {
+		if (
+			($f ? $f($a) : $a)
+		===	($g ? $g($b) : $b)
+		) return true;
+	}
+	return false;
+}
+
 function is_url_external($url) {
 	if ($url && ($s = $_SERVER['SERVER_NAME'])) {
 		$i = (strpos($url, '://'  ) ?: 0)+3;
@@ -259,6 +271,7 @@ function is_desc_arg($k) {return is_prefix($k, ARG_DESC);}
 function is_draw_arg($k) {return is_prefix($k, ARG_DRAW);}
 function is_opt_arg($k) {return is_prefix($k, OPT_PRFX);}
 function is_tag_attr($t) {return mb_strpos($t, '<') === mb_strpos($t, '>');}	//* <- if only both === false
+function is_not_empty($var) {return !empty($var);}
 function is_not_dot($path) {return !!trim($path, './\\');}
 function is_not_hidden($room) {
 	global $u_flag;
@@ -956,7 +969,11 @@ function get_template_form($t) {
 		$checked = ' checked';
 		$n = ' name="'.($n ?: 'radio').'"';
 		foreach ($o as $k => $v) {
-			$v = (array)$v;
+			$v = array(
+				'<span>'
+			.		indent(implode(NL, (array)$v))
+			.	'</span>'
+			);
 		//	foreach ($v as &$t) $t = "<span>$t</span>";
 			array_unshift($v, '<input type="radio"'.$n.' value="'.$k.'"'.$checked.'>');
 			array_push($v, '&mdash;');

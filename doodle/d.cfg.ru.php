@@ -48,9 +48,14 @@ $tmp_archive_find_by = array(
 	,	'placeholder'	=> 'Введите инструмент, напр.: имя рисовалки, undo, read file, text, и т.д.'
 	)
 ,	'name' => array(
-		'select'	=> 'имя автора'
-	,	'found by'	=> 'имени автора'
+		'select'	=> 'часть имени автора'
+	,	'found by'	=> 'части имени автора'
 	,	'placeholder'	=> 'Введите часть имени автора постов.'
+	)
+,	ARCH_TERM_NAME => array(
+		'select'	=> 'полное имя автора'
+	,	'found by'	=> 'полному имени автора'
+	,	'placeholder'	=> 'Введите полное имя автора постов.'
 	)
 );
 $tmp_archive_found = 'Результаты поиска по';

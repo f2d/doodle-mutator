@@ -403,7 +403,7 @@ var	count = {checked: 0, text: 0, req: 0}
 				if ((i = ['announce', 'freeze'].indexOf(v.split(' ').slice(-1)[0])) >= 0) {
 					e.value = (
 						(v = id(v) || id((v.indexOf('room') == 0?'room_':'') + ['anno', 'stop'][i]))
-						? v.textContent
+						? v.innerHTML
 							.replace(regTrim, '')
 							.replace(regSpace, ' ')
 						: (lang == 'ru' ? 'Текст сообщения тут.' : 'Announce text here.')

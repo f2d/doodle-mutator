@@ -308,7 +308,7 @@ function data_archive_get_search_terms($query) {
 	global $tmp_archive_find_by;
 	$terms = array();
 	if ($query && is_array($query)) {
-		foreach ($tmp_archive_find_by as $k => $v) if (
+		foreach ($tmp_archive_find_by as $k => $v) if (	//* <- fixed order to canonically sort query arguments
 			array_key_exists($k, $query)
 		&&	strlen($q = $query[$k])
 		&&	strlen($q = trim_post(fix_encoding($q), FIND_MAX_LENGTH))
@@ -320,7 +320,7 @@ function data_archive_get_search_terms($query) {
 }
 
 function data_archive_get_search_ranges($where, $what = '') {
-	$where = array_filter(is_array($where) ? $where : array($where => $what), 'strlen');
+	$where = array_filter(is_array($where) ? $where : array($where => $what), 'is_not_empty');
 	$signs = array('<','>','-');
 	$before = '^(?P<before>\D*?)(?P<minus>-)?';
 	$pat_oom = '~'.SUBPAT_OOM_LETTERS.'~iu';
@@ -433,7 +433,7 @@ if (TIME_PARTS) time_check_point(count($files)." files in $dr");
 					$found = $t = '';
 
 				//* get values from relevant post field:
-					if ($type == 'name') {
+					if ($type == 'name' || $type == ARCH_TERM_NAME) {
 						$t = $tab[1];		//* <- username
 					} else
 					if ($type == 'post') {
@@ -495,8 +495,13 @@ if (TIME_PARTS) time_check_point(count($files)." files in $dr");
 						$lowhat = ($caseless ? mb_strtolower($what) : $what);
 						foreach ((array)$t as $v) if (strlen($v)) {
 							$v = html_entity_decode($v);
+							if ($caseless) $v = mb_strtolower($v);
 							if ($found = (
-								false !== mb_strpos($caseless ? mb_strtolower($v) : $v, $lowhat)
+								(
+									$type == ARCH_TERM_NAME
+									? $v === $lowhat
+									: false !== mb_strpos($v, $lowhat)
+								)
 							||	($is_regex && @preg_match($what, $v))
 							)) break;
 						}

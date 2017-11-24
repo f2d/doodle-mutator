@@ -127,7 +127,7 @@ if (lang == 'ru') la = {
 ,	send_new_thread: 'Будет создана новая нить.'
 ,	send_anyway: 'Всё равно отправить?'
 ,	canceled: 'Отправка отменена'
-,	comment: 'комментарий'
+,	comment: 'сообщение'
 ,	report: 'Пожаловаться на это задание'
 ,	skip: 'Пропустить'
 ,	skip_hint: 'Пропускать задания из этой нити до её завершения.'
@@ -150,7 +150,7 @@ if (lang == 'ru') la = {
 ,	post_menu: {
 		arch_room: 'Найти в архиве комнаты'
 	,	arch_all: 'Найти во всех архивах'
-	,	report: 'Сообщить или ответить'
+	,	report: 'Сообщить или ответить о проблеме'
 	,	user: 'Все данные пользователя'
 	,	mod: 'Меню модерации'
 	}
@@ -227,7 +227,7 @@ if (lang == 'ru') la = {
 ,	send_new_thread: 'Sending will make a new thread.'
 ,	send_anyway: 'Send anyway?'
 ,	canceled: 'Sending canceled'
-,	comment: 'comment'
+,	comment: 'message'
 ,	report: 'Report a problem with this task'
 ,	skip: 'Skip'
 ,	skip_hint: 'Skip any task from this thread from now on.'
@@ -250,7 +250,7 @@ if (lang == 'ru') la = {
 ,	post_menu: {
 		arch_room: 'Search in room archive'
 	,	arch_all: 'Search in all archives'
-	,	report: 'Add a comment or report'
+	,	report: 'Report or comment a problem'
 	,	user: 'List all data of this user'
 	,	mod: 'Mod menu'
 	}
@@ -326,6 +326,14 @@ function encodeHTMLSpecialChars(t) {
 	.replace(/'/g, '&#39;')
 	.replace(/</g, '&lt;')
 	.replace(/>/g, '&gt;');
+}
+
+function encodeTagAttr(t) {
+	return String(t).replace(/"/g, '&quot;');
+}
+
+function escapeRegex(t) {
+	return t.replace(/[\\|\/\[\](){}^$.:?*+-]/g, '\\$&');
 }
 
 function propNameForIE(n) {
@@ -420,7 +428,7 @@ function getToggleButtonHTML(content, open) {
 function getTagAttrIfNotEmpty(name, values, delim) {
 	if (name) {
 	var	a = (values.filter ? values : [values]).filter(function(v) {return !!v;});
-		if (a.length) return ' '+name+'="'+a.join(delim || ' ')+'"';
+		if (a.length) return ' '+name+'="'+encodeTagAttr(a.join(delim || ' '))+'"';
 	}
 	return '';
 }
@@ -1577,7 +1585,7 @@ function showContent(sortOrder) {
 						if (tab.length > 4) a = tab[4], roomClasses.push('frozen');
 				//* room announce:
 						if (tab.length > 3 && (isNotEmpty(a) || isNotEmpty(a = tab[3]))) {
-							a = encodeHTMLSpecialChars(
+							a = encodeTagAttr(
 								a
 								.replace(regTrim, '')
 								.replace(regSpace, ' ')
@@ -1733,13 +1741,14 @@ function showContent(sortOrder) {
 					//||	dtp.found	//* <- TODO later
 					||	(dtp.users && i > 0)
 					) {
-					var	m = ''
-					,	j = param.archives || rootPath+'archive/'
+					var	j = param.archives || rootPath+'archive/'
 					,	k = param.room || room
+					,	m = '?'+(param.arch_term_name || 'name')+'='
 					,	a = (
 							userNameHidden
 							? ''
 							: encodeURIComponent(decodeHTMLSpecialChars(userName))
+						//	: encodeURIComponent('/^'+escapeRegex(decodeHTMLSpecialChars(userName))+'$/iu')
 						)
 					,	b = (
 							dtp.users
@@ -1754,19 +1763,13 @@ function showContent(sortOrder) {
 					,	a = {
 							arch_room: (
 								i > 0 && a.length > 0 && j && k && (!dtp.users || threadNum)
-								? (
-									j+k+'/'
-								+	'?name='
-								+	a
-								) : ''
+								? j+k+'/'+m+a
+								: ''
 							)
 						,	arch_all: (
 								i > 0 && a.length > 0 && j && (!dtp.users || threadNum)
-								? (
-									j
-								+	'?name='
-								+	a
-								) : ''
+								? j+m+a
+								: ''
 							)
 						,	report: (
 								modEnabled && dtp.threads
@@ -1791,7 +1794,7 @@ function showContent(sortOrder) {
 								,	(asideAttr += ' id="m_'+(
 										c
 									)+'"')
-								,	(asideAttr += ' data-post="'+encodeHTMLSpecialChars(
+								,	(asideAttr += ' data-post="'+encodeTagAttr(
 										editPostData
 									)+'"')
 								,	'javascript:menuOpen(\''
@@ -1801,6 +1804,7 @@ function showContent(sortOrder) {
 								) : ''
 							)
 						}
+					,	m = ''
 						;
 						for (k in a) if (j = a[k]) {
 							m +=	'<a href="'+j+'">'

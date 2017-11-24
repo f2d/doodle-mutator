@@ -393,19 +393,15 @@ li {
 	margin: 0;
 	padding: 0;
 }
-.task .radiogroup img {
-	float: left;
-	padding-top: 4px;
-}
 .task .radiogroup input[type="radio"] {
 	float: right;
 	margin-top: 8px;
 }
-.task .radiogroup input[type="radio"]:checked ~ span {
-	background-color: #777;
-}
-.task .radiogroup input[type="radio"]:not(:checked) ~ img {
-	visibility: hidden;
+.task .radiogroup input[type="radio"][name="freeze"][value="1"]:checked ~ span {
+	padding-left: 18px;
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAAAxQTFRFAAAAC1nJfNn/////gu5rjwAAAAF0Uk5TAEDm2GYAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMTZEaa/1AAAARUlEQVR42n3PUQoAIAhEQVfvf+fURdSg+uoNUSbyWMDVpthtOsXboSU6oCQ7gcImpIBbMo801CUF/QxhDhKwR1XD/3O9Dn+AAO+CgfZkAAAAAElFTkSuQmCC");
+	background-repeat: no-repeat;
+	background-position: left;
 }
 .task label.r {
 	margin-left: 22px;
@@ -708,6 +704,14 @@ label {
 }
 .post.hover-menu aside .stub {
 	min-width: 165px;
+}
+.post.hover-menu a.warn-mark {
+	padding-left: 2px;
+	padding-right: 28px;
+}
+.post.hover-menu .r a.warn-mark {
+	padding-left: 28px;
+	padding-right: 2px;
 }
 .post.pad aside .report {
 	display: block;
