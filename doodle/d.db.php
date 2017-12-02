@@ -69,7 +69,7 @@ define(DATA_PAT_TRD_MOD, '~^
 		(?P<ext>'.DATA_RE_LE.')
 	)
 	(?P<inactive>
-		(?:\.z
+		(?:\.
 			(?:
 				(?P<stopped>s)top
 			|	(?P<deleted>d)el

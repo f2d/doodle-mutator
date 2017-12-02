@@ -155,6 +155,7 @@ if (!POST) {
 
 $query = array();
 $qpath = array();
+$q = '';
 
 if (false !== GET_Q) {
 	if ($q = $query_in_url = ltrim(substr($p, GET_Q), '?')) {
@@ -214,7 +215,7 @@ if ($a = mb_split_filter($p)) {
 	}
 }
 
-$qfix = ROOTPRFX.encode_URL_parts($qpath).($query ? "?$q" : '');
+$qfix = ROOTPRFX.encode_URL_parts($qpath).($q ? "?$q" : '');
 
 if (
 	!POST
@@ -648,7 +649,7 @@ if ($qd_arch) {
 		strlen($query_in_url)
 	&&	!is_url_equivalent($q, $query_in_url)
 	) {
-		exit_redirect(ROOTPRFX.encode_URL_parts($qpath)."?$q");
+		exit_redirect(ROOTPRFX.encode_URL_parts($qpath).($q ? "?$q" : ''));
 	}
 
 //* archive threads list ------------------------------------------------------
