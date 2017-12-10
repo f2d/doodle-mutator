@@ -1369,7 +1369,7 @@ function showContent(sortOrder) {
 						tab[0] = j.join(sep);
 					}
 					if (threadNum = (tab.length > 2?1:0)) {
-						if (tab[2].indexOf('[') >= 0) {
+						if (tab[2].indexOf(', about: [') >= 0) {
 							userLink = (param.profiles || '')+userID;
 						}
 					}

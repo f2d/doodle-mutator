@@ -11,6 +11,7 @@ define(DATA_COUNT_EXT, '.count');
 define(DATA_LOCK_EXT, '.lock');
 define(DATA_LOG_EXT, '.log');
 define(DATA_STATIC_EXT, '.txt');
+define(DATA_HIDDEN_EXT, '_hidden');
 
 define(DATA_SUB_ACT, 'actions/');
 define(DATA_SUB_REP, 'reports/');
@@ -566,17 +567,18 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 			foreach (array(
 				DATA_U_FLAG => array(
 					'func' => 'data_get_user_flags'
-				,	'before' => ': '
 				)
 			,	DATA_U_ABOUT => array(
 					'func' => 'data_get_user_profile'
-				,	'before' => ' ['
-				,	'after' => ']'
 				,	'exclude' => 'last modified'
 				)
 			) as $e => $a) {
 				foreach (get_dir_contents(DATA_DIR_USER.$e) as $f) if (
-					(get_file_ext($f) == $e)
+					($fe = get_file_ext($f))
+				&&	(
+						$fe === $e
+					||	$fe === $e.DATA_HIDDEN_EXT
+					)
 				&&	($i = intval(get_file_name($f)))
 				&&	($f = $a['func'])
 				&&	($f = $f($i))
@@ -587,7 +589,7 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 						: $f
 					)))
 				) {
-					$t = preg_replace("~^$i	[^	]+~mu", "$0$a[before]$f$a[after]", $t);
+					$t = preg_replace("~^$i	[^	]+~mu", "$0, $fe: [$f]", $t);
 				}
 			}
 			$t = preg_replace(
@@ -952,7 +954,13 @@ function data_get_user_info($u_num) {
 	,	DATA_U_TASK	=> 'Tasks'
 	,	DATA_U_IP	=> 'IPs'
 	) as $e => $v) if (
-		is_file($f = "$d$e/$u_num.$e")
+		(
+			is_file($f = "$d$e/$u_num.$e")
+		||	(
+				is_file($f .= DATA_HIDDEN_EXT)
+			&&	($v .= ' (hidden)')
+			)
+		)
 	&&	($f = trim_bom(file_get_contents($f)))
 	) {
 		$r[$v] = preg_replace_callback('~^(\d{10,})\D~m', 'data_prepend_line_time', $f);
@@ -969,13 +977,12 @@ function data_get_user_profile($u_num, $array = true) {
 
 	if (!$array) return is_file($f);
 
-	$sep = '	';
-	$r = array();
-
 	data_lock($lk = LK_USER.$u_num, false);
-	$a = get_file_lines($f);
+	$a = get_file_lines(is_file($f) ? $f : $f.DATA_HIDDEN_EXT);
 	data_unlock($lk);
 
+	$sep = '	';
+	$r = array();
 	foreach ($a as $line) {
 		$tab = mb_split_filter($line, $sep);
 		$k = array_shift($tab);
@@ -993,14 +1000,8 @@ function data_get_user_profile($u_num, $array = true) {
 
 function data_save_user_profile($a, $write = true) {
 	global $u_num;
-	$t = T0.'+'.M0;
-	$h = DIR_USER;
-	$d = DATA_DIR_USER;
-	$e = DATA_U_ABOUT;
-	$f = "$d$e/$u_num.$e";
-
 	if (is_array($m = $a['email'] ?? '')) $a['email'] = implode('	', $m);
-
+	$t = T0.'+'.M0;
 	$new = (
 		$a
 		? BOM."
@@ -1011,19 +1012,38 @@ about:	$a[about]
 		: ''
 	);
 	if ($write) {
-		if ($old = (
-			is_file($f)
-			? trim_bom(file_get_contents($f))
-			: ''
-		)) {
-			$old = preg_replace('~(
+		$d = DATA_DIR_USER;
+		$e = DATA_U_ABOUT;
+		$v = "$d$e/$u_num.$e";
+		$h = $v.DATA_HIDDEN_EXT;
+		$about_files = array($v, $h);
+
+		foreach ($about_files as $f) {
+			$old = (
+				is_file($f)
+				? trim_bom(file_get_contents($f))
+				: ''
+			);
+			if ($old) {
+				$old = preg_replace('~(
 last modified:	)\V*~u', '$1'.$t, $old);
+				break;
+			}
 		}
 		if ($old !== $new) {
+
 			data_lock($lk = LK_USER.$u_num);
-			if ($new) file_put_mkdir($f, $new);
-			else if ($old) unlink($f);
+			foreach ($about_files as $f) if (is_file($f)) unlink($f);
+			if ($new) {
+				$f = (
+					($a['about'] || ($m && $m['show']))
+					? $v
+					: $h
+				);
+				file_put_mkdir($f, $new);
+			}
 			data_unlock($lk);
+
 		}
 	}
 	return $new;
