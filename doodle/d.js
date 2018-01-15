@@ -44,7 +44,7 @@
 ,	dropDownArrow = '&#x25BE;'
 ,	CS = 'checkStatus'
 ,	CM = 'checkMistype'
-,	checking, taskTime = {}, flag = {}, inputHints = {}, param = {}
+,	requestInProgress = {}, taskTime = {}, flag = {}, inputHints = {}, param = {}
 ,	count = {
 		u: 0
 	,	uLast: ''
@@ -104,6 +104,15 @@ if (lang == 'ru') la = {
 	,	anchor: 'Вечная ссылка на этот пост в результате этого поиска.'
 	,	thread: 'Перейти к той нити, в которой был найден этот пост.'
 	,	name: 'Искать этого автора.'
+	}
+,	arch_dl: {
+		no: 'Ничего не найдено.'
+	,	ready: 'Готово:'
+	,	names: 'Имена авторов:'
+	,	naming: 'Именование файлов внутри:'
+	,	incl: 'Включая файлы:'
+	,	dl: 'Скачать архив тут.'
+	,	see: 'Посмотреть список файлов внутри.'
 	}
 ,	task: {
 		free: {
@@ -205,6 +214,15 @@ if (lang == 'ru') la = {
 	,	thread: 'Go to the thread, where this post is from.'
 	,	name: 'Search this name.'
 	}
+,	arch_dl: {
+		no: 'Nothing found.'
+	,	ready: 'Ready:'
+	,	names: 'Author names:'
+	,	naming: 'File naming inside:'
+	,	incl: 'Including files:'
+	,	dl: 'Download archive here.'
+	,	see: 'See list of files inside.'
+	}
 ,	task: {
 		free: {
 			draw: 'Draw anything'
@@ -239,7 +257,7 @@ if (lang == 'ru') la = {
 	}
 ,	load: 'Checking... '
 ,	fail: 'Error '
-,	empty: 'Empty data.'
+,	empty: 'No data.'
 ,	hax: '(?)'		//'Unknown data set.'
 ,	time: 'Drawn in'
 ,	using: 'using'
@@ -594,27 +612,8 @@ function getFormattedNumUnits(num, unit) {
 //* Room-specific functions *--------------------------------------------------
 
 function checkMyTask(event, e) {
-var	nothing = (event ? false : void(0));
-	if (checking) return nothing;
-	checking = 1;
-var	d = 'data-id', f = id(CM), s = id(CS);
-	if (f) del(f);
-	if (e && e.tagName) f = getParentByTagName(e, 'form'); else
-	if (s && (f = s.getAttribute(d))) {
-		f = id(f), s.removeAttribute(d);
-		if (!regTagForm.test(f.tagName)) f = gn('form', f)[0];
-	}
-	if (event) {
-		if (event.preventDefault) event.preventDefault();
-		if (f && f.checkValidity && !f.checkValidity()) return checking = 0, nothing;
-	}
-	if (s) {
-	var	btn = getParentByTagName(s, 'a');
-		if (btn) toggleClass(btn, 'ready', -1);
-		s.textContent = la.load+0;
-	}
-var	r = new XMLHttpRequest();
-	r.onreadystatechange = function() {
+
+	function stateChange() {
 		if (r.readyState == 4) {
 		var	ttf = autoUpdateTaskTimer
 		,	tti = taskTime.intervalMax
@@ -666,9 +665,12 @@ var	r = new XMLHttpRequest();
 					,	k = task.indexOf(';')+1
 						;
 						j =	(flag.pixr || (flag.pixr = i.split('/').slice(0, flag.p?-3:-1).join('/')+'/'))
-						+	(flag.p?getPicSubDir(task):'')
-						+	(k?task.replace(/(\.[^.\/;]+);.+$/,'_res$1'):task);
-						if (i != j) e.src = j, e.alt = task, setPicResize(e, k), error = 'reloaded image';
+						+	(flag.p ? getPicSubDir(task) : '')
+						+	(k ? task.replace(/(\.[^.\/;]+);.+$/, '_res$1') : task);
+						if (i != j) {
+							alert(i+'\n'+j+'\n'+task),
+							e.src = j, e.alt = task, setPicResize(e, k), error = 'reloaded image';
+						}
 				//* 3-b) no image on page:
 					} else error = 'needs reload';
 				}
@@ -724,10 +726,35 @@ var	r = new XMLHttpRequest();
 				(btn || s).title = new Date()+'\n\n'+task;
 				if (btn) toggleClass(btn, 'ready', 1);
 			}
-			checking = 0;
+			requestInProgress.checking = 0;
 			if (s && d && ttf && !tti) ttf();
 		} else if (s) s.textContent = la.load+r.readyState;
-	};
+	}
+
+var	nothing = (event ? false : void(0));
+
+	if (requestInProgress.checking) return nothing;
+
+	requestInProgress.checking = 1;
+
+var	d = 'data-id', f = id(CM), s = id(CS);
+	if (f) del(f);
+	if (e && e.tagName) f = getParentByTagName(e, 'form'); else
+	if (s && (f = s.getAttribute(d))) {
+		f = id(f), s.removeAttribute(d);
+		if (!regTagForm.test(f.tagName)) f = gn('form', f)[0];
+	}
+	if (event) {
+		if (event.preventDefault) event.preventDefault();
+		if (f && f.checkValidity && !f.checkValidity()) return requestInProgress.checking = 0, nothing;
+	}
+	if (s) {
+	var	btn = getParentByTagName(s, 'a');
+		if (btn) toggleClass(btn, 'ready', -1);
+		s.textContent = la.load+0;
+	}
+var	r = new XMLHttpRequest();
+	r.onreadystatechange = stateChange;
 	r.open('GET', f
 		? (param.check_task_post || param.check_task_auto || '--')
 		: (param.check_task_keep || param.check_task_manual || '-')
@@ -737,7 +764,7 @@ var	r = new XMLHttpRequest();
 }
 
 function autoUpdateTaskTimer(event) {
-	if (checking) return;
+	if (requestInProgress.checking) return;
 //* all stamps in milliseconds:
 var	t = taskTime.taken
 ,	d = taskTime.deadline
@@ -1090,6 +1117,168 @@ function allowApply(v) {
 			}
 		}
 	}
+}
+
+function enableFirstIfNone() {
+var	e = event
+,	a = arguments
+,	i = a.length
+	;
+	if (e && (e = e.target)) {
+	var	form = getParentByTagName(e, 'form');
+	}
+	while (i-- > 0) if (
+		(e = a[i])
+	&&	(
+			e.tagName
+		||	(e = id(e) || (
+				form
+				? form.elements[e]
+				: null
+			))
+		)
+	&&	e.checked
+	) return;
+	if (e) e.checked = true;
+}
+
+function prepareArchiveDownload(btn) {
+
+	function getFormPartHTML(k, v) {
+		return (k ? (la.arch_dl[k] || k+':') : '')
+		+	'<center>'
+		+	(
+				v.map
+				? '<div class="dl">'
+				+	v.map(encodeHTMLSpecialChars).join('<br>')
+				+ '</div>'
+				: '<b>'
+				+	encodeHTMLSpecialChars(v)
+				+ '</b>'
+			)
+		+	'</center>'
+		;
+	}
+
+	function stateChange() {
+		if (r.readyState == 4) {
+		var	b = getParentBeforeTagName(btn, 'div')
+		,	p = b.parentNode
+		,	b = b.nextElementSibling
+		,	idNo = 'arch-dl-not-found'
+		,	tagName = 'label'
+		,	a = gn(tagName, p)
+		,	i = a.length
+		,	fileName
+		,	j,e,t,c
+			;
+			while (i--) if ((e = a[i]) && e.className) e.removeAttribute('class');
+
+			if (r.status == 200 && (fileName = r.responseText)) {
+				c = 'ok';
+				i = fileName;
+			} else {
+				c = 'mod';
+				i = idNo;
+			}
+			if (e = id(i)) {
+				if (fileName) e.scrollIntoView();
+			//	if (!fileName) p.insertBefore(e, b);
+			} else {
+				if (fileName) {
+					t =	getFormPartHTML('ready', fileName)
+					+	((j = formParts.text) ? j.join('') : '')
+					+	((j = formParts.bool) ? getFormPartHTML('incl', j) : '')
+					+	'<a href="'
+					+		(param.arch_dl_path || '')
+					+		fileName
+					+	'" target="_blank">'
+					+		la.arch_dl.dl
+					+	'</a>'
+					+	'<a href="'
+					+		(param.arch_dl_path || '')
+					+		fileName
+					+		(param.arch_dl_list_ext || '.txt')
+					+	'" target="_blank" class="r">'
+					+		la.arch_dl.see
+					+	'</a>'
+					;
+				} else {
+					t =	'<center>'
+					+		la.arch_dl.no
+					+	'</center>'
+					;
+				}
+				e = cre(tagName, p, b);
+				e.id = i;
+				e.innerHTML = t;
+			}
+			e.className = c;
+			if (fileName && (e = id(idNo))) del(e);
+
+			requestInProgress.archiver = 0;
+			btn.disabled = false;
+		}
+	}
+
+var	form, formData, e = eventStop(0,1,1);
+	if (
+		requestInProgress.archiver
+	||	!(btn || (e && (btn = e.target)))
+	||	!(form = getParentByTagName(btn, 'form'))
+	) return false;
+
+var	a = form.elements
+,	i = a.length
+,	formParts = {bool: [], text: []}
+,	queryParts = []
+,	k,v
+	;
+	while (i--) if (
+		(e = a[i])
+	&&	(k = e.name)
+	) {
+		if (!e.type) v = e.value;
+		else if (e.type == 'checkbox' || e.type == 'radio') v = +e.checked;
+		else if (e.type == 'submit') v = 1;
+		else v = e.value;
+
+		if (v) {
+			queryParts.push(
+				encodeURIComponent(k)+'='+
+				encodeURIComponent(v)
+			);
+			if (e.type != 'submit') {
+				if (v.replace) {
+					v = getFormPartHTML(k, v.split(/[\r\n]+/g));
+					k = 'text';
+				} else {
+					if (e = getParentByTagName(e, 'label')) {
+						v = e.textContent.replace(/[\s.:;,!?=-]+$/, '').replace(regTrim, '');
+					} else v = k;
+					k = 'bool';
+				}
+				formParts[k].push(v);
+			}
+		}
+	}
+	if (queryParts) {
+	var	q = '.?'+queryParts.join('&');
+
+		for (i in formParts) {
+			if (formParts[i][0].sort) {
+				formParts[i].map(function(v) {v.sort();});
+			} else {
+				formParts[i].sort();
+			}
+		}
+
+	var	r = new XMLHttpRequest();
+		r.onreadystatechange = stateChange;
+		r.open('GET', q, true);
+		r.send();
+	}
+	return false;
 }
 
 function selectLink(e,aa,no,r,t) {
@@ -1463,7 +1652,10 @@ function showContent(sortOrder) {
 						t = encodeHTMLSpecialChars(t);	//* <- fix for textarea source and evil usernames
 					}
 					if (dtp.found) {
-						t =	'<a href="?name='+encodeURIComponent(decodeHTMLSpecialChars(t))
+						t =	'<a href="?'
+						+		(param.arch_term_name || 'name')
+						+		'='
+						+		encodeURIComponent(userName)
 						+	'" title="'+la.search_hint.name
 						+	'">'
 						+		t
@@ -2271,6 +2463,7 @@ var	flagVarNames = ['flag', 'flags']
 				e.className = 'thread single-thread'+j;
 				e.threadsHTML = e.innerHTML = threadsHTML.join('');
 			}
+			if (dtp.threads) e.className += ' aside-wider';
 			for (i in (a = gn('select', e))) if (a[i].onchange) a[i].onchange();
 		} else del(e);
 

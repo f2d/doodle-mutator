@@ -52,7 +52,7 @@ $tmp_archive_find_by = array(
 	,	'found by'	=> 'части имени автора'
 	,	'placeholder'	=> 'Введите часть имени автора постов.'
 	)
-,	ARCH_TERM_NAME => array(
+,	ARG_FULL_NAME => array(
 		'select'	=> 'полное имя автора'
 	,	'found by'	=> 'полному имени автора'
 	,	'placeholder'	=> 'Введите полное имя автора постов.'
@@ -60,6 +60,25 @@ $tmp_archive_find_by = array(
 );
 $tmp_archive_found = 'Результаты поиска по';
 $tmp_archive_hint = 'Скрытые комнаты не показаны.';
+$tmp_archiver_button = 'Приготовить архив';
+$tmp_archiver_by_user_id = 'По вашему номеру профиля (отсутствует в архивах)';
+$tmp_archiver_by_user_names = 'По указанным именам авторов (целиком одно на строку)';
+$tmp_archiver_by_user_names_hint = 'Список имён авторов целиком (по одному на строку).';
+$tmp_archiver_from_arch = 'Из архивных нитей';
+$tmp_archiver_from_room = 'Из активных (незавершённых)';
+$tmp_archiver_hidden_room = 'скрытая комната';
+$tmp_archiver_naming = 'Названия файлов в архиве';
+$tmp_archiver_naming_parts = array(
+	'author' => 'автор'
+,	'room' => 'комната'
+,	'thread' => 'нить (только в архиве)'
+,	'date' => 'дата'
+/*,	'width' => 'ширина'
+,	'height' => 'высота'
+,	'bytes' => 'размер в байтах'
+,	'fbytes' => 'размер в К/М/байтах'
+*/,	'i' => 'идентификатор рисунка (добавляется в любом случае). Текст в <угловых скобках> пропускается, если внутри не хватает значения для подстановки.'
+);
 $tmp_archives = 'Архивы';
 $tmp_arch_count = 'нитей';
 $tmp_arch_last = 'последнее';
@@ -139,6 +158,7 @@ $tmp_options_apply = 'Применить';
 $tmp_options_area = array(
 	'user' => 'Ваши личные данные'
 ,	'view' => 'Настройки сайта'
+,	'arch' => 'Скачать архивы рисунков'
 ,	'save' => 'Доступные сохранения'
 );
 $tmp_options_drop = array(

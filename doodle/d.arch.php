@@ -1,12 +1,9 @@
 <?php
 
-define(ARCH_P_BF, '~(?:^|[;,\s]+)');
-define(ARCH_P_AF, '(?=[;,]|$)~ui');
-define(ARCH_PAT_POST_PIC_BYTES, ARCH_P_BF.'(\d+)\s*B'.ARCH_P_AF);
-define(ARCH_PAT_POST_PIC_WDXHD, ARCH_P_BF.'(\d+)\D(\d+)'.ARCH_P_AF);
+define(ARCH_PIC_NOT_FOUND, '<img src="'.ROOTPRFX.PIC_404.'">');
 define(ARCH_PAT_POST_PIC, '~
 	(?P<open><a\s+[^>]+>)?
-	(?P<image><img\s+[^>]+?(?P<w>\s+width="\d+")?(?P<h>\s+height="\d+")?(?:\s+[^>]+?)?>)
+	(?P<image><img\s+[^>]+?(?P<width>\s+width="\d+")?(?P<height>\s+height="\d+")?(?:\s+[^>]+?)?>)
 	(?P<close></a>)?
 	(?P<csv>(?:[;,]\s*[^;,]+)+\s+B)
 ~uix');
@@ -14,6 +11,7 @@ define(ARCH_PAT_POST_PIC, '~
 function data_archive_get_visible_rooms($type = '') {
 	$last = 0;
 	$a = array();
+
 	foreach (get_dir_rooms(DIR_ARCH, '', F_NATSORT | F_HIDE, $type) as $r) if ($mt = data_get_mtime(COUNT_ARCH, $r)) {
 		if ($last < $mt) $last = $mt;
 		$a[$r] = array(
@@ -21,6 +19,7 @@ function data_archive_get_visible_rooms($type = '') {
 		,	'count' => data_get_count(COUNT_ARCH, $r)
 		);
 	}
+
 	return $a ? array(
 		'last' => $last
 	,	'list' => $a
@@ -31,13 +30,15 @@ function data_archive_get_images($room = '') {
 	$a = array();
 	$d = DIR_ARCH;
 	$rooms = ($room ? (array)$room : get_dir_rooms($d));
+
 	foreach ($rooms as $r) if (is_dir($s = "$d$r/")) {
 		foreach (get_dir_contents($s) as $f) if (is_file($path = $s.$f)) {
-			foreach (data_get_thread_images($path) as $i) {
+			foreach (data_get_thread_pics($path) as $i) {
 				if (false === array_search($i, $a)) $a[] = $i;
 			}
 		}
 	}
+
 	return $a;
 }
 
@@ -76,22 +77,36 @@ function data_archive_get_thumb($src, $xMax = 0, $yMax = 0) {
 		$data['h'] = $h;
 		$data['imgdata'] = $res;
 	} else $data['imgdata'] = $orig;
+
 	return $data;
 }
 
 function data_archive_put_thumb($src, $dest, $xMax = 0, $yMax = 0) {
 	if (!is_array($data = data_archive_get_thumb($src, $xMax, $yMax))) return false;
-/*	switch ($data['mime']) {
+/*
+	switch ($data['mime']) {
 		case 'image/jpg': case 'image/jpeg': case 'image/pjpeg':
 					return imageJPEG($data['imgdata'], $dest);
 //		case 'image/gif':	return imageGIF($data['imgdata'], $dest);
 	}
-*/	return imagePNG($data['imgdata'], $dest);
+*/
+	return imagePNG($data['imgdata'], $dest);
+}
+
+function data_archive_get_post_pic_info($img_html, $check_file = 1) {
+	$a = mb_split($b = '>', $img_html);
+
+	$csv = array_pop($a);
+	if ($csv.$b == ARCH_PIC_NOT_FOUND) $csv = array_pop($a);
+
+	$p = get_first_arg($img_html);
+	$a = get_post_pic_info($p, $csv, $check_file);
+
+	return $a;
 }
 
 function data_archive_get_fixed_content_line($line) {
 	global $recheck_img, $line_time_min, $line_time_max;
-	$not_found = '<img src="'.ROOTPRFX.PIC_404.'">';
 	$sep = '	';
 	$tab = mb_split($sep, $line);
 
@@ -114,39 +129,42 @@ function data_archive_get_fixed_content_line($line) {
 			$recheck_img
 		||	!(
 				preg_match(ARCH_PAT_POST_PIC, $p, $match)
-			&&	preg_match(ARCH_PAT_POST_PIC_BYTES, $match['csv'])
-			&&	preg_match(ARCH_PAT_POST_PIC_WDXHD, $match['csv'])
+			&&	($csv = $match['csv'])
+			&&	preg_match(PAT_POST_PIC_CRC32, $csv)
+			&&	preg_match(PAT_POST_PIC_BYTES, $csv)
+			&&	preg_match(PAT_POST_PIC_W_X_H, $csv)
 			)
 		)
 	) {
-		$a = mb_split($b = '>', $p);
-		$csv = array_pop($a);
-		if ($csv.$b == $not_found) $csv = array_pop($a);
-		$full_path = $p = get_pic_subpath(get_first_arg($a[0]));
-		$full_url = get_pic_url($p);
-		if (is_file($p)) {
-			$full_res = getImageSize($full_path);
-			$full_bytes = filesize($full_path);
-			$full_bytes_f = format_filesize($full_bytes);
-			$csv = "$full_res[0]*$full_res[1], $full_bytes_f, $full_bytes B";
-		} else {
-			$csv = implode(', ', mb_split_filter($csv, '[;,]\\s*'));
-		}
+		$a = data_archive_get_post_pic_info($p, $recheck_img ? 2 : 1);
+		$csv = (
+			($full_res = $a['full_res'])
+		?	"$full_res[0]*$full_res[1], $a[full_bytes_f], $a[full_bytes] B, 0x$a[crc32]"
+		:	implode(', ', mb_split_filter($a['csv'], '[;,]\\s*'))
+		);
 		if ($full_res && $full_res[0] > DRAW_PREVIEW_WIDTH) {
-			$resized_path = $p = get_pic_resized_path($full_path);
-			$resized_url = get_pic_url($p);
+			$a['resized_path'] = $p = get_pic_resized_path($a['rel_path']);
+			$a['resized_url'] = get_pic_url($p);
 			if (is_file($p)) {
-				$resized_res = getImageSize($resized_path);
+				$a['resized_res'] = getImageSize($p);
 			}
-			$p = '<a href="'.$full_url.'">'
-			.	'<img src="'.$resized_url.($resized_res ? '" width="'.$resized_res[0].'" height="'.$resized_res[1] : '').'">'
+			$p = '<a href="'.$a['full_url'].'">'
+			.	'<img src="'.$a['resized_url'].(
+					($resized_res = $a['resized_res'])
+					? '" width="'.$resized_res[0].'" height="'.$resized_res[1]
+					: ''
+				).'">'
 			.'</a>';
 		} else {
-			$p = '<img src="'.$full_url.($full_res ? '" width="'.$full_res[0].'" height="'.$full_res[1] : '').'">';
+			$p = '<img src="'.$a['full_url'].(
+				$full_res
+				? '" width="'.$full_res[0].'" height="'.$full_res[1]
+				: ''
+			).'">';
 		}
 		if ($csv) $p .= "; $csv";
-		if ($recheck_img && !is_file($full_path)) {
-			$p = "<!--$p-->$not_found";
+		if ($recheck_img && !is_file($a['rel_path'])) {
+			$p = "<!--$p-->".ARCH_PIC_NOT_FOUND;
 		}
 		$tab[2] = $p;
 	}
@@ -159,6 +177,7 @@ function data_archive_get_page_html($room, $num, $tsv) {
 	global $cfg_langs, $line_time_min, $line_time_max;
 	$line_time_min = $line_time_max = 0;
 	if ($num <= 0) return false;
+
 	$p = $num-1;
 	$n = $num+1;
 	$lines = mb_split_filter(trim(fix_encoding($tsv)), NL);
@@ -166,6 +185,7 @@ function data_archive_get_page_html($room, $num, $tsv) {
 	$lines = array_map('data_archive_get_fixed_content_line', $lines);
 	sort($lines);
 	$tsv = NL.implode(NL, $lines);
+
 	return get_template_page(
 		array(
 			'title' => $room
@@ -189,6 +209,8 @@ function data_archive_full_threads($threads) {
 	&&	$room
 	)) return false;
 
+	data_lock($lk = LK_ARCH.$r, true);
+
 	mkdir_if_none($p = ($d = DIR_ARCH."$room/").DIR_THUMB);
 	$done_count = 0;
 	$gone_count = 0;
@@ -196,6 +218,7 @@ function data_archive_full_threads($threads) {
 	$e = PAGE_EXT;
 	$x = THUMB_EXT;
 	$icon = NAMEPRFX.$x;
+
 	foreach ($threads as $a) {
 		++$i;
 		if (
@@ -222,6 +245,9 @@ function data_archive_full_threads($threads) {
 		if (is_file($f = "$d$i$e") && data_del_thread($f, false, 1)) ++$gone_count;
 		if (is_file($f = "$p$i$x") && unlink($f)) $stop_count = 0; else ++$stop_count;
 	} while (--$i && $stop_count < 3);
+
+	data_unlock($lk);
+
 	return array(
 		'done' => $done_count
 	,	'gone' => $gone_count
@@ -238,6 +264,8 @@ function data_archive_rewrite($check = false) {
 		'<img src="'
 	,	'<a href="'
 	);
+
+	data_lock($lk = LK_ARCH.$r, true);
 	foreach (get_dir_rooms($d, '', F_NATSORT) as $room) {
 		$t = 0;
 		foreach (get_dir_contents($dr = "$d$room", F_NATSORT) as $fn) if (
@@ -273,6 +301,8 @@ function data_archive_rewrite($check = false) {
 		++$a;
 if (TIME_PARTS && $t) time_check_point("done $a: $room, $t threads");
 	}
+	data_unlock($lk);
+
 	return $text_report;
 }
 
@@ -284,6 +314,8 @@ function data_archive_rename_last_pic($old, $new, $n_last_pages = 0) {
 	$j = ';';
 	list($old_name, $old_size) = mb_split($j, $old, 2);
 	list($new_name, $new_size) = mb_split($j, $new, 2);
+
+	data_lock($lk = LK_ARCH.$r, true);
 	if ($i = get_dir_top_file_id($d, $e)) while ($i > 0) {
 		if (
 			is_file($f = "$d$i$e")
@@ -301,12 +333,15 @@ function data_archive_rename_last_pic($old, $new, $n_last_pages = 0) {
 		if ($c > 0 && !(--$c)) break;
 		--$i;
 	}
+	data_unlock($lk);
+
 	return $done;
 }
 
-function data_archive_get_search_terms($query) {
+function data_archive_get_search_terms($query, $caseless = true) {
 	global $tmp_archive_find_by;
 	$terms = array();
+
 	if ($query && is_array($query)) {
 		foreach ($tmp_archive_find_by as $k => $v) if (	//* <- fixed order to canonically sort query arguments
 			array_key_exists($k, $query)
@@ -316,73 +351,24 @@ function data_archive_get_search_terms($query) {
 			$terms[$k] = $q;
 		}
 	}
-	return data_archive_get_search_ranges($terms);
+
+	return get_search_ranges($terms, $caseless);
 }
 
-function data_archive_get_search_ranges($where, $what = '') {
-	$where = array_filter(is_array($where) ? $where : array($where => $what), 'is_not_empty');
-	$signs = array('<','>','-');
-	$before = '^(?P<before>\D*?)(?P<minus>-)?';
-	$pat_oom = '~'.SUBPAT_OOM_LETTERS.'~iu';
-	$patterns = array(
-		'(?P<number>\d+)'
-			=> array('width', 'height')
-	,	'(?P<number>\d+)((?P<float>[,.]\d+)?\s*(?P<oom>'.SUBPAT_OOM_LETTERS.'))?'
-			=> array('bytes')
-	,	'(?P<csv>\d+(:+\d+)*)'
-			=> array('time')
-	);
-	foreach ($patterns as $subpattern => $keys)
-	foreach ($keys as $key) if (strlen($t = $where[$key])) {
-		$sub_ranges = array();
-		$min = false;
-		while (preg_match("~$before$subpattern~iux", $t, $match)) {
-			$t = substr($t, strlen($match[0]));
-			$prefix = $match['before'] ?: '';
-			$minus = $match['minus'] ?: '';
-			if (strlen($minus) && !strlen($prefix) && false !== $min) {$prefix = '-'; $minus = '';}
-			if (strlen($v = $match['csv'])) {
-				$v = get_time_seconds($x = "$minus$v");
-			} else {
-				$v = intval($match['number']);
-				$x = "$minus$v";
-				if (($oom = $match['oom']) && preg_match($pat_oom, $oom, $m)) {
-					$v = (float)"$x$match[float]";
-					$x = "$v$oom";
-					$i = 0;
-					do { $v *= 1024; } while (!$m[++$i] && $i < 255);
-				} else {
-					$v = intval($x);
-				}
-			}
-			$k = '';
-			if (strlen($prefix)) foreach ($signs as $sign) if (false !== mb_strpos($prefix, $sign)) {$k = $sign; break;}
-			if ('-' === $k && false !== $min) {
-				array_pop($sub_ranges);
-				$sub_ranges[] = (
-					$min < $v
-					? array('min' => $min, 'max' => $v, 'min_arg' => $min_arg, 'max_arg' => $x)
-					: array('min' => $v, 'max' => $min, 'min_arg' => $x, 'max_arg' => $min_arg)
-				);
-				$min = false;
-			} else {
-				if ($k) $min = false;
-				else {
-					$k = '=';
-					$min = $v;
-					$min_arg = $x;
-				}
-				$sub_ranges[] = array(
-					'operator' => $k
-				,	'argument' => $x
-				,	'value' => $v
-				);
-			}
-		}
-		if ($sub_ranges) $where[$key] = $sub_ranges;
-		else unset($where[$key]);
+function data_archive_get_search_url($terms) {
+	$q = array();
+
+	if (is_array($terms)) foreach ($terms as $k => $v) {
+		if ($k === '_charset_' && $v === ENC) continue;
+		if (strlen($v = data_archive_get_search_value($v))) $q[] = URLencode($k).'='.URLencode($v);
 	}
-	return $where;
+
+	return implode('&', $q);
+}
+
+function data_archive_get_search_value($v) {
+	if (is_array($v)) return implode(', ', array_map('data_archive_get_search_array_item', $v));
+	return $v;
 }
 
 function data_archive_get_search_array_item($v) {
@@ -392,161 +378,55 @@ function data_archive_get_search_array_item($v) {
 	return "$v[argument]";
 }
 
-function data_archive_get_search_value($v) {
-	if (is_array($v)) return implode(', ', array_map('data_archive_get_search_array_item', $v));
-	return $v;
-}
-
-function data_archive_get_search_url($terms) {
-	$q = array();
-	if (is_array($terms)) foreach ($terms as $k => $v) {
-		if ($k === '_charset_' && $v === ENC) continue;
-		if (strlen($v = data_archive_get_search_value($v))) $q[] = URLencode($k).'='.URLencode($v);
-	}
-	return implode('&', $q);
-}
-
-function data_archive_find_by($terms, $caseless = 1) {
+function data_archive_find_by($terms, $caseless = true, $include_hidden = false) {
 	global $r_type, $room;
-	if (!$terms) return false;
-if (TIME_PARTS) time_check_point('inb4 archive search prep');
+	$results = array();
+	if (!$terms) return $results;
+
+if (TIME_PARTS) time_check_point('inb4 archive pages search prep, terms = '.get_print_or_none($terms));
 	$d = DIR_ARCH;
-	$elen = -strlen(PAGE_EXT);
-	$rooms = (array)($room ?: get_dir_rooms($d, '', F_NATSORT | F_HIDE, $r_type));
+	$e = PAGE_EXT;
+	$elen = -strlen($e);
+	$rooms = (array)($room ?: get_dir_rooms($d, '', F_NATSORT | ($include_hidden ? 0 : F_HIDE), $r_type));
 	$c = count($rooms);
-if (TIME_PARTS) time_check_point("got $c rooms, inb4 archive search iteration".NL);
+if (TIME_PARTS) time_check_point("got $c rooms, inb4 search iteration".NL);
+
 	foreach ($rooms as $r) {
-		$n_found = 0;
 		$files = array();
+
+		data_lock($lk = LK_ARCH.$r);
 		foreach (get_dir_contents($dr = "$d$r", F_NATSORT) as $f) if (
-			substr($f, $elen) == PAGE_EXT
+			substr($f, $elen) === $e
 		&&	is_file($path = "$dr/$f")
 		) $files[$path] = intval($f);
-if (TIME_PARTS) time_check_point(count($files)." files in $dr");
+if (TIME_PARTS) {$n_found = 0; time_check_point(count($files)." files in $dr");}
+
 		foreach ($files as $path => $i) if (
 			preg_match(PAT_CONTENT, file_get_contents($path), $match)
 		) {
-			$n_check = '';
+if (TIME_PARTS) $n_check = '';
 			foreach (mb_split_filter($match['content'], NL) as $line) {
 				$tab = mb_split('	', $line);
-				foreach ($terms as $type => $what) {
-					$found = $t = '';
+				$post = array(
+					'date' => intval($tab[0]) ?: '?'
+				,	'username' => $tab[1] ?: '?'
+				,	'post' => $tab[2] ?: '?'
+				);
+				if (count($tab) > 3) $post['meta'] = $tab[3];	//* <- faster than array_filter on empty values
 
-				//* get values from relevant post field:
-					if ($type == 'name' || $type == ARCH_TERM_NAME) {
-						$t = $tab[1];		//* <- username
-					} else
-					if ($type == 'post') {
-						if (count($tab) > 3) continue 2;
-						$t = $tab[2];		//* <- text-only post content
-						if (false !== mb_strpos($t, '<')) {
-							$t = preg_replace('~<[^>]+>~u', '', mb_str_replace('<br>', NL, $t));
-						}
-					} else
-					if (count($tab) < 4) continue 2; else
-					if ($type == 'file') {
-						$t = mb_split('"', $tab[2]);
-						$t = array_filter($t, 'is_tag_attr');
-						$t = array_map('get_file_name', $t);
-					} else
-					if ($type == 'width' || $type == 'height' || $type == 'bytes') {
-						$t = $tab[2];
-						$pat = ($type == 'bytes' ? ARCH_PAT_POST_PIC_BYTES : ARCH_PAT_POST_PIC_WDXHD);
-						if (preg_match($pat, mb_substr_after($t, '>'), $match)) {
-							$t = intval($match[$type == 'height'?2:1]);
-						} else continue 2;
-					} else
-					if ($type == 'time') {
-						if (preg_match('~^[\d:-]+~i', $tab[3], $match)) {
-							$t = $match[0];
-							if (mb_strrpos($t, '-')) {
-								$t1 = $t0 = false;
-								foreach (mb_split('-', $t) as $n) if (strlen($n)) {
-									if (false === $t0) $t0 = $n;
-									$t1 = $n;
-								}
-								$t = intval(($t1-$t0)/1000);	//* <- msec. from JS
-							} else {
-								$t = get_time_seconds($t);
-							}
-						} else continue 2;
-					} else {
-						$t = $tab[3];		//* <- what was used to draw
-					}
-
-				//* compare:
-					if (is_array($what)) {
-						foreach ($what as $cond) if (
-							array_key_exists($k = 'operator', $cond)
-							? (
-								($cond[$k] == '=' && $t == $cond['value'])
-							||	($cond[$k] == '<' && $t < $cond['value'])
-							||	($cond[$k] == '>' && $t > $cond['value'])
-							)
-							: ($t >= $cond['min'] && $t <= $cond['max'])
-						) {
-							if ($type == 'time') {
-								$found = "drawn in $t sec.";
-							} else $found = "found $t";
-							break;
-						}
-					} else {
-						$is_regex = preg_match(PAT_REGEX_FORMAT, $what);
-						$lowhat = ($caseless ? mb_strtolower($what) : $what);
-						foreach ((array)$t as $v) if (strlen($v)) {
-							$v = html_entity_decode($v);
-							if ($caseless) $v = mb_strtolower($v);
-							if ($found = (
-								(
-									$type == ARCH_TERM_NAME
-									? $v === $lowhat
-									: false !== mb_strpos($v, $lowhat)
-								)
-							||	($is_regex && @preg_match($what, $v))
-							)) break;
-						}
-					}
-					if (!$found) continue 2;
-				}
-				if ($found) {
-
-				//* reformat image post:
-					if (count($tab) > 3) {
-						$cleanup = 0;
-						if (mb_strpos($tab[0], ',')) {
-							$tab[0] = intval($tab[0]);
-							++$cleanup;
-						}
-						if (
-							mb_strpos($t = $tab[2], ',')
-						&&	($cut = strlen($v = mb_substr_after($t, '>')))
-						) {
-							$t = substr($t, 0, -$cut);
-							if (
-								preg_match(ARCH_PAT_POST_PIC_WDXHD, $v, $match)
-							&&	intval($match[1]) > DRAW_PREVIEW_WIDTH
-							) {
-								$t .= preg_replace(ARCH_PAT_POST_PIC_BYTES, '', $v);
-							}
-							$tab[2] = $t;
-							++$cleanup;
-						}
-						if ($cleanup) $line = implode('	', $tab);
-					}
-
-				//* add post to result output:
-					$content .= ($n_found || $room?'':($content?NL:'')."
-room = $r").($n_check?'':"
-t = $i").NL.$line;
-					++$n_found;
-					$n_check .= "=$n_found: $found";
+				if ($found = is_post_matching($post, $terms, $caseless)) {
+					$results[$r][$i][] = get_post_fields_to_display($post);
+if (TIME_PARTS) {++$n_found; $n_check .= "=$n_found: $found";}
 				}
 			}
 if (TIME_PARTS) time_check_point("done $i$n_check");
 		} else
 if (TIME_PARTS) time_check_point("$i: content not found in $path");
+
+		data_unlock($lk);
 	}
-	return $content;
+
+	return $results;
 }
 
 ?>

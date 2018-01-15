@@ -44,13 +44,32 @@ $tmp_archive_find_by = array(
 		'select'	=> 'author name (part)'
 	,	'placeholder'	=> 'Enter part of a post author name here.'
 	)
-,	ARCH_TERM_NAME => array(
+,	ARG_FULL_NAME => array(
 		'select'	=> 'author name (exact)'
 	,	'placeholder'	=> 'Enter full author name here.'
 	)
 );
 $tmp_archive_found = 'Search results for';
 $tmp_archive_hint = 'Hidden rooms are not shown.';
+$tmp_archiver_button = 'Prepare archive';
+$tmp_archiver_by_user_id = 'By your profile ID (not available in archives)';
+$tmp_archiver_by_user_names = 'By specfied full author names (one per line)';
+$tmp_archiver_by_user_names_hint = 'List of full author names (one per line).';
+$tmp_archiver_from_arch = 'From archived threads';
+$tmp_archiver_from_room = 'From active (unfinished)';
+$tmp_archiver_hidden_room = 'hidden room';
+$tmp_archiver_naming = 'File naming inside archive';
+$tmp_archiver_naming_parts = array(
+	'author' => ''
+,	'room' => ''
+,	'thread' => 'number (only in archive)'
+,	'date' => ''
+/*,	'width' => ''
+,	'height' => ''
+,	'bytes' => ''
+,	'fbytes' => 'formatted as K/M/etc.'
+*/,	'i' => 'image ID (mandatory, appended if omitted). Text in <angle brackets> is omitted if any variable inside is empty.'
+);
 $tmp_archives = 'Archives';
 $tmp_arch_count = 'threads';
 $tmp_arch_last = 'last';
@@ -130,6 +149,7 @@ $tmp_options_apply = 'Apply';
 $tmp_options_area = array(
 	'user' => 'Your personal info'
 ,	'view' => 'Site options'
+,	'arch' => 'Drawings archive download'
 ,	'save' => 'Available save data'
 );
 $tmp_options_drop = array(

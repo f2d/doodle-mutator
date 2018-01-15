@@ -9,6 +9,7 @@
 
 ,	regClassPost = getClassReg('post')
 ,	regClassThread = getClassReg('thread')
+,	regHash = /([;,]\s*)?0x[0-9a-f]{8}$/i
 ,	regBytes = /([;,]\s*)?\d+\s*B$/i
 ,	regNaN = /\D+/
 ,	regSpace = /\s+/g
@@ -211,11 +212,13 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 					j = post.split(l = '>');
 					k = j.pop()
 						.replace(regTrim, '')
+						.replace(regHash, '')
 						.replace(regBytes, '')
 						.replace(regLNaN, '')
 						.replace(regNaN, 'x');
 					post = j.join(l).replace(regImgTitle, ' $1, '+k+'"')+l;
 					tab[0] += '<br>'+post.replace(regImgTag, k);
+					tab[1] += '<br>&nbsp;';
 				} else
 				if (res) {
 					post = post.substr(0, post.lastIndexOf('>')+1);

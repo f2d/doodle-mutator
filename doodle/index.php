@@ -61,6 +61,9 @@ define(ARG_DESC, 'desc');
 define(ARG_DRAW, 'draw');
 define(ARG_DROP, 'drop');
 define(ARG_CHANGE, 'change');
+define(ARG_ANY_OF, 'any_of');
+define(ARG_FULL_NAME, 'fullname');
+define(ARG_NAMING_VAR_PREFIX, '$');
 
 define(LK_MOD_HTA, 'htaccess');
 define(LK_MOD_ACT_LOG, 'done');
@@ -71,6 +74,8 @@ define(LK_REF_LIST, 'reflinks');
 define(LK_USERLIST, 'users');
 define(LK_USER, 'user/');
 define(LK_ROOM, 'room/');
+define(LK_ARCH, 'arch/');
+define(LK_ARCH_DL, 'archiver');
 define(LK_VERSION, 'version');
 define(COUNT_ARCH, 'arch');
 define(COUNT_ROOM, 'room');
@@ -79,16 +84,22 @@ define(COUNT_POST, 'post');
 $s = '@#?<>()\[\]\s\\\\/';				//* <- characters not allowed in email parts; keep it simple, for browser-side check
 define(NL, "\n");
 define(BOM, pack('CCC', 239, 187, 191));		//* <- UTF-8 Byte Order Mark
+define(ARCH_DL_HASH_TYPE, 'crc32b');
 define(B64_PRFX, 'base64:');
 define(OPT_PRFX, 'opt_');
 define(TIMESTAMP, 'Y-m-d H:i:s');
+define(FILESTAMP, 'Y-m-d H-i-s');
 define(PAT_DATE, '~(?P<ym>(?P<y>\d+)-(?P<m>\d+))-(?P<d>\d+)~');
 define(PAT_REPORT, '~^(?P<thread>\d+)\D+(?P<post>\d+)\D+(?P<side>\d+)$~');
 define(PAT_CONTENT, '~^(?P<before>.*?<pre>)(?P<content>.*?\S)(?P<after>\s*</pre>.*)$~uis');
+define(PPM_BF, '~(?:^|[;,\s]+)');
+define(PPM_AF, '(?=[;,]|$)~ui');
+define(PAT_POST_PIC_CRC32, PPM_BF.'0x(?P<crc32>[0-9a-f]{8})'.PPM_AF);
+define(PAT_POST_PIC_BYTES, PPM_BF.'(?P<bytes>[^0\D]\d*)\s+B'.PPM_AF);
+define(PAT_POST_PIC_W_X_H, PPM_BF.'(?P<width>[^0\D]\d*)\D(?P<height>[^0\D]\d*)'.PPM_AF);
 define(PAT_REGEX_FORMAT, '~^/.+/[imsu]*$~u');
 define(PAT_EMAIL_FORMAT, "^.*?([^$s]+@[^$s.]+\\.[^$s]+).*?$");
 define(RELATIVE_LINK_PREFIX, 'http://*/');
-define(ARCH_TERM_NAME, 'fullname');
 
 //* Start buffering to clean up included output, like BOMs: *------------------
 
@@ -332,6 +343,11 @@ if (FROZEN_HELL && !(MOD || $qd_arch || ($qd_opts && $u_key))) {
 	);
 }
 
+if ($u_key && isset($_REQUEST[LK_ARCH_DL])) {
+	if (ARCH_DL_ENABLED) die(get_archiver_dl_list());
+	else exit_no_access('disabled');
+}
+
 if (TIME_PARTS) time_check_point('frozen = '.FROZEN_HELL.', MOD = '.MOD.', inb4 action fork');
 if (POST) goto posting;
 
@@ -458,7 +474,7 @@ if (TIME_PARTS) time_check_point('ignore user abort');
 			if ($do === 'opcache_check') {
 				if (is_array($a = opcache_get_status())) {
 					if (array_key_exists($k = 'scripts', $a) && is_array($b = &$a[$k])) ksort($b);
-					$t = print_r($a, true);
+					$t = get_print_or_none($a);
 				} else $t = $a;
 			} else
 			if ($do === 'opcache_reset') {
@@ -627,11 +643,7 @@ if ($qd_user) {
 		if ($r) {
 			array_unshift($r, "<p>$tmp_user_name: $name</p>");
 			$page['task'] = "<p>$tmp_user:</p>";
-			$page['profile'] = (
-				'<div class="al">'
-				.	indent(implode(NL, $r))
-				.'</div>'
-			);
+			$page['profile'] = implode(NL, $r);
 		}
 	}
 	if (!$page['profile']) {
@@ -738,8 +750,21 @@ $n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
 			$page['task'] .= '
 <p class="hint" id="research">'.indent($tmp_archive_found.$research).'</p>';
 			if ($found = data_archive_find_by($search)) {
+				$t = '';
+				foreach ($found as $r_i => $threads) {
+					if ($room) $t .= ($t ? NL.NL : NL)."room = $r_i";
+					foreach ($threads as $t_i => $posts) {
+						$t .= NL."t = $t_i";
+						foreach ($posts as $v) {
+							if (isset($v['meta'])) {
+								$v['post'] = get_post_pic_to_display($v['post']);
+							}
+							$t .= NL.implode('	', $v);//"$v[date]	$v[username]	$v[post]";
+						}
+					}
+				}
 				$page['content'] = "
-arch_term_name = ".ARCH_TERM_NAME."
+arch_term_name = ".ARG_FULL_NAME."
 archives = $arch_list_href
 profiles = ".ROOTPRFX.DIR_USER."
 page_ext = ".PAGE_EXT.get_flag_vars(
@@ -752,7 +777,7 @@ page_ext = ".PAGE_EXT.get_flag_vars(
 						)
 					,	'caps' => 0
 					)
-				).NL.$found;
+				).$t;
 				$page['data']['content']['type'] = 'archive found';
 			}
 		}
@@ -783,14 +808,16 @@ if ($u_key) {
 		$so = '|';
 		$sp = ';';
 		$t = ':	';
+		$c = array();
 
 //* personal info -------------------------------------------------------------
 
 		$u_profile = data_get_user_profile($u_num);
 		$u_email = ($u_profile['email'] ?? array());
 		$f = ($u_flag ? NL.$tmp_options_flags.$t.implode(', ', $u_flag) : '');
-		$b = '" onChange="allowApply(\'user\')">';
-		$b =
+		$a = '" onChange="allowApply(\'user\')">';
+
+		$c['user'] =
 NL.$tmp_options_name.$t.(
 	$u_profile
 	? '<a href="'.ROOTPRFX.DIR_USER.$u_num.'">'
@@ -802,24 +829,24 @@ NL.$tmp_options_name.$t.(
 .NL.$tmp_options_email.',<label><input type="checkbox"'
 .(
 	$u_email['show'] ? ' checked' : ''
-).' name="email_show'.$b.$tmp_options_email_show.':</label>	<input type="text" name="email" id="email" value="'
+).' name="email_show'.$a.$tmp_options_email_show.':</label>	<input type="text" name="email" id="email" value="'
 .(
 	$u_email['addr'] ?: ''
 ).(
 	$u_email['verified'] ? '" data-verified="1' : ''
 ).'" pattern="'.PAT_EMAIL_FORMAT.'" placeholder="'
 .$tmp_options_email_hint.'" title="'
-.$tmp_options_email_hint.$b
+.$tmp_options_email_hint.$a
 .NL.$tmp_options_self_intro.$t.'<textarea name="about" placeholder="'
 .$tmp_options_self_intro_hint.'" title="'
-.$tmp_options_self_intro_hint.$b
+.$tmp_options_self_intro_hint.$a
 .(
 	get_template_profile_text($u_profile['about']) ?: ''
-).'</textarea>	';
+).'</textarea>	&nbsp;';
 
 //* site view options ---------------------------------------------------------
 
-		$c = $d = '';
+		$d = '';
 		$draw_app = implode($sp, array(
 			(array_search($u_draw_app, $cfg_draw_app) ?: 0)
 		,	implode($so, $tmp_draw_app)
@@ -840,11 +867,55 @@ NL.$tmp_options_name.$t.(
 				) : ($u_opts[$k]?1:'')
 			);
 			if ($i === 'admin') $l = '<span class="gloom">'.$l.'</span>';
-			$c .= NL.$l.$t.$r;
+			$d .= NL.$l.$t.$r;
 		}
-		$c .=
-NL.$tmp_options_time.$t.date('e, T, P')
+
+		$c['view'] = $d
+.NL.$tmp_options_time.$t.date('e, T, P')
 .NL.$tmp_options_time_client.$t.'<time id="time-zone"></time>';
+
+//* archive downloader --------------------------------------------------------
+		if (ARCH_DL_ENABLED) {
+			$a = $b = '';
+			$j = ARG_NAMING_VAR_PREFIX;
+			$s = ARCH_DL_NAME_PART_SEPARATOR;
+			foreach ($tmp_archiver_naming_parts as $k => $v) {
+				$a .= ($a ? ', ' : '')."$j$k".($v ? " = $v" : '');
+				if ($k === 'i') $b .= "$j$k";
+				else if ($k === 'width' || $k === 'bytes') $b .= "<$j$k";
+				else if ($k === 'height') $b .= " x $j$k$s>";
+				else if ($k === 'fbytes') $b .= " B, $j$k$s>";
+				else $b .= "<$j$k$s>";
+			}
+			$tmp_archiver_naming_hint = $a;
+			$tmp_archiver_naming_default = $b;
+			$a = '<input type="checkbox" name="';
+			$d = '<label>';
+			$b = '</label>';
+			$i = ' onChange="enableFirstIfNone(\'';
+			$j = '\', this)">';
+
+			$c['arch'] = '
+arch_dl_list_ext = '.ARCH_DL_LIST_EXT.'
+arch_dl_path = '.ROOTPRFX.DIR_ARCH_DL
+.NL
+.$d.$a.'by_user_id"'.$i.'by_user_names'.$j.$tmp_archiver_by_user_id.$b.'	'
+.$d.$tmp_archiver_from_arch.$a.'from_arch" checked'.$i.'from_room'.$j.$b
+.NL
+.$d.$a.'by_user_names" checked'.$i.'by_user_id'.$j.$tmp_archiver_by_user_names.':'.$b.'	'
+.$d.$tmp_archiver_from_room.$a.'from_room" checked'.$i.'from_arch'.$j.$b
+.NL
+.'<textarea name="names" placeholder="'
+.$tmp_archiver_by_user_names_hint.'" title="'
+.$tmp_archiver_by_user_names_hint.'">'.$u_name.'</textarea>	&nbsp;'
+.NL
+.$tmp_archiver_naming.':<br>'
+.'<input type="text" name="naming" placeholder="'
+.$tmp_archiver_naming_hint.'" title="'
+.$tmp_archiver_naming_hint.'" value="'.$tmp_archiver_naming_default.'">	&nbsp;
+|<input type="submit" name="'.LK_ARCH_DL.'" value="'
+.$tmp_archiver_button.'" onClick="return prepareArchiveDownload(this)">';
+		}
 
 //* manage save data, log off, etc --------------------------------------------
 
@@ -853,6 +924,7 @@ NL.$tmp_options_time.$t.date('e, T, P')
 		$j = '
 -
 |<input type="button" value="';
+		$d = '';
 		foreach (array(
 			'save'	=> array($j, 'id="unsave" data-keep="'.DRAW_PERSISTENT_PREFIX)
 		,	'pref'	=> array($i, 'name="'.OPT_PRFX.'reset')
@@ -861,6 +933,11 @@ NL.$tmp_options_time.$t.date('e, T, P')
 		) as $k => $v) {
 			$d .= $v[0].$tmp_options_drop[$k].'" '.$v[1].'">';
 		}
+
+		$c['save'] = $d;
+
+//* compile sections ----------------------------------------------------------
+
 		if (!$qdir) {
 			if (GOD && WS_NGINX) $page['content'] .= vsprintf('
 ||<b class="anno report">%s<br><a href=".?'.LK_MOD_ACT.'=files&'.LK_MOD_OPT.'=nginx">%s</a></b>', $tmp_options_warning);
@@ -870,21 +947,26 @@ NL.$tmp_options_time.$t.date('e, T, P')
 		$a = '" class="apply" name="'.OPT_PRFX.'apply_';
 		$j = ':
 apply_change = ';
+		$b = '<br>';
 		$k = '
 		';
-
-//* compile sections ----------------------------------------------------------
 
 		$page['content'] .= '
 opt_prefix = '.OPT_PRFX.'
 separator = '.$so.'
 sep_select = '.$sp.'
 <form method="post">'
-.$k.$tmp_options_area['user'].$j.'user'.$b.$i.$tmp_options_apply.$a.'user" disabled>'
+.($c['user'] ? $k.$tmp_options_area['user'].$j.'user'.$c['user'].$i.$tmp_options_apply.$a.'user" disabled>'
 //.NL.$tmp_options_profile.$t.'<a href="'.ROOTPRFX.DIR_USER.$u_num.'">'.$tmp_options_profile_link.'</a>'
-.$k.$tmp_options_area['view'].$j.'view'.$c.$i.$tmp_options_apply.$a.'view"'.($qdir?' disabled':'').'>
+.$k.$b : '')
+.($c['view'] ? $k.$tmp_options_area['view'].$j.'view'.$c['view'].$i.$tmp_options_apply.$a.'view"'.($qdir?' disabled':'').'>
 </form><form method="post">'
-.$k.$tmp_options_area['save'].':'.$d.'
+.$k.$b : '')
+.($c['arch'] ? $k.$tmp_options_area['arch'].':'.$c['arch'].'
+</form><form method="post">'
+.$k.$b : '')
+.($c['save'] ? $k.$tmp_options_area['save'].':'.$c['save']
+: '').'
 </form>';
 
 //* rules in task bar ---------------------------------------------------------
@@ -945,8 +1027,10 @@ sep_select = '.$sp.'
 								).'>'.$tmp_target_status[$t]
 							).'</title>'
 							.NL.(
-								($t = $target['task']) && $target['pic']
-								? '<img src="'.get_pic_url($t).'" alt="'.$t.'">'
+								($t = $target['task'])
+							&&	$target['pic']
+							&&	($a = get_post_pic_to_display($t, true))
+								? '<img src="'.$a['src'].'" alt="'.$a['alt'].'">'
 								: $t
 							)
 						);
@@ -1052,7 +1136,7 @@ right = $tmp_report_user_hint"
 					)."
 report_to = .?report_post=$t";
 					$t .= "
-arch_term_name = ".ARCH_TERM_NAME."
+arch_term_name = ".ARG_FULL_NAME."
 archives = $arch_list_href
 profiles = ".ROOTPRFX.DIR_USER."
 images = ".ROOTPRFX.DIR_PICS;
@@ -1110,11 +1194,14 @@ if (TIME_PARTS) $pi = $ri = $li = 0;
 								}
 								$r = implode($b, $r);
 							} else $r = NB;
+							if ($t = $post['post']) {
+								if ($post['pic']) $t = get_post_pic_to_display($t);
+							} else $t = NB;
 							$tabs = array(
 								'color' => $u_opts['own']?0:$post['flag']
 							,	'time' => $l
 							,	'user' => $r
-							,	'content' => $post['post']
+							,	'content' => $t
 							);
 							if ($t = $post['used']) {
 								$tabs['used'] = $t;
@@ -1240,9 +1327,9 @@ right = $tmp_empty$flags
 					}
 					if ($t) {
 						if ($target['pic']) {
-							$src = (mb_strpos($t, ';') ? get_pic_resized_path(get_pic_normal_path($t)) : $t);
+							$a = get_post_pic_to_display($t, true);
 							$page['subtask'] = '
-<img src="'.get_pic_url($src).'" alt="'.$t.'" id="task-img">'.$page['subtask'];
+<img src="'.$a['src'].'" alt="'.$a['alt'].'" id="task-img">'.$page['subtask'];
 						}
 						if ($room_type['lock_taken_task']) {
 							$page['data']['task']['taken'] = $task_time;
@@ -1778,7 +1865,7 @@ if ($u_key) {
 			$ptx = "time: $t
 file: $upload[name]";
 			if ($upload['error']) {
-				$log = print_r($_FILES, true);
+				$log = get_print_or_none($_FILES);
 			} else {
 				$x = $upload['type'];
 				$file_type = mb_strtolower(mb_substr($x, mb_strpos_after($x, '/')));
@@ -2154,9 +2241,11 @@ if ($f = $pic_final_path) {
 		$TO = ' &#x2192; ';
 		$ri = max(intval(POST_PIC_WAIT), 1);
 
-	//* this is not working here, must set in php.ini:
-	//	ini_set('zlib.output_compression', 'Off');
-	//	ini_set('output_buffering', 'Off');
+	//* this is not working here anyway, must set in php.ini:
+	//	if (function_exists('ini_set')) {
+	//		ini_set('zlib.output_compression', 'Off');
+	//		ini_set('output_buffering', 'Off');
+	//	}
 
 	//* this is for nginx and gzip:
 		if (WS_NGINX) {

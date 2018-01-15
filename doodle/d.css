@@ -18,8 +18,9 @@ body,
 	font-size: 21px;
 	line-height: 28px;
 }
-body > * {
-	margin: 24px 0;
+body > *,
+.content > * {
+	margin: 24px auto;
 }
 .header,
 .header + *,
@@ -252,8 +253,7 @@ a.at {
 	border-right-color: #eee;
 }
 .next-prev a,
-a.a,
-a.r {
+a.a {
 	text-decoration: none;
 }
 .room-title {
@@ -336,8 +336,8 @@ li {
 #task > .res:hover img {
 	border-color: #eee;
 }
-#task > img
-#task > .res img
+#task > img,
+#task > .res img,
 #task .dump {
 	margin: 8px;
 	vertical-align: bottom;	/* <- removes extra bottom space (sub-baseline) */
@@ -355,7 +355,8 @@ li {
 }
 #task .dump {
 	display: block;
-	padding: 0;
+	padding: 8px;
+	padding-bottom: 0;
 	line-height: normal;
 }
 #task .dump textarea {
@@ -462,7 +463,7 @@ li {
 	padding: 0;
 	margin: 0;
 }
-.thread
+.thread,
 .task form:first-child,
 .task p:first-child,
 .task p.r:first-child + p,
@@ -553,8 +554,17 @@ body,
 	padding: 0 4px;
 	margin: 0;
 }
+.post .center > label {
+	display: block;
+	cursor: inherit;
+	font-size: 12px;
+	text-align: left;
+}
 .post label:hover {
 	background-color: #fff;
+}
+.post label.ok:hover {
+	background-color: #efe;
 }
 .post img {
 	max-width: 640px;
@@ -601,6 +611,9 @@ body,
 .post .center input[name="email"],
 .post .center:hover input[type="text"][readonly] {
 	width: 240px;
+}
+.post .center input[name="naming"] {
+	width: 480px;
 }
 .post input[type="text"][readonly] {
 	color: #777;
@@ -696,10 +709,10 @@ label {
 .r .warn-mark {
 	background-position: top left;
 }
-.post .date-out > *,
-.post > aside:not(.ref),
-.post.pad aside,
-.post.hover-menu aside:not(:hover) .stub {
+.aside-wider .post > aside:not(.ref),
+.aside-wider .post.pad aside,
+.post.hover-menu aside:not(:hover) .stub,
+.post .date-out > * {
 	width: 170px;
 }
 .post.hover-menu aside .stub {
@@ -841,7 +854,7 @@ label {
 	padding-top: 2px;
 }
 .post .image-num {
-	display: inline-block;
+	display: block;
 	margin-bottom: 4px;
 }
 .post .res {
@@ -884,6 +897,10 @@ label {
 .log i {
 	display: inline-block;
 	width: 40px;
+}
+.dl {
+	display: inline-block;
+	text-align: left;
 }
 .al {	text-align: left;}
 .ar {	text-align: right;}

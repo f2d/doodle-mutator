@@ -27,6 +27,7 @@ $cfg_game_type_dir = array(
 define(GAME_TYPE_DEFAULT, reset($cfg_game_type_dir));	//* <- if this or none of types is empty, no-subfolder will not be allowed
 
 define(BOARD_LINK, '/board/');	//* <- prepend ROOTPRFX (the script folder) here for a relative link
+define(DIR_ARCH_DL, 'dl/');	//* <- real folder to keep listfiles for zip streaming
 define(DIR_PICS, 'i/');		//* <- real folder
 define(DIR_PICS_DEL, DIR_PICS.'deleted/');
 define(DIR_PICS_ORPHAN, DIR_PICS.'orphan/');
@@ -38,6 +39,7 @@ define(LINK_TIME, false);	//* <- src=file?modtime to force reload at clients
 define(LOG_IP, true);		//* <- for each visit, add IP Address to separate file per user
 define(LOG_UA, false);		//* <- for each post with pic, add User-Agent field to the post itself
 define(PIC_SUB, false);		//* <- true: img src="/i/p/0/0123.png", false: src="/i/0123.png" and leave it to rewrite rule
+define(ARCH_DL_ENABLED, false);	//* <- currently requires nginx build with zip streaming module
 
 define(NOT_MOD_SEE_ACTIVE_TRD_REPORTS, true);
 define(NOT_MOD_SEE_STOPPED_TRD, true);
@@ -46,6 +48,7 @@ define(NOT_MOD_SEE_ROOM_MARKERS, true);
 //* ---------------------------------------------------------------------------
 
 define(ROOM_DEFAULT, 'base');
+define(ROOM_NAME_ALLOWED_CHARS, '\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}');	//* <- beside prefixes, 0-9, A-Z, underscore and minus
 define(ROOM_NAME_MIN_LENGTH, 1);
 define(ROOM_NAME_MAX_LENGTH, 26);
 define(USER_NAME_MIN_LENGTH, 1);
@@ -134,6 +137,9 @@ define(TRD_MAX_PER_ROOM, 30);
 define(TRD_MAX_SKIP_PER_ROOM, 5);
 define(TRD_PER_PAGE, 30);
 
+define(ARCH_DL_NAME_PART_SEPARATOR, ' - ');
+define(ARCH_DL_EXT, '.zip');
+define(ARCH_DL_LIST_EXT, '.txt');
 define(PAGE_EXT, '.htm');
 define(THUMB_EXT, '.png');
 define(THUMB_MAX_WIDTH, 160);
