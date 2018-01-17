@@ -316,7 +316,11 @@ if ($qdir) {
 	}
 } else {
 	if ($u_key && !$u_room_default) $qd_opts = 1;	//* <- root page
-	if (GOD && WS_HTACCESS_SUPPORTED && substr($query[LK_MOD_OPT],0,3) !== 'hta') rewrite_htaccess();
+	if (
+		GOD
+	&&	WS_HTACCESS_SUPPORTED
+	&&	!is_prefix($query[LK_MOD_OPT], 'hta')
+	) rewrite_htaccess();
 }
 $top_title = (false !== ($k = array_search($r_type, $cfg_game_type_dir)) ? $tmp_room_types_title[$k] : $tmp_title);
 
@@ -500,11 +504,11 @@ NL.(++$i)."	$old => $new	".($old === $new?'same':(rename($old, mkdir_if_none($ne
 				}
 if (TIME_PARTS && $i) time_check_point("done $i pics");
 			} else
-			if (substr($do, 0,6) === 'img2or') {
+			if (is_prefix($do, 'img2or')) {
 				require_once(NAMEPRFX.'.arch.php');
 				$i = $k = 0;
 				$c = count($links = array_unique(array_merge($r = data_get_visible_images(), $a = data_archive_get_images())));
-				$check = (substr($do, -5) === 'check');
+				$check = is_postfix($do, 'check');
 
 				function move_leftover_files($d) {
 					global $check, $links, $t, $i, $k;
@@ -546,12 +550,19 @@ $x
 # End of example. #";
 				}
 			} else
-			if (substr($do, 0,4) === 'arch') {
+			if (is_prefix($do, 'arch')) {
 				require_once(NAMEPRFX.'.arch.php');
-				$t = data_archive_rewrite(substr($do, -3) === 'pix');
+				$i = is_postfix($do, '404');
+				$h = is_postfix($do, 'hash');
+				$t = data_archive_rewrite(array(
+					'recheck_img' => array(
+						'exists' => $h || $i
+					,	'hash' => $h
+					)
+				));
 			} else
-			if (substr($do, 0,3) === 'hta') {
-				$t = rewrite_htaccess(substr($do, -5) === 'write');
+			if (is_prefix($do, 'hta')) {
+				$t = rewrite_htaccess(is_postfix($do, 'write'));
 			} else {
 				$t = data_fix($do);
 			}
@@ -559,9 +570,9 @@ $x
 			data_unlock($lk);
 		}
 	} else
-	if (substr($q,0,4) === 'vars') {
+	if (is_prefix($q, 'vars')) {
 		exit_if_not_mod();				//* <- never exits, to check HTTP_IF_MODIFIED_SINCE, etc
-		$sort = (substr($q, -4) === 'sort');
+		$sort = (is_postfix($q, 'sort'));
 		$headers = headers_list();
 		$t =	'DATE_RFC822 = '	.gmdate(DATE_RFC822, T0).NL
 		.	'DATE_RFC2822 = '	.gmdate('r', T0).NL
@@ -752,14 +763,14 @@ $n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
 			if ($found = data_archive_find_by($search)) {
 				$t = '';
 				foreach ($found as $r_i => $threads) {
-					if ($room) $t .= ($t ? NL.NL : NL)."room = $r_i";
+					if (!$room) $t .= ($t ? NL.NL : NL)."room = $r_i";
 					foreach ($threads as $t_i => $posts) {
 						$t .= NL."t = $t_i";
 						foreach ($posts as $v) {
 							if (isset($v['meta'])) {
 								$v['post'] = get_post_pic_to_display($v['post']);
 							}
-							$t .= NL.implode('	', $v);//"$v[date]	$v[username]	$v[post]";
+							$t .= NL.implode('	', $v);
 						}
 					}
 				}

@@ -106,7 +106,7 @@ function data_archive_get_post_pic_info($img_html, $check_file = 1) {
 }
 
 function data_archive_get_fixed_content_line($line) {
-	global $recheck_img, $line_time_min, $line_time_max;
+	global $data_archive_re_params;
 	$sep = '	';
 	$tab = mb_split($sep, $line);
 
@@ -117,16 +117,21 @@ function data_archive_get_fixed_content_line($line) {
 		? intval($match[1])
 		: strtotime($t)
 	) ?: intval($t);
-	if (!$line_time_min || $line_time_min > $t) $line_time_min = $t;
-	if (!$line_time_max || $line_time_max < $t) $line_time_max = $t;
+
+	if (is_array($date = &$data_archive_re_params['date'])) {
+		if (!$date['min'] || $date['min'] > $t) $date['min'] = $t;
+		if (!$date['max'] || $date['max'] < $t) $date['max'] = $t;
+	}
+
 	$tab[0] = $t.','.date(DATE_ATOM, $t);
 
 //* image/link:
+	$recheck = $data_archive_re_params['recheck_img'] ?: array();
 	if (
 		count($tab) > 3
 	&&	false !== mb_strpos($p = $tab[2], '<img')
 	&&	(
-			$recheck_img
+			count(array_filter($recheck))
 		||	!(
 				preg_match(ARCH_PAT_POST_PIC, $p, $match)
 			&&	($csv = $match['csv'])
@@ -136,7 +141,7 @@ function data_archive_get_fixed_content_line($line) {
 			)
 		)
 	) {
-		$a = data_archive_get_post_pic_info($p, $recheck_img ? 2 : 1);
+		$a = data_archive_get_post_pic_info($p, $recheck['hash'] ? 2 : 1);
 		$csv = (
 			($full_res = $a['full_res'])
 		?	"$full_res[0]*$full_res[1], $a[full_bytes_f], $a[full_bytes] B, 0x$a[crc32]"
@@ -163,7 +168,7 @@ function data_archive_get_fixed_content_line($line) {
 			).'">';
 		}
 		if ($csv) $p .= "; $csv";
-		if ($recheck_img && !is_file($a['rel_path'])) {
+		if ($recheck['exists'] && !is_file($a['rel_path'])) {
 			$p = "<!--$p-->".ARCH_PIC_NOT_FOUND;
 		}
 		$tab[2] = $p;
@@ -174,8 +179,13 @@ function data_archive_get_fixed_content_line($line) {
 
 function data_archive_is_a_content_line($line) {return (false !== mb_strpos($line, '	'));}
 function data_archive_get_page_html($room, $num, $tsv) {
-	global $cfg_langs, $line_time_min, $line_time_max;
-	$line_time_min = $line_time_max = 0;
+	global $data_archive_re_params, $cfg_langs;
+	if (!is_array($data_archive_re_params)) $data_archive_re_params = array();
+	$date = (array(
+		'min' => 0
+	,	'max' => 0
+	));
+	$data_archive_re_params['date'] = &$date;
 	if ($num <= 0) return false;
 
 	$p = $num-1;
@@ -193,7 +203,7 @@ function data_archive_get_page_html($room, $num, $tsv) {
 		,	'link' => ROOTPRFX.DIR_ARCH."$room/$num".PAGE_EXT
 		,	'head' => ($p ? '<link rel="prev" href="'.$p.PAGE_EXT.'">'.NL : '').
 					'<link rel="next" href="'.$n.PAGE_EXT.'">'
-		,	'body' => get_date_class($line_time_min, $line_time_max)
+		,	'body' => get_date_class($date['min'], $date['max'])
 		,	'task' => ($p ? '<a href="'.$p.PAGE_EXT.'" title="previous">'.$num.'</a>' : $num)
 		,	'content' => $tsv
 		,	'js' => array('capture' => 1, 'arch' => 1)
@@ -254,9 +264,9 @@ function data_archive_full_threads($threads) {
 	);
 }
 
-function data_archive_rewrite($check = false) {
-	global $recheck_img, $date_classes, $line_time_min, $line_time_max;
-	$recheck_img = $check;
+function data_archive_rewrite($params = false) {
+	global $data_archive_re_params, $date_classes;
+	$data_archive_re_params = (array)$params;
 	$a = 0;
 	$d = DIR_ARCH;
 	$elen = -strlen(PAGE_EXT);
@@ -292,10 +302,12 @@ function data_archive_rewrite($check = false) {
 				if (!unlink($x)) $x = 'delete old failed'; else
 				$x = strlen($old)." => $sz bytes";
 			}
-			$d0 = date(TIMESTAMP, $line_time_min);
-			$d1 = date(TIMESTAMP, $line_time_max);
+			$date = array();
+			foreach ($data_archive_re_params['date'] as $k => $v) {
+				$date[$k] = date(TIMESTAMP, $v);
+			}
 			$dc = ($date_classes ? '	'.implode(' ', $date_classes) : '');
-			$text_report .= NL."$f	$x	$d0 - $d1$dc";
+			$text_report .= NL."$f	$x	$date[min] - $date[max]$dc";
 			++$t;
 		}
 		++$a;

@@ -263,11 +263,11 @@ function data_fix($what = '') {
 
 		data_lock($t);
 		if (is_dir($old)) {
-			$d = "$old/u";
 			$data_types = array(DATA_U_ABOUT, DATA_U_FLAG, DATA_U_IP, DATA_U_TASK);
+			$d = "$old/u";
+			$i = 0;
 			if ($files = glob("$d/*$e", GLOB_NOSORT) ?: glob("$d?*$e", GLOB_NOSORT)) {
 				natcasesort($files);	//* <- to keep file write dates in ascending order alongside IDs
-				$i = 0;
 				foreach ($files as $f) if (
 					strlen($n = trim(get_file_name($f), "u$e"))
 				&&	intval($n) == $n
@@ -290,11 +290,14 @@ function data_fix($what = '') {
 					}
 				}
 			}
-if (TIME_PARTS && $i) time_check_point("done $i $t -> split lists");
+			if ($i) {
+				$done .= NL.($i = "done $i $t -> split lists");
+				time_check_point($i);
+			}
 			foreach ($data_types as $t) {
+				$i = 0;
 				if ($files = glob("$d/*.$t", GLOB_NOSORT)) {
 					natcasesort($files);
-					$i = 0;
 					foreach ($files as $f) if (is_file($f)) {
 						$i++;
 						$n = get_file_name($f);
@@ -311,7 +314,10 @@ if (TIME_PARTS && $i) time_check_point("done $i $t -> split lists");
 						$done .= NL."$f -> $n = $r";
 					}
 				}
-if (TIME_PARTS && $i) time_check_point("done $i $t -> /$t/");
+				if ($i) {
+					$done .= NL.($i = "done $i $t -> /$t/");
+					time_check_point($i);
+				}
 			}
 		}
 		data_unlock($t);
@@ -337,7 +343,10 @@ if (TIME_PARTS && $i) time_check_point("done $i $t -> /$t/");
 					$r = (rename($f, $n)?'OK':'failed to move');
 					$done .= NL."$i: $f -> $n = $r";
 				}
-if (TIME_PARTS && $i) time_check_point("done $i $t in $room");
+				if ($i) {
+					$done .= NL.($i = "done $i $t in $room");
+					time_check_point($i);
+				}
 			}
 			data_unlock($lk);
 
@@ -398,7 +407,10 @@ if (TIME_PARTS && $i) time_check_point("done $i $t in $room");
 					$r = (rmdir($d)?'OK':'failed');
 					$done .= NL."$i: old empty dir $d -> delete $r";
 				}
-if (TIME_PARTS && $i) time_check_point("done $i changes, $old -> $new");
+				if ($i) {
+					$done .= NL.($i = "done $i changes, $old -> $new");
+					time_check_point($i);
+				}
 			} else die("Fatal error: could not create data folder \"$new\"!".($done ? '<hr>Done: '.nl2br($done) : ''));
 		}
 	}
@@ -446,11 +458,22 @@ if (TIME_PARTS && $i) time_check_point("done $i changes, $old -> $new");
 			}
 			data_unlock($lk);
 
-if (TIME_PARTS && $i) time_check_point("done $i $t in $room");
+			if ($i) {
+				$done .= NL.($i = "done $i $t in $room");
+				time_check_point($i);
+			}
 		}
-
+	}
+	if (($d = 'archive') === ($t = $what ?: $d)) {
 		require_once(NAMEPRFX.'.arch.php');
-		data_archive_rewrite();
+		if ($i = data_archive_rewrite(array(
+			'recheck_img' => array(
+				'exists' => true
+			)
+		))) {
+			$done .= NL.$i;
+			time_check_point($i);
+		}
 	}
 	data_unlock(LK_MOD_ACT);
 

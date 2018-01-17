@@ -112,7 +112,8 @@ $tmp_me_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters. Also you ma
 $tmp_me_submit = $tmp_rooms_submit = 'Enter';
 $tmp_mod_files = array(
 	'arch' =>		'Rewrite all archives with newest template.'
-,	'arch_404_pix' =>	'Rewrite all archives, replacing not found images with placeholder, or vice versa.'
+,	'arch_pix_404' =>	'Rewrite all archives, replacing not found images with 404 placeholder, or vice versa.'
+,	'arch_pix_hash' =>	'Rewrite all archives, recalculate file hashes (for zip, not filenames) + 404 placeholder.'
 ,	'img2orphan_check' =>	'Find pics not used in any room thread or archive.'
 ,	'img2orphan' =>		'Move pics not used in any room thread or archive to separate backup folder.'
 ,	'img2subdir' =>		'Move pics in pic folder root to subfolders.'
