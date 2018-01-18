@@ -1464,7 +1464,9 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 					if (($v = $lsv[$k]) && !trim($v, '0123456789')) $tab[$i] = $v;
 
 			//* text, just make a post and be done:
-					if ($v = $lsv['text']) $new = "$tab[0]	$tab[1]".DATA_MARK_TXT.$v;
+					if ($v = $lsv['text']) {
+						$new = "$tab[0]	$tab[1]".DATA_MARK_TXT.get_post_text_formatted($v);
+					}
 
 			//* file/info, edit parts if post with file, or replace full post if enough values:
 					else if (array_filter(array(

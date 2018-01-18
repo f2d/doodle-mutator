@@ -1140,6 +1140,24 @@ function format_matched_link($a) {
 	return $a[0];
 }
 
+function get_post_text_formatted($text, $uncut = '') {
+	$n = mb_strlen($delim = '/');
+	if (!$uncut) $uncut = $text;
+	if (
+		mb_substr($uncut, 0, $n) == $delim
+	&&	mb_substr($uncut, -$n) == $delim
+	&&	mb_substr_count($text = trim($text, $spaced = " $delim "), $spaced)
+	) {
+		return'<i class="poem">'
+		.	mb_str_replace($spaced, '<br>',
+			preg_replace("~\s+($delim\s+){2,}~", '<br><br>',
+				trim($text, $spaced)
+			))
+		.'</i>';
+	}
+	return $text;
+}
+
 function delay_timeout($add_sec = 10) {
 	if (function_exists('ini_get') && function_exists('ini_set')) {
 		$m = 'max_execution_time';

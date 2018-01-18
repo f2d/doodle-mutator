@@ -1781,14 +1781,16 @@ if ($u_key) {
 
 	if (isset($_POST['mod'])) {
 		if (MOD && (($qd_room && $room) || (GOD && ($query[LK_MOD_ACT] === LK_USERLIST || $etc === '3')))) {
-			$d = 'abcdefg';
+			$d = ord('a');
 			$k = array();
 			$result = array();
 			$done = 0;
 			$failed = 0;
 			foreach ($_POST as $i => $a) if (preg_match('~^m\d+_(\d+)_(\d+)_(\d+)$~i', $i, $m)) {
 				$m[0] = $a;
-				$act[$k[] = str_replace_first('_', $d[substr_count($a, '+')], $i)] = $m;
+				$j = chr($d + substr_count($a, '+'));
+				$j = $k[] = str_replace_first('_', $j, $i);
+				$act[$j] = $m;
 			}
 			if ($act) {
 				natsort($k);
@@ -1844,23 +1846,11 @@ if ($u_key) {
 
 	if (isset($_POST[$k = 'describe'])) {
 		$post_status = 'text_short';
-		$trim_len = mb_strlen($x = $ptx = trim_post($_POST[$k], DESCRIBE_MAX_LENGTH));
+		$trim_len = mb_strlen($ptx = trim_post($_POST[$k], DESCRIBE_MAX_LENGTH));
 		if ($trim_len >= DESCRIBE_MIN_LENGTH) {
 			$full_len = mb_strlen($unlim = trim_post($_POST[$k]));
 			if ($full_len > $trim_len) data_log_action("full post length = $full_len > $trim_len, full text", $unlim);
-			$n = mb_strlen($delim = '/');
-			if (
-				mb_substr($unlim, 0, $n) == $delim
-			&&	mb_substr($unlim, -$n) == $delim
-			&&	mb_substr_count($x = trim($x, $spaced = " $delim "), $spaced)
-			) {
-				$x = '<i class="poem">'
-				.	mb_str_replace($spaced, '<br>',
-					preg_replace("~\s+($delim\s+){2,}~", '<br><br>',
-						trim($x, $spaced)
-					))
-				.'</i>';
-			}
+			$x = get_post_text_formatted($ptx, $unlim);
 			$post_status = 'new_post';
 		}
 	} else
