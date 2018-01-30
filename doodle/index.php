@@ -371,6 +371,7 @@ if (GOD && (
 	$qdo = LK_MOD_OPT;
 	$qday = 'day';
 	$qid = 'id';
+	$qpath = 'path';
 	$a = array_keys($tmp_mod_pages);
 	if ($q) {
 		$q = $query[$qmod] ?: reset($a);
@@ -456,23 +457,51 @@ flags = a
 			data_lock($lk = LK_MOD_ACT);
 if (TIME_PARTS) time_check_point('ignore user abort');
 			if ($do === 'list') {
-				$len = array(0,0,0);
+				$tab_count = 0;
 				$dirs = array();
 				$files = array();
-				foreach (get_dir_contents() as $f) {
-					$d = is_dir($f);
+				if (strlen($path = trim(mb_normalize_slash("$query[$qpath]", './')))) {
+					$path =  trim(preg_replace('~(^|/)(\.*/+|\.+$)+~u', '$1', $path), './');
+				}
+				foreach (get_dir_contents($path ?: '.', F_NATSORT) as $f) {
+					$f = ltrim(ltrim("$path/$f", '.'), '/');
 					$m = date(TIMESTAMP, filemtime($f));
-					$s = ($d ? 'DIR' : filesize($f).' B');
-					$a = array($f, $s, $m);
-					foreach ($len as $k => &$v) $v = max($v, mb_strlen($a[$k]));
+					if ($d = is_dir($f)) {
+						$f = "<a href=\"?$qmod=$q&$qdo=$do&$qpath=$f\">$f/</a>";
+						$a = array($f, $m);
+					} else {
+						$e = get_file_ext($f);
+						$s = filesize($f);
+						$f = '<a href="'.ROOTPRFX.$f.'">'.$f.'</a>';
+						$a = array($f, $e, $s, $m);
+					}
+					if ($tab_count < ($k = count($a))) $tab_count = $k;
 					${$d?'dirs':'files'}[] = $a;
 				}
-				foreach (array_merge($dirs, $files) as $a) {
-					foreach ($len as $k => $v) {
-						$s = mb_strlen($a[$k]);
-						if ($s < $v) $a[$k] .= str_repeat(' ', $v-$s);
-					}
-					$t .= implode('	', $a).NL;
+				if ($path) {
+					$up = trim(get_file_dir("/$path"), './');
+					array_unshift($dirs, array("<a href=\"?$qmod=$q&$qdo=$do&$qpath=$up\">..</a>"));
+				}
+				if ($a = array_merge($dirs, $files)) {
+					$a = array_map(
+						function($v) use ($tab_count) {
+							return indent(
+								is_array($v)
+								? '
+<td'.(($k = $tab_count - count($v)) > 0 ? ' colspan="'.($k+1).'"' : '').'>'.implode('</td>
+<td>', $v).'</td>'
+								: $v
+							);
+						}
+					,	$a
+					);
+					$page['subtask'] = '
+<center class="filelist">'.indent('
+<table>'.indent('
+<tr>'.implode('</tr>
+<tr>', $a).'</tr>')
+.'</table>').'
+</center>';
 				}
 			} else
 			if ($do === 'opcache_check') {
@@ -623,7 +652,13 @@ $t";
 		}
 		data_unlock($q);
 	}
-	if ($page['content'] || ($page['textarea'] = $t) || $page['welcome'] || $lnk) {
+	if (
+		$page['content']
+	||	$page['subtask']
+	||	$page['welcome']
+	||	($page['textarea'] = $t)
+	||	$lnk
+	) {
 		if ($page['content'] || $lnk) {
 			$page['js']['mod']++;
 			$page['js'][0]++;

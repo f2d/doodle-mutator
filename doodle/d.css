@@ -5,7 +5,8 @@ body.new-year	{	background-image: url("d.ny.png");}
 body,
 body > *,
 body > form > *,
-.content > * {
+.content > *,
+.centered {
 	margin: 8px auto;	/* <- centered */
 	min-width: 656px;
 	max-width: 1000px;
@@ -369,6 +370,30 @@ li {
 	min-width: 100%;
 	min-height: 320px;
 	height: 978px;
+}
+.filelist {
+	width: 100%;
+	margin: 8px;
+	padding: 0;
+}
+.filelist table {
+	margin: 0;
+	padding: 0;
+	background-color: transparent;
+}
+.filelist td {
+	padding: 8px;
+	background-color: #eee;
+	line-height: 12px;
+	font-size: 13px;
+	text-align: left;
+}
+.filelist td:not(:first-child) {
+	text-align: right;
+	white-space: nowrap;
+}
+.filelist td:first-child:last-child {
+	text-align: center;
 }
 .task {
 	position: relative;
