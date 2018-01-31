@@ -163,7 +163,7 @@ $cfg_opts_text = array('draw', 'room');
 $cfg_opts_order = array(
 	'input' => array_merge(
 		array(
-			'draw' => 'draw_app'
+			'draw' => ARG_DRAW_APP
 		)
 	,	$cfg_draw_vars = array(
 			'save' => 'draw_max_recovery'

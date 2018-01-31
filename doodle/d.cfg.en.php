@@ -163,7 +163,7 @@ $tmp_options_first = 'Press %s or <a href="%s">select a room</a> to continue.';
 $tmp_options_flags = 'Status';
 $tmp_options_input = array(	//* ID => array(setting description, default value (yes), toggled value (no)), or as string 'desc|yes|no'
 	'input' => array(
-		'draw_app'		=> 'Drawing tool variant'
+		ARG_DRAW_APP		=> 'Drawing tool variant'
 	,	'draw_max_recovery'	=> 'Drawing autosaved recovery slots'
 	,	'draw_max_undo'		=> 'Drawing undo history length'
 	,	'draw_time_idle'	=> 'Drawing idle time minimum, in seconds'

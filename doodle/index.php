@@ -62,6 +62,7 @@ define(ARG_DRAW, 'draw');
 define(ARG_DROP, 'drop');
 define(ARG_CHANGE, 'change');
 define(ARG_ANY_OF, 'any_of');
+define(ARG_DRAW_APP, 'draw_app');
 define(ARG_FULL_NAME, 'fullname');
 define(ARG_NAMING_VAR_PREFIX, '$');
 
@@ -847,10 +848,10 @@ page_ext = ".PAGE_EXT.get_flag_vars(
 
 //* draw test -----------------------------------------------------------------
 
-if (($qd_opts || !$qdir) && GET_Q) {
+if ($draw_test = (($qd_opts || !$qdir) && GET_Q)) {
 	$qd_opts = 2;
 	$n = get_draw_app_list(false);
-	$page['icon'] = $n['name'];
+	$page['icon'] = $draw_test = $n['name'];
 	$page['task'] = '
 <p>'.$tmp_draw_free.':</p>
 <p class="hint">'.$tmp_draw_hint.'</p>'.$n['noscript'];
@@ -911,7 +912,7 @@ NL.$tmp_options_name.$t.(
 		,	implode($so, $tmp_draw_app)
 		,	implode($so, $cfg_draw_app)
 		,	DRAW_APP_NONE
-		,	'?draw_app=*'
+		,	'?'.ARG_DRAW_APP.'=*'
 		));
 		foreach ($tmp_options_input as $i => $o)
 		foreach ($o as $k => $l) {

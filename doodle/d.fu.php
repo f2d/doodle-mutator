@@ -1011,16 +1011,15 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 function get_draw_app_list($allow_upload = true) {
 	global $cfg_draw_app, $tmp_draw_app, $tmp_draw_app_select, $tmp_require_js, $tmp_upload_file, $u_draw_app, $query;
 	$a = $tmp_draw_app_select;
-	$da = 'draw_app';
 	if (!$allow_upload && ($k = array_search(DRAW_APP_NONE, $cfg_draw_app)) !== false) unset($cfg_draw_app[$k]);
 	if (
-		!($n = $query[$da] ?: $u_draw_app)
+		!($n = $query[ARG_DRAW_APP] ?: $u_draw_app)
 	||	!in_array($n, $cfg_draw_app)
 	) $n = $cfg_draw_app[0];
 	foreach ($cfg_draw_app as $k => $v) $a .= ($k?',':':').NL.(
 		$n == $v
 		? $tmp_draw_app[$k]
-		: '<a href="?'.$da.'='.$v.'">'.$tmp_draw_app[$k].'</a>'
+		: '<a href="?'.ARG_DRAW_APP.'='.$v.'">'.$tmp_draw_app[$k].'</a>'
 	);
 	$a = array('list' => '
 <p class="hint" id="draw-app-select">'.indent("$a.").'</p>');
@@ -1590,7 +1589,7 @@ $k = $v$p";
 }
 
 function get_template_page($page) {
-	global $cfg_langs, $lang, $tmp_announce, $tmp_post_err, $room;
+	global $cfg_langs, $draw_test, $lang, $tmp_announce, $tmp_post_err, $room;
 	if (!is_array($j = $page['js'] ?: array())) $j = array($j => 1);
 	$R = !!$j['arch'];
 	$RL = $page['link'] ?? '';
@@ -1649,7 +1648,11 @@ function get_template_page($page) {
 	if ($RL || !ME_VAL) {
 		$k = $GLOBALS['cfg_link_schemes'] ?? '';
 		if ($k = (is_array($k)?$k[0]:$k)) {
-			$v = $RL ?: $_SERVER['REQUEST_URI'];
+			if ($draw_test) {
+				$v = ROOTPRFX.'?'.ARG_DRAW_APP.'='.$draw_test;
+			} else {
+				$v = $RL ?: $_SERVER['REQUEST_URI'];
+			}
 			$canon = "$k://$_SERVER[SERVER_NAME]$v";
 		}
 	}
