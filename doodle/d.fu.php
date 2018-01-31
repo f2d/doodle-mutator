@@ -189,10 +189,31 @@ function mb_split_filter($s, $by = '/', $limit = 0) {
 	, $s, $limit, PREG_SPLIT_NO_EMPTY);
 }
 
-function mb_substr_before($where, $what, $offset = 0) {return mb_substr($where, 0, mb_strpos($where, $what, $offset));}
+function mb_substr_before($where, $what, $offset = 0) {
+	return (
+		false !== ($pos = mb_strpos ($where, $what, $offset))
+		? mb_substr($where, 0, $pos)
+		: $where
+	);
+}
+
 function mb_substr_after ($where, $what, $offset = 0) {return mb_substr($where, mb_strrpos_after($where, $what, $offset));}
-function mb_strpos_after ($where, $what, $offset = 0) {return false !== ($pos = mb_strpos ($where, $what, $offset)) ? $pos + mb_strlen($what) : $pos;}
-function mb_strrpos_after($where, $what, $offset = 0) {return false !== ($pos = mb_strrpos($where, $what, $offset)) ? $pos + mb_strlen($what) : $pos;}
+function mb_strpos_after ($where, $what, $offset = 0) {
+	return (
+		false !== ($pos = mb_strpos ($where, $what, $offset))
+		? $pos + mb_strlen($what)
+		: $pos
+	);
+}
+
+function mb_strrpos_after($where, $what, $offset = 0) {
+	return (
+		false !== ($pos = mb_strrpos($where, $what, $offset))
+		? $pos + mb_strlen($what)
+		: $pos
+	);
+}
+
 function mb_str_replace($what, $to, $where) {return implode($to, preg_split('/('.mb_escape_regex($what).')/u', $where));}
 function mb_str_replace_first($what, $to, $where) {
 	return (
@@ -208,6 +229,12 @@ function str_replace_first($what, $to, $where) {
 		? $where
 		: substr_replace($where, $to, $pos, strlen($what))
 	);
+}
+
+function trim_slash_dots($path, $remove_edge_slashes = true) {
+	$path = preg_replace('~(^|/)(\.*/+|\.+$)+~u', '$1', $path);
+	if ($remove_edge_slashes) $path = trim($path, '/');
+	return $path;
 }
 
 function trim_bom($str) {return trim(str_replace(BOM, '', $str));}

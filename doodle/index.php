@@ -374,8 +374,9 @@ if (GOD && (
 	$qpath = 'path';
 	$a = array_keys($tmp_mod_pages);
 	if ($q) {
-		$q = $query[$qmod] ?: reset($a);
-		$do = $query[$qdo];
+		$q = "$query[$qmod]" ?: reset($a);
+		$do = "$query[$qdo]";
+		$path = "$query[$qpath]";
 		$i = intval($query[$qid]);
 	} else {
 		$q = $a[intval($etc)-1];
@@ -448,7 +449,7 @@ flags = a
 		foreach ($tmp_mod_files as $k => $v) $lnk .= "
 <li><a href=\"?$qmod=$q&$qdo=$k\">".mb_str_replace_first(' ', '</a> ', $v).'</li>';
 		$lnk = '
-<ul>'.indent($lnk).'</ul>';
+<ul'.(isset($query[$qpath]) ? ' class="hid"' : '').'>'.indent($lnk).'</ul>';
 		if (!$do) $do = end(array_keys($tmp_mod_files));
 		if ($do && array_key_exists($do, $tmp_mod_files)) {
 			if ($a = $tmp_mod_files[$do]) $lnk .= '
@@ -460,48 +461,60 @@ if (TIME_PARTS) time_check_point('ignore user abort');
 				$tab_count = 0;
 				$dirs = array();
 				$files = array();
-				if (strlen($path = trim(mb_normalize_slash("$query[$qpath]", './')))) {
-					$path =  trim(preg_replace('~(^|/)(\.*/+|\.+$)+~u', '$1', $path), './');
-				}
-				foreach (get_dir_contents($path ?: '.', F_NATSORT) as $f) {
-					$f = ltrim(ltrim("$path/$f", '.'), '/');
-					$m = date(TIMESTAMP, filemtime($f));
-					if ($d = is_dir($f)) {
-						$f = "<a href=\"?$qmod=$q&$qdo=$do&$qpath=$f\">$f/</a>";
-						$a = array($f, $m);
-					} else {
-						$e = get_file_ext($f);
-						$s = filesize($f);
-						$f = '<a href="'.ROOTPRFX.$f.'">'.$f.'</a>';
-						$a = array($f, $e, $s, $m);
+				$path = trim_slash_dots(mb_normalize_slash($path));
+				if (strlen($path) && is_file($path)) {
+					$t = trim_bom(file_get_contents($path));
+				} else {
+					$dd = trim_slash_dots(get_const('DATA_DIR') ?: get_const('DIR_DATA'));
+					$no_direct_access = (mb_substr_before($path, '/') === $dd);
+					foreach (get_dir_contents($path ?: '.', F_NATSORT) as $fn) {
+						$f = trim_slash_dots("$path/$fn");
+						$m = date(TIMESTAMP, filemtime($f));
+						if ($d = is_dir($f)) $fn .= '/';
+						$a = (
+							$d
+						||	$no_direct_access
+						||	is_prefix($fn, '.hta')
+						||	is_postfix($fn, '.bak')
+							? "?$qmod=$q&$qdo=$do&$qpath=$f"
+							: ROOTPRFX.$f
+						);
+						$a = "<a href=\"$a\">$fn</a>";
+						if ($d) {
+							$a = array($a, $m);
+						} else {
+							$e = get_file_ext($fn);
+							$s = filesize($f);
+							$a = array($a, $e, $s, $m);
+						}
+						if ($tab_count < ($k = count($a))) $tab_count = $k;
+						${$d?'dirs':'files'}[] = $a;
 					}
-					if ($tab_count < ($k = count($a))) $tab_count = $k;
-					${$d?'dirs':'files'}[] = $a;
-				}
-				if ($path) {
-					$up = trim(get_file_dir("/$path"), './');
-					array_unshift($dirs, array("<a href=\"?$qmod=$q&$qdo=$do&$qpath=$up\">..</a>"));
-				}
-				if ($a = array_merge($dirs, $files)) {
-					$a = array_map(
-						function($v) use ($tab_count) {
-							return indent(
-								is_array($v)
-								? '
+					if ($path) {
+						$up = trim_slash_dots(get_file_dir("/$path"));
+						array_unshift($dirs, array("<a href=\"?$qmod=$q&$qdo=$do&$qpath=$up\">$path/..</a>"));
+					}
+					if ($a = array_merge($dirs, $files)) {
+						$a = array_map(
+							function($v) use ($tab_count) {
+								return indent(
+									is_array($v)
+									? '
 <td'.(($k = $tab_count - count($v)) > 0 ? ' colspan="'.($k+1).'"' : '').'>'.implode('</td>
 <td>', $v).'</td>'
-								: $v
-							);
-						}
-					,	$a
-					);
-					$page['subtask'] = '
+									: $v
+								);
+							}
+						,	$a
+						);
+						$page['subtask'] = '
 <center class="filelist">'.indent('
 <table>'.indent('
 <tr>'.implode('</tr>
 <tr>', $a).'</tr>')
 .'</table>').'
 </center>';
+					}
 				}
 			} else
 			if ($do === 'opcache_check') {

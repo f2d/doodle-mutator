@@ -123,10 +123,10 @@ $tmp_mod_files = array(
 ,	'hta_check' =>		'Check .htaccess template for Apache2.'
 ,	'hta_write' =>		'Rewrite .htaccess (automatically done for each admin\'s main page visit).'
 ,	'nginx' =>		'Nginx config example to apply manually.'
-,	'list' =>		'List files in current script folder.'
 ,	'opcache_reset' =>	'Clear PHP OpCache globally.'
 ,	'opcache_inval' =>	'Clear PHP OpCache for this folder only.'
 ,	'opcache_check' =>	'View PHP OpCache stats.'
+,	'list' =>		'Browse files in current script folder.'
 );
 $tmp_mod_pages = array(
 	'logs' =>	'Logs'
