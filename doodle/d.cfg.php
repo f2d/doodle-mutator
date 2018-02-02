@@ -137,6 +137,7 @@ define(TRD_MAX_PER_ROOM, 30);
 define(TRD_MAX_SKIP_PER_ROOM, 5);
 define(TRD_PER_PAGE, 30);
 
+define(POST_LINE_BREAK, '/');	//* <- used with spaces around
 define(ARCH_DL_NAME_PART_SEPARATOR, ' - ');
 define(ARCH_DL_EXT, '.zip');
 define(ARCH_DL_LIST_EXT, '.txt');
@@ -319,8 +320,9 @@ $cfg_welcome_links = array(
 //* ---------------------------------------------------------------------------
 
 define(FOOT_NOTE, '
-<a href="https://github.com/f2d/doodle-mutator">%s</a> &mdash;
-<a href="https://github.com/f2d/">%s</a>, 2013-2017,
+<a href="'.ROOTPRFX.'?'.ARG_ABOUT.'">%s</a>,
+<a href="https://github.com/f2d/doodle-mutator">%s</a>,
+<a href="https://github.com/f2d/">%s</a>, 2013-2018,
 <a href="'.BOARD_LINK.'">%s</a>%s');
 /*
  * Format lang-specific %s:

@@ -1465,7 +1465,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 
 			//* text, just make a post and be done:
 					if ($v = $lsv['text']) {
-						$new = "$tab[0]	$tab[1]".DATA_MARK_TXT.get_post_text_formatted($v);
+						$new = "$tab[0]	$tab[1]".DATA_MARK_TXT.format_post_text($v);
 					}
 
 			//* file/info, edit parts if post with file, or replace full post if enough values:

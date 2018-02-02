@@ -56,6 +56,7 @@ define(WS_HTACCESS_SUPPORTED, stripos($s, 'apache') !== false);
 define(GET_Q, strpos($p, '?'));
 define(ARG_ERROR, '!');
 define(ARG_ERROR_SPLIT, '!');
+define(ARG_ABOUT, 'about');
 define(ARG_DENY, 'deny');
 define(ARG_DESC, 'desc');
 define(ARG_DRAW, 'draw');
@@ -682,6 +683,23 @@ $t";
 <p$attr>$mod_page:</p>$lnk";
 } else
 
+//* info page, about website, rules -------------------------------------------
+
+if (isset($query[ARG_ABOUT])) {
+	$page['task'] = "<p>$tmp_about:</p>";
+	$page['welcome'] = $tmp_welcome_parts;
+
+	foreach ($tmp_rules as $head => $hint) {
+		if (is_array($hint)) {
+			$s = '';
+			foreach ($hint as $i) $s .= NL.'<li>'.indent(get_template_hint($i)).'</li>';
+			$hid = ($qdir || $page['task']?' class="hid"':'');
+			$s = NL."<ul$hid>".indent($s).'</ul>';
+		} else	$s = NL.'<p class="hint">'.indent(get_template_hint($hint)).'</p>';
+		$page['task'] .= NL."<p>$head</p>$s";
+	}
+} else
+
 //* user profile page ---------------------------------------------------------
 
 if ($qd_user) {
@@ -1011,6 +1029,7 @@ apply_change = ';
 		$k = '
 		';
 
+		$page['task'] = "<p>$tmp_options:</p>";
 		$page['content'] .= '
 opt_prefix = '.OPT_PRFX.'
 separator = '.$so.'
@@ -1028,18 +1047,6 @@ sep_select = '.$sp.'
 .($c['save'] ? $k.$tmp_options_area['save'].':'.$c['save']
 : '').'
 </form>';
-
-//* rules in task bar ---------------------------------------------------------
-
-		foreach ($tmp_rules as $head => $hint) {
-			if (is_array($hint)) {
-				$s = '';
-				foreach ($hint as $i) $s .= NL.'<li>'.indent(get_template_hint($i)).'</li>';
-				$hid = ($qdir || $page['task']?' class="hid"':'');
-				$s = NL."<ul$hid>".indent($s).'</ul>';
-			} else	$s = NL.'<p class="hint">'.indent(get_template_hint($hint)).'</p>';
-			$page['task'] .= NL."<p>$head</p>$s";
-		}
 		$page['js'][0]++;
 	} else
 
@@ -1899,7 +1906,7 @@ if ($u_key) {
 		if ($trim_len >= DESCRIBE_MIN_LENGTH) {
 			$full_len = mb_strlen($unlim = trim_post($_POST[$k]));
 			if ($full_len > $trim_len) data_log_action("full post length = $full_len > $trim_len, full text", $unlim);
-			$x = get_post_text_formatted($ptx, $unlim);
+			$x = format_post_text($ptx, $unlim);
 			$post_status = 'new_post';
 		}
 	} else

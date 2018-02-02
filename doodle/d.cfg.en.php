@@ -1,5 +1,6 @@
 ﻿<?php
 
+$tmp_about = 'About';
 $tmp_announce = array(
 	'anno' =>	'Global announce'
 ,	'stop' =>	'Global freeze'
@@ -86,9 +87,16 @@ $tmp_describe_hint = 'At least '.DESCRIBE_MIN_LENGTH.' letters.\\
 		for a blank line.
 	]
 	To write poem blocks, start and end the whole text and each line with a fully spaced slash.
-	[cite|/ Like this, / or more than once / / for a blank line. /]
+	[cite|'
+.POST_LINE_BREAK.' Like this, '
+.POST_LINE_BREAK.' or more than once '
+.POST_LINE_BREAK.' '
+.POST_LINE_BREAK.' for a blank line. '
+.POST_LINE_BREAK.']
 	Result is shown at the right side. →
-	Not fully spaced slashes will remain as is, including double [cite|//] slashes.
+	Not fully spaced slashes will remain as is, including double [cite|'
+.POST_LINE_BREAK
+.POST_LINE_BREAK.'] slashes.
 ]';
 $tmp_describe_free = 'Write anything';
 $tmp_describe_new = 'Describe a picture you would like to see';
@@ -102,7 +110,7 @@ $tmp_draw_next = 'Try to draw what happens after this';
 $tmp_draw_test = 'Test drawing pad';
 $tmp_draw_this = 'Try to draw';
 $tmp_empty = 'Empty';
-$tmp_foot_notes = array('Project', 'author', 'message board', ' for contact.');
+$tmp_foot_notes = array('About this website', 'project', 'author', 'message board', ' for contact.');
 $tmp_link_schemes = array(
 	'http'	=> 'Switch to HTTP.'
 ,	'https'	=> 'Switch to HTTPS.'
@@ -145,7 +153,7 @@ $tmp_no_change = 'No change.';
 $tmp_no_play_hint = 'Game playing turned off for you (no taking targets).';
 $tmp_not_found = 'Not found.';
 $tmp_not_supported = 'This function is not supported.';
-$tmp_options = 'Options. About';
+$tmp_options = 'Options';
 $tmp_options_apply = 'Apply';
 $tmp_options_area = array(
 	'user' => 'Your personal info'

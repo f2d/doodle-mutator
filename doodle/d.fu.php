@@ -1166,17 +1166,16 @@ function format_matched_link($a) {
 	return $a[0];
 }
 
-function get_post_text_formatted($text, $uncut = '') {
-	$n = mb_strlen($delim = '/');
+function format_post_text($text, $uncut = '') {
 	if (!$uncut) $uncut = $text;
 	if (
-		mb_substr($uncut, 0, $n) == $delim
-	&&	mb_substr($uncut, -$n) == $delim
-	&&	mb_substr_count($text = trim($text, $spaced = " $delim "), $spaced)
+		is_prefix($uncut, POST_LINE_BREAK)
+	&&	is_postfix($uncut, POST_LINE_BREAK)
+	&&	mb_substr_count($text = trim($text, $spaced = ' '.POST_LINE_BREAK.' '), $spaced)
 	) {
 		return'<i class="poem">'
 		.	mb_str_replace($spaced, '<br>',
-			preg_replace("~\s+($delim\s+){2,}~", '<br><br>',
+			preg_replace('~\s+('.POST_LINE_BREAK.'\s+){2,}~', '<br><br>',
 				trim($text, $spaced)
 			))
 		.'</i>';
