@@ -326,6 +326,7 @@ define(FOOT_NOTE, '
 <a href="'.BOARD_LINK.'">%s</a>%s');
 /*
  * Format lang-specific %s:
+	0: about site link
 	1: site engine link
 	2: author link
 	3: guest book/forum/board link

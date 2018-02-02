@@ -2,7 +2,7 @@
 
 //* Constants only for internal use: ------------------------------------------
 
-define(HTML_VERSION, '2017-11-13 03:00');	//* <- change this to autoupdate old browser-cached pages
+define(HTML_VERSION, '2018-02-03 01:30');	//* <- change this to autoupdate old browser-cached pages
 define(HTACCESS_VERSION, '2017-10-27 23:23');	//* <- change this + open index as admin to autoupdate old .htaccess
 
 //* Function argument flags: --------------------------------------------------

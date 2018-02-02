@@ -688,6 +688,7 @@ $t";
 if (isset($query[ARG_ABOUT])) {
 	$page['task'] = "<p>$tmp_about:</p>";
 	$page['welcome'] = $tmp_welcome_parts;
+	$page['js'][0]++;
 
 	foreach ($tmp_rules as $head => $hint) {
 		if (is_array($hint)) {
