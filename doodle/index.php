@@ -1846,16 +1846,17 @@ if ($u_key) {
 			foreach ($_POST as $i => $a) if (preg_match('~^m\d+_(\d+)_(\d+)_(\d+)$~i', $i, $m)) {
 				$m[0] = $a;
 				$j = chr($d + substr_count($a, '+'));
-				$j = $k[] = str_replace_first('_', $j, $i);
+				$j = str_replace_first('_', $j, $i);
 				$act[$j] = $m;
 			}
 			if ($act) {
-				natsort($k);
+				ksort($act, SORT_NATURAL);		//* <- since php v5.4.0 only
+				array_reverse($act);
 
 				data_lock(LK_MOD_ACT);
 				data_lock(LK_ROOM.$room);
-				foreach (array_reverse($k) as $i) {
-					$m = data_mod_action($act[$i]);	//* <- act = array(option name, thread, row, column)
+				foreach ($act as $v) {
+					$m = data_mod_action($v);	//* <- act = array(option name, thread, row, column)
 					if ($m) {
 						if (array_key_exists($m, $tmp_post_err)) ++$result[$m];
 						else ++$done;

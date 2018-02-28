@@ -1224,6 +1224,7 @@ function prepareArchiveDownload(btn) {
 var	form, formData, e = eventStop(0,1,1);
 	if (
 		requestInProgress.archiver
+	||	btn.disabled
 	||	!(btn || (e && (btn = e.target)))
 	||	!(form = getParentByTagName(btn, 'form'))
 	) return false;
@@ -1272,6 +1273,8 @@ var	a = form.elements
 				formParts[i].sort();
 			}
 		}
+
+		btn.disabled = true;
 
 	var	r = new XMLHttpRequest();
 		r.onreadystatechange = stateChange;

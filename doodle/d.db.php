@@ -620,6 +620,18 @@ function data_get_mod_log_file($f, $mt = false) {	//* <- (full_file_path, 1|0)
 	if (is_file($f)) return ($mt ? filemtime($f) : trim_bom(file_get_contents($f)));
 }
 
+function data_fix_mod_log_line_tabs($match) {
+	global $usernames;
+	if (
+		($i = $match['UserID'])
+	&&	($i = intval($i))
+	&&	($name = $usernames[$i])
+	) {
+		$name = ": $name";
+	}
+	return "$match[Date]	$match[User]$name	$match[Text]";
+}
+
 function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 	global $room, $u_num;
 
@@ -702,7 +714,13 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 				$k = $r ?: '*';
 				$v = "
 room = $k".
-preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',	//* <- arrange data fields
+preg_replace_callback('~
+	(?<=\v)
+	(?P<Date>\S+)\s+
+	(?P<User>[^\s\d]*(?P<UserID>\d*)\S*?)\s+
+	(?P<Text>\S+)
+~ux', 'data_fix_mod_log_line_tabs',
+//preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',	//* <- arrange data fields
 preg_replace('~\h+~u', ' ',
 preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1	',	//* <- keep multiline entries atomic
 preg_replace('~\v+~u', '<br>',

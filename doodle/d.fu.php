@@ -950,7 +950,7 @@ function get_archiver_dl_list($caseless = true, $include_hidden = true) {
 		}
 	}
 	if ($file_list) {
-		ksort($file_list);
+		ksort($file_list, SORT_NATURAL);
 		$content = implode(NL, $file_list);
 		$hash = md5($content);
 		$count = count($file_list);
