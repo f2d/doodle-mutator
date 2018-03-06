@@ -2,7 +2,7 @@
 
 //* Constants only for internal use: ------------------------------------------
 
-define(HTML_VERSION, '2018-02-03 01:30');	//* <- change this to autoupdate old browser-cached pages
+define(HTML_VERSION, '2018-03-07 02:35');	//* <- change this to autoupdate old browser-cached pages
 define(HTACCESS_VERSION, '2017-10-27 23:23');	//* <- change this + open index as admin to autoupdate old .htaccess
 
 //* Function argument flags: --------------------------------------------------
@@ -1603,7 +1603,7 @@ function get_template_page($page) {
 				if (MOD) $v = "<span id=\"$k\">$v</span>";
 				$v = ": $v";
 				$c = (false !== mb_strpos($k, 'stop')?'cold':'dust');
-			} else $c = 'new';
+			} else $c = 'room-new';
 			$anno[$c][] = $tmp_announce[$k].$v;
 		}
 	}
@@ -1611,8 +1611,8 @@ function get_template_page($page) {
 		$L = LINK_TIME;
 		if ($a = $page['report']) {
 			$e_class = array(
-				'trd_arch' => 'gloom'
-			,	'trd_miss' => 'warn'
+				'trd_arch' => 'trd-arch'
+			,	'trd_miss' => 'trd-miss'
 			);
 			if (!is_array($a)) $a = mb_split_filter($a, ARG_ERROR_SPLIT);
 			foreach ($a as $v) if ($v = trim($v)) {

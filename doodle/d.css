@@ -226,8 +226,11 @@ a.at {
 }
 .report,
 .report b {
-	background-color: #f77;
+	background-color: #ff6244;
 	color: #ff7;
+}
+.report.anno b {
+	color: #fff;
 }
 .report.r b {
 	display: block;
@@ -512,6 +515,9 @@ li {
 body,
 .alt {		background-color: #eee;}
 .dust {		background-color: #d4d4d4;}
+.trd-arch {	background-color: #67b047;}
+.trd-miss {	background-color: #96f;}
+.room-new {	background-color: #09c;}
 .warn {		background-color: #fc7;}
 .burnt-hell,
 .burnt .post {	background-color: #fdd;}
