@@ -2221,6 +2221,9 @@ function data_log_post($post) {
 		&&	($i = data_is_thread_cap())
 		) {
 			$result['cap'] = $i;
+
+			if ($a) data_post_refresh();
+
 			return $result;
 		}
 
@@ -2263,6 +2266,7 @@ function data_log_post($post) {
 	}
 
 	data_post_refresh();
+
 	return $result;
 }
 
