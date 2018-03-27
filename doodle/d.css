@@ -891,12 +891,6 @@ label {
 .post .res {
 	color: #a9c;
 }
-.post .res img {
-	border: 2px solid #bae;
-}
-.post .u img {
-	border: 2px solid #09f;
-}
 .post .u {
 	color: #09f;
 }
@@ -906,8 +900,9 @@ label {
 .post a.res:hover {
 	color: #64a;
 }
-.post a.res img:hover {
-	border-color: #64a;
+.post .res img,
+.post .u img {
+	border: 2px solid currentColor;
 }
 .poem {
 	display: inline-block;
@@ -955,7 +950,7 @@ label {
 }
 .toggle::before {
 	display: inline-block;
-	border: 1px solid #888;
+	border: 1px solid currentColor;
 	margin-right: 4px;
 	padding: 0;
 	width: 23px;
@@ -972,12 +967,6 @@ label {
 }
 .toggle.open::before {
 	content: "-";
-}
-.toggle:hover::before {
-	border-color: #fff;
-}
-.thread .toggle:hover::before {
-	border-color: #000;
 }
 .hint .toggle::before {
 	border: none;
