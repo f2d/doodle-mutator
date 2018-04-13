@@ -30,7 +30,7 @@
 	).replace(regTrim, '')
 ,	timeRange
 
-,	lang = LS.lang || document.documentElement.lang || 'en'
+,	lang = getCookie('lang') || (LS ? LS.lang : '') || document.documentElement.lang || 'en'
 	;
 
 //* Utility functions *--------------------------------------------------------
@@ -100,6 +100,12 @@ function eventStop(e,i,d) {
 		if (e.cancelBubble !== null) e.cancelBubble = true;
 	}
 	return e;
+}
+
+function getCookie(name) {
+	//* https://stackoverflow.com/a/25490531
+var	m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+	return m ? m.pop() : '';
 }
 
 function orz(n) {return parseInt(n||0)||0;}

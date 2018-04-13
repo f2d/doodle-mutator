@@ -66,6 +66,7 @@ define(ARG_ANY_OF, 'any_of');
 define(ARG_DRAW_APP, 'draw_app');
 define(ARG_FULL_NAME, 'fullname');
 define(ARG_NAMING_VAR_PREFIX, '$');
+define(ARG_LANG, 'lang');
 
 define(LK_MOD_HTA, 'htaccess');
 define(LK_MOD_ACT_LOG, 'done');
@@ -108,7 +109,12 @@ define(RELATIVE_LINK_PREFIX, 'http://*/');
 ob_start();
 require(NAMEPRFX.'.cfg.php');
 require(NAMEPRFX.'.fu.php');
-require(NAMEPRFX.'.db.php');
+
+if ($v = $_GET[ARG_LANG] ?? $_POST[ARG_LANG]) {
+	add_cookie_header(ARG_LANG, $v);
+	header('Location: '.($_SERVER['HTTP_REFERER'] ?: ROOTPRFX));
+	die();
+}
 
 $cfg_wh = array('width', 'height');
 $cfg_room_prefixes = array();
@@ -121,6 +127,15 @@ $cfg_room_prefix_chars = implode('', array_unique(mb_str_split(fix_encoding(impl
 
 //* Select UI language *-------------------------------------------------------
 
+if (
+	($v = $_REQUEST[ARG_LANG])
+&&	(
+		in_array($v, $cfg_langs)
+	||	in_array($v = strtolower(substr($v, 0, 2)), $cfg_langs)
+	)
+) {
+	$lang = $v;
+} else
 //* source: http://www.dyeager.org/blog/2008/10/getting-browser-default-language-php.html
 if ($v = $_SERVER['HTTP_ACCEPT_LANGUAGE']) {
 	$a = array();
@@ -129,13 +144,21 @@ if ($v = $_SERVER['HTTP_ACCEPT_LANGUAGE']) {
 	} else $a[$v] = 1.0;
 //* check for highest q-value. No q-value means 1 by rule
 	$q = 0.0;
-	foreach ($a as $k => $v) if ($v > $q && in_array($l = strtolower(substr($k, 0, 2)), $cfg_langs)) {
+	foreach ($a as $k => $v) if (
+		$v > $q
+	&&	(
+			in_array($k, $cfg_langs)
+		||	in_array($k = strtolower(substr($k, 0, 2)), $cfg_langs)
+		)
+	) {
 		$q = (float)$v;
-		$lang = $l;
+		$lang = $k;
 	}
+	add_cookie_header(ARG_LANG, $lang);
 }
 
 require(NAMEPRFX.".cfg.$lang.php");
+require(NAMEPRFX.'.db.php');
 
 //* End buffering, hide output. *----------------------------------------------
 
@@ -150,7 +173,7 @@ if (!POST) {
 	$r = array($_SERVER['HTTP_REFERER']);
 	if (
 		($v = $_SERVER['HTTP_USER_AGENT'])
-	&&	preg_match_all('~\b\w+:/+\S+~i', $v, $m)
+	&&	preg_match_all('~\b\w+(:/+|\S*?@)\S+~i', $v, $m)
 	) {
 		foreach ($m[0] as $v) {
 			if (false === strpos($v, '(')) $v = trim($v, ')');
@@ -521,7 +544,10 @@ if (TIME_PARTS) time_check_point('ignore user abort');
 			} else
 			if ($do === 'opcache_check') {
 				if (is_array($a = opcache_get_status())) {
-					if (array_key_exists($k = 'scripts', $a) && is_array($b = &$a[$k])) ksort($b);
+					if (array_key_exists($k = 'scripts', $a)) {
+						if (is_array($b = &$a[$k])) ksort($b);
+						unset($b);
+					}
 					$t = get_print_or_none($a);
 				} else $t = $a;
 			} else
@@ -1530,6 +1556,7 @@ $a#$j$l|$r$m");
 			}
 			if ($t) {
 				foreach ($t as &$v) if ($v) $v = '[p|'.indent($v).']';
+				unset($v);
 				$t = trim(implode('', $t)).'\\';
 				$tmp_rooms_hint .= ($f ? '\\
 [buttons r|\\'.indent($f).']' : '').'\\
@@ -1623,6 +1650,9 @@ $page['title'] = (
 
 if (!$is_report_page) {
 	define(A, NL.'<a href="');
+	define(AB, '</a><br>');
+	define(CHK_ON, '&#x2611; ');
+	define(CHK_OFF, '&#x2610; ');
 	$short = !!$u_opts['head'];
 	$a_head = array(
 		'/' => $top_title
@@ -1639,12 +1669,13 @@ if (!$is_report_page) {
 		? $k
 		: $v.(mb_substr($v, -1) == '.'?'':'.')
 	).'</a>';
+	unset($v);
 
 	if (MOD && ($t = $query[LK_MOD_ACT_LOG])) $page['mod_act_log'] = $t;
 	if (GOD) {
 		define(M, A.'.?'.LK_MOD_ACT);
-		foreach ($tmp_mod_pages as $k => &$v) $mod_list .= M.'='.$k.'">'.$v.'</a><br>';
-		$mod_link =
+		foreach ($tmp_mod_pages as $k => $v) $mod_list .= M.'='.$k.'">'.$v.AB;
+		$mod_link_menu =
 			'<u class="menu-head">'.indent(
 				M.$a_head['#'].NL.
 				'<u class="menu-top">'.
@@ -1653,6 +1684,51 @@ if (!$is_report_page) {
 					$mod_list
 				).'</u></u></u>'
 			).'</u>';
+	}
+
+	$a = (array)$cfg_link_schemes;
+	if ($s = strtolower($_SERVER['REQUEST_SCHEME'] ?? $_SERVER['HTTPS'] ?? $a[0])) {
+		if ($s === 'off') $s = 'http'; else
+		if ($s === 'on') $s = 'https';
+	}
+
+	if ($a_head['/']) {
+		$i_a = array();
+		$i_b = '';
+		foreach ($cfg_langs as $v) {
+			$i_b .=
+				A.ROOTPRFX.'?lang='.$v.'">'
+			.	($v === $lang ? CHK_ON : CHK_OFF)
+			.	strtoupper($v)
+			.	AB;
+		}
+		if ($i_b) $i_a[] = $i_b;
+		$i_b = '';
+		foreach ($cfg_link_schemes as $v) {
+			$i_b .=
+				A."$v://$_SERVER[SERVER_NAME]$_SERVER[REQUEST_URI]\">"
+			.	($v === $s ? CHK_ON : CHK_OFF)
+			.	strtoupper($v)
+			.	AB;
+		}
+		if ($i_b) $i_a[] = $i_b;
+		$i_b = '';
+		foreach ($cfg_header_links as $k => $v) {
+			$i_b .= A.$v.'">'.$tmp_header_links[$k].AB;
+		}
+		if ($i_b) $i_a[] = $i_b;
+		$i_b = '';
+		if ($index_list = implode('&mdash;<br>', $i_a)) {
+			$index_link_menu =
+				'<u class="menu-head">'.indent(
+					A.ROOTPRFX.$a_head['/'].NL.
+					'<u class="menu-top">'.
+					'<u class="menu-hid">'.
+					'<u class="menu-list">'.indent(
+						$index_list
+					).'</u></u></u>'
+				).'</u>';
+		}
 	}
 
 	$r = ($room?"$room/":'');
@@ -1675,19 +1751,19 @@ if (!$is_report_page) {
 	$page['header'] = (
 		$u_key
 		? array(
-			A.ROOTPRFX.$a_head['/']
+			($index_link_menu ?: A.ROOTPRFX.$a_head['/'])
 		.	($short?$room_list_link:'')
 		.	$room_link
 		.	($short?'':$arch_link)
 		, 'ar' =>
-			$mod_link
+			$mod_link_menu
 		.	($short?$arch_link:'')
 		.	$arch_list_link
 		.	($short?'':$room_list_link)
 		.	A.(DIR_DOTS && $qdir && $qd_opts?'.':ROOTPRFX.DIR_OPTS.($r ?: $t)).$a_head['?']
 		)
 		: array(
-			A.ROOTPRFX.$a_head['/']
+			($index_link_menu ?: A.ROOTPRFX.$a_head['/'])
 		.	A.ROOTPRFX.'?draw_test'.$a_head['~']
 		, 'ar' => (
 				is_dir(DIR_ARCH)
@@ -1716,18 +1792,6 @@ if (!$is_report_page) {
 			}
 		}
 		$took = get_time_html().mb_str_replace_first(' ', NL, sprintf($tmp_took, $took));
-	}
-	if (
-		($a = (array)$cfg_link_schemes)
-	&&	($s = strtolower($_SERVER['REQUEST_SCHEME'] ?? $_SERVER['HTTPS'] ?? $a[0]))
-	) {
-		if ($s === 'off') $s = 'http'; else
-		if ($s === 'on') $s = 'https';
-		if (($i = array_search($s, $a)) !== false) unset($a[$i]);
-		foreach ($a as $k) {
-			$j = "$k://$_SERVER[SERVER_NAME]$_SERVER[REQUEST_URI]";
-			$took .= NL.'<a href="'.$j.'">'.$tmp_link_schemes[$k].'</a>';
-		}
 	}
 	foreach (array(
 		'l' => $took
@@ -2236,11 +2300,8 @@ if ($OK) {
 			}
 			$a = encode_URL_parts($a);
 		}
-		$s = 'Set-Cookie: ';
-		$x = '; expires='.gmdate(DATE_COOKIE, ($a ? T0 + QK_EXPIRES : 0)).'; Path='.ROOTPRFX;
-		$a = ME."=$a";
-		header("$s$a$x");
-		if ($add_qk) header("$s$add_qk$x");
+		add_cookie_header(ME, $a);
+		if ($add_qk) add_cookie_header($add_qk);
 	}
 	if ($room_type['single_active_thread']) {
 		$query = (

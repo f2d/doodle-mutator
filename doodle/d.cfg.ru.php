@@ -120,9 +120,9 @@ $tmp_draw_test = 'Испытать рисовалку.';
 $tmp_draw_this = 'Попробуйте нарисовать';
 $tmp_empty = 'Пусто';
 $tmp_foot_notes = array('Об этом сайте', 'проект', 'автор', 'доска сообщений', ' для связи.');
-$tmp_link_schemes = array(
-	'http'	=> 'Перейти на HTTP.'
-,	'https'	=> 'Перейти на HTTPS.'
+$tmp_header_links = array(
+	'drawpile' => 'Drawpile (порисовать вместе)'
+,	'index' => 'прочее'
 );
 $tmp_me = 'Назовитесь';
 $tmp_me_hint = 'Не более '.USER_NAME_MAX_LENGTH.' букв. Также тут можно ввести свой старый ключ.';

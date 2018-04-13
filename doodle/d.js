@@ -89,7 +89,7 @@
 
 //* UI translation *-----------------------------------------------------------
 
-if (LS && !(LS.lang && LS.lang == lang)) LS.lang = lang;
+//if (LS && !(LS.lang && LS.lang == lang)) LS.lang = lang;	//* <- use user-selectable cookie instead
 
 if (lang == 'ru') la = {
 	toggle: ['да', 'нет']
@@ -434,6 +434,12 @@ function eventStop(e,i,d) {
 }
 
 function deleteCookie(c) {document.cookie = c+'=; expires='+(new Date(0).toUTCString())+'; Path='+rootPath;}
+function getCookie(name) {
+	//* https://stackoverflow.com/a/25490531
+var	m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+	return m ? m.pop() : '';
+}
+
 function getToggleButtonHTML(content, open) {
 	return '<a href="javascript:void this'
 	+	'" onClick="toggleHideNext(this)'

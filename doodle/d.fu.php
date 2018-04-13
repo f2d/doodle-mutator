@@ -2,7 +2,7 @@
 
 //* Constants only for internal use: ------------------------------------------
 
-define(HTML_VERSION, '2018-03-07 02:35');	//* <- change this to autoupdate old browser-cached pages
+define(HTML_VERSION, '2018-04-14 01:10');	//* <- change this to autoupdate old browser-cached pages
 define(HTACCESS_VERSION, '2017-10-27 23:23');	//* <- change this + open index as admin to autoupdate old .htaccess
 
 //* Function argument flags: --------------------------------------------------
@@ -45,6 +45,22 @@ function exit_redirect($new_path) {
 	header('HTTP/1.1 303 Redirect: path fix');
 	header("Location: $new_path");
 	exit;
+}
+
+function add_cookie_header($name, $value = null) {
+	global $qk_expires_now, $qk_expires_later;
+
+	if ($value === null) {
+		list($name, $value) = preg_split('~\s*=\s*~u', $name, 2);
+	}
+	$k = (
+		($delete = !strlen($value))
+	?	'qk_expires_now'
+	:	'qk_expires_later'
+	);
+	$qk_expires = (isset($$k) ? $$k : ($$k = gmdate(DATE_COOKIE, ($delete ? 0 : T0 + QK_EXPIRES))));
+
+	header("Set-Cookie: $name=$value; expires=$qk_expires; Path=".ROOTPRFX);
 }
 
 function rewrite_htaccess($write_to_file = 1) {
@@ -1490,7 +1506,7 @@ function get_template_form($t) {
 			.		indent(implode(NL, (array)$v))
 			.	'</span>'
 			);
-		//	foreach ($v as &$t) $t = "<span>$t</span>";
+		//	foreach ($v as &$t) $t = "<span>$t</span>"; unset($t);
 			array_unshift($v, '<input type="radio"'.$n.' value="'.$k.'"'.$checked.'>');
 			array_push($v, '&mdash;');
 			$radiogroup .= NL
@@ -1603,7 +1619,7 @@ function get_template_page($page) {
 				if (MOD) $v = "<span id=\"$k\">$v</span>";
 				$v = ": $v";
 				$c = (false !== mb_strpos($k, 'stop')?'cold':'dust');
-			} else $c = 'room-new';
+			} else $c = 'new';
 			$anno[$c][] = $tmp_announce[$k].$v;
 		}
 	}
@@ -1684,6 +1700,7 @@ function get_template_page($page) {
 	if ($a = $page[$k = 'header']) {
 		if (is_array($a)) {
 			foreach ($a as $i => &$v) if ($v) $v = ($i?'<u class="'.$i.'">':'<u>').indent($v).'</u>';
+			unset($v);
 			$a = implode(NL, $a);
 		}
 		$header .= NL.'<p>'.indent($a).'</p>';

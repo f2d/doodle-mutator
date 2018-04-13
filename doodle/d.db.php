@@ -957,6 +957,7 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 					}
 					break;
 				}
+				unset($line);
 			}
 			data_unlock($lk);
 		}

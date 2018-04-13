@@ -111,9 +111,9 @@ $tmp_draw_test = 'Test drawing pad';
 $tmp_draw_this = 'Try to draw';
 $tmp_empty = 'Empty';
 $tmp_foot_notes = array('About this website', 'project', 'author', 'message board', ' for contact.');
-$tmp_link_schemes = array(
-	'http'	=> 'Switch to HTTP.'
-,	'https'	=> 'Switch to HTTPS.'
+$tmp_header_links = array(
+	'drawpile' => 'Drawpile (online collab.)'
+,	'index' => 'etc.'
 );
 $tmp_me = 'Name yourself';
 $tmp_me_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters. Also you may enter your old key here.';

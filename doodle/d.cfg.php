@@ -319,6 +319,13 @@ $cfg_welcome_links = array(
 
 //* ---------------------------------------------------------------------------
 
+$cfg_header_links = array(
+//	'drawpile' => '/drawpile/'
+//,	'index' => '/index.htm'
+);
+
+//* ---------------------------------------------------------------------------
+
 define(FOOT_NOTE, '
 <a href="'.ROOTPRFX.'?'.ARG_ABOUT.'">%s</a>,
 <a href="https://github.com/f2d/doodle-mutator">%s</a>,
