@@ -116,7 +116,7 @@ $tmp_header_links = array(
 ,	'index' => 'etc.'
 );
 $tmp_me = 'Name yourself';
-$tmp_me_hint = 'Maximum length — '.USER_NAME_MAX_LENGTH.' letters. Also you may enter your old key here.';
+$tmp_me_hint = 'Your nickname, maximum length — '.USER_NAME_MAX_LENGTH.' letters. Also you may enter your old key here.';
 $tmp_me_submit = $tmp_rooms_submit = 'Enter';
 $tmp_mod_files = array(
 	'arch' =>		'Rewrite all archives with newest template.'
@@ -202,7 +202,7 @@ $tmp_options_input = array(	//* ID => array(setting description, default value (
 $tmp_options_email = 'E-mail';
 $tmp_options_email_hint = 'your@mail.box';
 $tmp_options_email_show = 'visible to people';
-$tmp_options_name = 'Name';
+$tmp_options_name = 'Your nickname';
 $tmp_options_profile = 'After applying changes';
 $tmp_options_profile_link = 'Go to check your profile page.';
 $tmp_options_qk = 'Key to login';
@@ -331,7 +331,7 @@ $tmp_took = ', took %s sec.';
 $tmp_user = 'User profile';
 $tmp_user_about = 'About';
 $tmp_user_email = $tmp_options_email;
-$tmp_user_name = $tmp_options_name;
+$tmp_user_name = 'Nickname';
 $tmp_welcome_parts = array(
 	'header'	=> 'How to play:'
 ,	'footer'	=> 'Come anytime, leave anytime. There is no ending.'

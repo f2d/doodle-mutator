@@ -14,18 +14,20 @@ define(F_NATSORT, 8);
 
 //* ---------------------------------------------------------------------------
 
-function exit_if_not_mod($t = 0, $change = 0) {
+function exit_if_not_mod($t = 0, $change = false, $changes = '') {
 	$t = gmdate('r',
 		$t
 		? max(intval($t), data_global_announce('last'))
 		: T0
 	);
-	$q = 'W/"'.md5(
+	$q = 'W/"'.md5(implode(NL, array_filter(array(
 		'Refresh any page cached before '.HTML_VERSION
-	.NL.	'Or if user key, options or date-related decoration changed: '.ME_VAL
-	.NL.	implode(NL, get_date_class())
-	.NL.	$GLOBALS['target']['deadline']
-	).'"';
+	,	'Or if user key, options or date-related decoration changed: '.ME_VAL
+	,	implode(NL, get_date_class())
+	,	$GLOBALS['lang']
+	,	$GLOBALS['target']['deadline']
+	,	is_array($changes) ? implode(', ', $changes) : $changes
+	)))).'"';
 	header("Etag: $q");
 	if (
 		!$change
@@ -484,7 +486,7 @@ function get_room_type($room, $type = '') {
 	foreach ($cfg_room_types as $set_id => $set) if (
 		(!isset($set['if_game_type']) || (isset($result[$g]) && $set['if_game_type'] === $result[$g]))
 	&&	(!($v = $set['if_name_prefix']) || in_array($v, $found_prefixes))
-	&&	(!($v = intval($set['if_name_length'    ])) || $l == $v)
+	&&	(!($v = intval($set['if_name_length'	])) || $l == $v)
 	&&	(!($v = intval($set['if_name_length_min'])) || $l >= $v)
 	&&	(!($v = intval($set['if_name_length_max'])) || $l <= $v)
 	) {
@@ -1041,7 +1043,7 @@ function get_draw_app_list($allow_upload = true) {
 <p class="hint" id="draw-app-select">'.indent("$a.").'</p>');
 	if ($n !== DRAW_APP_NONE) {
 		$f = $n;
-		if (false !== ($s = mb_strrpos      ($n, '.'))) $n = mb_substr($n, 0, $s); else $f .= DRAW_APP_DEFAULT_EXT;
+		if (false !== ($s = mb_strrpos	  ($n, '.'))) $n = mb_substr($n, 0, $s); else $f .= DRAW_APP_DEFAULT_EXT;
 		if (false !== ($s = mb_strrpos_after($n, '/'))) $n = mb_substr($n, $s);
 		$ext = get_file_ext($f);
 		$f = ROOTPRFX.$f.(LINK_TIME?'?'.filemtime($f):'');
@@ -1297,6 +1299,21 @@ Shell output: $o");
 		}
 	}
 }
+
+# https://stackoverflow.com/a/1455610
+function get_system_memory_info() {
+	if (function_exists($f = 'win32_ps_stat_mem')) return $f();
+
+	$array = array();
+	if ($lines = get_file_lines('/proc/meminfo')) {
+		foreach ($lines as $line) {
+			list($key, $val) = explode(':', $line);
+			$array[$key] = trim($val);
+		}
+	}
+	return $array;
+}
+
 
 //* front end templates -------------------------------------------------------
 

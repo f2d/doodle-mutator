@@ -1032,6 +1032,8 @@ var	keep = (e?e.getAttribute('data-keep'):0) || ''
 		while (i--) if (
 			(m = LS.key(i))
 		&&	(m !== 'lang')
+		&&	(m[0] !== '/')
+		&&	(m.slice(-1)[0] !== '/')
 		&&	(!keep || keep !== m.substr(0,l))
 		) {
 			c.push(q = LS.getItem(m).length);

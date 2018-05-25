@@ -644,19 +644,22 @@ $x
 		exit_if_not_mod();				//* <- never exits, to check HTTP_IF_MODIFIED_SINCE, etc
 		$sort = (is_postfix($q, 'sort'));
 		$headers = headers_list();
-		$t =	'DATE_RFC822 = '	.gmdate(DATE_RFC822, T0).NL
-		.	'DATE_RFC2822 = '	.gmdate('r', T0).NL
-		.	'strip magic slashes = '.($gpc?'on':'off').NL
-		.	($f = 'normalizer_normalize').' = '.function_exists($f).NL
-		;
-		$v = '
-			ROOTPRFX, NAMEPRFX, DATA_VERSION, HTML_VERSION, HTACCESS_VERSION
-		,	mb_regex_encoding, mb_regex_set_options, headers
-		,	qfix, qpath, query, room, room_type
+		$t = '';
+		foreach (array('DATE_RFC822', 'DATE_RFC2822') as $k) if ($v = get_const($k)) {
+			$t .= "$k = ".gmdate($v, T0).NL;
+		}
+		foreach (array('strip_magic_slashes', 'normalizer_normalize') as $k) if ($v = function_exists($k)) {
+			$t .= "$k = $v".NL;
+		}
+		$v = array_map(trim, explode(',', '
+			mb_regex_encoding, mb_regex_set_options
+		,	get_system_memory_info, sys_getloadavg
+		,	ROOTPRFX, NAMEPRFX, DATA_VERSION, HTML_VERSION, HTACCESS_VERSION
 		,	cfg_room_prefix_chars, cfg_room_prefixes
+		,	qfix, qpath, query, room, room_type, headers
 		,	_COOKIE, _ENV, _GET, _POST, _SERVER, _SESSION, gd_info
-		';
-		foreach (explode(',', $v) as $k) if ($v = (function_exists($k = trim($k)) ? $k() : (get_const($k) ?: $$k))) {
+		'));
+		foreach ($v as $k) if ($v = (function_exists($k) ? $k() : (get_const($k) ?: $$k))) {
 			if ($sort && is_array($v)) {
 				if (isset($v[0])) natsort($v);
 				else ksort($v);
@@ -1184,9 +1187,17 @@ if (TIME_PARTS) time_check_point('inb4 aim lock');
 				);
 				$visible = data_get_visible_threads();
 				data_unlock();
-if (TIME_PARTS) time_check_point('got visible threads data, unlocked all, target = '.get_print_or_none($target));
+if (TIME_PARTS) time_check_point('got visible threads data, unlocked all'
+	.', changes = '.get_print_or_none($visible['changes'])
+	.', target = '.get_print_or_none($target)
+);
 
-				exit_if_not_mod(max($t = $target['time'], $visible['last']), $change || $target['changed']);
+				exit_if_not_mod(
+					max($t = $target['time'], $visible['last'])
+				,	$change || $target['changed']
+				,	$visible['changes']
+				);
+
 				$task_time = ($t ?: T0);	//* <- UTC seconds
 				$x = 'trd_max';
 				$t = '';

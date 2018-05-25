@@ -1585,12 +1585,12 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 				else if (
 					(list($d,$f,$m) = data_get_thread_by_num($i = $a[0]))
 				&&	($n = data_get_count(COUNT_ROOM, $msg)+1)
-				&&	($t = mkdir_if_none($new.DATA_SUB_TRD."$n$m[etc]$e$m[inactive]"))
+				&&	($t = mkdir_if_none("$new/".DATA_SUB_TRD."$n$m[etc]$e$m[inactive]"))
 				&&	copy($d.$f, $t)
 				) {
 					$ok = "$f -> $t";
-					if (is_file($r = $old.DATA_SUB_REP.$i.$e)) {
-						$t = mkdir_if_none($new.DATA_SUB_REP.$n.$e);
+					if (is_file($r = "$old/".DATA_SUB_REP.$i.$e)) {
+						$t = mkdir_if_none("$new/".DATA_SUB_REP.$n.$e);
 						if (copy($r, $t)) $ok .= NL."+ $r -> $t";
 					}
 					data_put_count($n, COUNT_ROOM, $msg);
@@ -1600,7 +1600,6 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 	//* rename room:
 			if (is_dir($new)) $ok = "target $new/ already exists";
 			else {
-				data_post_refresh();
 				$ok = "/$room/ -> /$msg/";
 				foreach (array(DATA_DIR_ROOM, DIR_ARCH) as $f) {
 					$old = $f.$room;
@@ -1610,7 +1609,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 						.(is_dir($old) && rename($old, $new) ?1:0);
 				}
 				$ok .= data_replace_u_flag(0, "mod_$room", "mod_$msg");
-				$room = $msg;
+				data_post_refresh($room = $msg);
 			}
 		}
 	} else
@@ -1791,6 +1790,7 @@ function data_get_visible_threads() {
 	$u_marks = array('ban', 'god', 'mod', "mod_$room", 'nor');
 	$threads = array();
 	$reports = array();
+	$changes = array();
 	$last = 0;
 
 	data_lock($lk = LK_ROOM.$room, false);
@@ -1816,7 +1816,7 @@ if (TIME_PARTS) time_check_point("done scan: $c files in $td, inb4 thread iterat
 			&&	($show_unknown || data_thread_has_posts_by($f, $u_num))
 			)
 		) {
-			$t = filemtime($path);
+			$changes[] = $t = filemtime($path);
 			if ($last < $t) $last = $t;
 			$last_post_time = 0;
 			$posts = array();
@@ -1881,6 +1881,7 @@ if (TIME_PARTS) time_check_point("done trd $fn, last = $last");
 		'last' => $last
 	,	'threads' => $threads
 	,	'reports' => $reports
+	,	'changes' => $changes
 	) : $threads;
 }
 
