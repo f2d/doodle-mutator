@@ -2,7 +2,7 @@
 
 //* Constants only for internal use: ------------------------------------------
 
-define(HTML_VERSION, '2018-04-14 01:10');	//* <- change this to autoupdate old browser-cached pages
+define(HTML_VERSION, '2018-05-30 16:42');	//* <- change this to autoupdate old browser-cached pages
 define(HTACCESS_VERSION, '2017-10-27 23:23');	//* <- change this + open index as admin to autoupdate old .htaccess
 
 //* Function argument flags: --------------------------------------------------
@@ -721,7 +721,7 @@ function is_post_matching($post, $criteria, $caseless = true) {
 			$t = $post['meta'];				//* <- what was used to draw
 		}
 
-if (TIME_PARTS) time_check_point("$type: $t vs ".get_print_or_none($value));
+if (TIME_PARTS && LOCALHOST) time_check_point("$type: $t vs ".get_print_or_none($value));
 
 	//* compare:
 		if (is_array($value)) {
@@ -1577,8 +1577,8 @@ function get_template_hint($t) {
 		'href="+"'
 	,	'href="javascript:void this" onClick="toggleClass(this.nextElementSibling,\'hid\')"'
 	,	str_replace(
-			str_split('{`}[|]\\')
-		,	array('<a href="', '" onClick="', '</a>', '<span class="', '">', '</span>', NL)
+			str_split('{`^}[|]\\')
+		,	array('<a href="', '" onClick="', '" target="_blank', '</a>', '<span class="', '">', '</span>', NL)
 		,	nl2br(
 				htmlspecialchars(
 					preg_replace(

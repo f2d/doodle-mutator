@@ -52,6 +52,7 @@ define(M0, $t[0]);
 $s = $_SERVER['SERVER_SOFTWARE'];
 define(WS_NGINX, stripos($s, 'nginx') !== false);
 define(WS_HTACCESS_SUPPORTED, stripos($s, 'apache') !== false);
+define(LOCALHOST, $_SERVER['SERVER_ADDR'] === $_SERVER['REMOTE_ADDR']);
 
 define(GET_Q, strpos($p, '?'));
 define(ARG_ERROR, '!');
@@ -715,18 +716,27 @@ $t";
 //* info page, about website, rules -------------------------------------------
 
 if (isset($query[ARG_ABOUT])) {
+	$about_open = preg_split('~\W+~u', $query[ARG_ABOUT], 0, PREG_SPLIT_NO_EMPTY);
+
 	$page['task'] = "<p>$tmp_about:</p>";
 	$page['welcome'] = $tmp_welcome_parts;
 	$page['js'][0]++;
 
-	foreach ($tmp_rules as $head => $hint) {
-		if (is_array($hint)) {
+	foreach ($tmp_rules as $k => $v) {
+		if (is_array($hint = $v['hint'] ?? $v['list'])) {
 			$s = '';
 			foreach ($hint as $i) $s .= NL.'<li>'.indent(get_template_hint($i)).'</li>';
-			$hid = ($qdir || $page['task']?' class="hid"':'');
+			$hid = (
+				($qdir || $page['task'])
+			&&	(false === array_search($k, $about_open))
+				? ' class="hid"'
+				: ''
+			);
 			$s = NL."<ul$hid>".indent($s).'</ul>';
-		} else	$s = NL.'<p class="hint">'.indent(get_template_hint($hint)).'</p>';
-		$page['task'] .= NL."<p>$head</p>$s";
+		} else {
+			$s = NL.'<p class="hint">'.indent(get_template_hint($hint)).'</p>';
+		}
+		$page['task'] .= NL."<p id=\"$k\">$v[head]</p>$s";
 	}
 } else
 

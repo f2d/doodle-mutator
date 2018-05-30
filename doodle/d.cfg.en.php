@@ -105,7 +105,7 @@ $tmp_draw_app = array('JS Flat', 'JS Layers', 'Simply upload your own file');
 $tmp_draw_app_select = 'Drawing tool variant';
 $tmp_draw_free = 'Draw anything';
 $tmp_draw_hint = 'This page shares browser memory with the actual game. May be used to restore, offline edit, save to file, etc.';
-$tmp_draw_limit_hint = 'It\'s acceptable here to attach you own drawing, limited in size from %sx%s to %sx%s pixels, up to %s bytes (%s), in a file of any of these types: %s.';
+$tmp_draw_limit_hint = 'Attach you own drawing, limited in size from %sx%s to %sx%s pixels, up to %s bytes (%s), in a file of any of these types: %s.';
 $tmp_draw_next = 'Try to draw what happens after this';
 $tmp_draw_test = 'Test drawing pad';
 $tmp_draw_this = 'Try to draw';
@@ -291,22 +291,49 @@ $tmp_rooms_hint = 'Maximum length — '.ROOM_NAME_MAX_LENGTH.' letters.';
 $tmp_filter_placeholder =
 $tmp_rooms_placeholder = 'Type here to filter the list.';
 $tmp_rules = array(
-	'Rules' => array(
-'Parallel turn-based multiplayer drawing game.',
-'Enjoy your time, make fun, not trouble.',
-'Site does not guarantee keeping everything that anyone may post.'
-),	'Mechanics' => array(
-'As a task you get random last post, except your own, or a prompt to start a new thread.
-You have '.TARGET_DESC_TIME.'s to describe or '.TARGET_DRAW_TIME.'s to draw, after that your task can possibly be taken by other people.
+	'rules' => array(
+		'head' => 'Rules'
+	,	'list' => array(
+			'Parallel turn-based multiplayer drawing game.'
+		,	'Enjoy your time, make fun, not trouble.'
+		,	'Site does not guarantee keeping everything that anyone may post.'
+		)
+	)
+,	'works' => array(
+		'head' => 'Mechanics'
+	,	'list' => array(
+			'As a task you get random last post, except your own, or a prompt to start a new thread.
+You have '.TARGET_DESC_TIME.'s to describe or ds to draw, after that your task can possibly be taken by other people.
 If not yet taken, or already dropped, you can still send your post and hit the target.
-Misfired pic makes a new thread with copy of your task, a text post just starts a new one.',
-'If your task is empty, you can try to change it anytime, if not — once in '.TARGET_CHANGE_TIME.'s, by entering or refreshing room.
+Misfired pic makes a new thread with copy of your task, a text post just starts a new one.'
+		,	'If your task is empty, you can try to change it anytime, if not — once in '.TARGET_CHANGE_TIME.'s, by entering or refreshing room.
 Do not open the same room in multiple tabs, the site keeps only single target per room for you, and it will change.
 If, after some time or room actions, you finally decide to perform your task, but disabled automatic task checking, be sure to check it with the timer button (at right). This check is also performed automatically when sending a post.
-Note: while any message in a [report|red bar] is displayed at top, or in-room draw app selection is used, refreshing the room in-place (i.e., using the F5 key) will not change the task. Сlicking the room link at the top will drop this effect.',
-'Threads stay full at '.TRD_MAX_POSTS.' pics for '.TRD_ARCH_TIME.'s (to let reports and moderation), then go to archive when the next new thread is created.
+Note: while any message in a [report|red bar] is displayed at top, or in-room draw app selection is used, refreshing the room in-place (i.e., using the F5 key) will not change the task. Сlicking the room link at the top will drop this effect.'
+		,	'Threads stay full at '.TRD_MAX_POSTS.' pics for '.TRD_ARCH_TIME.'s (to let reports and moderation), then go to archive when the next new thread is created.
 Single-letter rooms keep only 1 page in archive (no more than '.TRD_PER_PAGE.' threads), have no reports and moderation, and full threads go to archive right away.'
-));
+		)
+	)
+,	'data' => array(
+		'head' => 'Personal data and cookies'
+	,	'list' => array(
+			'No real-life personal data is ever required to use this site.'
+		,	'If you attach an optional E-mail address, it will be used only on-demand, e.g. instructions to restore your login.'
+		,	'This site stores numerical IP addresses of all registered users and participants, which are never deleted, unless directly asked.
+This technical data may be used for bans and deletions of malusers, and is never given outside, unless required by law.'
+		,	'This site uses {https://'.$lang.'.wikipedia.org/wiki/HTTP_cookie^|HTTP Cookies} in your browser only for:
+- user login,
+- user settings,
+- remembering skipped tasks.
+Site receives this data automatically with each page request, and it never leaves the site.'
+		,	'This site uses {https://'.$lang.'.wikipedia.org/wiki/Web_Storage^|Local Storage API} in your browser only for:
+- keeping drawpad settings,
+- keeping drawings to restore,
+- keeping archive subfolder listings for easier navigation options.
+Site does not receive this data, and it never leaves your browser.'
+		)
+	)
+);
 $tmp_sending = 'Sending now, please wait...';
 $tmp_spam_trap = 'Leave this empty.';
 $tmp_stop_all = 'Game is frozen.';

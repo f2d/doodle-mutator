@@ -431,7 +431,7 @@ if (TIME_PARTS) $n_check = '';
 if (TIME_PARTS) {++$n_found; $n_check .= "=$n_found: $found";}
 				}
 			}
-if (TIME_PARTS) time_check_point("done $i$n_check");
+if (TIME_PARTS && (LOCALHOST || $n_check)) time_check_point("done $i$n_check");
 		} else
 if (TIME_PARTS) time_check_point("$i: content not found in $path");
 
