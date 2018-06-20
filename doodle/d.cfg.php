@@ -181,7 +181,10 @@ $cfg_opts_order = array(
 	,	'save2common', 'kbox', 'focus', 'modtime304'
 	,	'picprogress', 'capture_altclick', 'capture_textselection', 'task_timer'
 	)
-,	'admin' => array('time_check_points')
+,	'admin' => array(
+		'time_check_points'
+	,	'display_php_errors'
+	)
 );
 
 //* ---------------------------------------------------------------------------

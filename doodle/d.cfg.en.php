@@ -197,6 +197,7 @@ $tmp_options_input = array(	//* ID => array(setting description, default value (
 	)
 ,	'admin' => array(
 		'time_check_points'	=> 'Work time check points in footer|show|hide'
+	,	'display_php_errors'	=> 'PHP errors|hide|show'
 	)
 );
 $tmp_options_email = 'E-mail';

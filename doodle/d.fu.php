@@ -188,6 +188,30 @@ normalize:
 	return function_exists($f = 'normalizer_normalize') ? $f($text) : $text;
 }
 
+function log_preg_last_error($none_too = true) {
+	if (!TIME_PARTS) return;
+	if (($e = preg_last_error()) || $none_too) {
+		//* http://php.net/manual/en/pcre.constants.php
+		foreach (array(
+			'PREG_NO_ERROR' => 'there were no errors. since v5.2.0'
+		,	'PREG_INTERNAL_ERROR' => 'there was an internal PCRE error. since v5.2.0'
+		,	'PREG_BACKTRACK_LIMIT_ERROR' => 'backtrack limit was exhausted. since v5.2.0'
+		,	'PREG_RECURSION_LIMIT_ERROR' => 'recursion limit was exhausted. since v5.2.0'
+		,	'PREG_BAD_UTF8_ERROR' => 'the last error was caused by malformed UTF-8 data (only when running a regex in UTF-8 mode). since v5.2.0'
+		,	'PREG_BAD_UTF8_OFFSET_ERROR' => 'the offset didn\'t correspond to the begin of a valid UTF-8 code point (only when running a regex in UTF-8 mode). since v5.3.0'
+		,	'PREG_JIT_STACKLIMIT_ERROR' => 'the last PCRE function failed due to limited JIT stack space. since v7.0.0'
+		) as $k => $v) if (
+			defined($k)
+		&&	$e == get_const($k)
+		) {
+			$e = "$e, $k: $v";
+			break;
+		}
+		$v = PCRE_VERSION;
+		time_check_point("PCRE ver.$v, preg_last_error = $e");
+	}
+}
+
 function get_const($name) {return defined($s = mb_strtoupper($name)) ? constant($s) : '';}
 function abbr($a, $sep = '_') {foreach ((is_array($a) ? $a : mb_split_filter($a, $sep)) as $word) $r .= mb_substr($word,0,1); return $r;}
 function mb_escape_regex($s, $delim = '/', $extend = '') {return preg_replace("~[\\\\|\\$delim$extend\\[\\](){}^$.:?*+-]~u", '\\\\$0', $s);}
@@ -1318,16 +1342,50 @@ function get_system_memory_info() {
 //* front end templates -------------------------------------------------------
 
 function indent($t, $n = 0) {
-	return (
-		!strlen($t = trim($t))
-	||	(!$n && false === mb_strpos($t, NL))
-	)
-	? $t
-	: preg_replace(
-		'~(?:^|\v+)(?:(\h*<(pre|textarea)\b.+?)(?=\v+\h*</\2>))?~uis'
-	,	NL.str_repeat("\t", $n > 0?$n:1).'$1'
-	,	$t
-	).NL;
+	if (
+		strlen($t = trim($t))
+	&&	($n || false !== mb_strpos($t, NL))
+	) {
+		$before = str_repeat("\t", $n > 0?$n:1);
+/*
+//* this regex fails on 1 MB of text with PREG_BACKTRACK_LIMIT_ERROR: backtrack limit was exhausted.
+		$t = preg_replace(
+			'~(?:^|\v+)(?:(\h*<(pre|textarea)\b.+?)(?=\v+\h*</\2>))?~uis'
+		,	NL.$before.'$1'
+		,	$t
+		).NL;
+*/
+		$in = false;
+		$t = NL.preg_replace_callback(
+			'~
+				(?<=^|\v)
+				\h*
+				(?:
+					<
+					(?P<openTag>pre|textarea)
+					\b\V*?
+				)?
+				(?:
+					</
+					(?P<closeTag>pre|textarea)
+					>
+				)?
+			~imux'
+		,	function($match) use ($before, &$in) {
+				if ($in) {
+					$add = false;
+				} else {
+					$add = $before;
+					if ($tag = $match['openTag']) $in = $tag;
+				}
+				if ($in && ($tag = $match['closeTag']) && ($in === $tag)) $in = false;
+				return $add ? $add.$match[0] : $match[0];
+			}
+		,	$t
+		).NL;
+		log_preg_last_error(false);
+	}
+	return $t;
 }
 
 function csv2nl($v, $c = ';', $n = 1) {
@@ -1597,13 +1655,45 @@ function get_template_hint($t) {
 	);
 }
 
-function get_template_content($p, $static = 0, $tag = '', $attr = '') {
+function get_template_menu($top_line, $hidden_content) {
+	return (
+		'<u class="menu-head">'.indent(
+			$top_line.NL.
+			'<u class="menu-top">'.
+			'<u class="menu-hid">'.
+			'<u class="menu-list">'.indent(
+				$hidden_content
+			).'</u></u></u>'
+		).'</u>'
+	);
+}
+
+function get_template_content($p, $static = 0, $tag = '', $attr = '', $LN = '') {
 	global $tmp_require_js, $tmp_result;
+	if ($LN) {
+		$a = (array)$p;
+		$p = '';
+		if (is_array($LN)) {
+			$NL = $LN['next-item'] ?? NL;
+			$LN = $LN['key-value'] ?? NL;
+		} else $NL = NL;
+		foreach ($a as $k => $v) {
+			$p .= ($p ? $NL : '').$k.$LN.$v;
+		}
+		$p = "
+<pre$attr>$p
+</pre>";
+	} else
 	if (is_array($p)) {
 		$a = $p;
 		$p = '';
-		foreach ($a as $k => $v) if (!$k) $p = $v; else if ($v) $attr .= " $k=\"$v\"";
+		foreach ($a as $k => $v) if (!$k) {
+			$p .= $v;
+		} else if ($v) {
+			$attr .= " $k=\"$v\"";
+		}
 	}
+
 	if (strlen($p)) {
 		if (GOD && !$static && ($v = $GLOBALS[$k = 'fix_encoding_chosen'])) {
 			$v = implode(',', (array)$v);
@@ -1615,14 +1705,20 @@ $k = $v$p";
 <$t$attr>$p
 </$t>
 <noscript>".indent('<p class="hint report">'.($static?'JavaScript support required.':$tmp_require_js).'</p>').'</noscript>';
-		return '<div class="'.($static?'thread':'content" id="content').'">'.indent($p).'</div>';
+		$p = '<div class="'.($static?'thread':'content" id="content').'">'.indent($p).'</div>';
+
+		return $p;
 	}
+
 	return '';
 }
 
 function get_template_page($page) {
-	global $cfg_langs, $draw_test, $lang, $tmp_announce, $tmp_post_err, $room;
-	if (!is_array($j = $page['js'] ?: array())) $j = array($j => 1);
+	global $cfg_langs, $draw_test, $lang, $room, $tcp, $tmp_announce, $tmp_post_err;
+
+	if (!is_array($j = $page['js'] ?: array())) {
+		$j = array($j => 1);
+	}
 	$R = !!$j['arch'];
 	$RL = $page['link'] ?? '';
 	$LN = $page['listing'] ?? '';
@@ -1630,6 +1726,7 @@ function get_template_page($page) {
 	$static = ($LN || $R);
 	$class = (($v = $page['body']) ? (array)$v : array());
 	$anno = array();
+
 	if ($page['anno']) {
 		foreach (data_global_announce('all') as $k => $v) {
 			if (strlen($v)) {
@@ -1640,6 +1737,7 @@ function get_template_page($page) {
 			$anno[$c][] = $tmp_announce[$k].$v;
 		}
 	}
+
 	if (!$static) {
 		$L = LINK_TIME;
 		if ($a = $page['report']) {
@@ -1656,27 +1754,22 @@ function get_template_page($page) {
 		if (FROZEN_HELL) $class[] = 'frozen-hell';
 		if ($d = get_date_class()) $class = array_merge($class, $d);
 	}
+
 	if ($a = $page[$k = 'welcome']) {
 		if (is_array($a) ? ($a = get_template_welcome($a)) : $a) {
 			$$k = '<div class="'.$k.'">'.indent($a).'</div>';
 		}
 	}
+
 	if ($a = $page[$k = 'profile']) {
 		$$k = '<div class="'.$k.' al">'.indent($a).'</div>';
 	}
+
 	if ($a = $page[$k = 'content']) {
 		$attr = get_template_attr($page['data'][$k]);
-		if ($LN) {
-			if (is_array($LN)) {
-				$NL = $LN['next-item'] ?? NL;
-				$LN = $LN['key-value'] ?? NL;
-			} else $NL = NL;
-			foreach ((array)$a as $k => $v) $content .= ($content ? $NL : '').$k.$LN.$v;
-			$content = "
-<pre$attr>$content
-</pre>";
-		} else $content = get_template_content($a, $static, '', $attr);
+		$content = get_template_content($a, $static, '', $attr, $LN);
 	}
+
 	if ($RL || !ME_VAL) {
 		$k = $GLOBALS['cfg_link_schemes'] ?? '';
 		if ($k = (is_array($k)?$k[0]:$k)) {
@@ -1688,6 +1781,7 @@ function get_template_page($page) {
 			$canon = "$k://$_SERVER[SERVER_NAME]$v";
 		}
 	}
+
 	$head = '<meta charset="'.ENC.'">'.($LN?'':'
 <meta name="viewport" content="width=690">
 <link rel="stylesheet" type="text/css" href="'.$N.($v = '.css').($L?'?'.filemtime(NAMEPRFX.$v):'').'">').'
@@ -1714,6 +1808,7 @@ function get_template_page($page) {
 			$anno_lines = '';
 		}
 	}
+
 	if ($a = $page[$k = 'header']) {
 		if (is_array($a)) {
 			foreach ($a as $i => &$v) if ($v) $v = ($i?'<u class="'.$i.'">':'<u>').indent($v).'</u>';
@@ -1722,16 +1817,27 @@ function get_template_page($page) {
 		}
 		$header .= NL.'<p>'.indent($a).'</p>';
 	}
+
 	if ($header) {
 		$i = '"'.$k.'"';
 		$attr = get_template_attr($page['data'][$k]);
 		$header = "<$k id=$i class=$i$attr>".indent($header)."</$k>";
 	}
-	if ($v = $page[$txt = 'textarea']) $$txt = NL.trim(htmlspecialchars($v));
+
+	if ($v = $page[$txt = 'textarea']) {
+		$$txt = NL.trim(htmlspecialchars($v));
+	}
+
 	if ($v = $page[$k = 'task']) {
 		$attr = get_template_attr($page['data'][$k]);
-		if ($sub = $page['subtask']) $v = '<div class="task">'.indent($v).'</div>'.$sub;
-		else if (!$static) $attr = ' class="task"'.$attr;
+
+		if ($sub = $page['subtask']) {
+			$v = '<div class="task">'.indent($v).'</div>'.$sub;
+		} else
+		if (!$static) {
+			$attr = ' class="task"'.$attr;
+		}
+
 		if ($sub = $$txt) {
 			$k = ' class="dump" id="dump"';
 			$v .= "
@@ -1742,11 +1848,31 @@ function get_template_page($page) {
 		}
 		$task = '<div id="task"'.$attr.'>'.indent($anno_lines.$v).'</div>';
 	} else
-	if ($v = $$txt) $content .= get_template_content($anno_lines.$v, $static, $txt);
-	if ($v = $page['footer']) $footer = '<footer>'.indent($v).'</footer>';
+	if ($v = $$txt) {
+		$content .= get_template_content($anno_lines.$v, $static, $txt);
+	}
 
-	if ($j) foreach ($j as $k => $v) $scripts .= '
-<script src="'.$N.($v = ($k?".$k":'').'.js').($L?'?'.filemtime(NAMEPRFX.$v):'').'"></script>';
+	if ($v = $page['footer']) {
+
+		if (TIME_PARTS) {
+			foreach ($tcp as $t => $comment) {
+				$t = get_time_elapsed($t);
+				$t_diff = ltrim(sprintf('%.6f', $t - $t_prev), '0.');
+				$t = sprintf('%.6f', $t_prev = $t);
+				$comment = mb_str_replace(NL, '<br>-', is_array($comment)?implode('<br>', $comment):$comment);
+				$took_list .= NL."<tr><td>$t +</td><td>$t_diff:</td><td>$comment</td></tr>";
+			}
+		}
+		if ($took_list) {
+			$v .= NL.'<table id="took" style="display:none">'.indent($took_list).'</table>';
+		}
+
+		$footer = '<footer>'.indent($v).'</footer>';
+	}
+
+	if ($j) foreach ($j as $k => $v) {
+		$scripts .= NL.'<script src="'.$N.($v = ($k?".$k":'').'.js').($L?'?'.filemtime(NAMEPRFX.$v):'').'"></script>';
+	}
 
 	return '<!doctype html>
 <html lang="'.($page['lang'] ?: $lang ?: $cfg_langs[0] ?: 'en').'">

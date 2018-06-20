@@ -326,6 +326,11 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 	}
 }
 define(GOD, !!$u_flag['god']);
+if (GOD && !POST && $u_opts['display_php_errors']) {
+	ini_set('display_errors', '1');
+	ini_set('html_errors', '1');
+	error_reporting(~0);
+}
 define(TIME_PARTS, !POST && GOD && !$u_opts['time_check_points']);	//* <- profiling
 if (TIME_PARTS) time_check_point('done user settings, GOD = '.GOD
 	.NL.'u_flag = '.get_print_or_none($u_flag)
@@ -674,6 +679,7 @@ $x
 	} else
 	if ($q && array_key_exists($q, $tmp_mod_pages)) {
 		data_lock($q, false);
+
 		exit_if_not_mod(data_get_mod_log($q, 1));
 		if ($t = data_get_mod_log($q)) {
 			if ($q === LK_USERLIST) {
@@ -692,9 +698,11 @@ $t";
 flags = c
 $t";
 			}
+
 			$page['data']['content']['type'] = $q;
 			$lnk .= get_template_form(array('filter' => 1));
 		}
+
 		data_unlock($q);
 	}
 	if (
@@ -1696,15 +1704,7 @@ if (!$is_report_page) {
 	if (GOD) {
 		define(M, A.'.?'.LK_MOD_ACT);
 		foreach ($tmp_mod_pages as $k => $v) $mod_list .= M.'='.$k.'">'.$v.AB;
-		$mod_link_menu =
-			'<u class="menu-head">'.indent(
-				M.$a_head['#'].NL.
-				'<u class="menu-top">'.
-				'<u class="menu-hid">'.
-				'<u class="menu-list">'.indent(
-					$mod_list
-				).'</u></u></u>'
-			).'</u>';
+		$mod_link_menu = get_template_menu(M.$a_head['#'], $mod_list);
 	}
 
 	$a = (array)$cfg_link_schemes;
@@ -1740,15 +1740,7 @@ if (!$is_report_page) {
 		if ($i_b) $i_a[] = $i_b;
 		$i_b = '';
 		if ($index_list = implode('&mdash;<br>', $i_a)) {
-			$index_link_menu =
-				'<u class="menu-head">'.indent(
-					A.ROOTPRFX.$a_head['/'].NL.
-					'<u class="menu-top">'.
-					'<u class="menu-hid">'.
-					'<u class="menu-list">'.indent(
-						$index_list
-					).'</u></u></u>'
-				).'</u>';
+			$index_link_menu = get_template_menu(A.ROOTPRFX.$a_head['/'], $index_list);
 		}
 	}
 
@@ -1804,13 +1796,6 @@ if (!$is_report_page) {
 		if (TIME_PARTS) {
 			time_check_point('inb4 template');
 			$took = '<a href="javascript:'.(++$page['js'][0]).',toggleHide(took),took.scrollIntoView()">'.$took.'</a>';
-			foreach ($tcp as $t => $comment) {
-				$t = get_time_elapsed($t);
-				$t_diff = ltrim(sprintf('%.6f', $t - $t_prev), '0.');
-				$t = sprintf('%.6f', $t_prev = $t);
-				$comment = mb_str_replace(NL, '<br>-', is_array($comment)?implode('<br>', $comment):$comment);
-				$took_list .= NL."<tr><td>$t +</td><td>$t_diff:</td><td>$comment</td></tr>";
-			}
 		}
 		$took = get_time_html().mb_str_replace_first(' ', NL, sprintf($tmp_took, $took));
 	}
@@ -1819,11 +1804,8 @@ if (!$is_report_page) {
 	,	'r' => $links
 	) as $k => $v) if (strlen($v)) $footer .= NL.'<span class="'.$k.'">'.indent($v).'</span>';
 
-	if ($footer) $page['footer'] = '<p class="hint">'.indent($footer).'</p>'.(
-		$took_list
-		? NL.'<table id="took" style="display:none">'.indent($took_list).'</table>'
-		: ''
-	);
+	if ($footer) $page['footer'] = '<p class="hint">'.indent($footer).'</p>';
+
 	$page['anno'] = 1;
 }
 if ($v = $query[ARG_ERROR]) $page['report'] = $v;

@@ -206,6 +206,7 @@ $tmp_options_input = array(
 	)
 ,	'admin' => array(
 		'time_check_points'	=> 'Время отработки этапов в конце страницы|показывать'
+	,	'display_php_errors'	=> 'Ошибки PHP|скрыть|показывать'
 	)
 );
 $tmp_options_email = 'Почта (E-mail)';
