@@ -1418,9 +1418,15 @@ right = $tmp_empty$flags
 					} else {
 						$head = (
 							$t
-							? $tmp_describe_this
+							? (
+								$target['pic']
+								? $tmp_describe_this
+								: $tmp_describe_next.':
+<span id="task-text">'.$t.'</span>'
+							)
 							: (
 								$room_type['single_active_thread']
+							||	!$room_type['allow_image_reply']
 								? $tmp_describe_free
 								: $tmp_describe_new
 							)
@@ -1430,6 +1436,7 @@ right = $tmp_empty$flags
 								'method' =>	'post'
 							,	'name' =>	'describe'
 							,	'min' =>	DESCRIBE_MIN_LENGTH
+							,	'max' =>	DESCRIBE_MAX_LENGTH
 							,	'head' =>	$head
 							,	'hint' =>	$tmp_describe_hint.($u_flag['nop'] ? '\\'.$tmp_no_play_hint : '')
 							,	'filter' =>	$filter
@@ -1906,19 +1913,18 @@ if ($u_key) {
 	if (isset($_POST['mod'])) {
 		if (MOD && (($qd_room && $room) || (GOD && ($query[LK_MOD_ACT] === LK_USERLIST || $etc === '3')))) {
 			$d = ord('a');
-			$k = array();
-			$result = array();
-			$done = 0;
-			$failed = 0;
-			foreach ($_POST as $i => $a) if (preg_match('~^m\d+_(\d+)_(\d+)_(\d+)$~i', $i, $m)) {
-				$m[0] = $a;
-				$j = chr($d + substr_count($a, '+'));
-				$j = str_replace_first('_', $j, $i);
-				$act[$j] = $m;
+			foreach ($_POST as $numbers => $text) if (preg_match('~^m\d+_(\d+)_(\d+)_(\d+)$~i', $numbers, $match)) {
+				$match[0] = $text;
+				$k = chr($d + substr_count($text, '+'));
+				$k = str_replace_first('_', "-$k-", $numbers);
+				$act[$k] = $match;
 			}
 			if ($act) {
-				ksort($act, SORT_NATURAL);		//* <- since php v5.4.0 only
-				array_reverse($act);
+				krsort($act, SORT_NATURAL);		//* <- SORT_NATURAL - since php v5.4.0 only
+
+				$done = 0;
+				$failed = 0;
+				$result = array();
 
 				data_lock(LK_MOD_ACT);
 				data_lock(LK_ROOM.$room);

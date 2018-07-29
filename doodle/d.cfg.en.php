@@ -77,7 +77,7 @@ $tmp_arch_last = 'last';
 $tmp_back = 'Return.';
 $tmp_ban = 'Access forbidden.';
 $tmp_check_required = 'Final check';
-$tmp_describe_hint = 'At least '.DESCRIBE_MIN_LENGTH.' letters.\\
+$tmp_describe_hint = 'From '.DESCRIBE_MIN_LENGTH.' to '.DESCRIBE_MAX_LENGTH.' letters.\\
 [a|Format options]\\
 [hid|\\
 	[r poem|\\
@@ -100,6 +100,7 @@ $tmp_describe_hint = 'At least '.DESCRIBE_MIN_LENGTH.' letters.\\
 ]';
 $tmp_describe_free = 'Write anything';
 $tmp_describe_new = 'Describe a picture you would like to see';
+$tmp_describe_next = 'Write what happens after this';
 $tmp_describe_this = 'Describe what you see on this picture';
 $tmp_draw_app = array('JS Flat', 'JS Layers', 'Simply upload your own file');
 $tmp_draw_app_select = 'Drawing tool variant';
@@ -278,13 +279,15 @@ $tmp_room_types_title = array(
 	'all' => 'All'
 ,	'1dpd' => 'Doodle Mutator'
 ,	'simd' => 'Doodle Version'
-,	'draw' => 'Doodle Story'
-,	'1trd' => 'Doodle Dump'
+,	'draw' => 'Doodle Continue'
+,	'text' => 'Text Continue'
+,	'1trd' => 'Dump'
 );
 $tmp_room_types = array(
 	'1dpd' => 'single drawing per description, a.k.a. the "blind phone" game'
 ,	'simd' => 'multiple drawings under single description (topic) in each thread'
 ,	'draw' => 'multiple drawings, no text posts, like "continue a story"'
+,	'text' => 'multiple text posts, no drawings, like "continue a story" again'
 ,	'1trd' => 'single active thread per room, no thread locking, random mess'
 );
 $tmp_rooms = 'Rooms';

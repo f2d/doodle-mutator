@@ -22,6 +22,7 @@ $cfg_game_type_dir = array(
 	'1dpd' => ''		//* <- single drawing per description, a.k.a. the "blind phone" game
 ,	'simd' => 'batch'	//* <- multiple drawings per single desc. (OP) per thread
 ,	'draw' => 'continue'	//* <- multiple drawings, no text posts
+,	'text' => 'text_pile'	//* <- endless text posts, no drawings
 ,	'1trd' => 'dump'	//* <- single thread per room, no thread locking, random mess
 );
 define(GAME_TYPE_DEFAULT, reset($cfg_game_type_dir));	//* <- if this or none of types is empty, no-subfolder will not be allowed
@@ -252,6 +253,18 @@ $cfg_room_types = array(
 	,	'lock_taken_task'      => true
 	,	'alternate_reply_type' => true
 	)
+,	'game_of_blind_story' => array(
+		'if_game_type'         => 'draw'
+	,	'allow_text_op'        => false
+	,	'allow_text_reply'     => false
+	,	'lock_taken_task'      => true
+	)
+,	'game_of_deaf_story' => array(
+		'if_game_type'         => 'text'
+	,	'allow_image_op'       => false
+	,	'allow_image_reply'    => false
+	,	'lock_taken_task'      => true
+	)
 ,	'game_of_multiversion' => array(
 		'if_game_type'         => 'simd'
 	,	'allow_image_op'       => false
@@ -259,12 +272,6 @@ $cfg_room_types = array(
 	,	'allow_reply_to_self'  => true
 	,	'allow_reply_to_full'  => true
 	,	'single_thread_task'   => true
-	)
-,	'game_of_story' => array(
-		'if_game_type'         => 'draw'
-	,	'allow_text_op'        => false
-	,	'allow_text_reply'     => false
-	,	'lock_taken_task'      => true
 	)
 ,	'game_of_random' => array(
 		'if_game_type'         => '1trd'

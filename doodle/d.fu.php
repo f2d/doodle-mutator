@@ -1378,7 +1378,10 @@ function indent($t, $n = 0) {
 					$add = $before;
 					if ($tag = $match['openTag']) $in = $tag;
 				}
-				if ($in && ($tag = $match['closeTag']) && ($in === $tag)) $in = false;
+				if ($in && ($tag = $match['closeTag']) && ($in === $tag)) {
+					$in = false;
+					if (!$add && !$match['openTag']) $add = $before;
+				}
 				return $add ? $add.$match[0] : $match[0];
 			}
 		,	$t
@@ -1547,7 +1550,7 @@ function get_template_form($t) {
 	if ($head) {
 		$head = NL
 		.'<p>'
-		.	indent($head.':')
+		.	indent(false === strpos($head, ':') ? "$head:" : $head)
 		.'</p>';
 	}
 	if ($a = $hint) {
