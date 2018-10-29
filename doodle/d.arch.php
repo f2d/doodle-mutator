@@ -127,9 +127,11 @@ function data_archive_get_fixed_content_line($line) {
 
 //* image/link:
 	$recheck = $data_archive_re_params['recheck_img'] ?: array();
+	$post_with_pic = (count($tab) > 3);
+	$p = $tab[2];
 	if (
-		count($tab) > 3
-	&&	false !== mb_strpos($p = $tab[2], '<img')
+		$post_with_pic
+	&&	false !== mb_strpos($p, '<img')
 	&&	(
 			count(array_filter($recheck))
 		||	!(
@@ -172,6 +174,16 @@ function data_archive_get_fixed_content_line($line) {
 			$p = "<!--$p-->".ARCH_PIC_NOT_FOUND;
 		}
 		$tab[2] = $p;
+	} else
+	if (
+		!$post_with_pic
+	&&	preg_match('~^<span title="(?P<Title>(?P<Time>\d+):\s+(?P<Task>[^>]*))">(?P<Text>'.NOR.')</span>$~iu', $p, $match)
+	) {
+		$tab[2] = (
+			strlen($match['Time']) && strlen($match['Task'])
+			? "$match[Text]<!-- $match[Title] -->"
+			: "$match[Text]"
+		);
 	}
 
 	return implode($sep, $tab);
