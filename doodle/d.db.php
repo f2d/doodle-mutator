@@ -1432,7 +1432,11 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 			) {
 				$lst = DATA_LOG_START;
 				if ($fst = mb_strpos($old[$ok], DATA_MARK_IMG)) {
-					$lst .= mb_substr($old[$ok], 0, $fst).DATA_MARK_TXT.NOR.NL;	//* <- add placeholder if pic first
+					$lst .= mb_substr($old[$ok], 0, $fst)
+					.DATA_MARK_TXT
+					.NOR
+					.'<!-- '.T0.': thread split -->'
+					.NL;	//* <- add placeholder if pic first
 				}
 				$fst = implode(NL, $p);
 				$lst .= implode(NL, $q);

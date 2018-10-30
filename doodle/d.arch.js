@@ -246,7 +246,7 @@ var	h,i,j,k,l,m,t = '\t', threadHTML = '', alt = 1, img = 1, num = 1
 		+		tab[k]
 		+	'</aside>'+post;
 
-		threadHTML += '<div class="post'
+		threadHTML += '<div class="post pad'
 		+	(num?' p':'')
 		+	(res?' res':'')
 		+	alt
