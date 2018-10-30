@@ -1051,8 +1051,16 @@ arch_dl_path = '.ROOTPRFX.DIR_ARCH_DL
 -
 |<input type="button" value="';
 		$d = '';
+		$prefixes_to_keep = DRAW_PERSISTENT_PREFIX;
+		$prefixes_to_del = implode(',', array_merge(
+			[NAMEPRFX, DRAW_BACKUPCOPY_PREFIX]
+		,	array_filter($cfg_draw_app, 'is_not_draw_none')
+		));
 		foreach (array(
-			'save'	=> array($j, 'id="unsave" data-keep="'.DRAW_PERSISTENT_PREFIX)
+			'save'	=> array($j, 'id="unsave'
+				.'" data-prefixes-to-keep="'.$prefixes_to_keep
+				.'" data-prefixes-to-delete="'.$prefixes_to_del
+			)
 		,	'pref'	=> array($i, 'name="'.OPT_PRFX.'reset')
 		,	'skip'	=> array($j, 'id="unskip')
 		,	'out'	=> array($i, 'name="quit')

@@ -1002,12 +1002,41 @@ var	t = id(i) || (showContent(), id(i))
 //* Options-specific functions *-----------------------------------------------
 
 function getSaves(v,e) {
-var	keep = (e?e.getAttribute('data-keep'):0) || ''
-,	room = (e?e.getAttribute('data-room'):0) || ''
+
+	function isMatchingAnyPrefix(line, prefixes) {
+		if (
+			!line
+		||	!line.length
+		) return false;
+
+		if (
+			!prefixes
+		||	!prefixes.length
+		) return true;
+
+	var	j,k
+	,	i = prefixes.length
+	,	l = line.length
+		;
+		while (i--) if (
+			(j = prefixes[i])
+		&&	(k = j.length)
+		&&	l >= k
+		&&	(line.substr(0,k) === j)
+		) return true;
+
+		return false;
+	}
+
+var	room = (e?e.getAttribute('data-room'):0) || ''
+,	dptk = (e?e.getAttribute('data-prefixes-to-keep'):0) || ''
+,	dptd = (e?e.getAttribute('data-prefixes-to-delete'):0) || ''
+,	prefToKeep = dptk.split(',')
+,	prefToDel = dptd.split(',')
 ,	c = []
 ,	j = []
 ,	k = []
-,	l = keep.length
+,	name
 	;
 	if (v == 'unskip') {
 	var	m,n,q,b = 'base64:'
@@ -1018,27 +1047,30 @@ var	keep = (e?e.getAttribute('data-keep'):0) || ''
 		;
 		while (i--) if (
 			(m = decodeURIComponent(a[i]).match(r))
+		&&	(name = m[1])
 		&&	(n = m[2].replace(regTrimSlash, ''))
 	//	&&	(n.slice(0,g) === b ? (n = atob(n.slice(g))) : true)	//* <- atob() turns utf8 into garbage, not usable
-		&&	(!keep || keep !== m[1].substr(0,l))
 		&&	(!room || room === n)
+		&&	!isMatchingAnyPrefix(name, prefToKeep)
+		&&	isMatchingAnyPrefix(name, prefToDel)
 		) {
 			c.push(q = m[3].split('/').length);
 			j.push(n+': '+getFormattedNumUnits(q, la.clear[v].unit));
-			k.push(m[1]);
+			k.push(name);
 		}
 	} else
 	if (v == 'unsave' && LS && (i = LS.length)) {
 		while (i--) if (
-			(m = LS.key(i))
-		&&	(m !== 'lang')
-		&&	(m[0] !== '/')
-		&&	(m.slice(-1)[0] !== '/')
-		&&	(!keep || keep !== m.substr(0,l))
+			(name = LS.key(i))
+		&&	(name !== 'lang')
+		&&	(name[0] !== '/')
+		&&	(name.slice(-1)[0] !== '/')
+		&&	!isMatchingAnyPrefix(name, prefToKeep)
+		&&	isMatchingAnyPrefix(name, prefToDel)
 		) {
-			c.push(q = LS.getItem(m).length);
-			j.push(m+': '+getFormattedNumUnits(q, la.clear[v].unit));
-			k.push(m);
+			c.push(q = LS.getItem(name).length);
+			j.push(name+': '+getFormattedNumUnits(q, la.clear[v].unit));
+			k.push(name);
 		}
 	}
 	return {

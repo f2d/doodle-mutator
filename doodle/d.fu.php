@@ -350,6 +350,7 @@ function is_opt_arg($k) {return is_prefix($k, OPT_PRFX);}
 function is_tag_attr($t) {return mb_strpos($t, '<') === mb_strpos($t, '>');}	//* <- if only both === false
 function is_not_empty($var) {return !empty($var);}
 function is_not_dot($path) {return !!trim($path, './\\');}
+function is_not_draw_none($var) {return $var !== DRAW_APP_NONE;}
 function is_not_hidden($room) {
 	global $u_flag;
 	return (
