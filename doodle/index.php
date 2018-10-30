@@ -951,7 +951,7 @@ NL.$tmp_options_name.$t.(
 	.'</a>'
 	: $u_name
 ).$f
-.NL.$tmp_options_qk.$t.'<input type="text" readonly value="'.$u_key.'" title="'.$tmp_options_qk_hint.'">'
+.NL.$tmp_options_qk.$t.'<div class="half-hidden" title="'.$tmp_options_qk_hint.'">'.$u_key.'</div>'
 .NL.$tmp_options_email.',<label><input type="checkbox"'
 .(
 	$u_email['show'] ? ' checked' : ''

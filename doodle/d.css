@@ -639,8 +639,12 @@ body,
 	vertical-align: middle;
 	line-height: 50%;
 }
+.half-hidden {
+	width: 99px;
+}
 .post .center input[name="email"],
-.post .center:hover input[type="text"][readonly] {
+.post .center:hover input[type="text"][readonly],
+.half-hidden:hover {
 	width: 240px;
 }
 .post .center input[name="naming"] {
@@ -714,6 +718,7 @@ body,
 .post.hover-menu aside.r .menu-head:hover {
 	right: -5px;
 }
+.half-hidden:not(:hover),
 .post.hover-menu aside:not(:hover) .stub,
 .post aside.ref,
 .room-title::after {
