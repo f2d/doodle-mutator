@@ -2007,7 +2007,7 @@ function showContent(sortOrder) {
 								: ''
 							)
 						,	report: (
-								modEnabled && dtp.threads
+								modEnabled && dtp.threads && !flag.n
 								? (
 									'javascript:openReportForm(\''
 								+		b
@@ -2023,7 +2023,7 @@ function showContent(sortOrder) {
 								) : ''
 							)
 						,	mod: (
-								modEnabled && bnw.menu
+								modEnabled && bnw.menu && (!flag.n || flag.g || i > 0)
 								? (
 									(postClickMenu = 1)
 								,	(asideAttr += ' id="m_'+(

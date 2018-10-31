@@ -1955,7 +1955,7 @@ if ($u_key) {
 //* report problem in active room ---------------------------------------------
 
 	if (isset($_POST[$k = 'report'])) {
-		if ((MOD || !NO_MOD) && ($report_post_ID = $query['report_post'] ?: $etc)) {
+		if (!NO_MOD && ($report_post_ID = $query['report_post'] ?: $etc)) {
 			$post_status = 'no_path';
 			if (preg_match(PAT_REPORT, $report_post_ID, $r)) {
 				$post_status = 'text_short';

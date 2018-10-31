@@ -511,6 +511,10 @@ li {
 #task-text {
 	word-wrap: break-word;
 }
+.post.hover-menu aside:hover {
+	border-color: #000;
+	background-color: #f5f5f5;
+}
 .post {		background-color: #f5f5f5;}
 body,
 .alt {		background-color: #eee;}
