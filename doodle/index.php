@@ -1634,6 +1634,7 @@ $a#$j$l|$r$m");
 
 	if ($etc) die('x');
 	foreach ($cfg_dir as $k => $v) unset(${"qd_$k"});
+	$page['signup'] = true;
 	$page['welcome'] = $tmp_welcome_parts;
 	$page['task'] = get_template_form(
 		array(

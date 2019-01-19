@@ -7,6 +7,7 @@
 
 $cfg_langs = array($lang = 'en', 'ru');
 $cfg_link_schemes = array('http', 'https');
+$cfg_link_canon = 'https://www.example.com/';	//* <- main domain address, for search engines
 $cfg_dir = array(
 //* Format: ID => subfolder
 //* real folder with accessible static files:

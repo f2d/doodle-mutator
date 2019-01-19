@@ -1775,14 +1775,22 @@ function get_template_page($page) {
 	}
 
 	if ($RL || !ME_VAL) {
-		$k = $GLOBALS['cfg_link_schemes'] ?? '';
-		if ($k = (is_array($k)?$k[0]:$k)) {
+		$k = (array)($GLOBALS['cfg_link_canon'] ?: $GLOBALS['cfg_link_schemes'] ?: '');
+		if ($k = $k[0]) {
+			if (false === strpos($k, '/')) {
+				$k = "$k://$_SERVER[SERVER_NAME]";
+			}
 			if ($draw_test) {
 				$v = ROOTPRFX.'?'.ARG_DRAW_APP.'='.$draw_test;
+			} else
+			if ($page['signup']) {
+				$v = ROOTPRFX;
 			} else {
 				$v = $RL ?: $_SERVER['REQUEST_URI'];
 			}
-			$canon = "$k://$_SERVER[SERVER_NAME]$v";
+			$k = rtrim($k, '/.');
+			$v = ltrim($v, '/.');
+			$canon = "$k/$v";
 		}
 	}
 
