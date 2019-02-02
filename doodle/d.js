@@ -582,23 +582,48 @@ var	t = orz(msec)
 	return (t < 0?'-':'')+a.join(':');
 }
 
-function getFTimeIfTime(t, plain) {return regTimeBreak.test(t = ''+t) ? getFormattedTime(t, plain) : t;}
+function getFTimeIfTime(t, plain) {
+	return (
+		regTimeBreak.test(t = ''+t)
+		? getFormattedTime(t, plain)
+		: t
+	);
+}
+
 function getFormattedTime(t, plain, only_ymd, for_filename) {
-	if (TOS.indexOf(typeof t) > -1) t = orz(t)*1000;
-var	d = (t ? new Date(t+(t > 0 ? 0 : new Date())) : new Date());
-	t = ('FullYear,Month,Date'+(only_ymd?'':',Hours,Minutes,Seconds')).split(',').map(function(v,i) {
-		v = d['get'+v]();
-		if (i == 1) ++v;
-		return leftPad(v);
-	});
-var	YMD = t.slice(0,3).join('-'), HIS = t.slice(3).join(for_filename?'-':':');
+	if (TOS.indexOf(typeof t) > -1) {
+		t = orz(t)*1000;
+	}
+var	d = (
+		t
+		? new Date(t+(t > 0 ? 0 : new Date()))
+		: new Date()
+	)
+,	t = (
+		('FullYear,Month,Date'+(only_ymd?'':',Hours,Minutes,Seconds'))
+		.split(',')
+		.map(
+			function(v,i) {
+				v = d['get'+v]();
+				if (i == 1) ++v;
+				return leftPad(v);
+			}
+		)
+	)
+,	YMD = t.slice(0,3).join('-')
+,	HIS = t.slice(3).join(for_filename?'-':':')
+	;
 	return (
 		plain
 		? YMD+(for_filename?'_':' ')+HIS
-		: '<time datetime="'+YMD+'T'+HIS
+		: (
+			'<time datetime="'+YMD+'T'+HIS
 		+	getFormattedTimezoneOffset(t)
 		+	'" data-t="'+Math.floor(d/1000)
-		+	'">'+YMD+' <small>'+HIS+'</small></time>'
+		+	'">'
+		+		YMD+' <small>'+HIS+'</small>'
+		+	'</time>'
+		)
 	);
 }
 
