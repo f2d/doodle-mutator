@@ -8,6 +8,7 @@
 ,	regClassSkipFilter = getClassReg('anno|x3')
 ,	regCountSkip = /(Time|Layers)$/
 ,	regCountTail = /\s*:+[\s\d]*(\([^()]*\))?$/
+,	regCookieSkip = /^([^=]+?-skip-[0-9a-f]+)=([^\/]+?\/+(?:[^\/]+?\/{2})?)(.*)$/i
 ,	regLinkProtocol = /^(\w*:)?(\/*)/
 ,	regTagDiv = /^div$/i
 ,	regTagDivP = /^(div|p)$/i
@@ -27,6 +28,8 @@
 ,	regNaNa = /\D+/g
 ,	regSpace = /\s+/g
 ,	regSpaceHTML = /\s|&(nbsp|#8203|#x200B);?/gi
+,	regSplitCookie = /;\s*/g
+,	regSplitComma = /,\s*/g
 ,	regSplitLineBreak = /\r\n|\r|\n/g
 ,	regSplitWord = /\W+/g
 ,	regTextAreaBR = /(<|&lt;)br[ /]*(>|&gt;)/gi
@@ -1056,8 +1059,8 @@ function getSaves(v,e) {
 var	room = (e?e.getAttribute('data-room'):0) || ''
 ,	dptk = (e?e.getAttribute('data-prefixes-to-keep'):0) || ''
 ,	dptd = (e?e.getAttribute('data-prefixes-to-delete'):0) || ''
-,	prefToKeep = dptk.split(',')
-,	prefToDel = dptd.split(',')
+,	prefToKeep = dptk.split(regSplitComma)
+,	prefToDel = dptd.split(regSplitComma)
 ,	c = []
 ,	j = []
 ,	k = []
@@ -1065,19 +1068,18 @@ var	room = (e?e.getAttribute('data-room'):0) || ''
 	;
 	if (v == 'unskip') {
 	var	m,n,q,b = 'base64:'
-	,	a = document.cookie.split(/;\s*/)
+	,	a = document.cookie.split(regSplitCookie)
 	,	i = a.length
 	,	g = b.length
-	,	r = /^([0-9a-z]+-skip-[0-9a-f]+)=([^\/]+?\/+(?:[^\/]+?\/{2})?)(.*)$/i
 		;
 		while (i--) if (
-			(m = decodeURIComponent(a[i]).match(r))
+			(m = decodeURIComponent(a[i]).match(regCookieSkip))
 		&&	(name = m[1])
 		&&	(n = m[2].replace(regTrimSlash, ''))
 	//	&&	(n.slice(0,g) === b ? (n = atob(n.slice(g))) : true)	//* <- atob() turns utf8 into garbage, not usable
 		&&	(!room || room === n)
-		&&	!isMatchingAnyPrefix(name, prefToKeep)
-		&&	isMatchingAnyPrefix(name, prefToDel)
+		// &&	!isMatchingAnyPrefix(name, prefToKeep)
+		// &&	isMatchingAnyPrefix(name, prefToDel)
 		) {
 			c.push(q = m[3].split('/').length);
 			j.push(n+': '+getFormattedNumUnits(q, la.clear[v].unit));
