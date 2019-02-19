@@ -76,6 +76,27 @@ var	a = gc('post',e)
 	}
 });
 
+function capsPostButtonClick(e, which) {
+	if (
+		e
+	&&	(e.tagName || ((e = id(e)) && e.tagName))
+	&&	(p = getCapsParentPost(e))
+	) {
+	var	p
+	,	whichNum = orz(which)
+	,	a = getCapsGroup(p, whichNum < 0 ? -1 : 1)
+		;
+		if (
+			typeof which !== 'undefined'
+		&&	whichNum > 0
+		&&	a.length > whichNum
+		) {
+			a.length = whichNum;
+		}
+		capsSave(a);
+	}
+}
+
 function capsPostClick(e) {
 	if (!e || !(
 			e.which === 1
@@ -90,30 +111,38 @@ function capsPostClick(e) {
 				)//* ugh; shift+rmb still fails if ff49, but works in o11, Chrome, etc.
 			)
 		)
-	) return e.which !== 1;
+	) {
+		return e.which !== 1;
+	}
+
 	if (e && (p = e.target) && (p = getCapsParentPost(p))) {
 		eventStop(e,1,1);
-	var	j,p,n = (e.which === 1?0:-1);
+	var	a,i,j,p,n = (e.which === 1?0:-1);
+
 //* capture snapshot of all selected posts:
+
 		if (e.altKey) {
-		var	a = gc('post selected', id('content'))
-		,	i = a.length
-			;
 			if (e.ctrlKey || e.shiftKey) {
-				a = getCapsGroup(p, e.shiftKey?1:-1), j = a.length;
+				a = getCapsGroup(p, e.shiftKey?1:-1);
 			} else {
-				if (a.indexOf(p) < 0) a = getCapsGroup(p), j = a.length;
+				a = gc('post selected', id('content'));
+				if (a.indexOf(p) < 0) a = getCapsGroup(p);
 			}
 			capsSave(a);
 		} else
+
 //* toggle selection of one clicked post:
+
 		if (e.ctrlKey) {
-		var	a = getCapsGroup(capsLastPost = p, j = (e.shiftKey?1:0))
+		var	a = getCapsGroup(capsLastPost = p
+		,	j = (e.shiftKey?1:0))
 		,	i = a.length
 			;
 			while (i--) toggleClass(a[i], 'selected', n || j);
 		} else
+
 //* select all posts between clicked and last clicked:
+
 		if (e.shiftKey) {
 		var	a = getCapsGroupRange(capsLastPost, p)
 		,	i = a.length
@@ -122,6 +151,7 @@ function capsPostClick(e) {
 			while (i--) toggleClass(a[i], 'selected', n || 1);
 		}
 	}
+
 	return false;
 }
 
@@ -179,7 +209,7 @@ var	la,a = {
 				e.className = capsBtn;
 				e.id = f;
 				e.innerHTML =
-					'<div>'
+					'<div class="'+capsBtn+'-mark capture-mark">'
 				+		'<b>'+la[i]+'</b>'
 				+		'<button>'+la.hint+'</button>'
 				+	'</div>';

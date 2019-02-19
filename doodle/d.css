@@ -743,11 +743,16 @@ label {
 }
 .warn-mark {
 	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwQAADsEBuJFr7QAAABl0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMC4xMK0KCsAAAADhSURBVEhL7ZTbCoMwEETtjV7ovf3/b+0c6kJYNqkaA31w4ECM607rZuwW/Ys2YvtdttdRvHtYN9VavIQZsmavmc7CzAz2moiZeTOjyTxvwgxMds29WbUX1hw4pZDuUTOLVuIh0uaRITXUVusk0saw6/H71FbJx8DIGVbHJIoBHHqie5NjUopByRAmxeQuombArKLZGjw7Sj4GUxgcE472U0RNxkCPQTEpvaqx/IwJYY5i4OHo++BH0Iu6rC4ietCDYekUp2T/Je87/UDPAXPkA5EVpvwijGu5iqLZokUD1HUf6oQRrO99Q8cAAAAASUVORK5CYII=");
-	background-repeat: no-repeat;
-	background-position: top right;
 }
-.r .warn-mark {
-	background-position: top left;
+.capture-mark {
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAATBAMAAAB8awA1AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMTJDBGvsAAAAMFBMVEUAAACqzO4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADcNH1TAAAAEHRSTlMAAAECAwQGBwsMDg8REhMU4+CFkgAAAJlJREFUGNNjEEQGDAIM6xdYvv//bzLXLwZGMG89w///vyC8vv8w8IKRQeLDh///Whki3gO5jQxyQPJq9rttsUD6IYP8////IoCsVqDkRxDvRz6Q960fyvu6H8j7HQ/lfQCZ8I8fxgObz49V5Y96IO87zJR/HkBeC8yG/0eq/2/3+Q/igdwCc9lDBsn/CDCRQWgenPNSkQHF7wDVQa3w7TSI5QAAAABJRU5ErkJggg==");
+}
+.menu-btn-mark {
+	background-repeat: no-repeat;
+	background-position: right;
+}
+.r .menu-btn-mark {
+	background-position: left;
 }
 .aside-wider .post > aside:not(.ref),
 .aside-wider .post.pad aside,
@@ -758,11 +763,11 @@ label {
 .post.hover-menu aside .stub {
 	min-width: 165px;
 }
-.post.hover-menu a.warn-mark {
+.post.hover-menu a.menu-btn-mark {
 	padding-left: 2px;
 	padding-right: 28px;
 }
-.post.hover-menu .r a.warn-mark {
+.post.hover-menu .r a.menu-btn-mark {
 	padding-left: 28px;
 	padding-right: 2px;
 }
@@ -793,10 +798,9 @@ label {
 	position: relative;
 	right: 0;
 }
-.post .caps-btn > * {
+.post .caps-btn-mark {
 	position: absolute;
 	right: 0;
-	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAATBAMAAAB8awA1AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMTJDBGvsAAAAMFBMVEUAAACqzO4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADcNH1TAAAAEHRSTlMAAAECAwQGBwsMDg8REhMU4+CFkgAAAJlJREFUGNNjEEQGDAIM6xdYvv//bzLXLwZGMG89w///vyC8vv8w8IKRQeLDh///Whki3gO5jQxyQPJq9rttsUD6IYP8////IoCsVqDkRxDvRz6Q960fyvu6H8j7HQ/lfQCZ8I8fxgObz49V5Y96IO87zJR/HkBeC8yG/0eq/2/3+Q/igdwCc9lDBsn/CDCRQWgenPNSkQHF7wDVQa3w7TSI5QAAAABJRU5ErkJggg==");
 	background-repeat: no-repeat;
 	background-position: left;
 	background-color: #ace;

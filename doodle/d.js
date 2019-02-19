@@ -162,6 +162,9 @@ if (lang == 'ru') la = {
 ,	post_menu: {
 		arch_room: 'Найти в архиве комнаты'
 	,	arch_all: 'Найти во всех архивах'
+	,	capture_thread: 'Снимок всей нити'
+	,	capture_to_last_pic: 'Снимок по последний рисунок'
+	,	capture_to_this_post: 'Снимок по этот пост'
 	,	report: 'Сообщить или ответить о проблеме'
 	,	user: 'Все данные пользователя'
 	,	mod: 'Меню модерации'
@@ -271,6 +274,9 @@ if (lang == 'ru') la = {
 ,	post_menu: {
 		arch_room: 'Search in room archive'
 	,	arch_all: 'Search in all archives'
+	,	capture_thread: 'Save screenshot of the thread'
+	,	capture_to_last_pic: 'Save screenshot up to last pic'
+	,	capture_to_this_post: 'Save screenshot up to this post'
 	,	report: 'Report or comment a problem'
 	,	user: 'List all data of this user'
 	,	mod: 'Mod menu'
@@ -1991,12 +1997,16 @@ function showContent(sortOrder) {
 					+		'</aside>'
 					+	'</div>';
 				}
+				if (dtp.threads) {
+					postID = 'post-'+threadNum+'-'+postNum;
+					postAttr += '" id="'+postID;
+				}
 			//* left & right wrap:
 				i = 2;
 				while (i--) if (isNotEmpty(t = tab[i])) {
 				var	asideAttr = '';
 					if (modEnabled) {
-						postID = threadNum+'-'+postNum+'-'+i;
+					var	menuID = threadNum+'-'+postNum+'-'+i;
 					}
 					if (
 						dtp.threads
@@ -2012,15 +2022,25 @@ function showContent(sortOrder) {
 							: encodeURIComponent(decodeHTMLSpecialChars(userName))
 						//	: encodeURIComponent('/^'+escapeRegex(decodeHTMLSpecialChars(userName))+'$/iu')
 						)
-					,	b = (
+					,	reportID = (
 							dtp.users
 							? userID
-							: postID
+							: menuID
 						)
-					,	c = (
+					,	modMenuID = (
 							dtp.users
 							? userID+'_'+threadNum+'_3'
-							: postID.replace(regNaNa, '_')
+							: menuID.replace(regNaNa, '_')
+						)
+					,	capBtnParts = (
+							param.caps_width
+							? [
+								'javascript:capsPostButtonClick(\''
+							+		postID
+							+	'\','
+							,	')" class="menu-btn-mark capture-mark'
+							]
+							: null
 						)
 					,	a = {
 							arch_room: (
@@ -2033,19 +2053,22 @@ function showContent(sortOrder) {
 								? j+m+a
 								: ''
 							)
+						,	capture_thread:       (capBtnParts ? capBtnParts.join(0)       : '')
+						,	capture_to_last_pic:  (capBtnParts ? capBtnParts.join(-1)      : '')
+						,	capture_to_this_post: (capBtnParts ? capBtnParts.join(postNum) : '')
 						,	report: (
 								modEnabled && dtp.threads && !flag.n
 								? (
 									'javascript:openReportForm(\''
-								+		b
-								+	'\')" class="warn-mark'
+								+		reportID
+								+	'\')" class="menu-btn-mark warn-mark'
 								) : ''
 							)
 						,	user: (
 								modEnabled && dtp.users
 								? (
 									'javascript:openReportForm(\''
-								+		b
+								+		reportID
 								+	'\')'
 								) : ''
 							)
@@ -2054,15 +2077,15 @@ function showContent(sortOrder) {
 								? (
 									(postClickMenu = 1)
 								,	(asideAttr += ' id="m_'+(
-										c
+										modMenuID
 									)+'"')
 								,	(asideAttr += ' data-post="'+encodeTagAttr(
 										editPostData
 									)+'"')
 								,	'javascript:menuOpen(\''
-								+		c
-								+	'\')" class="warn-mark" id="b_'
-								+		c
+								+		modMenuID
+								+	'\')" class="menu-btn-mark warn-mark" id="b_'
+								+		modMenuID
 								) : ''
 							)
 						}

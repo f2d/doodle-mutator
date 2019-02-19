@@ -1120,10 +1120,11 @@ function get_flag_vars($a) {
 		if (!is_array($v)) {
 			$mode = $v;
 			if ($k == 'caps') $v = array(
-				'at'
+				'atm'
 			,	array(
 					!$u_opts['capture_altclick']
 				,	!$u_opts['capture_textselection']
+				,	true
 				)
 			);
 		}
