@@ -2004,10 +2004,9 @@ function showContent(sortOrder) {
 			//* left & right wrap:
 				i = 2;
 				while (i--) if (isNotEmpty(t = tab[i])) {
-				var	asideAttr = '';
-					if (modEnabled) {
-					var	menuID = threadNum+'-'+postNum+'-'+i;
-					}
+				var	asideAttr = ''
+				,	menuID = threadNum+'-'+postNum+'-'+i
+					;
 					if (
 						dtp.threads
 					//||	dtp.found	//* <- TODO later
@@ -2033,7 +2032,7 @@ function showContent(sortOrder) {
 							: menuID.replace(regNaNa, '_')
 						)
 					,	capBtnParts = (
-							param.caps_width
+							i == 0 && param.caps_width
 							? [
 								'javascript:capsPostButtonClick(\''
 							+		postID
