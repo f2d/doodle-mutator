@@ -2238,7 +2238,7 @@ function data_log_post($post) {
 			$result['fork'] = 1;
 		} else
 		if ($pic) {
-			$fork = $u.DATA_MARK_TXT.NOR;
+			$fork = (T0 - 1)."	$u_num".DATA_MARK_TXT.NOR;
 			if ($target['task']) $fork .= '<!-- '.htmlspecialchars("$target[time]: $target[task]").' -->';
 		}
 		if ($fork) $post = $fork.NL.$post;

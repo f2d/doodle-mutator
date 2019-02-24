@@ -204,6 +204,20 @@ function data_archive_get_page_html($room, $num, $tsv) {
 	$n = $num+1;
 	$lines = mb_split_filter(trim(fix_encoding($tsv)), NL);
 	$lines = array_filter($lines, 'data_archive_is_a_content_line');
+	$dates = array_map('intval', $lines);
+
+	$pat_no_task_post = '~^(?P<Date>[^	]*)(?P<Post>	[^	]*	(v\d|'.mb_escape_regex(NOR).')(?:<!--.*-->)?)$~u';
+
+	foreach ($dates as $i => $no_task_post_date) if (preg_match($pat_no_task_post, $lines[$i], $match)) {
+		$same_date_count = 0;
+		foreach ($dates as $post_date) if ($post_date === $no_task_post_date) {
+			++$same_date_count;
+		}
+		if ($same_date_count > 1) {
+			$lines[$i] = ($no_task_post_date - 1).$match['Post'];
+		}
+	}
+
 	$lines = array_map('data_archive_get_fixed_content_line', $lines);
 	sort($lines);
 	$tsv = NL.implode(NL, $lines);
