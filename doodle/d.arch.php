@@ -1,6 +1,22 @@
 <?php
 
+define(ARCH_SITE_NAME, 'Doodle Mutator');
+define(ARCH_DESCRIPTION, 'Archived thread.');
 define(ARCH_PIC_NOT_FOUND, '<img src="'.ROOTPRFX.PIC_404.'">');
+define(ARCH_PAT_HTML_TAG, '~<\w+("[^">]*"|[^>])*>~u');
+define(ARCH_PAT_POST, '~^
+	(?P<Date>[^\t]*)
+	(?P<Post>\t[^\t]*\t
+		(?:
+			(?P<Placeholder>
+				(?P<PlaceholderText>v\d|'.mb_escape_regex(NOR).')
+				(?:<!--.*-->)?
+			)
+		|	(?P<Image><(?:a|img)\s.+)
+		|	(?P<Text>.+)
+		)
+	)
+$~uix');
 define(ARCH_PAT_POST_PIC, '~
 	(?P<open><a\s+[^>]+>)?
 	(?P<image><img\s+[^>]+?(?P<width>\s+width="\d+")?(?P<height>\s+height="\d+")?(?:\s+[^>]+?)?>)
@@ -191,7 +207,7 @@ function data_archive_get_fixed_content_line($line) {
 
 function data_archive_is_a_content_line($line) {return (false !== mb_strpos($line, '	'));}
 function data_archive_get_page_html($room, $num, $tsv) {
-	global $data_archive_re_params, $cfg_langs;
+	global $data_archive_re_params, $cfg_langs, $cfg_link_canon;
 	if (!is_array($data_archive_re_params)) $data_archive_re_params = array();
 	$date = (array(
 		'min' => 0
@@ -202,19 +218,34 @@ function data_archive_get_page_html($room, $num, $tsv) {
 
 	$p = $num-1;
 	$n = $num+1;
+
 	$lines = mb_split_filter(trim(fix_encoding($tsv)), NL);
 	$lines = array_filter($lines, 'data_archive_is_a_content_line');
 	$dates = array_map('intval', $lines);
 
-	$pat_no_task_post = '~^(?P<Date>[^	]*)(?P<Post>	[^	]*	(v\d|'.mb_escape_regex(NOR).')(?:<!--.*-->)?)$~u';
+	$post_text_types = array(
+		'Text' => 'desciption'
+	,	'Placeholder' => 'placeholder'
+	);
 
-	foreach ($dates as $i => $no_task_post_date) if (preg_match($pat_no_task_post, $lines[$i], $match)) {
-		$same_date_count = 0;
-		foreach ($dates as $post_date) if ($post_date === $no_task_post_date) {
-			++$same_date_count;
-		}
-		if ($same_date_count > 1) {
-			$lines[$i] = ($no_task_post_date - 1).$match['Post'];
+	foreach ($dates as $i => $no_task_post_date) if (preg_match(ARCH_PAT_POST, $lines[$i], $match)) {
+		if ($match['Placeholder']) {
+			$same_date_count = 0;
+			foreach ($dates as $post_date) if ($post_date === $no_task_post_date) {
+				++$same_date_count;
+			}
+			if ($same_date_count > 1) {
+				$lines[$i] = ($no_task_post_date - 1).$match['Post'];
+			}
+		} else
+		foreach ($post_text_types as $m_k => $v_k) if ($v = $match[$m_k]) {
+			if (
+				!$$v_k
+			&&	($v = preg_replace(ARCH_PAT_HTML_TAG, '', $v))
+			) {
+				$$v_k = $v;
+			}
+			break;
 		}
 	}
 
@@ -222,15 +253,33 @@ function data_archive_get_page_html($room, $num, $tsv) {
 	sort($lines);
 	$tsv = NL.implode(NL, $lines);
 
+	$full_link_prefix = rtrim($cfg_link_canon, './');
+	$link_here = ROOTPRFX.DIR_ARCH."$room/$num".PAGE_EXT;
+	$thumbnail = ROOTPRFX.DIR_ARCH."$room/".DIR_THUMB.$num.THUMB_EXT;
+
+	$date_min = date(TIMESTAMP, $date['min']);
+	$date_max = date(TIMESTAMP, $date['max']);
+	$title = "$room - $date_min - $date_max";
+
 	return get_template_page(
 		array(
 			'title' => $room
 		,	'lang' => $cfg_langs[0]
-		,	'link' => ROOTPRFX.DIR_ARCH."$room/$num".PAGE_EXT
-		,	'head' => ($p ? '<link rel="prev" href="'.$p.PAGE_EXT.'">'.NL : '').
-					'<link rel="next" href="'.$n.PAGE_EXT.'">'
+		,	'link' => $link_here
+		,	'links' => array(
+				'prev' => ($p > 0 ? $p.PAGE_EXT : '')
+			,	'next' => ($n > 0 ? $n.PAGE_EXT : '')
+			)
+		,	'meta' => array(
+				'og:type'  => 'article'
+			,	'og:url'   => $full_link_prefix.$link_here
+			,	'og:image' => $full_link_prefix.$thumbnail
+			,	'og:title' => $title
+			,	'og:description' => $desciption ?: $placeholder ?: ARCH_DESCRIPTION
+			,	'og:site_name'   => ARCH_SITE_NAME
+			)
 		,	'body' => get_date_class($date['min'], $date['max'])
-		,	'task' => ($p ? '<a href="'.$p.PAGE_EXT.'" title="previous">'.$num.'</a>' : $num)
+		,	'task' => ($p > 0 ? '<a href="'.$p.PAGE_EXT.'" title="previous">'.$num.'</a>' : $num)
 		,	'content' => $tsv
 		,	'js' => array('capture' => 1, 'arch' => 1)
 		)

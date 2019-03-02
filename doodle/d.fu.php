@@ -20,14 +20,14 @@ function exit_if_not_mod($t = 0, $change = false, $changes = '') {
 		? max(intval($t), data_global_announce('last'))
 		: T0
 	);
-	$q = 'W/"'.md5(implode(NL, array_filter(array(
+	$q = 'W/"'.md5(get_imploded_non_empty_lines(array(
 		'Refresh any page cached before '.HTML_VERSION
 	,	'Or if user key, options or date-related decoration changed: '.ME_VAL
-	,	implode(NL, get_date_class())
+	,	get_date_class()
 	,	$GLOBALS['lang']
 	,	$GLOBALS['target']['deadline']
-	,	is_array($changes) ? implode(', ', $changes) : $changes
-	)))).'"';
+	,	$changes
+	))).'"';
 	header("Etag: $q");
 	if (
 		!$change
@@ -213,7 +213,25 @@ function log_preg_last_error($none_too = true) {
 }
 
 function get_const($name) {return defined($s = mb_strtoupper($name)) ? constant($s) : '';}
-function abbr($a, $sep = '_') {foreach ((is_array($a) ? $a : mb_split_filter($a, $sep)) as $word) $r .= mb_substr($word,0,1); return $r;}
+function get_abbr($a, $sep = '_') {
+	if (!is_array($a)) {
+		$a = mb_split_filter($a, $sep);
+	}
+	foreach ($a as $word) {
+		$r .= mb_substr($word,0,1);
+	}
+	return $r;
+}
+
+function get_imploded_non_empty_lines($a) {
+	if (is_array($a)) {
+		$a = array_map('get_imploded_non_empty_lines', $a);
+		$a = array_filter($a, 'strlen');
+		return implode(NL, $a);
+	}
+	return trim("$a");
+}
+
 function mb_escape_regex($s, $delim = '/', $extend = '') {return preg_replace("~[\\\\|\\$delim$extend\\[\\](){}^$.:?*+-]~u", '\\\\$0', $s);}
 function mb_normalize_slash($s) {return mb_str_replace('\\', '/', $s);}
 function mb_sanitize_filename_char($match) {return $match[0] === '"' ? "'" : '_';}
@@ -1795,16 +1813,46 @@ function get_template_page($page) {
 		}
 	}
 
-	$head = '<meta charset="'.ENC.'">'.($LN?'':'
-<meta name="viewport" content="width=690">
-<link rel="stylesheet" type="text/css" href="'.$N.($v = '.css').($L?'?'.filemtime(NAMEPRFX.$v):'').'">').'
-<link rel="shortcut icon" type="image/png" href="'.(($v = $page['icon'])?ROOTPRFX.$v:$N).'.png">'
-.($canon?'
-<link rel="canonical" href="'.$canon.'">':'')
-.($R || ME_VAL?'
-<link rel="index" href="//'.$_SERVER['SERVER_NAME'].ROOTPRFX.($R || $room?'" data-room="'.($R?($page['room'] ?: $page['title']):$room):'').'">':'')
-.(($v = $page['head'])?NL.$v:'')
-.(($v = $page['title'])?NL."<title>$v</title>":'');
+	$head = array();
+
+	$head['meta'] = array(
+		'<meta charset="'.ENC.'">'
+	,	($LN?'':'<meta name="viewport" content="width=690">')
+	);
+
+	$head['links'] = array(
+		($LN?'':'<link rel="stylesheet" type="text/css" href="'.$N.($v = '.css').($L?'?'.filemtime(NAMEPRFX.$v):'').'">')
+	,	'<link rel="shortcut icon" type="image/png" href="'.(($v = $page['icon'])?ROOTPRFX.$v:$N).'.png">'
+	,	($canon?'<link rel="canonical" href="'.$canon.'">':'')
+	,	(
+			$R || ME_VAL
+			? '<link rel="index" href="//'.$_SERVER['SERVER_NAME'].ROOTPRFX.(
+				$R || $room
+				? '" data-room="'.(
+					$R
+					? ($page['room'] ?: $page['title'])
+					: $room
+				)
+				: ''
+			).'">'
+			: ''
+		)
+	);
+
+	$head['title'] = (($v = $page['title']) ? "<title>$v</title>" : '');
+	$head['head'] = $page['head'] ?: '';
+
+	if ($a = $page[$k = 'meta']) {
+		foreach ($a as $n => $v) if ($v) {
+			$head[$k][] = '<meta property="'.$n.'" content="'.$v.'">';
+		}
+	}
+
+	if ($a = $page[$k = 'links']) {
+		foreach ($a as $n => $v) if ($v) {
+			$head[$k][] = '<link rel="'.$n.'" href="'.$v.'">';
+		}
+	}
 
 	if ($a = (array)$anno) {
 		ksort($a);
@@ -1824,7 +1872,9 @@ function get_template_page($page) {
 
 	if ($a = $page[$k = 'header']) {
 		if (is_array($a)) {
-			foreach ($a as $i => &$v) if ($v) $v = ($i?'<u class="'.$i.'">':'<u>').indent($v).'</u>';
+			foreach ($a as $i => &$v) if ($v) {
+				$v = ($i?'<u class="'.$i.'">':'<u>').indent($v).'</u>';
+			}
 			unset($v);
 			$a = implode(NL, $a);
 		}
@@ -1890,7 +1940,7 @@ function get_template_page($page) {
 	return '<!doctype html>
 <html lang="'.($page['lang'] ?: $lang ?: $cfg_langs[0] ?: 'en').'">
 <head>'
-.indent($head)
+.indent(get_imploded_non_empty_lines($head))
 .'</head>
 <body'.($class?' class="'.implode(' ', $class).'"':'').'>'
 .indent($header, 1)

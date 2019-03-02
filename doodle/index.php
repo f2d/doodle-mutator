@@ -314,7 +314,7 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 					} else
 					if (array_key_exists($k, $cfg_opts_order) && $k !== $i) {
 						$y = (false !== mb_strpos($v, '.') ? mb_split('\\.', $v) : mb_str_split($v));
-						foreach ($cfg_opts_order[$k] as $v) if (in_array(abbr($v), $y)) $u_opts[$v] = 1;
+						foreach ($cfg_opts_order[$k] as $v) if (in_array(get_abbr($v), $y)) $u_opts[$v] = 1;
 					}
 				}
 			}
@@ -808,9 +808,12 @@ on_page = '.($a ? "$a
 start = $start" : ($u_trd_per_page ?: TRD_PER_PAGE)).'
 total = '.$thread_count.($u_key?'':'
 last = <a href="'.$thread_count.'.htm">'.$thread_count.'</a><!-- static link for scriptless bots -->');
-			$page['head'] = '
-<link rel="prev" href="'.($start+1).PAGE_EXT.'">
-<link rel="next" href="'.$thread_count.PAGE_EXT.'">';
+			$p = $start+1;
+			$n = $thread_count;
+			$page['links'] = array(
+				'prev' => ($p > 0 ? $p.PAGE_EXT : '')
+			,	'next' => ($n > 0 ? $n.PAGE_EXT : '')
+			);
 			$page['data']['content']['type'] = 'archive pages';
 		}
 	} else
@@ -982,7 +985,7 @@ NL.$tmp_options_name.$t.(
 		));
 		foreach ($tmp_options_input as $i => $o)
 		foreach ($o as $k => $l) {
-			$r = abbr($k).'='.(
+			$r = get_abbr($k).'='.(
 				$i === 'input'
 				? (
 					$$k ?: (
@@ -1859,7 +1862,7 @@ if ($u_key) {
 			if (isset($p[OPT_PRFX.'apply_view'])) {
 				foreach ($cfg_opts_order as $i => $o)
 				foreach ($o as $k) {
-					$v = (isset($p[$j = OPT_PRFX.abbr($k)]) ? $p[$j] : '');
+					$v = (isset($p[$j = OPT_PRFX.get_abbr($k)]) ? $p[$j] : '');
 					if ($i === 'input') ${"u_$k"} = $v;
 					else $u_opts[$k] = $v;
 				}
@@ -2310,7 +2313,7 @@ if ($OK) {
 					$v = array();
 					$s = '';
 					foreach ($o as $k) if (intval($u_opts[$k])) {
-						$v[] = $k = abbr($k);
+						$v[] = $k = get_abbr($k);
 						if (!$s && mb_strlen($k) > 1) $s = '.';
 					}
 					if (strlen($v = implode($s, $v))) $a[] = "$i:$v$s";
