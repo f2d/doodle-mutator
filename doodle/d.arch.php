@@ -225,7 +225,7 @@ function data_archive_get_page_html($room, $num, $tsv) {
 
 	$post_text_types = array(
 		'Text' => 'desciption'
-	,	'Placeholder' => 'placeholder'
+	// ,	'Placeholder' => 'placeholder'
 	);
 
 	foreach ($dates as $i => $no_task_post_date) if (preg_match(ARCH_PAT_POST, $lines[$i], $match)) {
@@ -256,10 +256,7 @@ function data_archive_get_page_html($room, $num, $tsv) {
 	$full_link_prefix = rtrim($cfg_link_canon, './');
 	$link_here = ROOTPRFX.DIR_ARCH."$room/$num".PAGE_EXT;
 	$thumbnail = ROOTPRFX.DIR_ARCH."$room/".DIR_THUMB.$num.THUMB_EXT;
-
-	$date_min = date(TIMESTAMP, $date['min']);
-	$date_max = date(TIMESTAMP, $date['max']);
-	$title = "$room - $date_min - $date_max";
+	$desciption = date('Y-m-d', $date['min']).'. '.($desciption ?: "$room - $num");
 
 	return get_template_page(
 		array(
@@ -274,9 +271,8 @@ function data_archive_get_page_html($room, $num, $tsv) {
 				'og:type'  => 'article'
 			,	'og:url'   => $full_link_prefix.$link_here
 			,	'og:image' => $full_link_prefix.$thumbnail
-			,	'og:title' => $title
-			,	'og:description' => $desciption ?: $placeholder ?: ARCH_DESCRIPTION
-			,	'og:site_name'   => ARCH_SITE_NAME
+			,	'og:title' => $desciption
+			,	'og:site_name' => ARCH_SITE_NAME
 			)
 		,	'body' => get_date_class($date['min'], $date['max'])
 		,	'task' => ($p > 0 ? '<a href="'.$p.PAGE_EXT.'" title="previous">'.$num.'</a>' : $num)
