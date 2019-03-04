@@ -1734,31 +1734,62 @@ if (!$is_report_page) {
 
 	if ($a_head['/']) {
 		$i_a = array();
-		$i_b = '';
+
+//* lang selection:
+
+		$i_b = array();
 		foreach ($cfg_langs as $v) {
-			$i_b .=
+			$i_b[] = (
 				A.ROOTPRFX.'?lang='.$v.'">'
 			.	($v === $lang ? CHK_ON : CHK_OFF)
 			.	strtoupper($v)
-			.	AB;
+			.	AB
+			);
 		}
 		if ($i_b) $i_a[] = $i_b;
-		$i_b = '';
+
+//* HTTP(S) selection:
+
+		$i_b = array();
 		foreach ($cfg_link_schemes as $v) {
-			$i_b .=
+			$i_b[] = (
 				A."$v://$_SERVER[SERVER_NAME]$_SERVER[REQUEST_URI]\">"
 			.	($v === $s ? CHK_ON : CHK_OFF)
 			.	strtoupper($v)
-			.	AB;
+			.	AB
+			);
 		}
 		if ($i_b) $i_a[] = $i_b;
-		$i_b = '';
+
+//* room type selection:
+
+		$i_b = array();
+		foreach ($cfg_game_type_dir as $k => $v) {
+			$i_b[] = (
+				A.ROOTPRFX.DIR_ROOM.'#'.$v.'/"'
+			.	($qd_room && !$room ? ' onclick="filterPrefix(\''.$v.'/\')"' : '')
+			.	'>'
+			.	($tmp_room_types_title[$k] ?: $v ?: $k)
+			.	AB
+			);
+		}
+		if ($i_b) $i_a[] = $i_b;
+
+//* other links:
+
+		$i_b = array();
 		foreach ($cfg_header_links as $k => $v) {
-			$i_b .= A.$v.'">'.$tmp_header_links[$k].AB;
+			$i_b[] = (
+				A.$v.'">'
+			.	$tmp_header_links[$k]
+			.	AB
+			);
 		}
 		if ($i_b) $i_a[] = $i_b;
-		$i_b = '';
-		if ($index_list = implode('&mdash;<br>', $i_a)) {
+
+//* compile menu blocks:
+
+		if ($index_list = implode('&mdash;<br>', array_map('implode', $i_a))) {
 			$index_link_menu = get_template_menu(A.ROOTPRFX.$a_head['/'], $index_list);
 		}
 	}
