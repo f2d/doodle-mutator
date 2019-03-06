@@ -305,6 +305,7 @@ var	threadHTML = ''
 	,	m = getFTimeIfTime(tab[0], 1)
 	,	res_link = 0
 	,	res = 0
+	,	userName = tab[1]
 		;
 		tab[0] = getFTimeIfTime(tab[0]);
 		if (!timeRange) timeRange = [m,m];
@@ -393,23 +394,23 @@ var	threadHTML = ''
 	var	asides = []
 	,	i = 2
 	,	postHoverMenu = 0
-	,	postID = 'post-'+postNum;
+	,	postID = 'post-'+postNum
+	,	archPath = param.archives || rootPath+'archive/'
+	,	roomName = param.room || room
+	,	userName = encodeURIComponent(decodeHTMLSpecialChars(userName))
 		;
 		while (i--) {
 			t = tab[i];
 
 //* side menu:
 
-		var	archPath = param.archives || rootPath+'archive/'
-		,	roomName = param.room || room
-		,	queryPrefix = '?'+(param.arch_term_name || 'name')+'='
-		,	userName = (
-				i > 0
-				? encodeURIComponent(decodeHTMLSpecialChars(t))
-				: ''
+		var	nameQuery = (
+				i > 0 && userName.length > 0
+				? '?'+(param.arch_term_name || 'name')+'='+userName
+				: null
 			)
 		,	capBtnParts = (
-				i == 0 && param.caps_width
+				i == 0 && param.caps_width > 0
 				? [
 					'javascript:capsPostButtonClick(\''
 				+		postID
@@ -420,14 +421,14 @@ var	threadHTML = ''
 			)
 		,	a = {
 				arch_room: (
-					i > 0
-					? archPath + roomName + '/' + queryPrefix + userName
+					nameQuery
+					? archPath + roomName + '/' + nameQuery
 					+ '" class="menu-btn-mark search-mark" rel="nofollow'
 					: ''
 				)
 			,	arch_all: (
-					i > 0
-					? archPath + queryPrefix + userName
+					nameQuery
+					? archPath + nameQuery
 					+ '" class="menu-btn-mark search-mark" rel="nofollow'
 					: ''
 				)
