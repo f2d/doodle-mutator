@@ -422,13 +422,13 @@ var	threadHTML = ''
 				arch_room: (
 					i > 0
 					? archPath + roomName + '/' + queryPrefix + userName
-					+ '" class="menu-btn-mark search-mark'
+					+ '" class="menu-btn-mark search-mark" rel="nofollow'
 					: ''
 				)
 			,	arch_all: (
 					i > 0
 					? archPath + queryPrefix + userName
-					+ '" class="menu-btn-mark search-mark'
+					+ '" class="menu-btn-mark search-mark" rel="nofollow'
 					: ''
 				)
 			,	capture_thread:       (capBtnParts ? capBtnParts.join(0)       : '')
