@@ -1732,6 +1732,27 @@ if (!$is_report_page) {
 		if ($s === 'on') $s = 'https';
 	}
 
+	$is_room_list = ($qd_room && !$room);
+
+	$r = ($room?"$room/":'');
+	$t = ($r_type?"$r_type/":'');
+	$this_href = ($r && $t?'../..':($r || $t?'..':'.'));
+	$room_list_link = A.(DIR_DOTS && $qd_room ? $this_href : $room_list_href).$a_head['..'];
+	$arch_list_link = (
+		$qd_arch || is_dir(DIR_ARCH)
+		? A.(DIR_DOTS && $qd_arch ? $this_href : $arch_list_href).$a_head['*']
+		: ''
+	);
+
+	if ($room) {
+		$room_link = A.(DIR_DOTS && $qd_room ? '.' : "$room_list_href$r").$a_head['.'];
+		$arch_link = (
+			$qd_arch || is_dir(DIR_ARCH.$room)
+			? A.(DIR_DOTS && $qd_arch ? '.' : "$arch_list_href$r").$a_head['a']
+			: ''
+		);
+	}
+
 	if ($a_head['/']) {
 		$i_a = array();
 
@@ -1766,8 +1787,10 @@ if (!$is_report_page) {
 		$i_b = array();
 		foreach ($cfg_game_type_dir as $k => $v) {
 			$i_b[] = (
-				A.ROOTPRFX.DIR_ROOM.'#'.$v.'/"'
-			.	($qd_room && !$room ? ' onclick="filterPrefix(\''.$v.'/\')"' : '')
+				A
+			.	($is_room_list ? '' : $room_list_href)
+			.	'#'.$v.'/"'
+			.	($is_room_list ? ' onclick="filterPrefix(\''.$v.'/\')"' : '')
 			.	'>'
 			.	($tmp_room_types_title[$k] ?: $v ?: $k)
 			.	AB
@@ -1794,23 +1817,6 @@ if (!$is_report_page) {
 		}
 	}
 
-	$r = ($room?"$room/":'');
-	$t = ($r_type?"$r_type/":'');
-	$this_href = ($r && $t?'../..':($r || $t?'..':'.'));
-	$room_list_link = A.(DIR_DOTS && $qd_room ? $this_href : $room_list_href).$a_head['..'];
-	$arch_list_link = (
-		$qd_arch || is_dir(DIR_ARCH)
-		? A.(DIR_DOTS && $qd_arch ? $this_href : $arch_list_href).$a_head['*']
-		: ''
-	);
-	if ($room) {
-		$room_link = A.(DIR_DOTS && $qd_room ? '.' : "$room_list_href$r").$a_head['.'];
-		$arch_link = (
-			$qd_arch || is_dir(DIR_ARCH.$room)
-			? A.(DIR_DOTS && $qd_arch ? '.' : "$arch_list_href$r").$a_head['a']
-			: ''
-		);
-	}
 	$page['header'] = (
 		$u_key
 		? array(

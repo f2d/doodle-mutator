@@ -2043,13 +2043,22 @@ function showContent(sortOrder) {
 						)
 					,	a = {
 							arch_room: (
-								i > 0 && a.length > 0 && j && k && (!dtp.users || threadNum)
+								i > 0
+							&&	(!dtp.users || threadNum)
+							&&	a.length > 0
+							&&	j.length > 0
+							&&	k.length > 0
 								? j+k+'/'+m+a
+								+ '" class="menu-btn-mark search-mark'
 								: ''
 							)
 						,	arch_all: (
-								i > 0 && a.length > 0 && j && (!dtp.users || threadNum)
+								i > 0
+							&&	(!dtp.users || threadNum)
+							&&	a.length > 0
+							&&	j.length > 0
 								? j+m+a
+								+ '" class="menu-btn-mark search-mark'
 								: ''
 							)
 						,	capture_thread:       (capBtnParts ? capBtnParts.join(0)       : '')
