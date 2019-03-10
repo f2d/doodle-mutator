@@ -2,42 +2,42 @@
 
 //* Constants only for internal use: ------------------------------------------
 
-define(DATA_VERSION, '2018-01-15 18:44');	//* <- change this to autoupdate old data formats
+define('DATA_VERSION', '2018-01-15 18:44');	//* <- change this to autoupdate old data formats
 
-define(DATA_FUNC_EXPORT, 'json_encode');
-define(DATA_FUNC_IMPORT, 'json_decode');
+define('DATA_FUNC_EXPORT', 'json_encode');
+define('DATA_FUNC_IMPORT', 'json_decode');
 
-define(DATA_COUNT_EXT, '.count');
-define(DATA_LOCK_EXT, '.lock');
-define(DATA_LOG_EXT, '.log');
-define(DATA_STATIC_EXT, '.txt');
-define(DATA_HIDDEN_EXT, '_hidden');
+define('DATA_COUNT_EXT', '.count');
+define('DATA_LOCK_EXT', '.lock');
+define('DATA_LOG_EXT', '.log');
+define('DATA_STATIC_EXT', '.txt');
+define('DATA_HIDDEN_EXT', '_hidden');
 
-define(DATA_SUB_ACT, 'actions/');
-define(DATA_SUB_REP, 'reports/');
-define(DATA_SUB_TRD, 'threads/');
+define('DATA_SUB_ACT', 'actions/');
+define('DATA_SUB_REP', 'reports/');
+define('DATA_SUB_TRD', 'threads/');
 
-define(DATA_DIR, 'data/');			//* <- all data not viewable directly by URL
-define(DATA_DIR_LOCK, DATA_DIR.'lock_files/');	//* <- lock files, empty and disposable
-define(DATA_DIR_ROOM, DATA_DIR.'rooms/');	//* <- keep separated, like rooms/meta/subtype/room_name
-define(DATA_DIR_USER, DATA_DIR.'users/');	//* <- per user files
-define(DATA_USERLIST, DATA_DIR.'users'.DATA_LOG_EXT);		//* <- user list filename
-define(DATA_REF_LIST, DATA_DIR.'reflinks'.DATA_LOG_EXT);	//* <- reflinks list filename
+define('DATA_DIR', 'data/');			//* <- all data not viewable directly by URL
+define('DATA_DIR_LOCK', DATA_DIR.'lock_files/');	//* <- lock files, empty and disposable
+define('DATA_DIR_ROOM', DATA_DIR.'rooms/');	//* <- keep separated, like rooms/meta/subtype/room_name
+define('DATA_DIR_USER', DATA_DIR.'users/');	//* <- per user files
+define('DATA_USERLIST', DATA_DIR.'users'.DATA_LOG_EXT);		//* <- user list filename
+define('DATA_REF_LIST', DATA_DIR.'reflinks'.DATA_LOG_EXT);	//* <- reflinks list filename
 
-define(DATA_U_ABOUT, 'about');
-define(DATA_U_FLAG, 'flag');
-define(DATA_U_IP, 'ip');
-define(DATA_U_TASK, 'task');
-define(DATA_U_TASK_CHANGE, 'change');
+define('DATA_U_ABOUT', 'about');
+define('DATA_U_FLAG', 'flag');
+define('DATA_U_IP', 'ip');
+define('DATA_U_TASK', 'task');
+define('DATA_U_TASK_CHANGE', 'change');
 
-define(DATA_LOG_START, BOM.NL);
-define(DATA_MARK_TXT, '		');
-define(DATA_MARK_IMG, '	<	');
+define('DATA_LOG_START', BOM.NL);
+define('DATA_MARK_TXT', '		');
+define('DATA_MARK_IMG', '	<	');
 
-define(DATA_RE_LE, mb_escape_regex(DATA_LOG_EXT));
-define(DATA_RE_MI, mb_escape_regex(DATA_MARK_IMG, '~', '\\s'));
+define('DATA_RE_LE', mb_escape_regex(DATA_LOG_EXT));
+define('DATA_RE_MI', mb_escape_regex(DATA_MARK_IMG, '~', '\\s'));
 
-define(DATA_PAT_IMG, '~
+define('DATA_PAT_IMG', '~
 	(?P<before>
 		(?:<a\\s+href|<img\\s+src)="?
 	|	'.DATA_RE_MI.'
@@ -46,7 +46,7 @@ define(DATA_PAT_IMG, '~
 	(?=[">\\t]|$)
 ~iux');
 
-define(DATA_PAT_TRD_PLAY, '~^
+define('DATA_PAT_TRD_PLAY', '~^
 	(?P<id>\d+)
 	(?P<etc>
 		(?:\.
@@ -63,7 +63,7 @@ define(DATA_PAT_TRD_PLAY, '~^
 	(?P<ext>'.DATA_RE_LE.')
 $~iux');
 
-define(DATA_PAT_TRD_MOD, '~^
+define('DATA_PAT_TRD_MOD', '~^
 	(?P<active>
 		(?P<id>\d+)
 		(?P<etc>\..+)?
@@ -81,9 +81,9 @@ $~iux');
 
 //* Function argument flags: --------------------------------------------------
 
-define(DATA_FLAG_POST_TXT, 1);
-define(DATA_FLAG_POST_IMG, 2);
-define(DATA_FLAG_POST_ANY, 4);
+define('DATA_FLAG_POST_TXT', 1);
+define('DATA_FLAG_POST_IMG', 2);
+define('DATA_FLAG_POST_ANY', 4);
 
 //* Be careful with this, caching is meant only for viewing: *-----------------
 

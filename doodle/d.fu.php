@@ -2,15 +2,15 @@
 
 //* Constants only for internal use: ------------------------------------------
 
-define(HTML_VERSION, '2019-03-04 13:44');	//* <- change this to autoupdate old browser-cached pages
-define(HTACCESS_VERSION, '2017-10-27 23:23');	//* <- change this + open index as admin to autoupdate old .htaccess
+define('HTML_VERSION', '2019-03-04 13:44');	//* <- change this to autoupdate old browser-cached pages
+define('HTACCESS_VERSION', '2017-10-27 23:23');	//* <- change this + open index as admin to autoupdate old .htaccess
 
 //* Function argument flags: --------------------------------------------------
 
-define(F_GET_FULL_IF_NONE, 1);
-define(F_GET_DIR_PART, 2);
-define(F_HIDE, 4);
-define(F_NATSORT, 8);
+define('F_GET_FULL_IF_NONE', 1);
+define('F_GET_DIR_PART', 2);
+define('F_HIDE', 4);
+define('F_NATSORT', 8);
 
 //* ---------------------------------------------------------------------------
 

@@ -26,46 +26,46 @@ $cfg_game_type_dir = array(
 ,	'text' => 'text_pile'	//* <- endless text posts, no drawings
 ,	'1trd' => 'dump'	//* <- single thread per room, no thread locking, random mess
 );
-define(GAME_TYPE_DEFAULT, reset($cfg_game_type_dir));	//* <- if this or none of types is empty, no-subfolder will not be allowed
+define('GAME_TYPE_DEFAULT', reset($cfg_game_type_dir));	//* <- if this or none of types is empty, no-subfolder will not be allowed
 
-define(BOARD_LINK, '/board/');	//* <- prepend ROOTPRFX (the script folder) here for a relative link
-define(DIR_ARCH_DL, 'dl/');	//* <- real folder to keep listfiles for zip streaming
-define(DIR_PICS, 'i/');		//* <- real folder
-define(DIR_PICS_DEL, DIR_PICS.'deleted/');
-define(DIR_PICS_ORPHAN, DIR_PICS.'orphan/');
-define(DIR_THUMB, 'th/');	//* <- subfolder in each room archive
-define(PIC_404, 'err.png');	//* <- filename for htaccess and nginx cfg example
+define('BOARD_LINK', '/board/');	//* <- prepend ROOTPRFX (the script folder) here for a relative link
+define('DIR_ARCH_DL', 'dl/');	//* <- real folder to keep listfiles for zip streaming
+define('DIR_PICS', 'i/');		//* <- real folder
+define('DIR_PICS_DEL', DIR_PICS.'deleted/');
+define('DIR_PICS_ORPHAN', DIR_PICS.'orphan/');
+define('DIR_THUMB', 'th/');	//* <- subfolder in each room archive
+define('PIC_404', 'err.png');	//* <- filename for htaccess and nginx cfg example
 
-define(DIR_DOTS, false);	//* <- use href="./.." in top menu
-define(LINK_TIME, false);	//* <- src=file?modtime to force reload at clients
-define(LOG_IP, true);		//* <- for each visit, add IP Address to separate file per user
-define(LOG_UA, false);		//* <- for each post with pic, add User-Agent field to the post itself
-define(PIC_SUB, false);		//* <- true: img src="/i/p/0/0123.png", false: src="/i/0123.png" and leave it to rewrite rule
-define(ARCH_DL_ENABLED, false);	//* <- currently requires nginx build with zip streaming module
+define('DIR_DOTS', false);	//* <- use href="./.." in top menu
+define('LINK_TIME', false);	//* <- src=file?modtime to force reload at clients
+define('LOG_IP', true);		//* <- for each visit, add IP Address to separate file per user
+define('LOG_UA', false);		//* <- for each post with pic, add User-Agent field to the post itself
+define('PIC_SUB', false);		//* <- true: img src="/i/p/0/0123.png", false: src="/i/0123.png" and leave it to rewrite rule
+define('ARCH_DL_ENABLED', false);	//* <- currently requires nginx build with zip streaming module
 
-define(NOT_MOD_SEE_ACTIVE_TRD_REPORTS, true);
-define(NOT_MOD_SEE_STOPPED_TRD, true);
-define(NOT_MOD_SEE_ROOM_MARKERS, true);
+define('NOT_MOD_SEE_ACTIVE_TRD_REPORTS', true);
+define('NOT_MOD_SEE_STOPPED_TRD', true);
+define('NOT_MOD_SEE_ROOM_MARKERS', true);
 
 //* ---------------------------------------------------------------------------
 
-define(ROOM_DEFAULT, 'base');
-define(ROOM_NAME_ALLOWED_CHARS, '\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}');	//* <- beside prefixes, 0-9, A-Z, underscore and minus
-define(ROOM_NAME_MIN_LENGTH, 1);
-define(ROOM_NAME_MAX_LENGTH, 26);
-define(USER_NAME_MIN_LENGTH, 1);
-define(USER_NAME_MAX_LENGTH, 26);
-define(FIND_MIN_LENGTH, 1);
-define(FIND_MAX_LENGTH, 123);
-define(REPORT_MIN_LENGTH, 5);
-define(REPORT_MAX_LENGTH, 500);
-define(DESCRIBE_MIN_LENGTH, 9);
-define(DESCRIBE_MAX_LENGTH, 900);
+define('ROOM_DEFAULT', 'base');
+define('ROOM_NAME_ALLOWED_CHARS', '\x{0400}-\x{04ff}\x{2460}-\x{2468}\x{2605}-\x{2606}');	//* <- beside prefixes, 0-9, A-Z, underscore and minus
+define('ROOM_NAME_MIN_LENGTH', 1);
+define('ROOM_NAME_MAX_LENGTH', 26);
+define('USER_NAME_MIN_LENGTH', 1);
+define('USER_NAME_MAX_LENGTH', 26);
+define('FIND_MIN_LENGTH', 1);
+define('FIND_MAX_LENGTH', 123);
+define('REPORT_MIN_LENGTH', 5);
+define('REPORT_MAX_LENGTH', 500);
+define('DESCRIBE_MIN_LENGTH', 9);
+define('DESCRIBE_MAX_LENGTH', 900);
 
-define(DRAW_APP_NONE, 'no');
-define(DRAW_APP_DEFAULT_EXT, '.js');
-define(PIC_OPT_ADD_TIMEOUT, 30);	//* <- seconds added per each program tried
-define(PIC_OPT_TRY_GLOBAL_EXEC, false);
+define('DRAW_APP_NONE', 'no');
+define('DRAW_APP_DEFAULT_EXT', '.js');
+define('PIC_OPT_ADD_TIMEOUT', 30);	//* <- seconds added per each program tried
+define('PIC_OPT_TRY_GLOBAL_EXEC', false);
 /*
  * Global exec notes:
 	If program is not found first in specified or current folder,
@@ -110,55 +110,55 @@ $cfg_optimize_pics = array(
 	)
 );
 
-define(DRAW_PREVIEW_WIDTH, 640);
-define(DRAW_DEFAULT_WIDTH, 640);
-define(DRAW_DEFAULT_HEIGHT, 360);
-define(DRAW_LIMIT_WIDTH, '100,1920');
-define(DRAW_LIMIT_HEIGHT, '100,1920');
-define(DRAW_MAX_FILESIZE, 8388608);	//* <- bytes, 8MiB = 8*1024*1024
-define(DRAW_MAX_RECOVERY, 9);
-define(DRAW_MAX_UNDO, 99);
-define(DRAW_TIME_IDLE, 300);		//* <- seconds, 5min
-define(DRAW_PERSISTENT_PREFIX, NAMEPRFX.'Keep');
-define(DRAW_BACKUPCOPY_PREFIX, NAMEPRFX.'Save');
-define(DRAW_SEND, 'send=layers.json, log.json, pic.png, jpg>1002003; check=checkStatus');
-define(DRAW_REST, 'resize_style=body, #task; resize_min_id=header');
+define('DRAW_PREVIEW_WIDTH', 640);
+define('DRAW_DEFAULT_WIDTH', 640);
+define('DRAW_DEFAULT_HEIGHT', 360);
+define('DRAW_LIMIT_WIDTH', '100,1920');
+define('DRAW_LIMIT_HEIGHT', '100,1920');
+define('DRAW_MAX_FILESIZE', 8388608);	//* <- bytes, 8MiB = 8*1024*1024
+define('DRAW_MAX_RECOVERY', 9);
+define('DRAW_MAX_UNDO', 99);
+define('DRAW_TIME_IDLE', 300);		//* <- seconds, 5min
+define('DRAW_PERSISTENT_PREFIX', NAMEPRFX.'Keep');
+define('DRAW_BACKUPCOPY_PREFIX', NAMEPRFX.'Save');
+define('DRAW_SEND', 'send=layers.json, log.json, pic.png, jpg>1002003; check=checkStatus');
+define('DRAW_REST', 'resize_style=body, #task; resize_min_id=header');
 
-define(QK_KEEP_AFTER_LOGOUT, false);
-define(QK_EXPIRES, 100200300);	//* <- seconds; renewed with every successful POST, incl.options
-define(POST_PIC_WAIT, 5);	//* <- seconds
+define('QK_KEEP_AFTER_LOGOUT', false);
+define('QK_EXPIRES', 100200300);	//* <- seconds; renewed with every successful POST, incl.options
+define('POST_PIC_WAIT', 5);	//* <- seconds
 
-define(TARGET_AUTOUPDATE_INTERVAL, 3600);//* 1h
-define(TARGET_CHANGE_TIME, 600);//* 10min
-define(TARGET_DESC_TIME, 1200);	//* 20min
-define(TARGET_DRAW_TIME, 7200);	//* 2h
-define(TARGET_LONG_TIME, 86400);//* 24h
-define(TRD_ARCH_TIME, 86400);	//* 24h
-define(TRD_MAX_POSTS, 10);
-define(TRD_MAX_PER_ROOM, 30);
-define(TRD_MAX_SKIP_PER_ROOM, 5);
-define(TRD_PER_PAGE, 30);
+define('TARGET_AUTOUPDATE_INTERVAL', 3600);//* 1h
+define('TARGET_CHANGE_TIME', 600);//* 10min
+define('TARGET_DESC_TIME', 1200);	//* 20min
+define('TARGET_DRAW_TIME', 7200);	//* 2h
+define('TARGET_LONG_TIME', 86400);//* 24h
+define('TRD_ARCH_TIME', 86400);	//* 24h
+define('TRD_MAX_POSTS', 10);
+define('TRD_MAX_PER_ROOM', 30);
+define('TRD_MAX_SKIP_PER_ROOM', 5);
+define('TRD_PER_PAGE', 30);
 
-define(POST_LINE_BREAK, '/');	//* <- used with spaces around
-define(ARCH_DL_NAME_PART_SEPARATOR, ' - ');
-define(ARCH_DL_EXT, '.zip');
-define(ARCH_DL_LIST_EXT, '.txt');
-define(PAGE_EXT, '.htm');
-define(THUMB_EXT, '.png');
-define(THUMB_MAX_WIDTH, 160);
-define(THUMB_MAX_HEIGHT, 90);
+define('POST_LINE_BREAK', '/');	//* <- used with spaces around
+define('ARCH_DL_NAME_PART_SEPARATOR', ' - ');
+define('ARCH_DL_EXT', '.zip');
+define('ARCH_DL_LIST_EXT', '.txt');
+define('PAGE_EXT', '.htm');
+define('THUMB_EXT', '.png');
+define('THUMB_MAX_WIDTH', 160);
+define('THUMB_MAX_HEIGHT', 90);
 
-define(ENC_FALLBACK, '
+define('ENC_FALLBACK', '
 	windows-1251
 ,	windows-1252
 ,	iso-8859-1
 ,	Shift_JIS');		//* <- comma-separated list (whitespace is ignored), to convert search requests from weird browsers into ENC
-define(NOR, '&mdash;');		//* <- static placeholder for no request, remains in content
-define(NB, '&#8203;');//&nbsp;	//* <- dynamic placeholder for empty table fields
-define(SUBPAT_OOM_LETTERS, '(?:([kк])|([mм])|([gг])|([tт])|([pп])|([eэе])|([zз])|([yий]))[bб]*');	//* <- orders of magnitude for archive search
+define('NOR', '&mdash;');		//* <- static placeholder for no request, remains in content
+define('NB', '&#8203;');//&nbsp;	//* <- dynamic placeholder for empty table fields
+define('SUBPAT_OOM_LETTERS', '(?:([kк])|([mм])|([gг])|([tт])|([pп])|([eэе])|([zз])|([yий]))[bб]*');	//* <- orders of magnitude for archive search
 
-define(HINT_REGEX_FORMAT, '/%s/imsu');
-define(HINT_REGEX_LINK, 'http://php.net/manual/%s/pcre.pattern.php');
+define('HINT_REGEX_FORMAT', '/%s/imsu');
+define('HINT_REGEX_LINK', 'http://php.net/manual/%s/pcre.pattern.php');
 
 //* ---------------------------------------------------------------------------
 
@@ -337,7 +337,7 @@ $cfg_header_links = array(
 
 //* ---------------------------------------------------------------------------
 
-define(FOOT_NOTE, '
+define('FOOT_NOTE', '
 <a href="'.ROOTPRFX.'?'.ARG_ABOUT.'">%s</a>,
 <a href="https://github.com/f2d/doodle-mutator">%s</a>,
 <a href="https://github.com/f2d/">%s</a>, 2013-2018,

@@ -15,15 +15,15 @@ header('Pragma: no-cache');
 if (function_exists($f = 'header_remove')) $f('Vary');
 if ($_REQUEST['pass']) exit_no_access('pass');		//* <- ignore spam bot requests
 
-define(NAMEPRFX, 'd');
+define('NAMEPRFX', 'd');
 
 //* Config parts that are not safe to change: ---------------------------------
 
-define(ENC, 'utf-8');
+define('ENC', 'utf-8');
 mb_internal_encoding(ENC);
 mb_regex_encoding(ENC);
 
-define(ROOTPRFX, mb_substr($s = $_SERVER['PHP_SELF'] ?: $_SERVER['SCRIPT_NAME'] ?: '/', 0, mb_strrpos($s, '/')+1));
+define('ROOTPRFX', mb_substr($s = $_SERVER['PHP_SELF'] ?: $_SERVER['SCRIPT_NAME'] ?: '/', 0, mb_strrpos($s, '/')+1));
 
 if (!is_prefix($s = URLdecode($p = $_SERVER['REQUEST_URI']), ROOTPRFX)) {
 	exit_no_access('"'.ROOTPRFX.'" path does not match "'.$s.'"');
@@ -36,9 +36,9 @@ if (function_exists($f = 'get_magic_quotes_gpc') && $f()) {
 	array_walk_recursive($gpc, 'strip_magic_slashes');
 }
 
-define(ME, 'me');
-define(ME_VAL, $_POST[ME] ?? $_COOKIE[ME] ?? '');	//* <- don't rely on $_REQUEST and EGPCS order
-define(POST, 'POST' == $_SERVER['REQUEST_METHOD']);
+define('ME', 'me');
+define('ME_VAL', $_POST[ME] ?? $_COOKIE[ME] ?? '');	//* <- don't rely on $_REQUEST and EGPCS order
+define('POST', 'POST' == $_SERVER['REQUEST_METHOD']);
 
 if (POST) {
 	if (!ME_VAL) exit_no_access('post');		//* <- ignore anonymous posting
@@ -46,64 +46,64 @@ if (POST) {
 }
 
 $t = explode(' ', $t);
-define(T0, $t[1]);
-define(M0, $t[0]);
+define('T0', $t[1]);
+define('M0', $t[0]);
 
 $s = $_SERVER['SERVER_SOFTWARE'];
-define(WS_NGINX, stripos($s, 'nginx') !== false);
-define(WS_HTACCESS_SUPPORTED, stripos($s, 'apache') !== false);
-define(LOCALHOST, $_SERVER['SERVER_ADDR'] === $_SERVER['REMOTE_ADDR']);
+define('WS_NGINX', stripos($s, 'nginx') !== false);
+define('WS_HTACCESS_SUPPORTED', stripos($s, 'apache') !== false);
+define('LOCALHOST', $_SERVER['SERVER_ADDR'] === $_SERVER['REMOTE_ADDR']);
 
-define(GET_Q, strpos($p, '?'));
-define(ARG_ERROR, '!');
-define(ARG_ERROR_SPLIT, '!');
-define(ARG_ABOUT, 'about');
-define(ARG_DENY, 'deny');
-define(ARG_DESC, 'desc');
-define(ARG_DRAW, 'draw');
-define(ARG_DROP, 'drop');
-define(ARG_CHANGE, 'change');
-define(ARG_ANY_OF, 'any_of');
-define(ARG_DRAW_APP, 'draw_app');
-define(ARG_FULL_NAME, 'fullname');
-define(ARG_NAMING_VAR_PREFIX, '$');
-define(ARG_LANG, 'lang');
+define('GET_Q', strpos($p, '?'));
+define('ARG_ERROR', '!');
+define('ARG_ERROR_SPLIT', '!');
+define('ARG_ABOUT', 'about');
+define('ARG_DENY', 'deny');
+define('ARG_DESC', 'desc');
+define('ARG_DRAW', 'draw');
+define('ARG_DROP', 'drop');
+define('ARG_CHANGE', 'change');
+define('ARG_ANY_OF', 'any_of');
+define('ARG_DRAW_APP', 'draw_app');
+define('ARG_FULL_NAME', 'fullname');
+define('ARG_NAMING_VAR_PREFIX', '$');
+define('ARG_LANG', 'lang');
 
-define(LK_MOD_HTA, 'htaccess');
-define(LK_MOD_ACT_LOG, 'done');
-define(LK_MOD_ACT, 'mod');
-define(LK_MOD_OPT, 'opt');
-define(LK_PIC_OPT, 'pic');
-define(LK_REF_LIST, 'reflinks');
-define(LK_USERLIST, 'users');
-define(LK_USER, 'user/');
-define(LK_ROOM, 'room/');
-define(LK_ARCH, 'arch/');
-define(LK_ARCH_DL, 'archiver');
-define(LK_VERSION, 'version');
-define(COUNT_ARCH, 'arch');
-define(COUNT_ROOM, 'room');
-define(COUNT_POST, 'post');
+define('LK_MOD_HTA', 'htaccess');
+define('LK_MOD_ACT_LOG', 'done');
+define('LK_MOD_ACT', 'mod');
+define('LK_MOD_OPT', 'opt');
+define('LK_PIC_OPT', 'pic');
+define('LK_REF_LIST', 'reflinks');
+define('LK_USERLIST', 'users');
+define('LK_USER', 'user/');
+define('LK_ROOM', 'room/');
+define('LK_ARCH', 'arch/');
+define('LK_ARCH_DL', 'archiver');
+define('LK_VERSION', 'version');
+define('COUNT_ARCH', 'arch');
+define('COUNT_ROOM', 'room');
+define('COUNT_POST', 'post');
 
 $s = '@#?<>()\[\]\s\\\\/';				//* <- characters not allowed in email parts; keep it simple, for browser-side check
-define(NL, "\n");
-define(BOM, pack('CCC', 239, 187, 191));		//* <- UTF-8 Byte Order Mark
-define(ARCH_DL_HASH_TYPE, 'crc32b');
-define(B64_PRFX, 'base64:');
-define(OPT_PRFX, 'opt_');
-define(TIMESTAMP, 'Y-m-d H:i:s');
-define(FILESTAMP, 'Y-m-d H-i-s');
-define(PAT_DATE, '~(?P<ym>(?P<y>\d+)-(?P<m>\d+))-(?P<d>\d+)~');
-define(PAT_REPORT, '~^(?P<thread>\d+)\D+(?P<post>\d+)\D+(?P<side>\d+)$~');
-define(PAT_CONTENT, '~^(?P<before>.*?<pre>)(?P<content>.*?\S)(?P<after>\s*</pre>.*)$~uis');
-define(PPM_BF, '~(?:^|[;,\s]+)');
-define(PPM_AF, '(?=[;,]|$)~ui');
-define(PAT_POST_PIC_CRC32, PPM_BF.'0x(?P<crc32>[0-9a-f]{8})'.PPM_AF);
-define(PAT_POST_PIC_BYTES, PPM_BF.'(?P<bytes>[^0\D]\d*)\s+B'.PPM_AF);
-define(PAT_POST_PIC_W_X_H, PPM_BF.'(?P<width>[^0\D]\d*)\D(?P<height>[^0\D]\d*)'.PPM_AF);
-define(PAT_REGEX_FORMAT, '~^/.+/[imsu]*$~u');
-define(PAT_EMAIL_FORMAT, "^.*?([^$s]+@[^$s.]+\\.[^$s]+).*?$");
-define(RELATIVE_LINK_PREFIX, 'http://*/');
+define('NL', "\n");
+define('BOM', pack('CCC', 239, 187, 191));		//* <- UTF-8 Byte Order Mark
+define('ARCH_DL_HASH_TYPE', 'crc32b');
+define('B64_PRFX', 'base64:');
+define('OPT_PRFX', 'opt_');
+define('TIMESTAMP', 'Y-m-d H:i:s');
+define('FILESTAMP', 'Y-m-d H-i-s');
+define('PAT_DATE', '~(?P<ym>(?P<y>\d+)-(?P<m>\d+))-(?P<d>\d+)~');
+define('PAT_REPORT', '~^(?P<thread>\d+)\D+(?P<post>\d+)\D+(?P<side>\d+)$~');
+define('PAT_CONTENT', '~^(?P<before>.*?<pre>)(?P<content>.*?\S)(?P<after>\s*</pre>.*)$~uis');
+define('PPM_BF', '~(?:^|[;,\s]+)');
+define('PPM_AF', '(?=[;,]|$)~ui');
+define('PAT_POST_PIC_CRC32', PPM_BF.'0x(?P<crc32>[0-9a-f]{8})'.PPM_AF);
+define('PAT_POST_PIC_BYTES', PPM_BF.'(?P<bytes>[^0\D]\d*)\s+B'.PPM_AF);
+define('PAT_POST_PIC_W_X_H', PPM_BF.'(?P<width>[^0\D]\d*)\D(?P<height>[^0\D]\d*)'.PPM_AF);
+define('PAT_REGEX_FORMAT', '~^/.+/[imsu]*$~u');
+define('PAT_EMAIL_FORMAT', "^.*?([^$s]+@[^$s.]+\\.[^$s]+).*?$");
+define('RELATIVE_LINK_PREFIX', 'http://*/');
 
 //* Start buffering to clean up included output, like BOMs: *------------------
 
@@ -325,13 +325,13 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 		if (POST) $post_status = 'user_qk';
 	}
 }
-define(GOD, !!$u_flag['god']);
+define('GOD', !!$u_flag['god']);
 if (GOD && !POST && $u_opts['display_php_errors']) {
 	ini_set('display_errors', '1');
 	ini_set('html_errors', '1');
 	error_reporting(~0);
 }
-define(TIME_PARTS, !POST && GOD && !$u_opts['time_check_points']);	//* <- profiling
+define('TIME_PARTS', !POST && GOD && !$u_opts['time_check_points']);	//* <- profiling
 if (TIME_PARTS) time_check_point('done user settings, GOD = '.GOD
 	.NL.'u_flag = '.get_print_or_none($u_flag)
 	.NL.'u_opts = '.get_print_or_none($u_opts)
@@ -355,9 +355,9 @@ if ($qdir) {
 }
 $top_title = (false !== ($k = array_search($r_type, $cfg_game_type_dir)) ? $tmp_room_types_title[$k] : $tmp_title);
 
-define(MOD, GOD || $u_flag['mod'] || $u_flag["mod_$room"]);
-define(NO_MOD, !$room_type['mod'] || $u_flag['nor']);
-define(FROZEN_HELL, data_global_announce('stop'));	//* <- after $room is defined
+define('MOD', GOD || $u_flag['mod'] || $u_flag["mod_$room"]);
+define('NO_MOD', !$room_type['mod'] || $u_flag['nor']);
+define('FROZEN_HELL', data_global_announce('stop'));	//* <- after $room is defined
 
 if (FROZEN_HELL && !(MOD || $qd_arch || ($qd_opts && $u_key))) {
 	if (POST) goto after_posting;
@@ -1652,7 +1652,7 @@ $a#$j$l|$r$m");
 
 template:
 
-define(S, '. ');
+define('S', '. ');
 $room_title = ($room_name == ROOM_DEFAULT ? $tmp_room_default : "$tmp_room $room_name");
 $page['title'] = (
 	$mod_title
@@ -1697,10 +1697,10 @@ $page['title'] = (
 );
 
 if (!$is_report_page) {
-	define(A, NL.'<a href="');
-	define(AB, '</a><br>');
-	define(CHK_ON, '&#x2611; ');
-	define(CHK_OFF, '&#x2610; ');
+	define('A', NL.'<a href="');
+	define('AB', '</a><br>');
+	define('CHK_ON', '&#x2611; ');
+	define('CHK_OFF', '&#x2610; ');
 	$short = !!$u_opts['head'];
 	$a_head = array(
 		'/' => $top_title
@@ -1721,7 +1721,7 @@ if (!$is_report_page) {
 
 	if (MOD && ($t = $query[LK_MOD_ACT_LOG])) $page['mod_act_log'] = $t;
 	if (GOD) {
-		define(M, A.'.?'.LK_MOD_ACT);
+		define('M', A.'.?'.LK_MOD_ACT);
 		foreach ($tmp_mod_pages as $k => $v) $mod_list .= M.'='.$k.'">'.$v.AB;
 		$mod_link_menu = get_template_menu(M.$a_head['#'], $mod_list);
 	}
@@ -1848,7 +1848,7 @@ if (!$is_report_page) {
 		$links = vsprintf(FOOT_NOTE, $tmp_foot_notes);
 	}
 	if (!$u_opts['times'] && $u_key) {
-		define(TOOK, $took = '<!--?-->');
+		define('TOOK', $took = '<!--?-->');
 		if (TIME_PARTS) {
 			time_check_point('inb4 template');
 			$took = '<a href="javascript:'.(++$page['js'][0]).',toggleHide(took),took.scrollIntoView()">'.$took.'</a>';

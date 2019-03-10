@@ -1,11 +1,11 @@
 <?php
 
-define(ARCH_SITE_NAME, 'Doodle Mutator');
-define(ARCH_DESCRIPTION, 'Archived thread.');
-define(ARCH_PIC_NOT_FOUND, '<img src="'.ROOTPRFX.PIC_404.'">');
-define(ARCH_PAT_HTML_TAG, '~<\w+("[^">]*"|[^>])*>~u');
-define(ARCH_PAT_PLACEHOLDER_TEXT, 'v\d|'.mb_escape_regex(NOR).'|'.mb_escape_regex(html_entity_decode(NOR)));
-define(ARCH_PAT_PLACEHOLDER, '
+define('ARCH_SITE_NAME', 'Doodle Mutator');
+define('ARCH_DESCRIPTION', 'Archived thread.');
+define('ARCH_PIC_NOT_FOUND', '<img src="'.ROOTPRFX.PIC_404.'">');
+define('ARCH_PAT_HTML_TAG', '~<\w+("[^">]*"|[^>])*>~u');
+define('ARCH_PAT_PLACEHOLDER_TEXT', 'v\d|'.mb_escape_regex(NOR).'|'.mb_escape_regex(html_entity_decode(NOR)));
+define('ARCH_PAT_PLACEHOLDER', '
 	(?P<PlaceholderText>'.ARCH_PAT_PLACEHOLDER_TEXT.')
 	(?P<PlaceholderLink>
 		[\s()]*
@@ -14,8 +14,8 @@ define(ARCH_PAT_PLACEHOLDER, '
 	)?
 	(?P<PlaceholderComment>\s*?<!--.*-->)?
 ');
-define(ARCH_PAT_POST_PLACEHOLDER, '~^'.ARCH_PAT_PLACEHOLDER.'$~uix');
-define(ARCH_PAT_POST_PLACEHOLDER_SPAN, '~^
+define('ARCH_PAT_POST_PLACEHOLDER', '~^'.ARCH_PAT_PLACEHOLDER.'$~uix');
+define('ARCH_PAT_POST_PLACEHOLDER_SPAN', '~^
 	<span\s+title="
 	(?P<Title>
 		(?P<Time>\d+)
@@ -26,7 +26,7 @@ define(ARCH_PAT_POST_PLACEHOLDER_SPAN, '~^
 	(?P<Text>'.ARCH_PAT_PLACEHOLDER_TEXT.')
 	</span>
 $~uix');
-define(ARCH_PAT_POST, '~^
+define('ARCH_PAT_POST', '~^
 	(?P<Date>[^\t]*)
 	(?P<Post>\t[^\t]*\t
 		(?:
@@ -36,7 +36,7 @@ define(ARCH_PAT_POST, '~^
 		)
 	)
 $~uix');
-define(ARCH_PAT_POST_PIC, '~
+define('ARCH_PAT_POST_PIC', '~
 	(?P<open><a\s+[^>]+>)?
 	(?P<image><img\s+[^>]+?(?P<width>\s+width="\d+")?(?P<height>\s+height="\d+")?(?:\s+[^>]+?)?>)
 	(?P<close></a>)?
