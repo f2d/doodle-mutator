@@ -657,7 +657,7 @@ $x
 		foreach (array('strip_magic_slashes', 'normalizer_normalize') as $k) if ($v = function_exists($k)) {
 			$t .= "$k = $v".NL;
 		}
-		$v = array_map(trim, explode(',', '
+		$v = array_map('trim', explode(',', '
 			mb_regex_encoding, mb_regex_set_options
 		,	get_system_memory_info, sys_getloadavg
 		,	ROOTPRFX, NAMEPRFX, DATA_VERSION, HTML_VERSION, HTACCESS_VERSION
