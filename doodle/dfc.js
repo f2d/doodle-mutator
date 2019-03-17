@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.69'
-,	INFO_DATE = '2013-04-01 — 2017-05-06'
+,	INFO_VERSION = 'v0.9.70'
+,	INFO_DATE = '2013-04-01 — 2019-03-17'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -824,10 +824,12 @@ function drawStart(event) {
 	try {
 		showProps(event,1,1);	//* <- check if permission denied to read some property
 	} catch (err) {
-		return;			//* <- against FireFox catching clicks on page scrollbar
+		return;		//* <- against FireFox catching clicks on page scrollbar
 	}
+
 	if (!draw.step || (draw.target && draw.target !== event.target)) drawEnd(event);
 	if (!isMouseIn()) return false;
+
 	draw.target = event.target;
 //	canvas.focus();
 	eventStop(event).preventDefault();
@@ -849,57 +851,58 @@ var	sf = select.shapeFlags[select.shape.value];
 		} else draw.step = 0;
 	}
 //	if (event.shiftKey) mode.click = 1;
-	if ((draw.btn = event.which) != 1 && draw.btn != 3) pickColor();
-	else {
-		draw.active = draw.time.act();
-		if (!interval.timer) {
-			interval.timer = setInterval(timeElapsed, 1000);
-			interval.save = setInterval(autoSave, 60000);
-		}
-	var	i = (event.which == 1?1:0)
-	,	t = tools[1-i]
-	,	pf = ((sf & 8) && (mode.shape || !mode.step))
-	,	fig = ((sf & 2) && (mode.shape || pf));
+	if ((draw.btn = event.which) != 1 && draw.btn != 3) return pickColor(), drawEnd();
 
-		t = (sf & 4 ? DRAW_HELPER : {
-			lineWidth: (pf && !mode.step?1:t.width)
-		,	fillStyle: (fig ? 'rgba('+(mode.step?tools[i]:t).color+', '+t.opacity+')' : A0)
-		,	strokeStyle: (fig && !(mode.step || pf) ? A0 : 'rgba('+t.color+', '+t.opacity+')')
-		,	shadowColor: (t.blur ? 'rgb('+t.color+')' : A0)
-		,	shadowBlur: t.blur
-		});
-		for (i in t) c2s[i] = c2d[i] = t[i];
+//* start drawing:
 
-		updatePosition(event);
-
-		for (i in draw.o) draw.prev[i] = draw.cur[i];
-		for (i in draw.line) draw.line[i] = false;
-		for (i in select.lineCaps) c2s[i] = c2d[i] = select.options[i][select[i].value];
-
-		if ((sf & 32) && (t = id('text-content').value).replace(regTrim, '').length) {
-		var	i = id('text-font'), f = c2d.font = DEFAULT_FONT, s = c2d.strokeStyle, a = draw.textAlign || 'center', t = t.split(regVertSpace);
-			if (k = checkTextStyle(i, 1)) {
-				f = i.value;
-			} else {
-			var	j = i.value.replace(regCommaSpace, '$1 ').split(' '), k = [], l = '', m;
-				for (i in j) {
-					if (m = j[i].match(regTextSize)) l = m[1] + (m[2] || 'px')+' ';
-					else k.push(j[i]);
-				}
-				f = l+k.join(' ');
-				k = (l && checkTextStyle(f, 1));
-			}
-			if (isA0(s)) {
-				i = (draw.btn == 1?1:0);
-				s = 'rgba('+tools[i].color+', '+tools[1-i].opacity+')';
-			}
-			draw.text = {font:f, style:s, align:a, lines:t, offset:(k?getTextOffsetXY(f,c2d,a,t):{x:0, y:0})};
-		} else draw.text = 0;
-
-		if ((sf & 32) && !(sf & 2)) return drawEnd(event);
-		c2d.beginPath();
-		c2d.moveTo(draw.cur.x, draw.cur.y);
+	draw.active = draw.time.act();
+	if (!interval.timer) {
+		interval.timer = setInterval(timeElapsed, 1000);
+		interval.save = setInterval(autoSave, 60000);
 	}
+var	i = (event.which == 1?1:0)
+,	t = tools[1-i]
+,	pf = ((sf & 8) && (mode.shape || !mode.step))
+,	fig = ((sf & 2) && (mode.shape || pf));
+
+	t = (sf & 4 ? DRAW_HELPER : {
+		lineWidth: (pf && !mode.step?1:t.width)
+	,	fillStyle: (fig ? 'rgba('+(mode.step?tools[i]:t).color+', '+t.opacity+')' : A0)
+	,	strokeStyle: (fig && !(mode.step || pf) ? A0 : 'rgba('+t.color+', '+t.opacity+')')
+	,	shadowColor: (t.blur ? 'rgb('+t.color+')' : A0)
+	,	shadowBlur: t.blur
+	});
+	for (i in t) c2s[i] = c2d[i] = t[i];
+
+	updatePosition(event);
+
+	for (i in draw.o) draw.prev[i] = draw.cur[i];
+	for (i in draw.line) draw.line[i] = false;
+	for (i in select.lineCaps) c2s[i] = c2d[i] = select.options[i][select[i].value];
+
+	if ((sf & 32) && (t = id('text-content').value).replace(regTrim, '').length) {
+	var	i = id('text-font'), f = c2d.font = DEFAULT_FONT, s = c2d.strokeStyle, a = draw.textAlign || 'center', t = t.split(regVertSpace);
+		if (k = checkTextStyle(i, 1)) {
+			f = i.value;
+		} else {
+		var	j = i.value.replace(regCommaSpace, '$1 ').split(' '), k = [], l = '', m;
+			for (i in j) {
+				if (m = j[i].match(regTextSize)) l = m[1] + (m[2] || 'px')+' ';
+				else k.push(j[i]);
+			}
+			f = l+k.join(' ');
+			k = (l && checkTextStyle(f, 1));
+		}
+		if (isA0(s)) {
+			i = (draw.btn == 1?1:0);
+			s = 'rgba('+tools[i].color+', '+tools[1-i].opacity+')';
+		}
+		draw.text = {font:f, style:s, align:a, lines:t, offset:(k?getTextOffsetXY(f,c2d,a,t):{x:0, y:0})};
+	} else draw.text = 0;
+
+	if ((sf & 32) && !(sf & 2)) return drawEnd(event);
+	c2d.beginPath();
+	c2d.moveTo(draw.cur.x, draw.cur.y);
 }
 
 function drawMove(event) {

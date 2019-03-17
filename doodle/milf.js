@@ -6,7 +6,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 //* Configuration *------------------------------------------------------------
 
 ,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2017-06-09'
+,	INFO_DATE = '2014-07-16 — 2019-03-17'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -631,10 +631,12 @@ function drawStart(event) {
 	try {
 		showProps(event,1,1);	//* <- check if permission denied to read some property
 	} catch (err) {
-		return;			//* <- against FireFox catching clicks on page scrollbar
+		return;		//* <- against FireFox catching clicks on page scrollbar
 	}
+
 	if (!draw.step || (draw.target && draw.target !== event.target)) drawEnd(event);
 	if (isMouseIn() <= 0) return false;
+
 	draw.target = event.target;
 //	cnv.view.focus();
 	eventStop(event).preventDefault();
@@ -674,36 +676,37 @@ var	y = draw.history, i = y.layer, s = select.shape.value, fig = select.shapeFig
 	}
 //	if (event.shiftKey) mode.click = 1;	//* <- draw line/form chains, meh, forget for now
 
-	if ((draw.btn = event.which) != 1 && draw.btn != 3) pickColor();
-	else {
-		draw.active = draw.time.act(), y = {draw:0, temp:0};
-		if (!interval.timer) {
-			interval.timer = setInterval(timeElapsed, 1000);
-			interval.save = setInterval(autoSave, 60000);
-		}
-	var	i = (event.which == 1)?1:0, j, t = tools[1-i]
-	,	b = (fig ? t.blur : 0)
-	,	pf = ((sf & 8) && (mode.shape || !mode.step))
-	,	sh = ((sf & 2) && (mode.shape || pf));
-		draw.clip = t.clip;
-		for (i in (t = mode.erase ? DRAW_HELPER : {
-			lineWidth: ((!fig || (pf && !mode.step))?1:t.width)
-		,	fillStyle: (sh ? 'rgba('+(mode.step?tools[i]:t).color+', '+t.opacity+')' : A0)
-		,	strokeStyle: (sh && !(mode.step || pf) ? A0 : 'rgba('+t.color+', '+(fig?t.opacity:(draw.step?0.33:0.66))+')')
-		,	shadowColor: (b ? 'rgb('+t.color+')' : A0)
-		,	shadowBlur: b
-		})) for (j in y) ctx[j][i] = t[i];
-		updatePosition(event);		//* <- update pixel offset based on tool width && draw.active
-		for (i in draw.o) draw.prev[i] = draw.cur[i];
-		for (i in draw.line) draw.line[i] = false;
-		for (i in select.lineCaps) {
-			t = select.options[i][select[i].value];
-			for (j in y) ctx[j][i] = t;
-		}
-		if (sf & 32) return drawEnd(event);
-		ctx.draw.beginPath();
-		ctx.draw.moveTo(draw.cur.x, draw.cur.y);
+	if ((draw.btn = event.which) != 1 && draw.btn != 3) return pickColor(), drawEnd();
+
+//* start drawing:
+
+	draw.active = draw.time.act(), y = {draw:0, temp:0};
+	if (!interval.timer) {
+		interval.timer = setInterval(timeElapsed, 1000);
+		interval.save = setInterval(autoSave, 60000);
 	}
+var	i = (event.which == 1)?1:0, j, t = tools[1-i]
+,	b = (fig ? t.blur : 0)
+,	pf = ((sf & 8) && (mode.shape || !mode.step))
+,	sh = ((sf & 2) && (mode.shape || pf));
+	draw.clip = t.clip;
+	for (i in (t = mode.erase ? DRAW_HELPER : {
+		lineWidth: ((!fig || (pf && !mode.step))?1:t.width)
+	,	fillStyle: (sh ? 'rgba('+(mode.step?tools[i]:t).color+', '+t.opacity+')' : A0)
+	,	strokeStyle: (sh && !(mode.step || pf) ? A0 : 'rgba('+t.color+', '+(fig?t.opacity:(draw.step?0.33:0.66))+')')
+	,	shadowColor: (b ? 'rgb('+t.color+')' : A0)
+	,	shadowBlur: b
+	})) for (j in y) ctx[j][i] = t[i];
+	updatePosition(event);		//* <- update pixel offset based on tool width && draw.active
+	for (i in draw.o) draw.prev[i] = draw.cur[i];
+	for (i in draw.line) draw.line[i] = false;
+	for (i in select.lineCaps) {
+		t = select.options[i][select[i].value];
+		for (j in y) ctx[j][i] = t;
+	}
+	if (sf & 32) return drawEnd(event);
+	ctx.draw.beginPath();
+	ctx.draw.moveTo(draw.cur.x, draw.cur.y);
 }
 
 function drawMove(event) {
