@@ -100,6 +100,7 @@ if (lang == 'ru') la = {
 ,	room_logs: 'Записи комнаты'
 ,	arch: 'архив'
 ,	page: 'Страница'
+,	single_page_hint: 'Архив однобуквенных комнат хранит не больше одной страницы.'
 ,	search_add: 'Добавить предмет поиска'
 ,	search_remove: 'Убрать'
 ,	search_hint: {
@@ -212,6 +213,7 @@ if (lang == 'ru') la = {
 ,	room_logs: 'Room logs'
 ,	arch: 'archive'
 ,	page: 'Page'
+,	single_page_hint: 'Archive of a single-letter room keeps no more than one page.'
 ,	search_add: 'Add search term'
 ,	search_remove: 'Remove'
 ,	search_hint: {
@@ -2581,8 +2583,9 @@ var	flagVarNames = ['flag', 'flags']
 		var	t = document.title
 		,	h = (e.firstElementChild || e).textContent.replace(regTrimWord, '')
 		,	i = t.lastIndexOf(h)+h.length
+		,	singlePage = (typeof param.start !== 'undefined')
 			;
-			param.on_page = (touch && !param.start ? 20 : orz(param.on_page));
+			param.on_page = (touch && !singlePage ? 20 : orz(param.on_page));
 			param.start = orz(param.start);
 			param.total = orz(param.total);
 			param.title = [
@@ -2591,10 +2594,14 @@ var	flagVarNames = ['flag', 'flags']
 			];
 			if (a = gn('p', e)[0]) a.innerHTML += '\n<span id="range"></span>';
 			e.innerHTML += (
-				!param.start && param.total > param.on_page
+				!singlePage && param.total > param.on_page
 				? '<p id="pages"'+(touch?' class="touch"':'')+'></p>'
 				: '<p>'+la.page+': 1</p>'
-			)+'<div id="thumbs"></div>';
+			)+'<div id="thumbs"></div>'+(
+				singlePage
+				? '<p class="hint">'+la.single_page_hint+'</p>'
+				: ''
+			);
 			page(1);
 		}
 

@@ -272,9 +272,12 @@ a.a {
 	max-width: 320px;
 }
 #thumbs {
-	margin: 8px auto 0 auto;
+	margin: 8px auto;
 	max-width: 864px;
 	text-align: left;
+}
+#thumbs:last-child {
+	margin-bottom: 0;
 }
 #thumbs a {
 	display: inline-block;
