@@ -828,6 +828,7 @@ last = <a href="'.$thread_count.'.htm">'.$thread_count.'</a><!-- static link for
 $tmp_arch_last	$tmp_arch_count";
 			$prev_type = false;
 			foreach ($visible['list'] as $room => $n) {
+				$room_type = get_room_type($room);
 				$a = mb_split_filter($room);
 				$room = array_pop($a);
 				if (!$r_type && ($prev_type !== ($type = implode('/', $a)))) {
@@ -839,6 +840,7 @@ type_title = $tmp_room_types_title[$k]$top";
 					}
 					$prev_type = $type;
 				}
+				if ($v = $room_type['arch_pages']) $n['count'] .= '*'.$v;
 				$page['content'] .= ($c ? "
 $n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
 			}
@@ -1004,6 +1006,7 @@ NL.$tmp_options_name.$t.(
 .NL.$tmp_options_time_client.$t.'<time id="time-zone"></time>';
 
 //* archive downloader --------------------------------------------------------
+
 		if (ARCH_DL_ENABLED) {
 			$a = $b = '';
 			$j = ARG_NAMING_VAR_PREFIX;
@@ -1527,6 +1530,7 @@ archives = $arch_list_href$y
 separator = \"$s\"
 $top";
 				foreach ($visible['list'] as $room => $n) {
+					$room_type = get_room_type($room);
 					$a = mb_split_filter($room);
 					$mid = array_pop($a);
 					if (!$y && ($prev_type !== ($type = implode('/', $a)))) {
@@ -1544,7 +1548,13 @@ type_title = $tmp_room_types_title[$k]$top";
 					if ($a = $n['marked']) foreach ($a as $k => $v) $mid .= "$s$v$k[0]";
 					if ($c) {
 						$left = $n['threads now'].$s.$n['threads ever'];
-						if ($v = $n['threads arch']) $left .= $s.$v.($t ? $s.$n['last arch'] : '');
+						if ($v = $n['threads arch']) {
+							$left .= (
+								$s.$v
+							.	(($v = $room_type['arch_pages']) ? '*'.$v : '')
+							.	($t ? $s.$n['last arch'] : '')
+							);
+						}
 						$right = $n['pics'].$s.$n['desc'].($t ? $s.$n['last post'] : '');
 					} else {
 						$left = ($n['threads arch']?'*':NB);

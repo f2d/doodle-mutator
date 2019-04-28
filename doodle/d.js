@@ -100,7 +100,7 @@ if (lang == 'ru') la = {
 ,	room_logs: 'Записи комнаты'
 ,	arch: 'архив'
 ,	page: 'Страница'
-,	single_page_hint: 'Архив однобуквенных комнат хранит не больше одной страницы.'
+,	page_limit_hint: 'Архив однобуквенных комнат хранит не больше одной страницы.'
 ,	search_add: 'Добавить предмет поиска'
 ,	search_remove: 'Убрать'
 ,	search_hint: {
@@ -213,7 +213,7 @@ if (lang == 'ru') la = {
 ,	room_logs: 'Room logs'
 ,	arch: 'archive'
 ,	page: 'Page'
-,	single_page_hint: 'Archive of a single-letter room keeps no more than one page.'
+,	page_limit_hint: 'Archive of a single-letter room keeps no more than one page.'
 ,	search_add: 'Add search term'
 ,	search_remove: 'Remove'
 ,	search_hint: {
@@ -1564,7 +1564,7 @@ function showContent(sortOrder) {
 				}
 			} else {
 		//* 3 columns, sort of:
-			var	t,a,b,c,d,i,j,k
+			var	t,a,b,c,d,i,j,k,l,m,n
 			,	u = ''
 			,	userID = ''
 			,	userLink = ''
@@ -1677,11 +1677,26 @@ function showContent(sortOrder) {
 					} else
 					if (dtp.rooms && sep) {
 				//* arch link:
-						j = '<a href="'
-						+	param.archives
-						+	(param.type?param.type+'/':'')
-						+	tab[2]
-						+ '/">';
+						j = '*';
+						if (t.indexOf(j) < 0) j = '';
+
+						m = (
+							'<a href="'
+						+		param.archives
+						+		(param.type?param.type+'/':'')
+						+		tab[2]
+						+		'/'
+						+	(
+								j
+								? '" title="'
+								+	encodeTagAttr(la.page_limit_hint)
+								: ''
+							)
+						+	'">'
+						);
+
+						n = j+'</a>';
+
 						if (roomCount && t.indexOf(sep) >= 0) {
 							k = t.split(sep).map(orz);
 				//* last arch date:
@@ -1691,20 +1706,22 @@ function showContent(sortOrder) {
 							}
 							if (!count.u.length) count.u = [0,0,0];
 							for (i in (k = k.slice(0,3))) count.u[i] += k[i];
-							if (i = k[2]) k[2] = j+i+'</a>';
+							if (i = k[2]) k[2] = m+i+n;
 							t = k.join(sep);
 						} else
 				//* date hidden:
-						if (tab[2] && isNotEmpty(t)) t = j+t+'</a>';
+						if (tab[2] && isNotEmpty(t)) t = m+t+n;
 					} else {
 					var	time = t = getFTimeIfTime(t);
-						if (dtp.found) t =
+
+						if (dtp.found) t = (
 							'<a href="'+(param.room?param.room+'/':'')+param.t+param.page_ext
 						+	'" title="'+la.search_hint.thread
 						+	'">'
 						+		t
 						+	'</a>'
-						+	(alter?' → '+threadNum:'');
+						+	(alter?' → '+threadNum:'')
+						);
 					}
 					if (flag.c && (dtp.reflinks || (tab.length > 2 && isNotEmpty(tab[2])))) {
 						++count[k = (u == 'u'?u:'o')];
@@ -1753,6 +1770,16 @@ function showContent(sortOrder) {
 						t = '<a href="'+t+'">'+d+'</a>';
 					} else
 				//* rooms:
+					if (dtp.rooms && dtp.archive && t.indexOf(j = '*') >= 0) {
+						t = (
+							'<span title="'
+						+		encodeTagAttr(la.page_limit_hint)
+						+	'">'
+						+		orz(t)
+						+		j
+						+	'</span>'
+						);
+					} else
 					if (roomCount && t.indexOf(sep) >= 0) {
 						k = t.split(sep).map(orz);
 				//* last post date:
@@ -2596,10 +2623,14 @@ var	flagVarNames = ['flag', 'flags']
 			e.innerHTML += (
 				!singlePage && param.total > param.on_page
 				? '<p id="pages"'+(touch?' class="touch"':'')+'></p>'
-				: '<p>'+la.page+': 1</p>'
+				: '<p>'+la.page+': '
+				+	'<span title="'
+				+		encodeTagAttr(la.page_limit_hint)
+				+	'">1*</span>'
+				+ '</p>'
 			)+'<div id="thumbs"></div>'+(
 				singlePage
-				? '<p class="hint">'+la.single_page_hint+'</p>'
+				? '<p class="hint">* '+la.page_limit_hint+'</p>'
 				: ''
 			);
 			page(1);
