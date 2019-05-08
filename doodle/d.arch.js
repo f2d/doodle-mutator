@@ -16,6 +16,7 @@
 ,	regBytes = /([;,]\s*)?\d+\s*B$/i
 ,	regNaN = /\D+/
 ,	regSpace = /\s+/g
+,	regSpaceHTML = /\s|&(nbsp|#8203|#x200B);?/gi
 ,	regTrim = /^\s+|\s+$/g
 ,	regTimeBreak = /^\d+(<|>|,|$)/
 
@@ -31,9 +32,12 @@
 	||	location.pathname.split('/').slice(-2)[0]
 	||	'room'
 	).replace(regTrim, '')
+
+,	thisPage
 ,	timeRange
 
-,	la, lang = getCookie('lang') || (LS ? LS.lang : '') || document.documentElement.lang || 'en'
+,	la
+,	lang = getCookie('lang') || (LS ? LS.lang : '') || document.documentElement.lang || 'en'
 	;
 
 //* UI translation *-----------------------------------------------------------
@@ -91,6 +95,7 @@ function gn(n,p) {try {return TOS.slice.call((p || document).getElementsByTagNam
 function id(i) {return document.getElementById(i);}
 function fit() {v.content = 'width='+(d.maxWidth = w[d.maxWidth != w[1]?1:0]).replace(regNaN,'');}
 function meta() {toggleClass(document.body, 'hide-aside');}
+function isNotEmpty(t) {return String(t).replace(regSpaceHTML, '').length;}
 function getClassReg(c) {return new RegExp('(^|\\s)('+c+')($|\\s)', 'i');}
 function toggleClass(e,c,keep) {
 var	k = 'className'
@@ -254,7 +259,6 @@ var	h,i,j,k,l,m,t
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
 ,	regTimeDrawn = /^((\d+)-(\d+)(?:[^\d:,=-]+(\d+)-(\d+))?|[\d:]+)(?:=(-?\d+))?,(.*)$/m
 
-,	thisPage
 ,	nextPage
 ,	prevPage
 ,	rootPath

@@ -12,6 +12,7 @@
 ,	capsWidth = document.body.offsetWidth
 
 ,	regClassCapsBtn
+,	thisPage
 	;
 
 bnw.push(bnw.caps = function capsInit(i) {
@@ -375,13 +376,21 @@ function capsSave(posts) {
 				;
 				a.href = blob;
 			} else a.href = dataURI;
-;			a.download = getFormattedTime(0,1,0,1)+(room?'_'+room:'')+(ext?'.'+ext:'');
+			a.download = (
+				[
+					getFormattedTime(0,1,0,1)
+				,	room || ''
+				,	thisPage || ''
+				].filter(isNotEmpty).join('_')
+			+	(ext?'.'+ext:'')
+			);
 			a.click();
 			setTimeout(function() {
 				if (blob) u.revokeObjectURL(blob);
 				del(a);
 			}, 12345);
 		} else window.open(dataURI, '_blank');
+
 		return size;
 	}
 
@@ -568,5 +577,6 @@ var	la;
 	} else {
 		alert(la.no_posts);
 	}
+
 	return false;
 }
