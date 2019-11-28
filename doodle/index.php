@@ -29,12 +29,16 @@ if (!is_prefix($s = URLdecode($p = $_SERVER['REQUEST_URI']), ROOTPRFX)) {
 	exit_no_access('"'.ROOTPRFX.'" path does not match "'.$s.'"');
 }
 
+ob_start();
+
 //* source: http://php.net/security.magicquotes.disabling#91653
 if (function_exists($f = 'get_magic_quotes_gpc') && $f()) {
 	function strip_magic_slashes(&$value, $key) {$value = stripslashes($value);}
 	$gpc = array(&$_COOKIE, &$_GET, &$_POST, &$_REQUEST, &$_SESSION);
 	array_walk_recursive($gpc, 'strip_magic_slashes');
 }
+
+$deprecated .= ob_get_clean();
 
 define('ME', 'me');
 define('ME_VAL', $_POST[ME] ?? $_COOKIE[ME] ?? '');	//* <- don't rely on $_REQUEST and EGPCS order
@@ -163,7 +167,12 @@ require(NAMEPRFX.'.db.php');
 
 //* End buffering, hide output. *----------------------------------------------
 
-if ($v = trim_bom(ob_get_clean())) data_log_action('cfg buffer dump', $v);
+if ($v = trim_bom(ob_get_clean())) {
+	if ($t = trim_bom($deprecated)) {
+		$v .= NL.$t;
+	}
+	data_log_action('cfg buffer dump', $v);
+}
 time_check_point('done cfg');
 
 //* Data maintenance *---------------------------------------------------------
@@ -1795,7 +1804,7 @@ if (!$is_report_page) {
 //* room type selection:
 
 		$i_b = array();
-		foreach ($cfg_game_type_dir as $k => $v) {
+		if ($u_key) foreach ($cfg_game_type_dir as $k => $v) {
 			$i_b[] = (
 				A
 			.	($is_room_list ? '' : $room_list_href)

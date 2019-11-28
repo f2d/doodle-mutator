@@ -240,7 +240,10 @@ function mb_sanitize_filename($s) {
 //	return strtr($s, array('"' => "'", ':' => '_', '?' => '_', '*' => '_', '<' => '_', '>' => '_'));
 }
 
-function mb_str_split($s) {return preg_split('//u', $s);}
+if (!function_exists($f = 'mb_str_split')) {
+	function mb_str_split($s) {return preg_split('//u', $s);}
+}
+
 function mb_split_filter($s, $by = '/', $limit = 0) {
 	return preg_split(
 		$by === NL
