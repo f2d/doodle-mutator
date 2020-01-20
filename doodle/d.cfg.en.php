@@ -86,7 +86,7 @@ $tmp_describe_hint = 'From '.DESCRIBE_MIN_LENGTH.' to '.DESCRIBE_MAX_LENGTH.' le
 
 		for a blank line.
 	]
-	To write poem blocks, start and end the whole text and each line with a fully spaced slash.
+	To write poem blocks, start and end the whole description text and each line with a fully spaced slash.
 	[cite|'
 .POST_LINE_BREAK.' Like this, '
 .POST_LINE_BREAK.' or more than once '

@@ -30,10 +30,9 @@ Another way to name the game is "broken telephone", it can be played with just a
 
 ### Contributing
 
-Want to show your appreciation?
-Nice drawing is better, any help with development is even cooler, and still, if you'd like to support my server hosting, here is a button:
-
-[![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU)
+* Participating in the game makes it meaningful to keep the server working.
+* Help with development is helpful: code patches, reports, ideas.
+* Donations to support my server hosting can be sent via [PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU), [Qiwi](https://qiwi.me/f2d), [etc.](https://2draw.me/index.htm)
 
 ## RU:
 
@@ -52,7 +51,6 @@ Nice drawing is better, any help with development is even cooler, and still, if 
 
 ### Помощь проекту
 
-Хотите выразить признательность?
-Няшный рисунок лучше, помощь в разработке — совсем классно, и всё же, если угодно оказать помощь в оплате сервера, вот кнопка:
-
-[![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU)
+* Участие в игре сохраняет смысль держать работающий сервер.
+* Помощь в доработке пригодится, будь то патчи, сообщения или идеи.
+* Поддержать оплату сервера будет кстати, через [Киви](https://qiwi.me/f2d), [Пейпал](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU), [и т.д.](https://2draw.me/index.htm)
