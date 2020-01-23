@@ -1162,7 +1162,7 @@ function data_get_full_threads($get_content = true) {
 			$tab = mb_split($sep, $line);
 			if ($tab[0]) {
 				if ($last_time < $tab[0]) $last_time = $tab[0];
-				$tab[0] = date(TIMESTAMP, $tab[0]);
+				$tab[0] = date(CONTENT_DATETIME_FORMAT, $tab[0]);
 			}
 			if ($tab[1] && ($i = intval($tab[1])) && isset($usernames[$i])) $tab[1] = $usernames[$i];
 			if ($tab[2]) {

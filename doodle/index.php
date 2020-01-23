@@ -95,8 +95,9 @@ define('BOM', pack('CCC', 239, 187, 191));		//* <- UTF-8 Byte Order Mark
 define('ARCH_DL_HASH_TYPE', 'crc32b');
 define('B64_PRFX', 'base64:');
 define('OPT_PRFX', 'opt_');
-define('TIMESTAMP', 'Y-m-d H:i:s');
-define('FILESTAMP', 'Y-m-d H-i-s');
+define('CONTENT_DATETIME_FORMAT', 'Y-m-d H:i:s');
+define('FILENAME_DATETIME_FORMAT', 'Y-m-d H-i-s');
+define('HTTP_MOD_TIME_FORMAT', 'D, d M Y H:i:s \G\M\T');
 define('PAT_DATE', '~(?P<ym>(?P<y>\d+)-(?P<m>\d+))-(?P<d>\d+)~');
 define('PAT_REPORT', '~^(?P<thread>\d+)\D+(?P<post>\d+)\D+(?P<side>\d+)$~');
 define('PAT_CONTENT', '~^(?P<before>.*?<pre>)(?P<content>.*?\S)(?P<after>\s*</pre>.*)$~uis');
@@ -432,7 +433,7 @@ if (GOD && (
 		,	'content' => (
 				($a = data_get_user_info($i))
 				? array_merge(array(
-					'Current date' => date(TIMESTAMP, T0)
+					'Current date' => date(CONTENT_DATETIME_FORMAT, T0)
 				,	'User ID' => $i
 				,	'User name' => $usernames[$i]
 				), $a)
@@ -509,7 +510,7 @@ if (TIME_PARTS) time_check_point('ignore user abort');
 					$no_direct_access = (mb_substr_before($path, '/') === $dd);
 					foreach (get_dir_contents($path ?: '.', F_NATSORT) as $fn) {
 						$f = trim_slash_dots("$path/$fn");
-						$m = date(TIMESTAMP, filemtime($f));
+						$m = date(CONTENT_DATETIME_FORMAT, filemtime($f));
 						if ($d = is_dir($f)) $fn .= '/';
 						$a = (
 							$d
@@ -1145,7 +1146,7 @@ sep_select = '.$sp.'
 					if (!strlen($t = trim($etc, '-'))) {
 						$t = data_check_my_task();
 						die(
-							'<!--'.date(TIMESTAMP, T0).'-->'
+							'<!--'.date(CONTENT_DATETIME_FORMAT, T0).'-->'
 							.NL.'<meta charset="'.ENC.'">'
 							.NL.'<title'.get_template_attr(array('deadline' => $target['deadline'])).(
 								is_array($t)

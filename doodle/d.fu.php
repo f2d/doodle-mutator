@@ -15,10 +15,13 @@ define('F_NATSORT', 8);
 //* ---------------------------------------------------------------------------
 
 function exit_if_not_mod($t = 0, $change = false, $changes = '') {
-	$t = gmdate('r',
-		$t
-		? max(intval($t), data_global_announce('last'))
-		: T0
+	$t = gmdate(
+		HTTP_MOD_TIME_FORMAT
+	,	(
+			$t
+			? max(intval($t), data_global_announce('last'))
+			: T0
+		)
 	);
 	$q = 'W/"'.md5(get_imploded_non_empty_lines(array(
 		'Refresh any page cached before '.HTML_VERSION
@@ -103,7 +106,7 @@ function rewrite_htaccess($write_to_file = 1) {
 	RewriteRule ^'.$d.'$ $0/ [L,R]'.'
 
 </IfModule>
-'.$end_mark.date(TIMESTAMP, T0).' -- Manual changes inside will be lost on the next autoupdate.';
+'.$end_mark.date(CONTENT_DATETIME_FORMAT, T0).' -- Manual changes inside will be lost on the next autoupdate.';
 		if ($old) {
 			$b_found = (false !== ($i = mb_strpos($old, $start_mark)));
 			$before = ($b_found ? trim(mb_substr($old, 0, $i)) : '');
@@ -971,7 +974,7 @@ function get_archiver_dl_list($caseless = true, $include_hidden = true) {
 					$i = get_file_name_no_ext($f);
 					$ext = get_file_ext($f);
 
-					$date = date(FILESTAMP, $time = $post['date']);
+					$date = date(FILENAME_DATETIME_FORMAT, $time = $post['date']);
 					$author = $post['username'];
 
 					if ($name = $naming) {
@@ -1019,8 +1022,8 @@ function get_archiver_dl_list($caseless = true, $include_hidden = true) {
 		$hash = md5($content);
 		$count = count($file_list);
 		$size = format_filesize($total_size);
-		$first = date(FILESTAMP, $first);
-		$last = date(FILESTAMP, $last);
+		$first = date(FILENAME_DATETIME_FORMAT, $first);
+		$last = date(FILENAME_DATETIME_FORMAT, $last);
 		$f = "$first$s$last$s$size in $count files$s$hash".ARCH_DL_EXT;
 		$f = preg_replace('~\s+~u', '_', $f);
 		if (!is_file($p = DIR_ARCH_DL.$f.ARCH_DL_LIST_EXT)) file_put_mkdir($p, $content);

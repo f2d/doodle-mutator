@@ -522,7 +522,7 @@ function data_archive_rewrite($params = false) {
 			}
 			$date_span = array();
 			foreach ($data_archive_rewrite_params['date_span'] as $k => $v) {
-				$date_span[$k] = date(TIMESTAMP, $v);
+				$date_span[$k] = date(CONTENT_DATETIME_FORMAT, $v);
 			}
 			$dc = ($date_classes ? '	'.implode(' ', $date_classes) : '');
 			$text_report .= NL."$f	$x	$date_span[min] - $date_span[max]$dc";
