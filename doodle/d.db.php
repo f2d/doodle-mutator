@@ -1324,9 +1324,9 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 		if (list($d,$f,$m) = data_get_thread_by_num($a[0])) {
 			if ($un > 1) {
 				$t = data_get_thread_name_tail(file_get_contents($d.$f));
-				if (rename($d.$f, "$d$m[id]$t$e")) $ok = OK;	//* <- put to wait
+				if (rename($d.$f, "$d$m[id]$t$e")) $ok = 'OK';	//* <- put to wait
 			} else {
-				if (rename($d.$f, "$d$m[id].pf$e")) $ok = OK;	//* <- get ready
+				if (rename($d.$f, "$d$m[id].pf$e")) $ok = 'OK';	//* <- get ready
 				if ($ok && !$un && is_array($r = data_archive_ready_go())) {
 					foreach ($r as $k => $v) if ($v) $ok .= ", $v $k";
 					$return = 'trd_arch';
@@ -1341,7 +1341,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 		&&	$f != ($n = $m['active'].($un > 1?'.del':($un?'':'.stop')))
 		&&	rename($d.$f, $d.$n)
 		) {
-			$ok = OK;
+			$ok = 'OK';
 			data_post_refresh();
 		}
 	} else
@@ -1351,7 +1351,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 		&&	is_file($r = DATA_DIR_ROOM."$room/".DATA_SUB_REP."$m[id]$e")
 		&&	unlink($r)
 		) {
-			$ok = OK;
+			$ok = 'OK';
 			data_post_refresh();
 		}
 	} else
@@ -1365,7 +1365,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 			)
 			: ($bak = rename($d.$f, "$d$m[active].del"))
 		) {
-			$ok = OK.$bak;
+			$ok = 'OK'.$bak;
 			if ($count) $ok .= NL.'deleted counts: '.get_print_or_none($count);
 			data_post_refresh();
 		}

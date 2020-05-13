@@ -1898,7 +1898,7 @@ posting:
 ob_start();
 
 if ($u_key) {
-	$post_status = (($_POST[ME] || $_POST[$qredir])?OK:'unkn_req');
+	$post_status = (($_POST[ME] || $_POST[$qredir])?'OK':'unkn_req');
 
 	if (isset($_POST[$qredir])) goto after_posting;
 
@@ -2007,7 +2007,7 @@ if ($u_key) {
 				data_unlock();
 
 				if ($result) $post_status = implode(ARG_ERROR_SPLIT, array_keys($result));
-				else $post_status = ($done && !$failed?OK:'unkn_res');
+				else $post_status = ($done && !$failed?'OK':'unkn_res');
 			}
 		}
 	} else
@@ -2025,7 +2025,7 @@ if ($u_key) {
 					$r['freeze'] = ($_POST['freeze'] || $_POST['stop'] || $_POST['check']);
 					$r['report'] = $t;
 					$r = data_log_report($r);
-					$post_status = ($r > 0?OK:'trd_n_a');
+					$post_status = ($r > 0?'OK':'trd_n_a');
 					data_unlock();
 				}
 			}

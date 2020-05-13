@@ -429,8 +429,10 @@ li {
 	float: right;
 	margin-top: 8px;
 }
-.task .radiogroup input[type="radio"][name="freeze"][value="1"]:checked ~ span {
+.task .radiogroup input[type="radio"][name="freeze"][value="1"] ~ span {
 	padding-left: 18px;
+}
+.task .radiogroup input[type="radio"][name="freeze"][value="1"]:checked ~ span {
 	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAAAxQTFRFAAAAC1nJfNn/////gu5rjwAAAAF0Uk5TAEDm2GYAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMTZEaa/1AAAARUlEQVR42n3PUQoAIAhEQVfvf+fURdSg+uoNUSbyWMDVpthtOsXboSU6oCQ7gcImpIBbMo801CUF/QxhDhKwR1XD/3O9Dn+AAO+CgfZkAAAAAElFTkSuQmCC");
 	background-repeat: no-repeat;
 	background-position: left;
