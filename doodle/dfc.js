@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.70'
-,	INFO_DATE = '2013-04-01 — 2019-03-17'
+,	INFO_VERSION = 'v0.9.71'
+,	INFO_DATE = '2013-04-01 — 2020-05-14'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -147,6 +147,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	,	'\rw'
 	]
 
+,	CUSTOM_CURSOR_DOT = false
 ,	noTransformByProp = /^Opera.* Version\D*11\.\d+$/i.test(navigator.userAgent)
 ,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)
 ,	noBorderRadius	= noTransformByProp || noShadowBlurCurve
@@ -2576,6 +2577,12 @@ var	o = outside
 
 
 
+var CURSOR_DOT = (
+	CUSTOM_CURSOR_DOT
+	? 'url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC\'), auto'
+	: 'default'
+);
+
 document.write(
 	replaceAll(
 		'<div id="|">'
@@ -2600,7 +2607,7 @@ document.write(
 	+		'#| a {color: #888;}'
 	+		'#| a:hover {color: #000;}'
 	+		'#| abbr {border-bottom: 1px dotted #111;}'
-	+		'#| canvas {border: '+CANVAS_BORDER+'px solid #ddd; margin: 0; cursor: url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC\'), auto;}'
+	+		'#| canvas {border: '+CANVAS_BORDER+'px solid #ddd; margin: 0; cursor: '+CURSOR_DOT+';}'
 	+		'#| canvas:hover, #| canvas:hover + #|-color-wheel-inner, #|-color-wheel-inner div:hover {border-color: #aaa;}'
 	+		'#| hr {border: none; border-top: 1px solid #aaa; margin: 8px 0;}'
 	+		'#| input[type="range"] {width: 156px; height: 16px; margin: 0; padding: 0;}'

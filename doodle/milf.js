@@ -5,8 +5,8 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v1.16'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2019-03-17'
+,	INFO_VERSION = 'v1.16.1'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2020-05-14'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -110,6 +110,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 //* Set up (don't change) *----------------------------------------------------
 
+,	CUSTOM_CURSOR_DOT = false
 ,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)	//* <- broken forever, sadly
 ,	noBorderRadius = /^Opera.* Version\D*1\d\.\d+$/i.test(navigator.userAgent)
 ,	abc = 'abc'.split('')
@@ -2962,6 +2963,12 @@ Instead, it is recommended to drag and drop files from another program.'
 
 //* Embed CSS and container *--------------------------------------------------
 
+var CURSOR_DOT = (
+	CUSTOM_CURSOR_DOT
+	? 'url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC\'), auto'
+	: 'default'
+);
+
 document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #| #|-color-text {width: 78px;}\
 #| .|-button {background-color: #ddd;}\
@@ -2997,9 +3004,7 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #| aside {position: absolute; z-index: 100; left: 0; top: 0; text-align: left; padding: 2px; border: 2px solid #888; background-color: rgba(234,234,234,0.90);}\
 #| aside, #|-load canvas {box-shadow: 3px 3px rgba(0,0,0, 0.1);}\
 #| aside:hover {background-color: #eaeaea;}\
-#| canvas {border: '+CANVAS_BORDER+'px solid #ddd; margin: 0; vertical-align: bottom; cursor:\
-	url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC\'),\
-	auto;}\
+#| canvas {border: '+CANVAS_BORDER+'px solid #ddd; margin: 0; vertical-align: bottom; cursor: '+CURSOR_DOT+';}\
 #| canvas:hover, #| canvas:hover + #|-color-wheel-inner, #|-color-wheel-inner div:hover {border-color: #aaa;}\
 #| hr {border: 1px solid #aaa; border-top: none;}\
 #| {text-align: center; padding: 12px; background-color: #f8f8f8;}\
