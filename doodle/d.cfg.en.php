@@ -210,7 +210,7 @@ $tmp_options_profile_link = 'Go to check your profile page.';
 $tmp_options_qk = 'Key to login';
 $tmp_options_qk_hint = 'Double click to select it all for copying. Use in place of name at login form.';
 $tmp_options_self_intro = 'Tell about yourself, if you wish';
-$tmp_options_self_intro_hint = 'Your text here, http://links, [http://pictures], [http://picture left,right,center].';
+$tmp_options_self_intro_hint = 'Your text here, links as http://link, pics as [http://picture], align pics to left, right or center as [http://picture left right center].';
 $tmp_options_time = 'Default time zone';
 $tmp_options_time_client = 'Your time zone';
 $tmp_options_warning = array('Warning: check your server configuration first!', 'See example.');
@@ -325,12 +325,12 @@ Single-letter rooms keep only 1 page in archive (no more than '.TRD_PER_PAGE.' t
 		,	'If you attach an optional E-mail address, it will be used only on-demand, e.g. instructions to restore your login.'
 		,	'This site stores numerical IP addresses of all registered users and participants, which are never deleted, unless directly asked.
 This technical data may be used for bans and deletions of malusers, and is never given outside, unless required by law.'
-		,	'This site uses {https://'.$lang.'.wikipedia.org/wiki/HTTP_cookie^|HTTP Cookies} in your browser only for:
+		,	'This site uses {https://'.$lang.'.wikipedia.org/wiki/HTTP_cookie|HTTP Cookies} in your browser only for:
 - user login,
 - user settings,
 - remembering skipped tasks.
 Site receives this data automatically with each page request, and it never leaves the site.'
-		,	'This site uses {https://'.$lang.'.wikipedia.org/wiki/Web_Storage^|Local Storage API} in your browser only for:
+		,	'This site uses {https://'.$lang.'.wikipedia.org/wiki/Web_Storage|Local Storage API} in your browser only for:
 - keeping drawpad settings,
 - keeping drawings to restore,
 - keeping archive subfolder listings for easier navigation options.

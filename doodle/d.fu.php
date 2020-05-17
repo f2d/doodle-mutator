@@ -1665,7 +1665,7 @@ function get_template_hint($t) {
 	,	'href="javascript:void this" onClick="toggleClass(this.nextElementSibling,\'hid\')"'
 	,	str_replace(
 			str_split('{`^}[|]\\')
-		,	array('<a href="', '" onClick="', '" target="_blank', '</a>', '<span class="', '">', '</span>', NL)
+		,	array('<a href="', '" onClick="', '" target="_blank" rel="noopener', '</a>', '<span class="', '">', '</span>', NL)
 		,	nl2br(
 				htmlspecialchars(
 					preg_replace(
