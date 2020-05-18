@@ -5,8 +5,8 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v1.16.1'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2020-05-14'
+,	INFO_VERSION = 'v1.16.2'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2020-05-18'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -2389,6 +2389,27 @@ var	margin = 2, h = 256//Math.max(cnv.view.height, select.imgRes.height)
 	}
 }
 
+//* Check before closing page *------------------------------------------------
+
+function beforeUnload(evt) {
+	if (!fillCheck()) {
+
+//* Note: given message text won't be used in modern browsers.
+//* https://habr.com/ru/post/141793/
+
+	var	message = lang.confirm.close;
+
+		if (typeof evt === 'undefined') {
+			evt = window.event;
+		}
+		if (evt) {
+			evt.returnValue = message;
+		}
+
+		return message;
+	}
+}
+
 //* Initialization *-----------------------------------------------------------
 
 function init() {
@@ -2625,6 +2646,7 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 	,	mousewheel:	f = hotWheel
 	,	wheel:		f
 	,	scroll:		f
+	,	beforeunload:	beforeUnload
 	})) e.addEventListener(i, a[i], false);
 
 //* Get ready to work *--------------------------------------------------------
@@ -2700,6 +2722,7 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 ,	flood:		'Полотно пусто.'
 ,	confirm: {
 		send:	'Отправить рисунок в сеть?'
+	,	close:	'Покинуть эту страницу и выбросить открытый рисунок?'
 	,	size:	'Превышен размер полотна. Отправить всё равно?'
 	,	save:	'Сохранить слои в память браузера? \r\nПерезаписать копию, изменённую: '
 	,	load:	'Вернуть слои из памяти браузера? \r\nВосстановить копию, изменённую: '
@@ -2835,6 +2858,7 @@ else o.lang = 'en'
 ,	flood:		'Canvas is empty.'
 ,	confirm: {
 		send:	'Send image to server?'
+	,	close:	'Leave this page and discard the drawing?'
 	,	size:	'Canvas size exceeds limit. Send anyway?'
 	,	save:	'Save layers to your browser memory? \r\nOverwrite the copy edited at:'
 	,	load:	'Restore layers from your browser memory? \r\nOverwrite the copy edited at:'

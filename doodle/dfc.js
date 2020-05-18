@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.71'
-,	INFO_DATE = '2013-04-01 — 2020-05-14'
+,	INFO_VERSION = 'v0.9.72'
+,	INFO_DATE = '2013-04-01 — 2020-05-18'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -2030,6 +2030,25 @@ function hotWheel(event) {
 	return false;
 }
 
+function beforeUnload(evt) {
+	if (!fillCheck()) {
+
+//* Note: given message text won't be used in modern browsers.
+//* https://habr.com/ru/post/141793/
+
+	var	message = lang.confirm.close;
+
+		if (typeof evt === 'undefined') {
+			evt = window.event;
+		}
+		if (evt) {
+			evt.returnValue = message;
+		}
+
+		return message;
+	}
+}
+
 
 
 
@@ -2079,6 +2098,7 @@ var	a,b,c = 'canvas', d = '<div id="', e,f,g,h,i,j,k,n = '\n', o = outside, r = 
 	,	mousewheel:	f = hotWheel
 	,	wheel:		f
 	,	scroll:		f
+	,	beforeunload:	beforeUnload
 	})) e.addEventListener(i, a[i], false);
 
 	a = {left:'←</label>', center:'<label>→', right:'</label>'}, b = '<label>', k = 'text-align';
@@ -2348,6 +2368,7 @@ var	o = outside
 		,	found_swap:	'Рисунок был в запасе, теперь сдвинут на первое место.'
 		,	confirm: {
 				send:	'Отправить рисунок в сеть?'
+			,	close:	'Покинуть эту страницу и выбросить открытый рисунок?'
 			,	size:[
 					'Размеры полотна вне допустимых пределов, от '
 				,	' до '
@@ -2476,6 +2497,7 @@ var	o = outside
 		,	found_swap:	'Found same image still saved, swapped it to first slot.'
 		,	confirm: {
 				send:	'Send image to server?'
+			,	close:	'Leave this page and discard the drawing?'
 			,	size:[
 					'Canvas size is outside of limits, from '
 				,	' to '
