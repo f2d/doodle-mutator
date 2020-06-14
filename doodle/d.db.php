@@ -645,7 +645,7 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 			,	$t
 			);
 		}
-		return $t;
+		return htmlspecialchars($t);
 	}
 
 //* single list of users:
@@ -686,7 +686,7 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 			,	$t
 			);
 		}
-		return $t;
+		return htmlspecialchars($t);
 	}
 
 //* logs by date:
