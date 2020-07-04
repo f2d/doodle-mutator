@@ -160,7 +160,6 @@ if ($v = $_SERVER['HTTP_ACCEPT_LANGUAGE']) {
 		$q = (float)$v;
 		$lang = $k;
 	}
-	add_cookie_header(ARG_LANG, $lang);
 }
 
 require(NAMEPRFX.".cfg.$lang.php");
