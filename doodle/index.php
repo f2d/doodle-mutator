@@ -954,7 +954,25 @@ if ($u_key) {
 
 		$u_profile = data_get_user_profile($u_num);
 		$u_email = ($u_profile['email'] ?? array());
-		$f = ($u_flag ? NL.$tmp_options_flags.$t.implode(', ', $u_flag) : '');
+		$u_flag_text = '';
+
+		if ($u_flag) {
+			$u_flag_lines = array();
+			$u_flag_lines_with_time = array();
+
+			asort($u_flag, SORT_NATURAL);
+
+			foreach($u_flag as $flag => $time) {
+				if ($flag === $time) {
+					$u_flag_lines[] = '<span>'.$flag.'</span>';
+				} else {
+					$u_flag_lines_with_time[] = '<span>'.$flag.' &mdash; '.get_time_html(intval($time)).'</span>';
+				}
+			}
+
+			$u_flag_text = NL.$tmp_options_flags.$t.implode('<br>', array_merge($u_flag_lines, $u_flag_lines_with_time));
+		}
+
 		$a = '" onChange="allowApply(\'user\')">';
 
 		$c['user'] =
@@ -964,7 +982,7 @@ NL.$tmp_options_name.$t.(
 	.	preg_replace('~\s+~u', '&nbsp;', $u_name)
 	.'</a>'
 	: $u_name
-).$f
+).$u_flag_text
 .NL.$tmp_options_qk.$t.'<div class="half-hidden" title="'.$tmp_options_qk_hint.'">'.$u_key.'</div>'
 .NL.$tmp_options_email.',<label><input type="checkbox"'
 .(

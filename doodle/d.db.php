@@ -492,9 +492,9 @@ function data_get_user_flags($u_num) {
 		data_lock(LK_USER.$u_num, false);
 		foreach (get_file_lines("$d$e/$u_num.$e") as $line) {
 			$a = mb_split($sep, $line);
-			$key = reset($a);
-			$value = end($a);
-			$r[$key] = $value;
+			$flag = end($a);
+			$time = reset($a);
+			$r[$flag] = $time;
 		}
 	}
 	return $r;
