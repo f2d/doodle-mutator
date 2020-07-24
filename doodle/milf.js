@@ -5,8 +5,8 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v1.16.2'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2020-05-18'
+,	INFO_VERSION = 'v1.16.3'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2020-07-24'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -130,6 +130,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 ,	text = o0('debug,timer')
 ,	cnv = o0('view,draw,lower,current,upper,filter,temp'), ctx = {}
 ,	count = o0('layers,strokes,erases,undo'), used = {}, used_shape = {}
+,	postingInProgress
 
 ,	draw = {m:{}, o:{}, cur:{}, prev:{}
 	,	refresh: 0
@@ -2025,8 +2026,24 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 			a.pic.value = d;
 			a.txt.value = getSendMeta(d.length);
 			f.encoding = f.enctype = 'multipart/form-data';
-			if ((i = outside.check) && (e = document.getElementById(i))) e.setAttribute('data-id', f.id), e.click();
-			else f.submit();
+
+			try {
+				postingInProgress = true;
+
+				if (
+					(i = outside.check)
+				&&	(e = document.getElementById(i))
+				) {
+					e.setAttribute('data-id', f.id);
+					e.click();
+				} else {
+					f.submit();
+				}
+			} catch (error) {
+				console.log(error);
+
+				postingInProgress = false;
+			}
 		}
 	}
 	return c;
@@ -2392,7 +2409,10 @@ var	margin = 2, h = 256//Math.max(cnv.view.height, select.imgRes.height)
 //* Check before closing page *------------------------------------------------
 
 function beforeUnload(evt) {
-	if (!fillCheck()) {
+	if (
+		!postingInProgress
+	&&	!fillCheck()
+	) {
 
 //* Note: given message text won't be used in modern browsers.
 //* https://habr.com/ru/post/141793/

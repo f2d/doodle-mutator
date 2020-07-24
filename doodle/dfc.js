@@ -2,8 +2,8 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.72'
-,	INFO_DATE = '2013-04-01 — 2020-05-18'
+,	INFO_VERSION = 'v0.9.73'
+,	INFO_DATE = '2013-04-01 — 2020-07-24'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
@@ -171,6 +171,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 ,	self = this, outside = this.o = {}, container, canvas, c2d, cnvHid, c2s, hue, lang, i,DL,HP,LP,LS = window.localStorage || localStorage
 ,	fps = 0, ticks = 0, timer = 0, lastUsedSaveSlot = 0
 ,	interval = {fps:0, timer:0, save:0}, text = {debug:0, timer:0, undo:0}, used = {}, cue = {upd:{}}
+,	postingInProgress
 
 ,	draw = {o:{}, cur:{}, prev:{}
 	,	refresh:0
@@ -1885,8 +1886,24 @@ var	a = (lsid < 0), b = 'button', c,d,e,i,j,t = (lsid > 0);
 			a.pic.value = d;
 			a.txt.value = getSendMeta(d.length);
 			f.encoding = f.enctype = 'multipart/form-data';
-			if ((i = outside.check) && (e = document.getElementById(i))) e.setAttribute('data-id', f.id), e.click();
-			else f.submit();
+
+			try {
+				postingInProgress = true;
+
+				if (
+					(i = outside.check)
+				&&	(e = document.getElementById(i))
+				) {
+					e.setAttribute('data-id', f.id);
+					e.click();
+				} else {
+					f.submit();
+				}
+			} catch (error) {
+				console.log(error);
+
+				postingInProgress = false;
+			}
 		}
 	}
 	return c;
@@ -2031,7 +2048,10 @@ function hotWheel(event) {
 }
 
 function beforeUnload(evt) {
-	if (!fillCheck()) {
+	if (
+		!postingInProgress
+	&&	!fillCheck()
+	) {
 
 //* Note: given message text won't be used in modern browsers.
 //* https://habr.com/ru/post/141793/

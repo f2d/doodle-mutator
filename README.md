@@ -1,9 +1,9 @@
 ﻿# doodle-mutator
 
-## EN:
+## EN
 
 Parallel turn-based multiplayer online drawing game.
-Server-side scripts in PHP (7.0 and later) and client-side in JS (ES5 and later).
+Server-side scripts in PHP (version 7.0 and later) and client-side in JS (ES5 and later).
 URL-rewriting is currently required to work (Apache htaccess is added automatically, Nginx conf example is available).
 An optional board for user feedback is available [here](https://github.com/f2d/bakareha) (uses Perl).
 
@@ -13,9 +13,10 @@ An optional board for user feedback is available [here](https://github.com/f2d/b
 	1. You can rename root folders as you wish, but change the paths in respective config files too.
 	2. Even if you keep everything as is, don't forget to change passwords.
 2. Get the web-server up and running, index.php must be default root for the doodle folder.
+	* Required PHP modules: gd, intl, json, mbstring.
 3. Open the doodle folder in a web-browser, input a name for the admin account.
 
-### What is the game about?
+### What is the game about
 
 0. Make a room.
 1. First person writes some initial descriptions.
@@ -34,9 +35,9 @@ Another way to name the game is "broken telephone", it can be played with just a
 * Help with development is helpful: code patches, reports, ideas.
 * Donations to support my server hosting can be sent via [PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU), [Qiwi](https://qiwi.me/f2d), [etc.](https://2draw.me/index.htm)
 
-## RU:
+## RU
 
-### В чём смысл игры?
+### В чём смысл игры
 
 0. Создаётся комната.
 1. Один человек пишет начальные описания.
