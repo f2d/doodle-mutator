@@ -2,6 +2,7 @@
 
 define('ARCH_SITE_NAME', 'Doodle Mutator');
 define('ARCH_DESCRIPTION', 'Archived thread.');
+define('ARCH_POST_FIELD_SEPARATOR', "\t");
 define('ARCH_PIC_NOT_FOUND', '<img src="'.ROOTPRFX.PIC_404.'">');
 define('ARCH_PAT_HTML_TAG', '~<\w+("[^">]*"|[^>])*>~u');
 define('ARCH_PAT_PLACEHOLDER_TEXT', 'v\d|'.mb_escape_regex(NOR).'|'.mb_escape_regex(html_entity_decode(NOR)));
@@ -12,23 +13,28 @@ define('ARCH_PAT_PLACEHOLDER', '
 		<a\s+[^<]+</a>
 		[\s()]*
 	)?
-	(?P<PlaceholderComment>\s*?<!--.*-->)?
+	(?P<PlaceholderComment>\s*?<!--.*?-->)?
 ');
 define('ARCH_PAT_POST_PLACEHOLDER', '~^'.ARCH_PAT_PLACEHOLDER.'$~uix');
 define('ARCH_PAT_POST_PLACEHOLDER_SPAN', '~^
-	<span\s+title="
+	<span\s+title="\s*
 	(?P<Title>
 		(?P<Time>\d+)
-		:\s+
-		(?P<Task>[^">]*)
+		:\s*
+		(?P<Task>[^">]*?)
 	)
-	">
+	\s*">
 	(?P<Text>'.ARCH_PAT_PLACEHOLDER_TEXT.')
 	</span>
 $~uix');
 define('ARCH_PAT_POST', '~^
-	(?P<Date>[^\t]*)
-	(?P<Post>\t[^\t]*\t
+	(?P<Date>
+		[^'.ARCH_POST_FIELD_SEPARATOR.']*
+	)
+	(?P<Post>
+		['.ARCH_POST_FIELD_SEPARATOR.']
+		[^'.ARCH_POST_FIELD_SEPARATOR.']*
+		['.ARCH_POST_FIELD_SEPARATOR.']
 		(?:
 			(?P<Placeholder>'.ARCH_PAT_PLACEHOLDER.')
 		|	(?P<Image><(?:a|img)\s.+)
@@ -200,9 +206,7 @@ function data_archive_fix_image_html_and_meta($post_content, $recheck = false) {
 function data_archive_get_post_fixed_values($line) {
 	global $data_archive_rewrite_params;
 
-	$sep = '	';
-	$tab = mb_split($sep, $line);
-
+	$tab = mb_split(ARCH_POST_FIELD_SEPARATOR, $line);
 	$is_post_with_pic = (count($tab) > 3);
 
 //* date:
@@ -267,7 +271,7 @@ function data_archive_get_post_fixed_values($line) {
 function data_archive_get_post_fixed_lines($post) {
 	global $data_archive_rewrite_params;
 
-	$sep = '	';
+//* set local variables:
 
 	extract($post);
 
@@ -302,7 +306,7 @@ function data_archive_get_post_fixed_lines($post) {
 	$tab[0] = $post_date_int.','.date(DATE_ATOM, $post_date_int);
 	$tab[2] = $post_content;
 
-	return implode($sep, $tab);
+	return implode(ARCH_POST_FIELD_SEPARATOR, $tab);
 }
 
 function data_archive_sort_post_by_date($a, $b) {
@@ -314,13 +318,22 @@ function data_archive_sort_post_by_date($a, $b) {
 
 function data_archive_fix_post_date(&$posts, $i, $increment = false) {
 	$old_date = $post_date = $posts[$i]['post_date_int'];
+	$last_i = count($posts) - 1;
 
-	if ($post_date <= 0) {
+	if ($posts[$i]['is_post_placeholder']) {
+		$post_date = $posts[
+			($i > 0)
+		||	($i > 1 && $i === $last_i)
+			? 0
+			: 1
+		]['post_date_int'] - 1;
+	} else
+	if ($post_date <= 0 || $post_date > T0) {
 		$post_date = (
 			(
 				$increment
 				? ($i > 0)
-				: ($i == count($posts) - 1)
+				: ($i === $last_i)
 			)
 			? ($posts[$i-1]['post_date_int'] + 1)
 			: ($posts[$i+1]['post_date_int'] - 1)
