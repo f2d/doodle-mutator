@@ -327,8 +327,9 @@ function data_archive_fix_post_date(&$posts, $i, $increment = false) {
 			? 0
 			: 1
 		]['post_date_int'] - 1;
-	} else
-	if ($post_date <= 0 || $post_date > T0) {
+	}
+
+	if ($post_date <= 0) {
 		$post_date = (
 			(
 				$increment
