@@ -32,6 +32,7 @@ if (!is_prefix($s = URLdecode($p = $_SERVER['REQUEST_URI']), ROOTPRFX)) {
 ob_start();
 
 //* source: http://php.net/security.magicquotes.disabling#91653
+
 if (function_exists($f = 'get_magic_quotes_gpc') && $f()) {
 	function strip_magic_slashes(&$value, $key) {$value = stripslashes($value);}
 	$gpc = array(&$_COOKIE, &$_GET, &$_POST, &$_REQUEST, &$_SESSION);
@@ -66,6 +67,7 @@ define('ARG_DENY', 'deny');
 define('ARG_DESC', 'desc');
 define('ARG_DRAW', 'draw');
 define('ARG_DROP', 'drop');
+define('ARG_KEEP', 'keep');
 define('ARG_CHANGE', 'change');
 define('ARG_ANY_OF', 'any_of');
 define('ARG_DRAW_APP', 'draw_app');
@@ -142,13 +144,17 @@ if (
 ) {
 	$lang = $v;
 } else
+
 //* source: http://www.dyeager.org/blog/2008/10/getting-browser-default-language-php.html
+
 if ($v = $_SERVER['HTTP_ACCEPT_LANGUAGE']) {
 	$a = array();
 	foreach (explode(',', $v) as $v) if (preg_match('~(\S+);q=([.\d]+)~ui', $v, $m)) {
 		$a[$m[1]] = (float)$m[2];
 	} else $a[$v] = 1.0;
+
 //* check for highest q-value. No q-value means 1 by rule
+
 	$q = 0.0;
 	foreach ($a as $k => $v) if (
 		$v > $q
@@ -218,7 +224,9 @@ $p = mb_strtolower(URLdecode(substr($p, strlen(ROOTPRFX))));
 
 if ($a = mb_split_filter($p)) {
 	$d = array_shift($a);
+
 //* 1) only accept recognized folders:
+
 	if (in_array($d, $cfg_dir)) {
 		$etc = '';
 		$qredir = ($qpath['dir'] = $qdir = $d).'s';
@@ -226,18 +234,24 @@ if ($a = mb_split_filter($p)) {
 			${"qd_$k"} = 1;
 			break;
 		}
+
 //* 2) user profile/number, first non-zero found:
+
 		if ($qd_user) {
 			foreach ($a as $v) if ($v = intval($v)) $etc = $v;
 			$a = array();
 		} else {
+
 //* 2) if recognized room type found in path parts, next after it be the room name, last part optional, anything else thrown away:
+
 			foreach ($a as $v) {
 				if ($qroom) $etc = $v; else
 				if ($qr_type) $qroom = $v; else
 				if (in_array($v, $cfg_game_type_dir)) $qr_type = $v;
 			}
+
 //* 3) if no valid room type, assume the default one, take 1st part to be room name, last part optional, all other thrown away:
+
 			if (!$qr_type && $a) {
 				$qr_type = GAME_TYPE_DEFAULT;
 				$qroom = array_shift($a);
@@ -246,7 +260,9 @@ if ($a = mb_split_filter($p)) {
 			if (isset($qr_type)) $r_type = $qr_type;
 			if ($r_type) $qpath['room_type'] = $r_type;
 			if ($r_type || !GAME_TYPE_DEFAULT) {
+
 //* 4) validate and fix room name:
+
 				if (
 					($room = trim_room($qroom))
 				&&	get_room_name_length($room)
@@ -255,7 +271,9 @@ if ($a = mb_split_filter($p)) {
 				} else $etc = $room = '';
 			}
 		}
+
 //* 5) this will be either "/last-part" (kept for legacy requests) or just a trailing "/" before optional "?query":
+
 		if ($etc && !preg_match('~^[-\d]+$~', $etc)) $etc = '';
 		$qpath['etc'] = $etc;
 	}
@@ -284,20 +302,28 @@ $opt_lvls = array('a' => 'admin', 'i' => 'check');
 
 if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 	if (false === mb_strpos($me, '/')) {
+
 //* v1, one separator for all, like "hash_etc_etc":
+
 		list($u_qk, $u_opti, $u_trd_per_page, $u_room_default) = mb_split('_', $me, 4);
 	} else
 	if (false === mb_strpos($me, ':')) {
+
 //* v2, plain ordered numbers, like "hash/vvv_val_val/etc":
+
 		list($u_qk, $i, $u_room_default, $u_draw_app) = mb_split('\\/', $me, 4);
 		if (!preg_match_all('~(\d+)([a-z])~u', mb_strtolower($i), $m)) {
 			list($u_opti, $u_trd_per_page, $u_draw_max_undo) = mb_split(false !== mb_strpos($i, '_')?'_':'.', $i);
 		} else {
+
 //* v3, abbreviated suffixes for middle part, like "01adm_0010opt_30per_page_99undo", or "0a1o2p3u", in any order:
+
 			foreach ($m[1] as $k => $v) if (false !== ($i = mb_strpos($opt_sufx, $m[2][$k]))) ${'u_'.$opt_name[$i]} = $v;
 		}
 	} else {
+
 //* v4, key prefixes for all, like "hash/key:val/key:val/etc:etc", in any order:
+
 		$a = mb_split('\\/', $me);
 		$u_qk = array_shift($a);
 		$key_value_pairs = $a;
@@ -1158,7 +1184,9 @@ sep_select = '.$sp.'
 			}
 			if ($etc) {
 				if ($etc[0] == '-') {
+
 			//* show current task:
+
 					$sending = (strlen($etc) > 1);
 					if (!strlen($t = trim($etc, '-'))) {
 						$t = data_check_my_task();
@@ -1191,7 +1219,9 @@ sep_select = '.$sp.'
 							)
 						);
 					}
+
 			//* skip current task, obsolete way by GET:
+
 					$add_qk = get_room_skip_list($t);
 					$post_status = 'skip';
 					goto after_posting;
@@ -1223,29 +1253,53 @@ sep_select = '.$sp.'
 
 //* active room task and visible content --------------------------------------
 
-				$y = $query[ARG_ERROR];
-				if ($ay = mb_split_filter($y, ARG_ERROR_SPLIT)) unset($ay['trd_arch'], $ay['trd_miss']);
-				$drop = isset($query[ARG_DROP]);
-				$change = ($drop || isset($query[ARG_CHANGE]) ? ($query[ARG_DROP] ?: $query[ARG_CHANGE] ?: true) : false);
-				$desc_query = ($change === ARG_DESC || isset($query[ARG_DESC]));
-				$draw_query = ($change === ARG_DRAW || !!array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY));
-				$dont_change = (!$change && (
-					$desc_query
-				||	$draw_query
-				||	$ay
-				||	$query[LK_MOD_ACT_LOG]
-				));
-				$skip_list = get_room_skip_list();
+				$errors_in_query = $query[ARG_ERROR];
+				if ($errors_after_POST = mb_split_filter($errors_in_query, ARG_ERROR_SPLIT)) {
+					unset(
+						$errors_after_POST['trd_arch']
+					,	$errors_after_POST['trd_miss']
+					);
+				}
 
-if (TIME_PARTS) time_check_point('inb4 aim lock');
-				data_aim(
-					$drop ? ARG_DROP : $change
-				,	$dont_change		//* <- after POST with error
-				,	$skip_list
-				,	!$u_opts['unknown']
+				$asked_to_change = isset($query[ARG_CHANGE]);
+				$asked_to_keep = isset($query[ARG_KEEP]);
+				$asked_to_drop = isset($query[ARG_DROP]);
+
+				$change_to = $query[ARG_CHANGE];
+				$asked_to_desc = (
+					$change_to === ARG_DESC
+				||	isset($query[ARG_DESC])
 				);
+				$asked_to_draw = (
+					$change_to === ARG_DRAW
+				||	!!array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY)
+				);
+
+				$skip_threads = get_room_skip_list();
+				$task_changing_params = array(
+					'can_change' => (
+						(
+							$errors_after_POST
+						||	$query[LK_MOD_ACT_LOG]
+						) ? false :
+						($asked_to_keep ? ARG_KEEP :
+						($asked_to_drop ? ARG_DROP :
+						($asked_to_desc ? ARG_DESC :
+						($asked_to_draw ? ARG_DRAW :
+						($asked_to_change ? ($change_to ?: ARG_CHANGE) : true)))))
+					)
+				,	'skip_threads' => $skip_threads
+				,	'prefer_unknown' => !$u_opts['unknown']
+				);
+
+if (TIME_PARTS) time_check_point('inb4 aim lock, params = '.get_print_or_none($task_changing_params));
+
+				data_aim($task_changing_params);
+
 				$visible = data_get_visible_threads();
+
 				data_unlock();
+
 if (TIME_PARTS) time_check_point('got visible threads data, unlocked all'
 	.', changes = '.get_print_or_none($visible['changes'])
 	.', target = '.get_print_or_none($target)
@@ -1253,7 +1307,7 @@ if (TIME_PARTS) time_check_point('got visible threads data, unlocked all'
 
 				exit_if_not_mod(
 					max($t = $target['time'], $visible['last'])
-				,	$change || $target['changed']
+				,	$target['changed']
 				,	$visible['changes']
 				);
 
@@ -1267,21 +1321,21 @@ check_task_keep = .?check_task=keep';
 					$post_rel = '_reply';
 					$draw = !$target['pic'];
 					if (!$room_type['alternate_reply_type']) {
-						if ($desc_query) $draw = 0; else
-						if ($draw_query) $draw = 1;
+						if ($asked_to_desc) $draw = 0; else
+						if ($asked_to_draw) $draw = 1;
 					}
 				} else {
 					$post_rel = '_op';
 					if (
-				//		!in_array($x, $ay)
+				//		!in_array($x, $errors_after_POST)
 						!($full_threads = data_get_full_threads(false))
 					&&	data_is_thread_cap()
 					) {
 						$draw = -1;
-				//		$query[ARG_ERROR] = ($y?$y.ARG_ERROR_SPLIT:'').$x;
+				//		$query[ARG_ERROR] = ($errors_in_query ? $errors_in_query.ARG_ERROR_SPLIT : '').$x;
 					} else
-					if ($desc_query) $draw = 0; else
-					if ($draw_query) $draw = 1;
+					if ($asked_to_desc) $draw = 0; else
+					if ($asked_to_draw) $draw = 1;
 				}
 				if ($draw >= 0) {
 					$post_type = ($draw?'image':'text').$post_rel;
@@ -1524,12 +1578,17 @@ right = $tmp_empty$flags
 				}
 				if ($t) {
 					$page['data']['task']['skip'] = $t = intval($target['thread']);
+
+					if ($target['keep']) {
+						$page['data']['task']['keep'] = $t;
+					}
+
 					if (!NO_MOD) {
 						$p = intval($target['posts']) ?: 1;
 						$page['data']['task']['report'] = "$t-$p-0";
 					}
 				} else
-				if ($s = count($skip_list)) {
+				if ($s = count($skip_threads)) {
 					$page['data']['task']['unskip'] = $s;
 				}
 				if ($page['content']) {
@@ -1589,7 +1648,9 @@ type_title = $tmp_room_types_title[$k]$top";
 					}
 					$page['content'] .= "
 $left	$right	$mid";
+
 				//* announce/frozen:
+
 					if ($a = $n['anno']) {
 						if (!$a['room_anno']) $page['content'] .= '	';
 						foreach ($a as $k => $v) $page['content'] .= "	$tmp_announce[$k]: ".trim(
@@ -2098,7 +2159,9 @@ file: $upload[name]";
 			$post_data_size = strlen($post_data = $_POST[$k]);
 			$txt = $ptx = ($_POST['txt'] ?: '0-0,(?)');
 			unset($_POST[$k]);
+
 	//* metadata, newline-separated key-value format:
+
 			if (false !== mb_strpos($txt, NL)) {
 				$a = explode(',', 'app,active_time,draw_time,open_time,t0,time,used');	//* <- to add to picture mouseover text
 				$b = explode(',', 'bytes,length');					//* <- to validate
@@ -2138,7 +2201,9 @@ file: $upload[name]";
 					$txt = "$t,$a";
 				}
 			} else
+
 	//* metadata, legacy CSV:
+
 			if (preg_match('~^(?:(\d+),)?(?:([\d:]+)|(\d+)-(\d+)),(.*)$~is', $txt, $t)) {
 				if ($t[2]) $txt = $t[2].','.$t[5];
 				else {
@@ -2149,7 +2214,9 @@ file: $upload[name]";
 				}
 			}
 			if (!$log) {
+
 	//* check pic content: "data:image/png;base64,EncodedFileContent"
+
 				$i = strpos($post_data, ':');
 				$j = strpos($post_data, '/');
 				$k = strpos($post_data, ';');
@@ -2183,7 +2250,9 @@ file: $upload[name]";
 			$post_status = 'file_size';
 			$log = $x;
 		} else
+
 	//* decide file name:
+
 		if (
 			($hash = (
 				$upload
@@ -2196,12 +2265,16 @@ file: $upload[name]";
 			$post_status = 'file_dup';
 			$log = $fn;
 		} else {
+
 	//* save pic file:
+
 			if (!$upload && ($log = file_put_mkdir($f = $pic_final_path, $file_content)) != $x) {
 				$x = 0;
 				$post_status = 'file_put';
 			} else
+
 	//* check image data:
+
 			if ($sz = getImageSize($f)) {
 				unset($file_content, $post_data);
 				foreach ($cfg_wh as $k => $v)
@@ -2226,9 +2299,13 @@ file: $upload[name]";
 					for ($x = $w; --$x;)
 					for ($y = $h; --$y;) if (imageColorAt($pic, $x, $y) != $log) break 2;
 				}
+
 	//* invalid image:
+
 			} else $x = 0;
+
 	//* ready to save post:
+
 			if ($x > 0) {
 				if ($upload && !rename($f, mkdir_if_none($pic_final_path))) {
 					$x = 0;
@@ -2240,7 +2317,9 @@ file: $upload[name]";
 					} else if ($pic) {
 						imageDestroy($pic);
 					} else $log = "imageDestroy(none): $f";
+
 	//* gather post data fields to store:
+
 					$x = array($fn, trim_post($txt));
 					if (LOG_UA) $x[] = trim_post($_SERVER['HTTP_USER_AGENT']);
 					$post_status = 'new_post';
@@ -2254,7 +2333,9 @@ file: $upload[name]";
 	if ($post_status == 'new_post') {
 		if (!$target) data_aim();
 		$x = data_log_post($x);
+
 	//* no unlock here, wait for pic optimization
+
 		$t = array();
 		if ($log = $x['fork']) $t[] = 'trd_miss';
 		if ($log = $x['cap']) $t[] = 'trd_max'; else
@@ -2332,7 +2413,9 @@ if ($u_profile) {
 if ($query[LK_MOD_ACT]) {
 	$l = $qfix;
 } else {
+
 //* go to room name via post form:
+
 	if (
 		$qdir
 	&&	($v = $_POST[$qredir])
@@ -2350,7 +2433,9 @@ if ($query[LK_MOD_ACT]) {
 		if (!$room && ($r_type || !GAME_TYPE_DEFAULT)) $room = reset($a);
 		$qpath = array($qdir, $r_type, $room);
 	} else
+
 //* after renaming the room:
+
 	if (
 		$room
 	&&	$_POST['mod']
@@ -2457,18 +2542,21 @@ if ($f = $pic_final_path) {
 		$ri = max(intval(POST_PIC_WAIT), 1);
 
 	//* this is not working here anyway, must set in php.ini:
+
 	//	if (function_exists('ini_set')) {
 	//		ini_set('zlib.output_compression', 'Off');
 	//		ini_set('output_buffering', 'Off');
 	//	}
 
 	//* this is for nginx and gzip:
+
 		if (WS_NGINX) {
 			header('X-Accel-Buffering: no');
 			header('Content-Encoding: none');
 		}
 
 	//* this is for the browser, some may be configured to prevent though:
+
 		header("Refresh: $ri; url=$l");
 
 		echo '<!doctype html>

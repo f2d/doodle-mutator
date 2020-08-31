@@ -45,6 +45,7 @@
 ,	NB = '&nbsp;'
 ,	NW = '&#8203;'
 ,	dropDownArrow = '&#x25BE;'
+,	toolTipNewLine = ' \r\n'
 ,	CS = 'checkStatus'
 ,	CM = 'checkMistype'
 ,	requestInProgress = {}, taskTime = {}, flag = {}, inputHints = {}, param = {}
@@ -141,6 +142,12 @@ if (lang == 'ru') la = {
 ,	send_anyway: 'Всё равно отправить?'
 ,	canceled: 'Отправка отменена'
 ,	comment: 'сообщение'
+,	keep_task: 'Оставить себе это задание'
+,	keep_task_hint: [
+		'Оставить до завершения или ручной смены.'
+	,	'После включения этой опции всё ещё требуется держать вкладку с заданием открытой'
+	,	'или открывать хотя бы раз в день, чтобы его не взяли другие участники.'
+	].join(toolTipNewLine)
 ,	report: 'Пожаловаться на это задание'
 ,	skip: 'Пропустить'
 ,	skip_hint: 'Пропускать задания из этой нити до её завершения.'
@@ -254,6 +261,12 @@ if (lang == 'ru') la = {
 ,	send_anyway: 'Send anyway?'
 ,	canceled: 'Sending canceled'
 ,	comment: 'message'
+,	keep_task: 'Keep this task for yourself'
+,	keep_task_hint: [
+		'Keep until done or manually changed.'
+	,	'After enabling this, you still need to keep a tab with this task open,'
+	,	'or at least open it once a day, to not let another participant take it.'
+	].join(toolTipNewLine)
 ,	report: 'Report a problem with this task'
 ,	skip: 'Skip'
 ,	skip_hint: 'Skip any task from this thread from now on.'
@@ -566,9 +579,9 @@ var	i = arguments.length, total = 0;
 
 function orz(n) {return parseInt(n||0)||0;}
 function leftPad(n, len, pad) {
-	n = ''+orz(n);
+	n = String(orz(n));
 	len = orz(len) || 2;
-	pad = ''+(pad || 0);
+	pad = String(pad || 0);
 	while (n.length < len) n = pad+n;
 	return n;
 }
@@ -595,7 +608,7 @@ var	t = orz(msec)
 
 function getFTimeIfTime(t, plain) {
 	return (
-		regTimeBreak.test(t = ''+t)
+		regTimeBreak.test(t = String(t))
 		? getFormattedTime(t, plain)
 		: t
 	);
@@ -859,8 +872,15 @@ var	t = taskTime.taken
 }
 
 function skipMyTask(v) {
-var	f = cre('form', document.body), i = cre('input',f);
-	f.setAttribute('method', 'post'), i.type = 'hidden', i.name = 'skip', i.value = v;
+var	f = cre('form', document.body)
+,	i = cre('input', f)
+	;
+
+	i.type = 'hidden';
+	i.name = 'skip';
+	i.value = v;
+
+	f.setAttribute('method', 'post');
 	f.submit();
 }
 
@@ -2714,56 +2734,95 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 ,	m = 'task-change-buttons'
 ,	n,l = la.task
 	;
-	if (t && !(a || id('task-img') || id('task-text'))) t = -1;
-	while (p && regTagForm.test(p.tagName)) p = p.parentNode;
+
+	if (t && !(a || id('task-img') || id('task-text'))) {
+		t = -1;
+	}
+
+	while (p && regTagForm.test(p.tagName)) {
+		p = p.parentNode;
+	}
+
 	if (taskTop = p) {
-		if (j = k.getAttribute('data-skip')) {
+	var	taskKeptNum = k.getAttribute('data-keep')
+	,	taskSkipNum = k.getAttribute('data-skip')
+	,	taskUnskipNum = k.getAttribute('data-unskip')
+	,	taskReportNum = k.getAttribute('data-report')
+		;
+
+		if (taskSkipNum) {
 			addTaskMenuBtn(
 				'X'
 			,	{
-					href: 'javascript:skipMyTask('+j+')'
+					href: 'javascript:skipMyTask(' + taskSkipNum + ')'
 				,	title: la.skip_hint
 				}
 			,	m
 			);
 		}
-		if (j = k.getAttribute('data-report')) {
+
+		if (taskReportNum) {
 			addTaskMenuBtn(
 				la.report
 			,	{
-					href: 'javascript:openReportForm(\''+j+'\')'
+					href: 'javascript:openReportForm(\'' + taskReportNum + '\')'
 				}
 			,	m
 			);
 		}
-		for (i in l) if (j = k.getAttribute('data-'+i)) j.split(regSplitWord).map(function(v) {
+
+		if (
+			taskSkipNum
+		&&	!taskKeptNum
+		) {
+		var	match = location.search.match(/(^|[?&])(draw_app=[^&]+)/i);
+
 			addTaskMenuBtn(
-				l[i][v]
+				la.keep_task
 			,	{
-					href: ('?' + (i == 'free'?'':i+'=') + v).replace(regREqual, '')
+					href: '?keep=on'+(match ? '&'+match[2] : '')
+				,	title: la.keep_task_hint
 				}
 			,	m
 			);
-		});
-		if (j = k.getAttribute('data-unskip')) {
+		}
+
+		for (i in l) if (j = k.getAttribute('data-'+i)) {
+			j.split(regSplitWord).map(
+				function(v) {
+					addTaskMenuBtn(
+						l[i][v]
+					,	{
+							href: ('?' + (i == 'free'?'':i+'=') + v).replace(regREqual, '')
+						}
+					,	m
+					);
+				}
+			);
+		}
+
+		if (taskUnskipNum) {
 			addTaskBtn(
 				la.unskip
 			,	{
-					href: 'javascript:void '+orz(j)
+					href: 'javascript:void ' + orz(taskUnskipNum)
 				,	title: la.unskip_hint
 				,	id: 'unskip'
 				,	'data-room': room
 				}
 			);
 		}
-		if (t > 0) addTaskBtn(
-			'<span id="'+CS+'">?</span>'
-		,	{
-				href: 'javascript:checkMyTask()'
-			,	title: ''+(t > 0 ? new Date(t) : new Date)+' \r\n'+la.check
-			,	class: (a > 0?'auto ':'')+'ready'
-			}
-		);
+
+		if (t > 0) {
+			addTaskBtn(
+				'<span id="'+CS+'">?</span>'
+			,	{
+					href: 'javascript:checkMyTask()'
+				,	title: String(t > 0 ? new Date(t) : new Date) + toolTipNewLine + la.check
+				,	class: (a > 0?'auto ':'')+'ready'
+				}
+			);
+		}
 	}
 	if (
 		(i = gi('submit',k)[0])

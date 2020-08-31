@@ -28,6 +28,7 @@ define('DATA_U_ABOUT', 'about');
 define('DATA_U_FLAG', 'flag');
 define('DATA_U_IP', 'ip');
 define('DATA_U_TASK', 'task');
+define('DATA_U_TASK_KEEP', 'keep');
 define('DATA_U_TASK_CHANGE', 'change');
 
 define('DATA_LOG_START', BOM.NL);
@@ -142,14 +143,18 @@ function data_log($file_path, $line, $n = DATA_LOG_START, $report_errors = true)
 function data_global_announce($type = 'all', $room_in_list = '') {
 	global $u_key, $last_user, $room, $tmp_announce, $data_maintenance;
 	if ($d = ($room_in_list ?: $room ?: '')) $d = DATA_DIR_ROOM."$d/";
+
 //* usage 1: check top level flag standing:
+
 	if (array_key_exists($type, $tmp_announce)) {
 		$f = $type.DATA_STATIC_EXT;
 		if (is_file(DATA_DIR.$f)) return -1;	//* <- global freeze
 		if ($d && is_file($d.$f)) return 1;	//* <- room freeze
 		return 0;
 	}
+
 //* usage 2: get all contents, or last mod.date:
+
 	switch ($type) {
 		case 'all': $a = array(); break;
 		case 'last': $a = 0; break;
@@ -365,7 +370,9 @@ function data_fix($what = '') {
 				$s = DATA_STATIC_EXT;
 				$bak = '.bak.'.T0;
 				if ($g = GAME_TYPE_DEFAULT) $g = "$g/";
+
 		//* gather old paths, from => to:
+
 				$a = array(
 					"$old/ref$e"	=> DATA_REF_LIST
 				,	"$old/u$e"	=> DATA_USERLIST
@@ -389,7 +396,9 @@ function data_fix($what = '') {
 						if (in_array($room, $cfg_game_type_dir) && is_dir($r.DIR_THUMB)) $a[$r] = "$r$bak";
 					}
 				}
+
 		//* move them:
+
 				foreach ($a as $f => $n) if (($f !== $n) && (is_file($f) || is_dir($f))) {
 					delay_timeout();
 					$i++;
@@ -401,7 +410,9 @@ function data_fix($what = '') {
 					$r = (rename($f, mkdir_if_none($n))?'OK':'failed to move');
 					$done .= NL."$i: $f -> $n = $r";
 				}
+
 		//* delete empty leftovers:
+
 				foreach (array($old_meta, $old, DIR_ROOM) as $d) if (is_dir($d) && !get_dir_contents($d)) {
 					$i++;
 					$r = (rmdir($d)?'OK':'failed');
@@ -570,19 +581,25 @@ function data_log_action($text, $dump = '') {	//* <- write to logs of administra
 function data_log_report($a) {			//* <- write to user report logs, filename by thread
 	global $u_num, $room;
 	$d = ($room ? DATA_DIR_ROOM."$room/" : DATA_DIR);
+
 //* find matching file:
+
 	if ($text = $a['report'])
 	foreach (get_dir_contents($t = $d.DATA_SUB_TRD) as $f) if (
 		preg_match(DATA_PAT_TRD_MOD, $f, $match)
 	&&	strlen($i = $match['id'])
 	&&	($i == $a['thread'])
 	) {
+
 //* check permission:
+
 		if (
 			is_file($f = $t.$f)
 		&&	(
 				MOD
+
 //* cannot report invisible:
+
 			||	(
 					preg_match(DATA_PAT_TRD_PLAY, $match['active'], $m)
 				&&	($u = intval($m['hold_u'])) > 0
@@ -591,7 +608,9 @@ function data_log_report($a) {			//* <- write to user report logs, filename by t
 			||	data_thread_has_posts_by($f, $u_num)
 			)
 		) {
+
 //* write changes:
+
 			$act = 'report';
 			if ($a['freeze'] || $a['stop']) {
 				$act = 'freeze: '.(
@@ -638,6 +657,7 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 	global $room, $u_num;
 
 //* single list of reflinks:
+
 	if ($t === LK_REF_LIST) {
 		$t = data_get_mod_log_file(DATA_REF_LIST, $mt);
 		if (!$mt) {
@@ -651,6 +671,7 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 	}
 
 //* single list of users:
+
 	if ($t === LK_USERLIST) {
 		$t = data_get_mod_log_file(DATA_USERLIST, $mt);
 		if (!$mt) {
@@ -692,6 +713,7 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 	}
 
 //* logs by date:
+
 	$d = DATA_DIR_ROOM;
 	$s = DATA_SUB_ACT;
 	$e = DATA_LOG_EXT;
@@ -701,17 +723,25 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 		$rooms = get_dir_rooms($d);
 		$rooms[] = '';
 	}
+
 //* for a single day:
+
 	if ($t) {
 		$a = ($mt ? 0 : array());
+
 //* for a single timestamp:
+
 		if (false === mb_strpos($t, '-')) $t = date('Y-m-d', $t0 = $t);
+
 //* for selected rooms:
+
 		foreach ($rooms as $r) if (
 			($p = ($r ? "$d$r/" : DATA_DIR))
 		&&	($v = data_get_mod_log_file("$p$s$t$e", $mt))
 		) {
+
 //* a) get contents to show:
+
 			if (!$mt) {
 				$k = $r ?: '*';
 				$v = "
@@ -729,6 +759,7 @@ preg_replace('~\v+~u', '<br>',
 NL.htmlspecialchars($v)))));
 
 //* check each message author and timestamp:
+
 				if ($t0) {
 					$v = mb_split(NL, $v);
 					$v = array_filter(array_map(function($line) use ($t0, $u_num) {
@@ -743,7 +774,9 @@ NL.htmlspecialchars($v)))));
 					$a[$k] = $v;
 				}
 			} else
+
 //* b) find last mod.time:
+
 			if ($a < $v) $a = $v;
 		}
 		if (!$mt) {
@@ -752,7 +785,9 @@ NL.htmlspecialchars($v)))));
 			return implode(NL, $a);
 		}
 	} else {
+
 //* list of all dates with existing logs:
+
 		$a = array();
 		foreach ($rooms as $r)
 		foreach (get_dir_contents(($r ? "$d$r/" : DATA_DIR).$s) as $f) {
@@ -773,8 +808,10 @@ function data_put_count($i = 0, $type = COUNT_ROOM, $r = '') {
 
 function data_get_count($type = COUNT_ROOM, $r = '', $uncached = false, $read = 'file_get_contents', $count = 'get_dir_top_file_id') {
 	if ($r || ($r = $GLOBALS['room']))
+
 //* 1) file_get_contents() seems ~2x faster than count(scandir()) on ~50 files
 //* 2) scandir() seems ~2x faster than glob()
+
 	return intval(
 		!$uncached && is_file($f = DATA_DIR_ROOM."$r/$type".DATA_COUNT_EXT)
 		? $read($f)
@@ -847,17 +884,23 @@ function data_get_thread_pics($t, $full_path = false) {
 function data_get_thread_name_tail($t, $count_pics = true) {
 	global $room_type;
 	$tt = !!$room_type['lock_taken_task'];
+
 //* locked thread:
+
 	if (is_array($t)) {
 		if ($tt) list($hold_t, $hold_u) = $t;
+
 //* unlocked thread:
+
 	} else if ($t) {
 		$pics = mb_substr_count($t, DATA_MARK_IMG);
 		if ($tt) {
 			$last_u = data_get_last_post_u($t);
 			$last_t = data_get_last_post_time($t);
 		} else $count_pics = false;
+
 //* always mark a full thread:
+
 		if (!$count_pics && $pics < TRD_MAX_POSTS) unset($pics);
 	}
 	$tail = '';
@@ -874,15 +917,21 @@ function data_get_thread_name_tail($t, $count_pics = true) {
 function data_put_thread_rename_if_free($f, $t = '', $m = '') {
 	if (!file_put_mkdir($f, $t)) return false;
 	if (is_array($m)) {
+
 //* if task is free:
+
 		if ($m['pics'] || strpos($m['etc'], 'p') || mb_substr_count($t, DATA_MARK_IMG) >= TRD_MAX_POSTS) {
 			$t = data_get_thread_name_tail($t);
 		} else
+
 //* if task is taken:
+
 		if ($m['hold_u'] || strpos($m['etc'], 'u')) {
 			$t = '';
 		} else {
+
 //* if task was taken and dropped:
+
 			$t = data_get_thread_name_tail($t, false);
 		}
 		if ($t) $n = get_file_dir($f)."/$m[id]$t$m[ext]$m[inactive]";
@@ -905,10 +954,14 @@ function data_get_thread_by_num($n) {
 
 function data_get_tab_by_file_line($f, $tab = 0, $line = 0) {
 	if (!$f) return 0;
+
 //* find last in file:
+
 	if (!$line) $f = file_get_contents($f); else
 //	if ($line < 0) $f = data_cache($f); else
+
 //* find in given line of file:
+
 	if ($line > 0) {
 		if ($line >= count($f = get_file_lines($f))) return 0;
 		$f = $f[$line];
@@ -941,6 +994,7 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 	if (is_array($u)) $u = data_get_u_by_post($u);
 
 //* rename user:
+
 	$sep = '	';
 	if ($on < 0) {
 		$report = '';
@@ -967,6 +1021,7 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 	}
 
 //* modify user flags:
+
 	if (!$u || !$name) return 0;
 
 	$d = DATA_DIR_USER;
@@ -979,7 +1034,9 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 
 	data_lock(LK_USER.$u);
 	if ($flags) {
+
 //* check if can:
+
 		if (
 			!GOD
 		&&	(
@@ -997,13 +1054,17 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 				)
 			)
 		) return -$u;
+
 //* check if set:
+
 		foreach ($flags as $k => $v) if ($k == $name) {
 			if ($add) return $u;		//* <- add, exists
 			unset($flags[$k]);		//* <- remove
 			++$removed;
 		}
+
 //* modify:
+
 		if ($add) data_log($f, $text, '');	//* <- add
 		else if (!$removed) return 0;		//* <- remove, did not exist
 		else if ($text = data_get_flags_text_from_array($flags).($replace ? NL.$text : '')) file_put_mkdir($f, $text);
@@ -1168,7 +1229,9 @@ function data_get_full_threads($get_content = true) {
 			}
 			if ($tab[1] && ($i = intval($tab[1])) && isset($usernames[$i])) $tab[1] = $usernames[$i];
 			if ($tab[2]) {
+
 			//* image markup for scriptless view, autofixed by archive template:
+
 				list($src, $res) = mb_split(';', $tab[3], 2);
 				if (!isset($a['thumb'])) $a['thumb'] = get_pic_subpath($src);
 				$tab[3] = '<img src="'.get_pic_url($src).'">'.($res ? ";$res" : '');
@@ -1460,7 +1523,9 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 			if (count($l) > ($n = $a[1])) {
 				$old = $l[$n];
 				$new = '';
+
 		//* check line-separated "key: value" pairs: ------------------
+
 				$lsv = array();
 				$keys = explode(',', 're,text,file,meta'.(GOD?',user,time,browser':''));
 				foreach (preg_split('~\v+~u', $msg) as $line)
@@ -1475,6 +1540,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 					}
 					$lsv[$k] = $v;
 				}
+
 			//	if (!$lsv) $lsv['text'] = preg_replace('~\s+~u', ' ', $msg);
 				if ($lsv) {
 					$ok .= NL.'data = '.get_print_or_none($lsv);
@@ -1485,15 +1551,18 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 					);
 
 			//* timestamp/ID, accept digits > 0 only, or no change:
+
 					foreach (array('time', 'user') as $i => $k)
 					if (($v = $lsv[$k]) && !trim($v, '0123456789')) $tab[$i] = $v;
 
 			//* text, just make a post and be done:
+
 					if ($v = $lsv['text']) {
 						$new = "$tab[0]	$tab[1]".DATA_MARK_TXT.format_post_text($v);
 					}
 
 			//* file/info, edit parts if post with file, or replace full post if enough values:
+
 					else if (array_filter(array(
 						($v = $lsv['file'])
 					,	($t = $lsv['meta'])
@@ -1516,7 +1585,9 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 						}
 					} else $new = implode('	', $tab);
 				}
+
 		//* save result: ----------------------------------------------
+
 				if (!strlen(trim($new))) $ok .= NL.'! nothing to save';
 				else if ($old === $new) $ok .= NL.'! no change';
 				else {
@@ -1585,7 +1656,9 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 		if ($new = DATA_DIR_ROOM.$msg) {
 
 			data_lock(LK_ROOM.$msg);
+
 	//* copy thread:
+
 			if ($un) {
 				if (!is_dir($new)) $ok = "target $new/ does not exist";
 				else if (
@@ -1603,7 +1676,9 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 					data_post_refresh($msg);
 				}
 			} else
+
 	//* rename room:
+
 			if (is_dir($new)) $ok = "target $new/ already exists";
 			else {
 				$ok = "/$room/ -> /$msg/";
@@ -1626,9 +1701,11 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 		$count = array();
 
 	//* wipe just the active content:
+
 		$a[$k.DATA_SUB_TRD] = $del_pics;
 
 	//* total nuke, including all meta:
+
 		if ($un > 1) {
 			$a[$k] = 0;
 			$a[DIR_ARCH.$room] = $del_pics;
@@ -1894,7 +1971,10 @@ if (TIME_PARTS) time_check_point("done trd $fn, last = $last");
 function data_check_my_task($aim = false) {
 	global $u_num, $u_flag, $u_task, $u_t_f, $room, $target;
 	if (!$target) $target = array('time' => T0);
-	if ($u_flag['nop']) return '';
+
+	if ($u_flag['nop']) {
+		return '';
+	}
 
 	data_lock(LK_ROOM.$room);
 
@@ -1904,87 +1984,156 @@ function data_check_my_task($aim = false) {
 	$sep = '	';
 	$u_task = get_file_lines($u_t_f = "$d$e/$u_num.$e");
 	foreach ($u_task as $k => $line) if (
+
+//* check if line is a task:
+
 		false !== mb_strpos($line, $sep)
-	&&	(list($t, $r, $f, $p) = mb_split($sep, $line, 4))
-	&&	$r && $f && $p
+	&&	(list($t, $r, $thread, $post) = mb_split($sep, $line, 4))
+	&&	$r && $thread && $post
 	) {
 		if ($g && false === mb_strpos($r, '/')) $r = "$g/$r";
 		if ($r == $room) {
+
+//* found user's task for current room:
+
 			if (!$target || !$target['task']) $target = array(
-				'time'	=> $t
-			,	'thread'=> $f
-			,	'posts'	=> ($f && count($c = mb_split_filter($f)) > 2 ? $c[2] : 0)
-			,	'post'	=> $p
-			,	'pic'	=> (false === ($i = mb_strrpos_after($p, $sep)))
-			,	'task'	=> ($i ? mb_substr($p, $i) : $p)
+				'time'	=> intval($t)
+			,	'keep'	=> (false !== strpos($t, DATA_U_TASK_KEEP))
+			,	'thread'=> $thread
+			,	'posts'	=> ($thread && count($posts_count = mb_split_filter($thread)) > 2 ? $posts_count[2] : 0)
+			,	'post'	=> $post
+			,	'pic'	=> (false === ($i = mb_strrpos_after($post, $sep)))
+			,	'task'	=> ($i ? mb_substr($post, $i) : $post)
 			);
+
+			$old_task_line = $line;
 			unset($u_task[$k]);
 		}
-	} else unset($u_task[$k]);
+	} else {
 
-	$f = $target['thread'];
-	$p = $target['post'];
+//* remove non-task lines:
+
+		unset($u_task[$k]);
+	}
+
+	$asked_to_keep = ($aim === ARG_KEEP);
+	$keep = ($asked_to_keep || $target['keep']);
+
+	$thread = $target['thread'];
+	$post = $target['post'];
 
 //* auto check for posting or selecting new task:
-	if ($aim) {
-		if ($aim === DATA_U_TASK_CHANGE && $f && $p) array_unshift($u_task, "$aim	$room	$f	$p");
-		if ($aim === DATA_U_TASK_CHANGE || !intval($aim)) {
-			$t = implode(NL, $u_task);
-			return file_put_mkdir($u_t_f, DATA_LOG_START.$t);
-		}
+
+	if ($aim && !$asked_to_keep) {
+
+	//* change task to another, or none:
+
 		if (
-			$f
-		&&	($own = reset(mb_split_filter($f)))
+			$aim === DATA_U_TASK_CHANGE
+		&&	$thread
+		&&	$post
+		) {
+			array_unshift($u_task, "$aim	$room	$thread	$post");
+		}
+
+	//* drop task, get none:
+
+		if (
+			$aim === DATA_U_TASK_CHANGE
+		||	$aim === ARG_DROP
+		) {
+			$task_list_text = implode(NL, $u_task);
+
+			return file_put_mkdir($u_t_f, DATA_LOG_START.$task_list_text);
+		}
+
+	//* check current task deadline:
+
+		if (
+			$thread
+		&&	($own = reset(mb_split_filter($thread)))
 		&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
 		) {
 			$target['deadline'] = $m['hold_t'];
 		}
-		return $f;
+
+		return $thread;
 	}
 
 //* manual check for work in progress:
+
 	$d = DATA_DIR_ROOM."$room/".DATA_SUB_TRD;
-	if (!is_dir($d)) return 'no_room';
+	if (!is_dir($d)) {
+		return 'no_room';
+	}
 
 	if (!(
-		$f && $p
-	&&	(list($own, $dropped, $c) = mb_split_filter($f))
+		$thread && $post
+	&&	(list($own, $dropped, $posts_count) = mb_split_filter($thread))
 	&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
-	)) return 'no_task';
+	)) {
+		return 'no_task';
+	}
 
 	$e = DATA_LOG_EXT;
 	$i = $m['id'];
-	$a = array(
-		$own     => 'task_owned'	//* <- retake for new interval
-	,	$dropped => 'task_reclaim'	//* <- dropped by others
-	,	"$i$e"   => 'task_reclaim'	//* <- legacy dropped format, without last post user/time
-	);
-	foreach ($a as $f => $status) if (is_file($f = $d.$f)) {
 
-//* update time limit to hold:
+	foreach (
+		array(
+			$own     => 'task_owned'	//* <- retake for new interval
+		,	$dropped => 'task_reclaim'	//* <- dropped by others
+		,	"$i$e"   => 'task_reclaim'	//* <- legacy dropped format, without last post user/time
+		) as $f => $status
+	) if (is_file($thread = $d.$f)) {
+
+//* update time limit to keep:
+
 		$tm = $m['hold_t'];
 		$tt = $target['time'];
 		$td = ($target['pic'] ? TARGET_DESC_TIME : TARGET_DRAW_TIME);
-		if ($tm && $tt && ($td < $tm - $tt)) $td = TARGET_LONG_TIME;
+		if ($tm && $tt && ($td < $tm - $tt)) {
+			$td = TARGET_LONG_TIME;
+		}
 		$t = $target['deadline'] = T0 + $td;
 
 //* rename thread file:
+
 		$t = data_get_thread_name_tail(array($t, $u_num));
 		$taken = "$i$t$e";
-		rename($f, $d.$taken);
+		rename($thread, $d.$taken);
 
 //* update user task list:
-		$f = $target['thread'] = "$taken/$dropped/$c";
-		array_unshift($u_task, "$tt	$room	$f	$p");
-		$t = implode(NL, $u_task);
-		file_put_mkdir($u_t_f, DATA_LOG_START.$t);
 
-		return array($status, $td);
+		if ($keep) {
+			$target['keep'] = true;
+			$tt = "$tt/".DATA_U_TASK_KEEP;
+		}
+		$thread = $target['thread'] = "$taken/$dropped/$posts_count";
+
+		array_unshift($u_task, "$tt	$room	$thread	$post");
+		$task_list_text = implode(NL, $u_task);
+		file_put_mkdir($u_t_f, DATA_LOG_START.$task_list_text);
+
+		return (
+			$aim
+			? $status
+			: array($status, $td)
+		);
 	}
+
+	if ($asked_to_keep && !$target['keep']) {
+		$target['keep'] = true;
+		$old_line_parts = mb_split($sep, $old_task_line, 2);
+
+		array_unshift($u_task, "$target[time]/".DATA_U_TASK_KEEP."$sep$old_line_parts[1]");
+		$task_list_text = implode(NL, $u_task);
+		file_put_mkdir($u_t_f, DATA_LOG_START.$task_list_text);
+	}
+
 	return 'task_let_go';
 }
 
-function data_aim($change = false, $dont_change = false, $skip_list = false, $unknown_1st = false) {
+function data_aim($task_changing_params = false) {
 	global $u_num, $u_flag, $u_task, $u_t_f, $room, $room_type, $target;
 	$d = DATA_DIR_ROOM."$room/".DATA_SUB_TRD;
 	$e = DATA_LOG_EXT;
@@ -1995,16 +2144,57 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 	||	$room_type['single_active_thread']
 	||	$u_flag['nop']
 	||	!is_dir($d)
-	) return $target ?: $new_target;
+	) {
+		return $target ?: $new_target;
+	}
+
+//* never change for POST:
+
+	if (POST) {
+		data_check_my_task(true);
+
+		return $target;
+	}
+
+//* check arguments for task changing:
+
+	if (is_array($task_changing_params)) {
+		extract($task_changing_params);
+	}
+
+	if (!is_array($skip_threads)) {
+		$skip_threads = array();
+	}
+
+	$prefer_unknown = !!$prefer_unknown;
+	$keep = ($can_change === ARG_KEEP ? ARG_KEEP : false);
+	$drop = ($can_change === ARG_DROP ? ARG_DROP : false);
+
+	if ($keep) {
+		$can_change = false;
+	}
 
 //* check personal target list:
-	$drop = ($change === ARG_DROP ? 'drop' : false);
-	$tt = data_check_my_task($drop ?: true);
 
-	if (POST) return $target;
+	$tt = data_check_my_task($keep ?: $drop ?: true);
 
-	if ($tt) list($own, $dropped) = mb_split_filter($tt);
-	if (!$change) $change = ($target['time'] === DATA_U_TASK_CHANGE);
+	if ($tt) {
+		list($own, $dropped) = mb_split_filter($tt);
+	}
+
+	$change = $can_change;
+
+//* prevent automatic change if task is marked to keep:
+
+	if ($target['keep']) {
+		if ($change === true) {
+			$change = false;
+		}
+	} else
+	if (!$change) {
+		$change = ($target['time'] === DATA_U_TASK_CHANGE);
+	}
+
 	$change_from = ($change ? array($own, $dropped, "$i$e") : array());
 	$alt = !!$room_type['alternate_reply_type'];
 	$counts = array();
@@ -2012,6 +2202,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 	$free_tasks = array();
 
 //* scan threads; ignore skipped, full or held by others:
+
 	foreach (get_dir_contents($d) as $f) if (
 		preg_match(DATA_PAT_TRD_PLAY, $f, $m)
 	&&	is_file($path = $d.$f)
@@ -2023,7 +2214,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 		) {
 			$u_own[$f] = $i;			//* <- own current target excluded
 		} else if (
-			!(is_array($skip_list) && in_array($i, $skip_list))
+			!in_array($i, $skip_threads)
 		&&	intval($m['hold_t']) < T0		//* <- other's target expired
 		&&	!data_is_thread_full($m['pics'])
 		&&	($room_type['allow_reply_to_self'] || data_get_last_post_u(data_cache($path)) != $u_num)
@@ -2031,7 +2222,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			$type = (data_is_thread_last_post_pic($path) ? ARG_DESC : ARG_DRAW);
 			$free_tasks['any'][$f] = $i;
 			$free_tasks[$type][$f] = $i;
-			if ($unknown_1st && !data_thread_has_posts_by($path, $u_num)) {
+			if ($prefer_unknown && !data_thread_has_posts_by($path, $u_num)) {
 				$free_tasks['any_unknown'][$f] = $i;
 				$free_tasks[$type.'_unknown'][$f] = $i;
 			}
@@ -2040,12 +2231,14 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 	}
 
 //* invert type for change:
+
 	if ($alt) {
 		if ($change === ARG_DESC) $change = ARG_DRAW; else
 		if ($change === ARG_DRAW) $change = ARG_DESC; else $change = 0;
 	} else $change = 0;
 
 //* throw away irrelevant pools:
+
 	$dont_count = array('undrawn', 'unknown');
 	foreach ($free_tasks as $k => $v) {
 		$typed = (is_prefix($k, ARG_DESC) || is_prefix($k, ARG_DRAW));
@@ -2063,15 +2256,18 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 	}
 	$target['count_free_tasks'] = $counts;
 
-	if ($dont_change) return $target;
+	if (!$can_change) {
+		return $target;
+	}
 
 //* change task if thread is missing or taken, or enough time passed since taking last task:
+
 	$f = $own ?: '';
 	if (!(
 		$tt
 	&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
 	&&	strlen($i = $m['id'])
-	&&	!(is_array($skip_list) && in_array($i, $skip_list))
+	&&	!in_array($i, $skip_threads)
 	&&	($own_exists = (
 			is_file($path = $d.$own)
 		||	is_file($path = $d.$dropped)
@@ -2082,10 +2278,13 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 	&&	(T0 < $t + TARGET_CHANGE_TIME)
 	&&	($room_type['allow_reply_to_self'] || data_get_last_post_u(data_cache($path)) != $u_num)
 	)) {
+
 //* add empty task to selection, unless current is empty:
+
 		if (!$drop && $tt && !data_is_thread_cap()) $free_tasks['any'][] = '';
 
 //* get random target from top-preferred pool:
+
 		if ($drop || !(
 			ksort($free_tasks)
 		&&	($fa = end($free_tasks))
@@ -2096,11 +2295,13 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 		}
 
 //* return own back to counts:
+
 		if ($f != $own && $own_exists && $target['task']) {
 			++$counts[$target['pic']?'desc':'draw'];
 		}
 
 //* forget the old:
+
 		if (!strlen($f)) {
 			$target = $new_target;
 		} else
@@ -2112,6 +2313,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			$c = $target['posts'] = mb_substr_count($t, DATA_MARK_IMG) + mb_substr_count($t, DATA_MARK_TXT);
 
 //* get target text to display:
+
 			if ($room_type['single_thread_task']) {
 				if ($p = mb_strpos($t, NL)) $t = mb_substr($t, 0, $p);	//* <- only first post
 			}
@@ -2132,6 +2334,7 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 			$target['deadline'] = $t = T0 + get_const('TARGET_'.$type.'_TIME');
 
 //* rename new target as taken (locked):
+
 			$t = data_get_thread_name_tail(array($t, $u_num));
 			$taken = "$i$t$e";
 			$dropped = "$i$b$e";
@@ -2143,14 +2346,19 @@ function data_aim($change = false, $dont_change = false, $skip_list = false, $un
 		$target['count_free_tasks'] = $counts;
 	}
 
-	if ($f != $own || !strlen($f) !== !strlen($tt)) {
+	if (
+		($f != $own)
+	||	(!strlen($f) !== !strlen($tt))
+	) {
 
 //* save new target to personal list:
+
 		if ($t = implode(NL, $u_task)) {
 			file_put_mkdir($u_t_f, DATA_LOG_START.$t);
 		} else unlink($u_t_f);
 
 //* rename old targets as dropped (unlocked):
+
 		if ($u_own && (!strlen($f) || ($f != $own))) foreach ($u_own as $f => $i) {
 			$t = data_get_thread_name_tail(data_cache($f = $d.$f), false);
 			data_cache_file_rename($f, "$d$i$t$e");
@@ -2184,6 +2392,7 @@ function data_log_post($post) {
 	)) $target = array();
 
 //* thread exists and not full/taken:
+
 	if ((
 		$room_type['single_active_thread']
 	) ? (
@@ -2213,17 +2422,21 @@ function data_log_post($post) {
 	}
 
 //* check if post type allowed:
+
 	if (!$room_type["allow_$post_type"]) {
 		$result[ARG_DENY."_$post_type"] = 1;
 		return $result;
 	}
 
 	if ($new) {
+
 //* archive old full threads before creating new:
+
 		if ($a = data_archive_ready_go()) $result['arch'] = $a;
 
 //* check if not too many existing threads:
 //* still possible to post over the cap, e.g. if user finished drawing too late:
+
 		if (
 			!$pic
 		&&	($i = data_is_thread_cap())
@@ -2236,6 +2449,7 @@ function data_log_post($post) {
 		}
 
 //* prepend a task copy or placeholder post, if needed:
+
 		if ($fork = $target['post']) {
 			$result['fork'] = 1;
 		} else
@@ -2246,6 +2460,7 @@ function data_log_post($post) {
 		if ($fork) $post = $fork.NL.$post;
 
 //* create new thread, thread IDs start at 1 (was at 0 before):
+
 		data_put_count($i = data_get_count()+1);
 		if ($i <= 1) data_set_u_flag($u_num, "mod_$room", 1);
 
@@ -2254,6 +2469,7 @@ function data_log_post($post) {
 	}
 
 //* write the post:
+
 	if ($result['post'] = data_log($f, $post)) {
 		if (!$new) {
 			$t = file_get_contents($f);
@@ -2262,6 +2478,7 @@ function data_log_post($post) {
 		}
 
 //* archive full threads after each post:
+
 		if (!$room_type['arch_wait'] && !$result['arch'] && ($a = data_archive_ready_go())) {
 			$result['arch'] = $a;
 		}
