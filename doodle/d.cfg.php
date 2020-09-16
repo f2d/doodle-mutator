@@ -99,15 +99,16 @@ $cfg_optimize_pics = array(
 */
 	'jpg' => array(
 		array('jpegoptim', '"%s" --all-progressive "%s" 2>&1'),
-	//	array('jpegoptim', '"%s" --all-progressive --strip-all "%s" 2>&1'),			//* <- http://freecode.com/projects/jpegoptim/
+	//	array('jpegoptim', '"%s" --all-progressive --strip-all "%s" 2>&1'),	//* <- http://freecode.com/projects/jpegoptim/
 		array('jpegtran', '"%1$s" -progressive -optimize -outfile "%2$s.out" "%2$s" 2>&1'),	//* <- http://jpegclub.org/jpegtran/
 	//	array('jpegtran', '"%1$s" -progressive -optimize -copy none -outfile "%2$s.out" "%2$s" 2>&1'),
-	)
-,	'png' => array(
-		array('optipng', '"%s" -v -i 0 -fix "%s" 2>&1'),	//* <- http://optipng.sourceforge.net/
+	),
+	'png' => array(
+		array('optipng', '"%s" -v -i 0 -fix "%s" 2>&1'),			//* <- http://optipng.sourceforge.net/
 		array('optipng', '"%s" -v "%s" 2>&1'),
-		array('oxipng', '"%s" -v -i 0 --fix -t 1 "%s" 2>&1'),	//* <- https://github.com/shssoichiro/oxipng
-	)
+		array('oxipng', '"%s" -v -i 0 --fix -t 1 "%s" 2>&1'),			//* <- https://github.com/shssoichiro/oxipng
+		array('pngoptimizercl', '"%1$s" -stdio < "%2$s" > "%2$s.out" 2>&1'),	//* <- https://psydk.org/pngoptimizer
+	),
 );
 
 define('DRAW_PREVIEW_WIDTH', 640);

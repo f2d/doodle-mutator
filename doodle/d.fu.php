@@ -1269,7 +1269,9 @@ function optimize_pic($filepath) {
 		$bad_path = $f.($bad = '.bad');
 		$bak_path = $f.($bak = '.bak');
 		$d = DIRECTORY_SEPARATOR;
-		global $cfg_optimize_pics;
+
+		global $cfg_optimize_pics, $cfg_optimize_pics_failed_output;
+
 		foreach ($cfg_optimize_pics as $format => $tool) if ($ext == $format)
 		foreach ($tool as $arr) {
 			list($program, $command) = array_map('mb_normalize_slash', $arr);
@@ -1286,7 +1288,22 @@ function optimize_pic($filepath) {
 
 			data_lock($lk = LK_PIC_OPT);
 			$return = exec($cmd, $output, $return_code);
-			$done = ($return_code ? 'error' : 'done');
+
+			$not_supported = false;
+
+			if ($fail_marks = $cfg_optimize_pics_failed_output[$format]) {
+				foreach ((array)$output as $output_line)
+				foreach ($fail_marks as $fail_mark) {
+					if (false !== strpos($output_line, $fail_mark)) {
+						$not_supported = true;
+						break 2;
+					}
+				}
+			}
+
+			$error_or_not_supported = ($not_supported || $return_code);
+			$done = ($error_or_not_supported ? 'error' : 'done');
+
 			if (is_file($out_path)) {
 				$size = filesize($f);
 				$out_size = filesize($out_path);
@@ -1295,7 +1312,7 @@ function optimize_pic($filepath) {
 				if (
 					$out_size
 				&&	($out_size < $size)
-				&&	!$return_code
+				&&	!$error_or_not_supported
 				&&	unlink($f)
 				) {
 					$ren = (rename($out_path, $f) ? 'renamed' : 'could not rename');
@@ -1335,22 +1352,35 @@ function optimize_pic($filepath) {
 			}
 			data_unlock($lk);
 
-			if ($return_code) {
-				$o = trim(preg_replace('~\v+~u', NL, implode(NL, (array)$output)));
-				if (strlen($o)) {
-					if (false !== mb_strpos($o, NL)) $o = NL.'['.indent($o).']';
-				} else $o = 'empty';
-				data_log_action("Optimization $done.
+			if (!$error_or_not_supported) {
+				return $program_name;
+			}
+
+			$o = trim(preg_replace('~\v+~u', NL, implode(NL, (array)$output)));
+
+			if (strlen($o)) {
+				if (false !== mb_strpos($o, NL)) {
+					$o = NL.'['.indent($o).']';
+				}
+			} else {
+				$o = 'empty';
+			}
+
+			data_log_action(
+"Optimization $done.
+Program name: $program_name
 Command line: $cmd
 Return code: $return_code
 Return text: $return
-Shell output: $o");
-			} else return $program_name;
+Shell output: $o"
+			);
+
+			//* continue, try next command
 		}
 	}
 }
 
-# https://stackoverflow.com/a/1455610
+//* https://stackoverflow.com/a/1455610
 function get_system_memory_info() {
 	if (function_exists($f = 'win32_ps_stat_mem')) return $f();
 
