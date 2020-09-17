@@ -1262,32 +1262,38 @@ sep_select = '.$sp.'
 				}
 
 				$asked_to_change = isset($query[ARG_CHANGE]);
+				$asked_to_keep_desc = isset($query[ARG_DESC]);
+				$asked_to_keep_draw = !!array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY);
 				$asked_to_keep = isset($query[ARG_KEEP]);
 				$asked_to_drop = isset($query[ARG_DROP]);
 
-				$change_to = $query[ARG_CHANGE];
+				$change_to = ($query[ARG_CHANGE] ?: ARG_CHANGE);
 				$asked_to_desc = (
 					$change_to === ARG_DESC
-				||	isset($query[ARG_DESC])
+				// ||	$asked_to_keep_desc
 				);
 				$asked_to_draw = (
 					$change_to === ARG_DRAW
-				||	!!array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY)
+				// ||	$asked_to_keep_draw
 				);
 
 				$skip_threads = get_room_skip_list();
+				$dont_change = (
+					$errors_after_POST
+				||	$query[LK_MOD_ACT_LOG]
+				||	$asked_to_keep_desc
+				||	$asked_to_keep_draw
+				);
+				$what_change = (
+					($asked_to_keep ? ARG_KEEP : false)
+				?:	($asked_to_drop ? ARG_DROP : false)
+				?:	($asked_to_desc ? ARG_DESC : false)
+				?:	($asked_to_draw ? ARG_DRAW : false)
+				?:	($asked_to_change ? $change_to : false)
+				);
 				$task_changing_params = array(
-					'can_change' => (
-						(
-							$errors_after_POST
-						||	$query[LK_MOD_ACT_LOG]
-						) ? false :
-						($asked_to_keep ? ARG_KEEP :
-						($asked_to_drop ? ARG_DROP :
-						($asked_to_desc ? ARG_DESC :
-						($asked_to_draw ? ARG_DRAW :
-						($asked_to_change ? ($change_to ?: ARG_CHANGE) : true)))))
-					)
+					'what_change' => $what_change
+				,	'dont_change' => $dont_change
 				,	'skip_threads' => $skip_threads
 				,	'prefer_unknown' => !$u_opts['unknown']
 				);
@@ -1308,6 +1314,7 @@ if (TIME_PARTS) time_check_point('got visible threads data, unlocked all'
 				exit_if_not_mod(
 					max($t = $target['time'], $visible['last'])
 				,	$target['changed']
+				// ,	$asked_to_drop || $asked_to_change || $target['changed']
 				,	$visible['changes']
 				);
 
@@ -1578,10 +1585,7 @@ right = $tmp_empty$flags
 				}
 				if ($t) {
 					$page['data']['task']['skip'] = $t = intval($target['thread']);
-
-					if ($target['keep']) {
-						$page['data']['task']['keep'] = $t;
-					}
+					$page['data']['task']['keep'] = ($target['keep'] ? 'on' : $t);
 
 					if (!NO_MOD) {
 						$p = intval($target['posts']) ?: 1;
@@ -2111,12 +2115,25 @@ if ($u_key) {
 	} else
 	if ($etc); else			//* <- no "etc" posting without report
 
+//* keep current task ---------------------------------------------------------
+
+	if (isset($_POST[$k = 'keep'])) {
+		if (preg_match('~^\d+~', $_POST[$k], $digits)) {
+			data_check_my_task(ARG_KEEP);
+			$post_status = 'OK';
+		} else {
+			$post_status = 'no_id_to_keep';
+		}
+	} else
+
 //* skip current task ---------------------------------------------------------
 
 	if (isset($_POST[$k = 'skip'])) {
 		if (preg_match('~^\d+~', $_POST[$k], $digits)) {
 			$add_qk = get_room_skip_list($digits[0]);
-			$post_status = 'skip';
+			$post_status = 'OK';
+		} else {
+			$post_status = 'no_id_to_skip';
 		}
 	} else
 
@@ -2499,7 +2516,15 @@ if (MOD && $_POST['mod']) $query[LK_MOD_ACT_LOG] = T0;
 if ($query && is_array($query)) {
 	$q = array();
 	ksort($query);
-	foreach ($query as $k => $v) $q[] = (strlen($v) ? "$k=$v" : $k);
+
+	foreach ($query as $k => $v) if (
+		$k !== ARG_CHANGE
+	&&	$k !== ARG_DROP
+	&&	$k !== ARG_KEEP
+	) {
+		$q[] = (strlen($v) ? "$k=$v" : $k);
+	}
+
 	$l .= (false === strpos($l, '?') ? '?' : '&').implode('&', $q);
 }
 

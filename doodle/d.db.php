@@ -1968,9 +1968,26 @@ if (TIME_PARTS) time_check_point("done trd $fn, last = $last");
 	) : $threads;
 }
 
+function save_updated_task_list_file($top_line_to_add = false) {
+	global $u_task, $u_t_f;
+
+	if ($top_line_to_add) {
+		array_unshift($u_task, $top_line_to_add);
+	}
+
+	if ($task_list_text = implode(NL, $u_task)) {
+		return file_put_mkdir($u_t_f, DATA_LOG_START.$task_list_text);
+	} else {
+		return -intval(unlink($u_t_f));
+	}
+}
+
 function data_check_my_task($aim = false) {
 	global $u_num, $u_flag, $u_task, $u_t_f, $room, $target;
-	if (!$target) $target = array('time' => T0);
+
+	if (!$target) {
+		$target = array('time' => T0);
+	}
 
 	if ($u_flag['nop']) {
 		return '';
@@ -1983,6 +2000,7 @@ function data_check_my_task($aim = false) {
 	$g = GAME_TYPE_DEFAULT;
 	$sep = '	';
 	$u_task = get_file_lines($u_t_f = "$d$e/$u_num.$e");
+
 	foreach ($u_task as $k => $line) if (
 
 //* check if line is a task:
@@ -2016,35 +2034,41 @@ function data_check_my_task($aim = false) {
 		unset($u_task[$k]);
 	}
 
-	$asked_to_keep = ($aim === ARG_KEEP);
-	$keep = ($asked_to_keep || $target['keep']);
-
 	$thread = $target['thread'];
 	$post = $target['post'];
 
 //* auto check for posting or selecting new task:
 
-	if ($aim && !$asked_to_keep) {
+	if ($aim) {
+		if ($thread && $post) {
+
+	//* keep task:
+
+			if ($aim === ARG_KEEP) {
+				if (!$target['keep']) {
+					$target['keep'] = true;
+
+					save_updated_task_list_file("$target[time]/".DATA_U_TASK_KEEP."	$room	$thread	$post");
+				}
+			}
 
 	//* change task to another, or none:
 
-		if (
-			$aim === DATA_U_TASK_CHANGE
-		&&	$thread
-		&&	$post
-		) {
-			array_unshift($u_task, "$aim	$room	$thread	$post");
-		}
+			if ($aim === DATA_U_TASK_CHANGE) {
+				save_updated_task_list_file("$aim	$room	$thread	$post");
+			}
+		} else {
 
 	//* drop task, get none:
 
-		if (
-			$aim === DATA_U_TASK_CHANGE
-		||	$aim === ARG_DROP
-		) {
-			$task_list_text = implode(NL, $u_task);
+			if (
+				$aim === DATA_U_TASK_CHANGE
+			||	$aim === ARG_DROP
+			) {
+				save_updated_task_list_file();
 
-			return file_put_mkdir($u_t_f, DATA_LOG_START.$task_list_text);
+				return;
+			}
 		}
 
 	//* check current task deadline:
@@ -2104,30 +2128,14 @@ function data_check_my_task($aim = false) {
 
 //* update user task list:
 
-		if ($keep) {
-			$target['keep'] = true;
+		if ($target['keep']) {
 			$tt = "$tt/".DATA_U_TASK_KEEP;
 		}
 		$thread = $target['thread'] = "$taken/$dropped/$posts_count";
 
-		array_unshift($u_task, "$tt	$room	$thread	$post");
-		$task_list_text = implode(NL, $u_task);
-		file_put_mkdir($u_t_f, DATA_LOG_START.$task_list_text);
+		save_updated_task_list_file("$tt	$room	$thread	$post");
 
-		return (
-			$aim
-			? $status
-			: array($status, $td)
-		);
-	}
-
-	if ($asked_to_keep && !$target['keep']) {
-		$target['keep'] = true;
-		$old_line_parts = mb_split($sep, $old_task_line, 2);
-
-		array_unshift($u_task, "$target[time]/".DATA_U_TASK_KEEP."$sep$old_line_parts[1]");
-		$task_list_text = implode(NL, $u_task);
-		file_put_mkdir($u_t_f, DATA_LOG_START.$task_list_text);
+		return array($status, $td);
 	}
 
 	return 'task_let_go';
@@ -2166,36 +2174,34 @@ function data_aim($task_changing_params = false) {
 		$skip_threads = array();
 	}
 
-	$prefer_unknown = !!$prefer_unknown;
-	$keep = ($can_change === ARG_KEEP ? ARG_KEEP : false);
-	$drop = ($can_change === ARG_DROP ? ARG_DROP : false);
-
-	if ($keep) {
-		$can_change = false;
-	}
+	$keep = ($what_change === ARG_KEEP ? ARG_KEEP : false);
+	$drop = ($what_change === ARG_DROP ? ARG_DROP : false);
 
 //* check personal target list:
 
-	$tt = data_check_my_task($keep ?: $drop ?: true);
+	$old_target_thread = data_check_my_task($keep ?: $drop ?: true);
 
-	if ($tt) {
-		list($own, $dropped) = mb_split_filter($tt);
+	if ($old_target_thread) {
+		list($own, $dropped) = mb_split_filter($old_target_thread);
 	}
 
-	$change = $can_change;
+//* prevent automatic change if task is marked to keep and not skipped:
 
-//* prevent automatic change if task is marked to keep:
-
-	if ($target['keep']) {
-		if ($change === true) {
-			$change = false;
-		}
-	} else
-	if (!$change) {
-		$change = ($target['time'] === DATA_U_TASK_CHANGE);
+	if (
+		preg_match(DATA_PAT_TRD_PLAY, $own, $m)
+	&&	($i = $m['id'])
+	&&	in_array($i, $skip_threads)
+	) {
+		$what_change = ARG_CHANGE;
+		$target['keep'] = false;
 	}
+
+	$change = $what_change ?: ($target['time'] === DATA_U_TASK_CHANGE);
+
+//* prepare list of threads available for manual change:
 
 	$change_from = ($change ? array($own, $dropped, "$i$e") : array());
+	$prefer_unknown = !!$prefer_unknown;
 	$alt = !!$room_type['alternate_reply_type'];
 	$counts = array();
 	$u_own = array();
@@ -2256,15 +2262,17 @@ function data_aim($task_changing_params = false) {
 	}
 	$target['count_free_tasks'] = $counts;
 
-	if (!$can_change) {
+	if ($dont_change) {
 		return $target;
 	}
 
 //* change task if thread is missing or taken, or enough time passed since taking last task:
 
+	$task_line_to_add = '';
 	$f = $own ?: '';
+
 	if (!(
-		$tt
+		$old_target_thread
 	&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
 	&&	strlen($i = $m['id'])
 	&&	!in_array($i, $skip_threads)
@@ -2281,22 +2289,35 @@ function data_aim($task_changing_params = false) {
 
 //* add empty task to selection, unless current is empty:
 
-		if (!$drop && $tt && !data_is_thread_cap()) $free_tasks['any'][] = '';
+		if (
+			!$drop
+		&&	$old_target_thread
+		&&	!data_is_thread_cap()
+		) {
+			$free_tasks['any'][] = '';
+		}
 
 //* get random target from top-preferred pool:
 
-		if ($drop || !(
-			ksort($free_tasks)
-		&&	($fa = end($free_tasks))
-		&&	($f = array_rand($fa))
-		&&	is_file($path = $d.$f)
-		)) {
+		if (
+			$drop
+		||	!(
+				ksort($free_tasks)
+			&&	($fa = end($free_tasks))
+			&&	($f = array_rand($fa))
+			&&	is_file($path = $d.$f)
+			)
+		) {
 			$f = '';
 		}
 
 //* return own back to counts:
 
-		if ($f != $own && $own_exists && $target['task']) {
+		if (
+			$f !== $own
+		&&	$own_exists
+		&&	$target['task']
+		) {
 			++$counts[$target['pic']?'desc':'draw'];
 		}
 
@@ -2305,7 +2326,7 @@ function data_aim($task_changing_params = false) {
 		if (!strlen($f)) {
 			$target = $new_target;
 		} else
-		if ($f != $own) {
+		if ($f !== $own) {
 			$target = $new_target;
 			$i = $fa[$f];
 			$t = trim_bom(data_cache($path));
@@ -2340,26 +2361,24 @@ function data_aim($task_changing_params = false) {
 			$dropped = "$i$b$e";
 			$t = $target['thread'] = "$taken/$dropped/$c";
 			data_cache_file_rename($path, $d.$taken);
-			array_unshift($u_task, T0."	$room	$t	$p");
+			$task_line_to_add = T0."	$room	$t	$p";
 		}
 
 		$target['count_free_tasks'] = $counts;
 	}
 
 	if (
-		($f != $own)
-	||	(!strlen($f) !== !strlen($tt))
+		($f !== $own)
+	||	(!strlen($f) !== !strlen($old_target_thread))
 	) {
-
-//* save new target to personal list:
-
-		if ($t = implode(NL, $u_task)) {
-			file_put_mkdir($u_t_f, DATA_LOG_START.$t);
-		} else unlink($u_t_f);
+		save_updated_task_list_file($task_line_to_add);
 
 //* rename old targets as dropped (unlocked):
 
-		if ($u_own && (!strlen($f) || ($f != $own))) foreach ($u_own as $f => $i) {
+		if (
+			$u_own
+		&&	(!strlen($f) || ($f !== $own))
+		) foreach ($u_own as $f => $i) {
 			$t = data_get_thread_name_tail(data_cache($f = $d.$f), false);
 			data_cache_file_rename($f, "$d$i$t$e");
 		}
@@ -2400,8 +2419,8 @@ function data_log_post($post) {
 	&&	is_file($f = "$d$i$e")
 	) : (
 		!$change
-	&&	($tt = $target['thread'])
-	&&	(list($own, $dropped) = mb_split_filter($tt))
+	&&	($current_target_thread = $target['thread'])
+	&&	(list($own, $dropped) = mb_split_filter($current_target_thread))
 	&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
 	&&	strlen($i = $m['id'])
 	&&	(!($h = $m['hold_u']) || $h == $u_num)		//* <- not taken by others

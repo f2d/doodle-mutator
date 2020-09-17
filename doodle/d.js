@@ -41,6 +41,7 @@
 ,	splitSec = 60
 ,	splitSort = 500
 ,	TOS = ['object','string']
+,	ON = ['on','yes','true']
 ,	NA = ['&#8203;', '&#x200B;', '\x20\x0B', '\u200B']
 ,	NB = '&nbsp;'
 ,	NW = '&#8203;'
@@ -144,9 +145,9 @@ if (lang == 'ru') la = {
 ,	comment: 'сообщение'
 ,	keep_task: 'Оставить себе это задание'
 ,	keep_task_hint: [
-		'Оставить до завершения или ручной смены.'
-	,	'После включения этой опции всё ещё требуется держать вкладку с заданием открытой'
-	,	'или открывать хотя бы раз в день, чтобы его не взяли другие участники.'
+		'Оставить его до выполнения или ручной смены.'
+	,	'Это лишь предотвратит автоматическую смену задания при посещении комнаты.'
+	,	'Чтобы не дать другим участникам взять его, всё ещё надо держать вкладку с заданием открытой или открывать её хотя бы раз в день.'
 	].join(toolTipNewLine)
 ,	report: 'Пожаловаться на это задание'
 ,	skip: 'Пропустить'
@@ -166,6 +167,8 @@ if (lang == 'ru') la = {
 ,	using_file_upload: 'файл'
 ,	resized: 'Размер'	//'\nИзображение уменьшено.\nРазмер'
 ,	resized_hint: 'Кликните для просмотра изображения в полном размере.'
+,	task_old_src: 'Изображение, которое было на странице до проверки:'
+,	task_new_src: 'Проверка вашего задания в этой комнате сейчас дала:'
 ,	confirm_again: 'Защита от случайного нажатия: 5 секунд.\nПроверьте, что не ошиблись.'
 ,	post_menu: {
 		arch_room: 'Найти в архиве комнаты'
@@ -263,9 +266,9 @@ if (lang == 'ru') la = {
 ,	comment: 'message'
 ,	keep_task: 'Keep this task for yourself'
 ,	keep_task_hint: [
-		'Keep until done or manually changed.'
-	,	'After enabling this, you still need to keep a tab with this task open,'
-	,	'or at least open it once a day, to not let another participant take it.'
+		'Keep it until done or manually changed.'
+	,	'This will prevent automatic task change when opening room.'
+	,	'To prevent another participant take it, you still need to keep a tab with this task open, or at least open it once a day.'
 	].join(toolTipNewLine)
 ,	report: 'Report a problem with this task'
 ,	skip: 'Skip'
@@ -285,6 +288,8 @@ if (lang == 'ru') la = {
 ,	using_file_upload: 'file'
 ,	resized: 'Full size'	//'\nShown image is resized.\nFull size'
 ,	resized_hint: 'Click to view full size image.'
+,	task_old_src: 'Image that was on this page before checking:'
+,	task_new_src: 'Checked your current task for this room, got this:'
 ,	confirm_again: 'Accidental click safety: 5 seconds.\nPlease check that you are certain.'
 ,	post_menu: {
 		arch_room: 'Search in room archive'
@@ -723,8 +728,18 @@ function checkMyTask(event, e) {
 						+	(flag.p ? getPicSubDir(task) : '')
 						+	(k ? task.replace(/(\.[^.\/;]+);.+$/, '_res$1') : task);
 						if (i != j) {
-							alert(i+'\n'+j+'\n'+task),
-							e.src = j, e.alt = task, setPicResize(e, k), error = 'reloaded image';
+							alert([
+								task_old_src
+							,,	i
+							,	task_new_src
+							,,	j
+							,	task
+							].join('\n'));
+
+							e.src = j;
+							e.alt = task;
+							setPicResize(e, k);
+							error = 'reloaded image';
 						}
 				//* 3-b) no image on page:
 					} else error = 'needs reload';
@@ -871,17 +886,37 @@ var	t = taskTime.taken
 	} else if (i) clearInterval(i);
 }
 
-function skipMyTask(v) {
-var	f = cre('form', document.body)
-,	i = cre('input', f)
+function skipMyTask(v) {submitPostForm({'skip': v});}
+function keepMyTask(v) {submitPostForm({'keep': v});}
+
+function submitPostForm() {
+
+	function addInputField(name, value) {
+	var	input = cre('input', form);
+
+		input.type = 'hidden';
+		input.name = name;
+		input.value = value;
+	}
+
+var	form = cre('form', document.body)
+,	k = arguments.length
 	;
 
-	i.type = 'hidden';
-	i.name = 'skip';
-	i.value = v;
+	for (var i = 0; i < k; i++) {
+	var	arg = arguments[i];
 
-	f.setAttribute('method', 'post');
-	f.submit();
+		if (typeof arg === 'object' && arg) {
+			for (var key in arg) {
+				addInputField(key, arg[key]);
+			}
+		} else {
+			addInputField(i, arg);
+		}
+	}
+
+	form.setAttribute('method', 'post');
+	form.submit();
 }
 
 function openReportForm(i) {
@@ -2744,7 +2779,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 	}
 
 	if (taskTop = p) {
-	var	taskKeptNum = k.getAttribute('data-keep')
+	var	taskKeepNum = k.getAttribute('data-keep')
 	,	taskSkipNum = k.getAttribute('data-skip')
 	,	taskUnskipNum = k.getAttribute('data-unskip')
 	,	taskReportNum = k.getAttribute('data-report')
@@ -2772,15 +2807,16 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 		}
 
 		if (
-			taskSkipNum
-		&&	!taskKeptNum
+			taskKeepNum
+		&&	ON.indexOf(taskKeepNum) < 0
 		) {
-		var	match = location.search.match(/(^|[?&])(draw_app=[^&]+)/i);
+		// var	match = location.search.match(/(^|[?&])(draw_app=[^&]+)/i);
 
 			addTaskMenuBtn(
 				la.keep_task
 			,	{
-					href: '?keep=on'+(match ? '&'+match[2] : '')
+					// href: '?keep=on'+(match ? '&'+match[2] : '')
+					href: 'javascript:keepMyTask(' + taskKeepNum + ')'
 				,	title: la.keep_task_hint
 				}
 			,	m
