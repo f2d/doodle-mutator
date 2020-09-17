@@ -728,13 +728,17 @@ function checkMyTask(event, e) {
 						+	(flag.p ? getPicSubDir(task) : '')
 						+	(k ? task.replace(/(\.[^.\/;]+);.+$/, '_res$1') : task);
 						if (i != j) {
-							alert([
-								task_old_src
-							,,	i
-							,	task_new_src
-							,,	j
-							,	task
-							].join('\n'));
+							alert(
+								[
+									la.task_old_src
+								,	i
+								,
+								,	la.task_new_src
+								,	j
+								,
+								,	task
+								].join('\n')
+							);
 
 							e.src = j;
 							e.alt = task;

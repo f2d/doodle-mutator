@@ -1314,7 +1314,6 @@ if (TIME_PARTS) time_check_point('got visible threads data, unlocked all'
 				exit_if_not_mod(
 					max($t = $target['time'], $visible['last'])
 				,	$target['changed']
-				// ,	$asked_to_drop || $asked_to_change || $target['changed']
 				,	$visible['changes']
 				);
 
