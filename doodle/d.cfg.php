@@ -80,34 +80,55 @@ $cfg_optimize_pics = array(
 /*
  * Format:
 	'file_ext' => array(
-		array('program name or path', 'command line format string, first %s = program path, 2nd %s = source file path')
-	)
+		array(
+			'program name or path',
+			'command line format string, first %s = program path, 2nd %s = source file path',
+			[optional number of additional retries],
+		),
+	),
  * JPEG notes:
-	Jpegoptim and Jpegtran produce bit-identical file results.
-	Jpegoptim can run a batch and rewrites the source files by default.
-	Jpegtran can run only a single file and possibly dumps file content into stdout/console.
+	JpegOptim and JpegTran produce bit-identical file results.
+	JpegOptim can run a batch and rewrites the source files by default.
+	JpegTran can run only a single file and possibly dumps file content into stdout/console.
 	Both remove appended data (e.g. rarjpg) even without any stripping options.
  * PNG notes:
-	Optipng v0.7.6 rarely fails with code 9, leaving no/empty/part of result file + source backup copy.
-	Optipng v0.7.6 makes a bit smaller or same files as Oxipng v0.15.1 with defaults.
-	Oxipng with -Z (zopfli) takes forever to finish, but makes the smallest result (not much difference).
-	Oxipng with -Z takes too much CPU if thread count is too high (> 1, and especially > 6).
-	Both remove appended data (e.g. rarpng), but Optipng - only with -fix option.
+	OptiPng v0.7.6 makes a bit smaller or same files as OxiPng v0.15.1 with defaults, therefore it is tried first.
+	OptiPng v0.7.6 rarely fails with code 9, leaving no/empty/part of result file + source backup copy.
+	OptiPng v0.7.7 seems to not fail anymore, see: https://sourceforge.net/p/optipng/bugs/66/
+	OxiPng with -Z (zopfli) takes forever to finish, but makes the smallest result (not much difference).
+	OxiPng with -Z takes too much CPU if thread count is too high (> 1, and especially > 6).
+	Both remove appended data (e.g. rarpng), but OptiPng - only with -fix option.
  * Overall notes:
 	All of these programs must be installed manually and PHP must be allowed to run them with exec().
 	Script will try to run them in given order until OK exit code is met.
+ * Links to sources of programs:
+	JpegOptim: http://freecode.com/projects/jpegoptim/
+	JpegTran: http://jpegclub.org/jpegtran/
+	OptiPng: http://optipng.sourceforge.net/
+	OxiPng: https://github.com/shssoichiro/oxipng
+	PngOptimizer: https://psydk.org/pngoptimizer
 */
 	'jpg' => array(
 		array('jpegoptim', '"%s" --all-progressive "%s" 2>&1'),
-	//	array('jpegoptim', '"%s" --all-progressive --strip-all "%s" 2>&1'),	//* <- http://freecode.com/projects/jpegoptim/
-		array('jpegtran', '"%1$s" -progressive -optimize -outfile "%2$s.out" "%2$s" 2>&1'),	//* <- http://jpegclub.org/jpegtran/
+		array('jpegtran', '"%1$s" -progressive -optimize -outfile "%2$s.out" "%2$s" 2>&1'),
+	//* remove metadata:
+	//	array('jpegoptim', '"%s" --all-progressive --strip-all "%s" 2>&1'),
 	//	array('jpegtran', '"%1$s" -progressive -optimize -copy none -outfile "%2$s.out" "%2$s" 2>&1'),
 	),
 	'png' => array(
-		array('optipng', '"%s" -v -i 0 -fix "%s" 2>&1'),			//* <- http://optipng.sourceforge.net/
-		array('optipng', '"%s" -v "%s" 2>&1'),
-		array('oxipng', '"%s" -v -i 0 --fix -t 1 "%s" 2>&1'),			//* <- https://github.com/shssoichiro/oxipng
-		array('pngoptimizercl', '"%1$s" -stdio < "%2$s" > "%2$s.out" 2>&1'),	//* <- https://psydk.org/pngoptimizer
+		array('optipng', '"%s" -v -i 0 -fix "%s" 2>&1', 1),
+		array('oxipng', '"%s" -v -i 0 --fix -t 1 "%s" 2>&1'),
+		array('pngoptimizercl', '"%1$s" -stdio < "%2$s" > "%2$s.out" 2>&1'),
+	),
+);
+
+$cfg_optimize_pics_not_supported = array(
+	'png' => array(
+		'APNG not supported',
+		'APNG is not supported',
+		'APNG files are not supported',
+		'APNG files are not (yet) supported',
+		"Can't reliably reduce APNG",
 	),
 );
 
@@ -341,7 +362,7 @@ $cfg_header_links = array(
 define('FOOT_NOTE', '
 <a href="'.ROOTPRFX.'?'.ARG_ABOUT.'">%s</a>,
 <a href="https://github.com/f2d/doodle-mutator">%s</a>,
-<a href="https://github.com/f2d/">%s</a>, 2013-2018,
+<a href="https://github.com/f2d/">%s</a>, 2013-2020,
 <a href="'.BOARD_LINK.'">%s</a>%s');
 /*
  * Format lang-specific %s:

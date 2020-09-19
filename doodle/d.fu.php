@@ -1270,31 +1270,50 @@ function optimize_pic($filepath) {
 		$bak_path = $f.($bak = '.bak');
 		$d = DIRECTORY_SEPARATOR;
 
-		global $cfg_optimize_pics, $cfg_optimize_pics_failed_output;
+		global $cfg_optimize_pics, $cfg_optimize_pics_not_supported;
 
 		foreach ($cfg_optimize_pics as $format => $tool) if ($ext == $format)
-		foreach ($tool as $arr) {
-			list($program, $command) = array_map('mb_normalize_slash', $arr);
+		foreach ($tool as $tool_params) {
+			list($program, $command, $retries) = array_map('mb_normalize_slash', $tool_params);
+
 			$program_name = get_file_name($program);
-			if (is_file($p = $program) || is_file($p .= '.exe')) $p = "./$p";
-			else if (PIC_OPT_TRY_GLOBAL_EXEC) $p = $program_name;
-			else continue;
+
+			if (
+				is_file($program_path = $program)
+			||	is_file($program_path .= '.exe')
+			) {
+				$program_path = "./$program_path";
+			} else
+			if (PIC_OPT_TRY_GLOBAL_EXEC) {
+				$program_path = $program_name;
+			} else {
+				continue;
+			}
+
+			$retries = intval($retries);
+
+			retry_this_command:
 
 			$return_code = $size = 0;
 			$output = array('');
-			$cmd = sprintf($command, $p, $f);
-			if ($d !== '/') $cmd = str_replace('/', $d, $cmd);
+			$cmd = sprintf($command, $program_path, $f);
+
+			if ($d !== '/') {
+				$cmd = str_replace('/', $d, $cmd);
+			}
+
 			delay_timeout(PIC_OPT_ADD_TIMEOUT);
 
 			data_lock($lk = LK_PIC_OPT);
 			$return = exec($cmd, $output, $return_code);
+			data_unlock($lk);
 
 			$not_supported = false;
 
-			if ($fail_marks = $cfg_optimize_pics_failed_output[$format]) {
+			if ($not_supported_text_parts = $cfg_optimize_pics_not_supported[$format]) {
 				foreach ((array)$output as $output_line)
-				foreach ($fail_marks as $fail_mark) {
-					if (false !== strpos($output_line, $fail_mark)) {
+				foreach ($not_supported_text_parts as $not_supported_text_part) {
+					if (false !== strpos($output_line, $not_supported_text_part)) {
 						$not_supported = true;
 						break 2;
 					}
@@ -1350,32 +1369,36 @@ function optimize_pic($filepath) {
 				$done = "failed, $f = $size bytes, $del$rest";
 				if (!$return_code) $return_code = '0, fallback';
 			}
-			data_unlock($lk);
 
 			if (!$error_or_not_supported) {
 				return $program_name;
 			}
 
-			$o = trim(preg_replace('~\v+~u', NL, implode(NL, (array)$output)));
+			if (!$not_supported) {
+				$o = trim(preg_replace('~\v+~u', NL, implode(NL, (array)$output)));
 
-			if (strlen($o)) {
-				if (false !== mb_strpos($o, NL)) {
-					$o = NL.'['.indent($o).']';
+				if (strlen($o)) {
+					if (false !== mb_strpos($o, NL)) {
+						$o = NL.'['.indent($o).']';
+					}
+				} else {
+					$o = 'empty';
 				}
-			} else {
-				$o = 'empty';
-			}
 
-			data_log_action(
+				data_log_action(
 "Optimization $done.
 Program name: $program_name
 Command line: $cmd
 Return code: $return_code
 Return text: $return
 Shell output: $o"
-			);
+				);
 
-			//* continue, try next command
+				if ($retries > 0) {
+					--$retries;
+					goto retry_this_command;
+				}
+			}
 		}
 	}
 }
