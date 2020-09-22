@@ -469,10 +469,10 @@ var	m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
 	return m ? m.pop() : '';
 }
 
-function getToggleButtonHTML(content, open) {
+function getToggleButtonHTML(content, opened) {
 	return '<a href="javascript:void this'
 	+	'" onClick="toggleHideNext(this)'
-	+	'" class="toggle'+(open?' open':'')
+	+	'" class="toggle'+(opened?' open':'')
 	+	'">'
 	+		content.replace(regTrimPun, '')
 	+	'</a>';
@@ -674,13 +674,13 @@ function getFormattedNumUnits(num, unit) {
 function checkMyTask(event, e) {
 
 	function stateChange() {
-		if (r.readyState == 4) {
+		if (xhr.readyState == 4) {
 		var	ttf = autoUpdateTaskTimer
 		,	tti = taskTime.intervalMax
 			;
-			if (r.status == 200) {
+			if (xhr.status == 200) {
 			var	k = '\n'
-			,	j = r.responseText.split(regSplitLineBreak)
+			,	j = xhr.responseText.split(regSplitLineBreak)
 			,	i = j.pop()
 			,	j = j.join(k)
 			,	status = j
@@ -793,7 +793,7 @@ function checkMyTask(event, e) {
 					taskTime.nextCheckTime = now + Math.min(tti, taskTime.intervalFail);
 				}
 				status = la.fail;
-				task = r.status || 0;
+				task = xhr.status || 0;
 			}
 			if (s) {
 				s.textContent = status;
@@ -802,7 +802,7 @@ function checkMyTask(event, e) {
 			}
 			requestInProgress.checking = 0;
 			if (s && d && ttf && !tti) ttf();
-		} else if (s) s.textContent = la.load+r.readyState;
+		} else if (s) s.textContent = la.load + xhr.readyState;
 	}
 
 var	nothing = (event ? false : void(0));
@@ -827,13 +827,18 @@ var	d = 'data-id', f = id(CM), s = id(CS);
 		if (btn) toggleClass(btn, 'ready', -1);
 		s.textContent = la.load+0;
 	}
-var	r = new XMLHttpRequest();
-	r.onreadystatechange = stateChange;
-	r.open('GET', f
+
+var	url = (
+		f
 		? (param.check_task_post || param.check_task_auto || '--')
 		: (param.check_task_keep || param.check_task_manual || '-')
-	, true);
-	r.send();
+	);
+
+var	xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = stateChange;
+	xhr.open('GET', url, true);
+	xhr.send();
+
 	return nothing;
 }
 
@@ -892,6 +897,7 @@ var	t = taskTime.taken
 
 function skipMyTask(v) {submitPostForm({'skip': v});}
 function keepMyTask(v) {submitPostForm({'keep': v});}
+function changeMyTask(k,v) {submitPostForm({'change': k, 'change_to': v});}
 
 function submitPostForm() {
 
@@ -935,6 +941,7 @@ function openReportForm(i) {
 	,	w = 'width=800,height=600'
 		;
 	}
+
 	window.open(decodeHTMLSpecialChars(k || '')+i, n, w);
 }
 
@@ -1096,6 +1103,7 @@ var	t = id(i) || (showContent(), id(i))
 
 //* Options-specific functions *-----------------------------------------------
 
+function sortNum(a,b) {return (a>b?1 : a<b?-1 : 0);}
 function getSaves(v,e) {
 
 	function isMatchingAnyPrefix(line, prefixes) {
@@ -1148,8 +1156,9 @@ var	room = (e?e.getAttribute('data-room'):0) || ''
 		// &&	!isMatchingAnyPrefix(name, prefToKeep)
 		// &&	isMatchingAnyPrefix(name, prefToDel)
 		) {
-			c.push(q = m[3].split('/').length);
-			j.push(n+': '+getFormattedNumUnits(q, la.clear[v].unit));
+		var	parts = m[3].split('/').map(orz).sort(sortNum);
+			c.push(q = parts.length);
+			j.push(n+': '+getFormattedNumUnits(q, la.clear[v].unit) + ' (' + parts.join(', ') + ')');
 			k.push(name);
 		}
 	} else
@@ -1203,7 +1212,7 @@ function clearSaves(e) {
 				alert(la.empty);
 			} else
 			if (confirm(la.clear[v].ask+'\n\n'+a.rows.join('\n'))) {
-				for (i in k) {
+				for (var i in k) {
 					if (v == 'unskip') deleteCookie(k[i]); else
 					if (v == 'unsave') LS.removeItem(k[i]);
 				}
@@ -1295,7 +1304,7 @@ function prepareArchiveDownload(btn) {
 	}
 
 	function stateChange() {
-		if (r.readyState == 4) {
+		if (xhr.readyState == 4) {
 		var	b = getParentBeforeTagName(btn, 'div')
 		,	p = b.parentNode
 		,	b = b.nextElementSibling
@@ -1308,7 +1317,7 @@ function prepareArchiveDownload(btn) {
 			;
 			while (i--) if ((e = a[i]) && e.className) e.removeAttribute('class');
 
-			if (r.status == 200 && (fileName = r.responseText)) {
+			if (xhr.status == 200 && (fileName = xhr.responseText)) {
 				c = 'ok';
 				i = fileName;
 			} else {
@@ -1398,7 +1407,7 @@ var	a = form.elements
 		}
 	}
 	if (queryParts) {
-	var	q = '.?'+queryParts.join('&');
+	var	url = '.?'+queryParts.join('&');
 
 		for (i in formParts) {
 			if (formParts[i][0].sort) {
@@ -1410,11 +1419,12 @@ var	a = form.elements
 
 		btn.disabled = true;
 
-	var	r = new XMLHttpRequest();
-		r.onreadystatechange = stateChange;
-		r.open('GET', q, true);
-		r.send();
+	var	xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = stateChange;
+		xhr.open('GET', url, true);
+		xhr.send();
 	}
+
 	return false;
 }
 
@@ -2771,7 +2781,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 ,	t = orz(k.getAttribute('data-taken'))
 ,	p = gn('p',k)[0] || k.firstElementChild || k
 ,	m = 'task-change-buttons'
-,	n,l = la.task
+,	i,j,k,l,m,n
 	;
 
 	if (t && !(a || id('task-img') || id('task-text'))) {
@@ -2804,7 +2814,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			addTaskMenuBtn(
 				la.report
 			,	{
-					href: 'javascript:openReportForm(\'' + taskReportNum + '\')'
+					href: "javascript:openReportForm('" + taskReportNum + "')"
 				}
 			,	m
 			);
@@ -2827,13 +2837,20 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			);
 		}
 
-		for (i in l) if (j = k.getAttribute('data-'+i)) {
-			j.split(regSplitWord).map(
-				function(v) {
+		for (var changeType in la.task) {
+		var	possibleChanges = k.getAttribute('data-' + changeType);
+
+			if (possibleChanges) possibleChanges.split(regSplitWord).map(
+				function(newTaskType) {
 					addTaskMenuBtn(
-						l[i][v]
+						la.task[changeType][newTaskType]
 					,	{
-							href: ('?' + (i == 'free'?'':i+'=') + v).replace(regREqual, '')
+							// href: ('?' + (changeType == 'free'?'':changeType+'=') + newTaskType).replace(regREqual, '')
+							href: (
+								changeType == 'free'
+								? '?' + newTaskType
+								: "javascript:changeMyTask('" + changeType + "', '" + newTaskType + "')"
+							)
 						}
 					,	m
 					);
@@ -2939,7 +2956,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 
 				if ((e = id('research')) && (a = gn('a',e))) {
 					document.title += '. '+e.textContent.replace(regTrim, '');
-					l = (a.length > 1);
+				var	l = (a.length > 1);
 					for (n in a) if ((e = a[n]).name) {
 						if (l && n > 0) addSearchTerm(selectId);
 						e.href = 'javascript:void \''+e.name+'\'';
