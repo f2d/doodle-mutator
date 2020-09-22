@@ -14,36 +14,74 @@ define('F_NATSORT', 8);
 
 //* ---------------------------------------------------------------------------
 
-function exit_if_not_mod($t = 0, $change = false, $changes = '') {
-	$t = gmdate(
+function exit_if_not_mod($new_time_int = 0) {
+	$new_time_int = intval($new_time_int);
+	$new_date_time = gmdate(
 		HTTP_MOD_TIME_FORMAT
 	,	(
-			$t
-			? max(intval($t), data_global_announce('last'))
+			$new_time_int > 0
+			? max($new_time_int, data_global_announce('last'))
 			: T0
 		)
 	);
-	$q = 'W/"'.md5(get_imploded_non_empty_lines(array(
-		'Refresh any page cached before '.HTML_VERSION
-	,	'Or if user key, options or date-related decoration changed: '.ME_VAL
+
+	$lines_to_hash = [
+		$new_date_time
+	,	'Refresh any page cached before:'
+	,	HTML_VERSION
+	,	'Also if user key changed:'
+	,	ME_VAL
+	,	'Also date-related decorations, etc:'
 	,	get_date_class()
 	,	$GLOBALS['lang']
-	,	$GLOBALS['target']['deadline']
-	,	$changes
-	))).'"';
-	header("Etag: $q");
+	];
+
+	if ($v = $GLOBALS['target']) {
+		$lines_to_hash[] = [
+			'target:'
+		,	"task = $v[task]"
+		,	$v['drop'] ? 'drop' : ''
+		,	$v['keep'] ? 'keep' : ''
+		];
+	}
+
+	if ($v = $GLOBALS['visible']['changes']) {
+		$lines_to_hash[] = [
+			'visible changes:'
+		,	$v
+		];
+	}
+
+	$content_to_hash = get_imploded_non_empty_lines($lines_to_hash);
+	$etag_hash = md5($content_to_hash);
+	$quoted_etag = '"'.$etag_hash.'"';
+	$weak_etag = 'W/"'.$etag_hash.'"';
+
+	if (TIME_PARTS) time_check_point('page refreshed, data = '.get_print_or_none([
+		'modified' => $new_date_time
+	,	'Etag' => $weak_etag
+	,	'hash content' => $content_to_hash
+	]));
+
+	header("Etag: $weak_etag");
+	header("Last-Modified: $new_date_time");
+
 	if (
-		!$change
+		!POST
+	&&	!$GLOBALS['target']['changed']
 	&&	!$GLOBALS['u_opts']['modtime304']
 	&&	isset($_SERVER[$m = 'HTTP_IF_MODIFIED_SINCE'])
 	&&	isset($_SERVER[$n = 'HTTP_IF_NONE_MATCH'])
-	&&	$_SERVER[$m] == $t
-	&&	$_SERVER[$n] == $q
+	&&	$_SERVER[$m] === $new_date_time
+	&&	(
+			$_SERVER[$n] === $etag_hash
+		||	$_SERVER[$n] === $quoted_etag
+		||	$_SERVER[$n] === $weak_etag
+		)
 	) {
 		header('HTTP/1.0 304 Not Modified');
 		exit;
 	}
-	header("Last-Modified: $t");
 }
 
 function exit_redirect($new_path) {

@@ -9,11 +9,29 @@ function exit_no_access($why) {
 	die("Error 403: Forbidden. Reason: $why.");
 }
 
-header('Cache-Control: max-age=0; must-revalidate; no-cache');
+function remove_header_if_possible($header_name) {
+	if (function_exists($f = 'header_remove')) $f($header_name);
+}
+
+function replace_header_value($header_name, $header_value) {
+	remove_header_if_possible($header_name);
+	header("$header_name: $header_value");
+}
+
+function set_cache_control_header($can_store) {
+	replace_header_value('Cache-Control', "max-age=0; must-revalidate; $can_store");
+}
+
+// remove_header_if_possible('Vary');			//* <- fallback to this in case of problems?
+
+replace_header_value('Vary', 'Accept-Encoding, Accept-Language');
+set_cache_control_header('no-cache');
 header('Expires: Mon, 12 Sep 2016 00:00:00 GMT');
 header('Pragma: no-cache');
-if (function_exists($f = 'header_remove')) $f('Vary');
-if ($_REQUEST['pass']) exit_no_access('pass');		//* <- ignore spam bot requests
+
+if ($_REQUEST['pass']) {
+	exit_no_access('pass');				//* <- ignore spam bot requests
+}
 
 define('NAMEPRFX', 'd');
 
@@ -46,7 +64,12 @@ define('ME_VAL', $_POST[ME] ?? $_COOKIE[ME] ?? '');	//* <- don't rely on $_REQUE
 define('POST', 'POST' == $_SERVER['REQUEST_METHOD']);
 
 if (POST) {
-	if (!ME_VAL) exit_no_access('post');		//* <- ignore anonymous posting
+	set_cache_control_header('no-store');
+
+	if (!ME_VAL) {
+		exit_no_access('post');			//* <- ignore anonymous posting
+	}
+
 	ignore_user_abort(true);
 }
 
@@ -68,7 +91,12 @@ define('ARG_DESC', 'desc');
 define('ARG_DRAW', 'draw');
 define('ARG_DROP', 'drop');
 define('ARG_KEEP', 'keep');
+define('ARG_SKIP', 'skip');
+define('ARG_UNSKIP', 'unskip');
 define('ARG_CHANGE', 'change');
+define('ARG_CHANGE_TO', 'change_to');
+define('ARG_REPORT', 'report');
+define('ARG_ANY', 'any');
 define('ARG_ANY_OF', 'any_of');
 define('ARG_DRAW_APP', 'draw_app');
 define('ARG_FULL_NAME', 'fullname');
@@ -167,6 +195,8 @@ if ($v = $_SERVER['HTTP_ACCEPT_LANGUAGE']) {
 		$lang = $k;
 	}
 }
+
+replace_header_value('Content-Language', $lang);
 
 require(NAMEPRFX.".cfg.$lang.php");
 require(NAMEPRFX.'.db.php');
@@ -360,12 +390,22 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 		if (POST) $post_status = 'user_qk';
 	}
 }
+
+if ($u_key) {
+	replace_header_value('Vary', 'Accept-Encoding, Accept-Language, Cookie');
+}
+
+if (!POST) {
+	set_cache_control_header($u_key ? 'private' : 'public');
+}
+
 define('GOD', !!$u_flag['god']);
 if (GOD && !POST && $u_opts['display_php_errors']) {
 	ini_set('display_errors', '1');
 	ini_set('html_errors', '1');
 	error_reporting(~0);
 }
+
 define('TIME_PARTS', !POST && GOD && !$u_opts['time_check_points']);	//* <- profiling
 if (TIME_PARTS) time_check_point('done user settings, GOD = '.GOD
 	.NL.'u_flag = '.get_print_or_none($u_flag)
@@ -479,12 +519,12 @@ if (GOD && (
 	if ($q === 'logs') {
 		$day = $query[$qday] ?: $etc;
 		$ymd = preg_match(PAT_DATE, $day);
-		if ($l = data_get_mod_log()) {
+		if ($mod_logs = data_get_mod_log()) {
 			$page['data']['content']['type'] = 'reports';
 			$page['content'] = "
 day_link = .?$qmod=$q&$qday=";
-			$last = end(end($l));
-			$last = data_get_mod_log($last_ymd = key($l).'-'.$last, 1);
+			$last = end(end($mod_logs));
+			$last = data_get_mod_log($last_ymd = key($mod_logs).'-'.$last, 1);
 			if (!$day) $day = $ymd = $last_ymd;
 			if ($ymd) {
 				exit_if_not_mod(data_get_mod_log($day, 1));
@@ -500,7 +540,7 @@ flags = a
 			} else {
 				exit_if_not_mod($last);
 			}
-			foreach ($l as $ym => $d) $lnk .= ($lnk?'</p>':'').'
+			foreach ($mod_logs as $ym => $d) $lnk .= ($lnk?'</p>':'').'
 <p>'.$ym.'-'.implode(',', $d);
 			$lnk .= ' <small>'.date('H:i:s', $last).'</small></p>';
 		}
@@ -1039,7 +1079,7 @@ NL.$tmp_options_name.$t.(
 		,	'?'.ARG_DRAW_APP.'=*'
 		));
 		foreach ($tmp_options_input as $i => $o)
-		foreach ($o as $k => $l) {
+		foreach ($o as $k => $line) {
 			$r = get_abbr($k).'='.(
 				$i === 'input'
 				? (
@@ -1050,8 +1090,8 @@ NL.$tmp_options_name.$t.(
 					).$so.get_const($k)
 				) : ($u_opts[$k]?1:'')
 			);
-			if ($i === 'admin') $l = '<span class="gloom">'.$l.'</span>';
-			$d .= NL.$l.$t.$r;
+			if ($i === 'admin') $line = '<span class="gloom">'.$line.'</span>';
+			$d .= NL.$line.$t.$r;
 		}
 
 		$c['view'] = $d
@@ -1180,16 +1220,36 @@ sep_select = '.$sp.'
 			if (strlen($v = $query['skip_thread'])) $etc = '-'.abs(intval($v)); else
 			if (strlen($v = $query['check_task'])) {
 				if ($v == 'keep' || $v == 'prolong') $etc = '-'; else
-				if ($v == 'post' || $v == 'sending') $etc = '--';
+				if ($v == 'post' || $v == 'sending') $etc = '--'; else
+				if ($v == 'save' || $v == 'preserve') $etc = '---';
 			}
+
 			if ($etc) {
 				if ($etc[0] == '-') {
 
-			//* show current task:
+			//* skip current task (obsolete way by GET):
 
-					$sending = (strlen($etc) > 1);
-					if (!strlen($t = trim($etc, '-'))) {
-						$t = data_check_my_task();
+					if (strlen($t = trim($etc, '-')) > 0) {
+						$add_qk = get_room_skip_list($t);
+						$post_status = 'skip';
+
+						goto after_posting;
+					} else {
+
+			//* keep current task until changed manually:
+
+						if (strlen($etc) === 3) {
+							$t = data_check_my_task(ARG_KEEP);
+						} else {
+
+			//* check current task and prolong deadline:
+
+							$sending = (strlen($etc) === 2);
+							$t = data_check_my_task();
+						}
+
+			//* show current task (simple page content for AJAX):
+
 						die(
 							'<!--'.date(CONTENT_DATETIME_FORMAT, T0).'-->'
 							.NL.'<meta charset="'.ENC.'">'
@@ -1219,12 +1279,6 @@ sep_select = '.$sp.'
 							)
 						);
 					}
-
-			//* skip current task, obsolete way by GET:
-
-					$add_qk = get_room_skip_list($t);
-					$post_status = 'skip';
-					goto after_posting;
 				}
 
 //* report form ---------------------------------------------------------------
@@ -1261,11 +1315,11 @@ sep_select = '.$sp.'
 					);
 				}
 
-				$asked_to_change = isset($query[ARG_CHANGE]);
 				$asked_to_keep_desc = isset($query[ARG_DESC]);
 				$asked_to_keep_draw = !!array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY);
 				$asked_to_keep = isset($query[ARG_KEEP]);
 				$asked_to_drop = isset($query[ARG_DROP]);
+				$asked_to_change = isset($query[ARG_CHANGE]);
 
 				$change_to = ($query[ARG_CHANGE] ?: ARG_CHANGE);
 				$asked_to_desc = (
@@ -1284,18 +1338,29 @@ sep_select = '.$sp.'
 				||	$asked_to_keep_desc
 				||	$asked_to_keep_draw
 				);
+
+			//* deprecated way via GET request, may cause displaying wrong task in modern browsers due to double requests:
+
 				$what_change = (
-					($asked_to_keep ? ARG_KEEP : false)
+					false
+				?:	($asked_to_keep ? ARG_KEEP : false)
 				?:	($asked_to_drop ? ARG_DROP : false)
+				?:	($asked_to_change ? ARG_CHANGE : false)
+				// ?:	true
+				);
+
+				$what_change_to = (
+					false
 				?:	($asked_to_desc ? ARG_DESC : false)
 				?:	($asked_to_draw ? ARG_DRAW : false)
 				?:	($asked_to_change ? $change_to : false)
 				);
+
 				$task_changing_params = array(
-					'what_change' => $what_change
-				,	'dont_change' => $dont_change
+					'dont_change' => $dont_change
+				,	'what_change' => $what_change
+				,	'what_change_to' => $what_change_to
 				,	'skip_threads' => $skip_threads
-				,	'prefer_unknown' => !$u_opts['unknown']
 				);
 
 if (TIME_PARTS) time_check_point('inb4 aim lock, params = '.get_print_or_none($task_changing_params));
@@ -1311,15 +1376,12 @@ if (TIME_PARTS) time_check_point('got visible threads data, unlocked all'
 	.', target = '.get_print_or_none($target)
 );
 
-				exit_if_not_mod(
-					max($t = $target['time'], $visible['last'])
-				,	$target['changed']
-				,	$visible['changes']
-				);
+				exit_if_not_mod(max($t = $target['time'], $visible['last']));
 
 				$task_time = ($t ?: T0);	//* <- UTC seconds
 				$x = 'trd_max';
 				$t = '';
+
 				if ($target['task']) {
 					$t = '
 check_task_post = .?check_task=post
@@ -1340,9 +1402,10 @@ check_task_keep = .?check_task=keep';
 						$draw = -1;
 				//		$query[ARG_ERROR] = ($errors_in_query ? $errors_in_query.ARG_ERROR_SPLIT : '').$x;
 					} else
-					if ($asked_to_desc) $draw = 0; else
-					if ($asked_to_draw) $draw = 1;
+					if ($asked_to_desc || $asked_to_keep_desc) $draw = 0; else
+					if ($asked_to_draw || $asked_to_keep_draw) $draw = 1;
 				}
+
 				if ($draw >= 0) {
 					$post_type = ($draw?'image':'text').$post_rel;
 					$other_type = ($draw?'text':'image').$post_rel;
@@ -1471,7 +1534,7 @@ right = $tmp_empty$flags
 0,0	$left	v";	//* <- dummy thread for JS drop-down menus
 				} else $page['content'] = $t;
 
-				$t = $target['task'];
+				$task_content = $target['task'];
 				if ($draw < 0) {
 					$page['task'] = '
 <p>'.indent($tmp_room_thread_cap).'</p>
@@ -1483,9 +1546,9 @@ right = $tmp_empty$flags
 							$target['pic']
 							? $tmp_draw_next.':'
 							: (
-								$t
+								$task_content
 								? $tmp_draw_this.':
-<span id="task-text">'.$t.'</span>'
+<span id="task-text">'.$task_content.'</span>'
 								: $tmp_draw_free.':'
 							)
 						);
@@ -1518,12 +1581,12 @@ right = $tmp_empty$flags
 						}
 					} else {
 						$head = (
-							$t
+							$task_content
 							? (
 								$target['pic']
 								? $tmp_describe_this
 								: $tmp_describe_next.':
-<span id="task-text">'.$t.'</span>'
+<span id="task-text">'.$task_content.'</span>'
 							)
 							: (
 								$room_type['single_active_thread']
@@ -1554,11 +1617,11 @@ right = $tmp_empty$flags
 					}
 					if (!$u_flag['nop']) {
 						if (!$u_opts['task_timer']) $page['data']['task']['autoupdate'] = TARGET_AUTOUPDATE_INTERVAL;
-						if ($t) $page['data']['task']['taken'] = T0;
+						if ($task_content) $page['data']['task']['taken'] = T0;
 					}
-					if ($t) {
+					if ($task_content) {
 						if ($target['pic']) {
-							$a = get_post_pic_to_display($t, true);
+							$a = get_post_pic_to_display($task_content, true);
 							$page['subtask'] = '
 <img src="'.$a['src'].'" alt="'.$a['alt'].'" id="task-img">'.$page['subtask'];
 						}
@@ -1575,24 +1638,27 @@ right = $tmp_empty$flags
 					} else {
 						$post_type = ($draw?'text':'image');
 						if ($room_type["allow_$post_type$post_rel"]) {
-							$page['data']['task']['free'] = ($draw?ARG_DESC:ARG_DRAW);
+							$page['data']['task']['free'] = ($draw ? ARG_DESC : ARG_DRAW);
 						}
 					}
 				}
-				if ($f = $target['count_free_tasks']) {
-					$page['data']['task'][ARG_CHANGE] = implode(',', array_keys(array_filter($f)));
+				if ($free_task_counts = $target['free_task_counts']) {
+					$free_task_types = array_keys(array_filter($free_task_counts));
+					sort($free_task_types);
+
+					$page['data']['task'][ARG_CHANGE] = implode(',', $free_task_types);
 				}
-				if ($t) {
-					$page['data']['task']['skip'] = $t = intval($target['thread']);
-					$page['data']['task']['keep'] = ($target['keep'] ? 'on' : $t);
+				if ($task_content) {
+					$page['data']['task'][ARG_SKIP] = $thread_num = intval($target['thread']);
+					$page['data']['task'][ARG_KEEP] = ($target['keep'] ? 'on' : $thread_num);
 
 					if (!NO_MOD) {
-						$p = intval($target['posts']) ?: 1;
-						$page['data']['task']['report'] = "$t-$p-0";
+						$post_num = intval($target['posts']) ?: 1;
+						$page['data']['task'][ARG_REPORT] = "$thread_num-$post_num-0";
 					}
 				} else
-				if ($s = count($skip_threads)) {
-					$page['data']['task']['unskip'] = $s;
+				if ($skip_threads_count = count($skip_threads)) {
+					$page['data']['task'][ARG_UNSKIP] = $skip_threads_count;
 				}
 				if ($page['content']) {
 					$page['data']['content']['type'] = 'threads';
@@ -2096,7 +2162,7 @@ if ($u_key) {
 
 //* report problem in active room ---------------------------------------------
 
-	if (isset($_POST[$k = 'report'])) {
+	if (isset($_POST[$k = ARG_REPORT])) {
 		if (!NO_MOD && ($report_post_ID = $query['report_post'] ?: $etc)) {
 			$post_status = 'no_path';
 			if (preg_match(PAT_REPORT, $report_post_ID, $r)) {
@@ -2116,9 +2182,30 @@ if ($u_key) {
 
 //* keep current task ---------------------------------------------------------
 
-	if (isset($_POST[$k = 'keep'])) {
+	if (
+		isset($_POST[$k = ARG_CHANGE])
+	// ||	isset($_POST[$t = ARG_DESC])
+	// ||	isset($_POST[$t = ARG_DRAW])
+	) {
+		data_aim([
+			'what_change' => $_POST[$k]
+		,	'what_change_to' => $_POST[ARG_CHANGE_TO]
+		,	'skip_threads' => get_room_skip_list()
+		]);
+		data_unlock();
+
+		$post_status = 'OK';
+	} else
+
+//* keep current task ---------------------------------------------------------
+
+	if (
+		isset($_POST[$k = ARG_KEEP])
+	||	isset($_POST[$k = ARG_DROP])
+	) {
 		if (preg_match('~^\d+~', $_POST[$k], $digits)) {
-			data_check_my_task(ARG_KEEP);
+			data_check_my_task($k);
+
 			$post_status = 'OK';
 		} else {
 			$post_status = 'no_id_to_keep';
@@ -2127,9 +2214,10 @@ if ($u_key) {
 
 //* skip current task ---------------------------------------------------------
 
-	if (isset($_POST[$k = 'skip'])) {
+	if (isset($_POST[$k = ARG_SKIP])) {
 		if (preg_match('~^\d+~', $_POST[$k], $digits)) {
 			$add_qk = get_room_skip_list($digits[0]);
+
 			$post_status = 'OK';
 		} else {
 			$post_status = 'no_id_to_skip';
@@ -2424,10 +2512,10 @@ if ($OK && isset($_POST['report'])) die(get_template_page(array(
 header("HTTP/1.1 303 Refresh after POST: $p");
 
 if ($u_profile) {
-	$l = ROOTPRFX.DIR_USER.$u_num;
+	$refresh_location = ROOTPRFX.DIR_USER.$u_num;
 } else
 if ($query[LK_MOD_ACT]) {
-	$l = $qfix;
+	$refresh_location = $qfix;
 } else {
 
 //* go to room name via post form:
@@ -2459,8 +2547,12 @@ if ($query[LK_MOD_ACT]) {
 	) {
 		$qpath = array($qdir, $a[0], $a[1]);
 	}
-	$l = ROOTPRFX;
-	if (strlen($v = encode_URL_parts(array_filter($qpath, 'strlen')))) $l .= (strlen($qpath['etc'])?$v:"$v/");
+
+	$refresh_location = ROOTPRFX;
+
+	if (strlen($v = encode_URL_parts(array_filter($qpath, 'strlen')))) {
+		$refresh_location .= (strlen($qpath['etc']) ? $v : "$v/");
+	}
 }
 
 if ($OK) {
@@ -2499,32 +2591,58 @@ if ($OK) {
 		add_cookie_header(ME, $a);
 		if ($add_qk) add_cookie_header($add_qk);
 	}
+
+//* after changing task:
+
+	if (
+		$target
+	&&	$target['changed']
+	&&	!$target['task']
+	) {
+		$k = (
+			(
+				$_POST[ARG_CHANGE] === ARG_DRAW
+			||	isset($_POST[ARG_DRAW])
+			)
+			? ARG_DRAW
+			: ARG_DESC
+		);
+
+		$query[$k] = '';
+	} else
 	if ($room_type['single_active_thread']) {
 		$query = (
 			array_filter($query, 'is_desc_arg', ARRAY_FILTER_USE_KEY)
 		?:	array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY)
 		);
-	} else unset($query);
+	} else
+ {
+		unset($query);
+	}
 } else {
 	$query = array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY);
 	if ($report_post_ID) $query['report_post'] = $report_post_ID;
 	if ($p) $query[ARG_ERROR] = $p;
 }
 
-if (MOD && $_POST['mod']) $query[LK_MOD_ACT_LOG] = T0;
+if (MOD && $_POST['mod']) {
+	$query[LK_MOD_ACT_LOG] = T0;
+}
+
 if ($query && is_array($query)) {
-	$q = array();
 	ksort($query);
+	$refresh_args = array();
 
 	foreach ($query as $k => $v) if (
 		$k !== ARG_CHANGE
+	&&	$k !== ARG_CHANGE_TO
 	&&	$k !== ARG_DROP
 	&&	$k !== ARG_KEEP
 	) {
-		$q[] = (strlen($v) ? "$k=$v" : $k);
+		$refresh_args[] = (strlen($v) ? "$k=$v" : $k);
 	}
 
-	$l .= (false === strpos($l, '?') ? '?' : '&').implode('&', $q);
+	$refresh_location .= (false === strpos($refresh_location, '?') ? '?' : '&').implode('&', $refresh_args);
 }
 
 //* show pic processing progress ----------------------------------------------
@@ -2581,7 +2699,7 @@ if ($f = $pic_final_path) {
 
 	//* this is for the browser, some may be configured to prevent though:
 
-		header("Refresh: $ri; url=$l");
+		header("Refresh: $ri; url=$refresh_location");
 
 		echo '<!doctype html>
 <html lang="'.$lang.'">
@@ -2636,7 +2754,7 @@ if ($f = $pic_final_path) {
 
 	if ($ri) {
 		echo pic_opt_get_time().$msg.'</p>
-<p>'.sprintf($tmp_post_progress['refresh'], $l, format_time_units($ri)).'</p>
+<p>'.sprintf($tmp_post_progress['refresh'], $refresh_location, format_time_units($ri)).'</p>
 </body>
 </html>';
 	} else ob_end_clean();
@@ -2645,6 +2763,6 @@ if ($f = $pic_final_path) {
 //* use Refresh header for printing content.
 //* use Location header otherwise:
 
-if (!headers_sent()) header("Location: $l");
+if (!headers_sent()) header("Location: $refresh_location");
 
 ?>

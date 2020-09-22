@@ -1960,6 +1960,8 @@ if (TIME_PARTS) time_check_point("done trd $fn, last = $last");
 	}
 	data_unlock($lk);
 
+	sort($changes);
+
 	return $threads ? array(
 		'last' => $last
 	,	'threads' => $threads
@@ -1971,15 +1973,28 @@ if (TIME_PARTS) time_check_point("done trd $fn, last = $last");
 function save_updated_task_list_file($top_line_to_add = false) {
 	global $u_task, $u_t_f;
 
-	if ($top_line_to_add) {
-		array_unshift($u_task, $top_line_to_add);
+	$result = 'no context';
+
+	if ($u_t_f && is_array($u_task)) {
+		if ($top_line_to_add) {
+			array_unshift($u_task, $top_line_to_add);
+		}
+
+		if ($task_list_text = implode(NL, $u_task)) {
+			$result = file_put_mkdir($u_t_f, DATA_LOG_START.$task_list_text);
+		} else {
+			$result = (unlink($u_t_f) ? true : false);
+		}
 	}
 
-	if ($task_list_text = implode(NL, $u_task)) {
-		return file_put_mkdir($u_t_f, DATA_LOG_START.$task_list_text);
-	} else {
-		return -intval(unlink($u_t_f));
+	if (!(
+		$result === true
+	||	$result > 0
+	)) {
+		data_log_action("save_updated_task_list_file: $result");
 	}
+
+	return intval($result);
 }
 
 function data_check_my_task($aim = false) {
@@ -2148,7 +2163,7 @@ function data_check_my_task($aim = false) {
 }
 
 function data_aim($task_changing_params = false) {
-	global $u_num, $u_flag, $u_task, $u_t_f, $room, $room_type, $target;
+	global $u_num, $u_flag, $u_opts, $room, $room_type, $target;
 	$d = DATA_DIR_ROOM."$room/".DATA_SUB_TRD;
 	$e = DATA_LOG_EXT;
 	$target = array();
@@ -2162,7 +2177,17 @@ function data_aim($task_changing_params = false) {
 		return $target ?: $new_target;
 	}
 
-//* never change for POST:
+//* check arguments for task changing:
+
+	if ($task_changing_params) {
+		if (is_array($task_changing_params)) {
+			extract($task_changing_params);
+		} else {
+			$what_change = $task_changing_params;
+		}
+	} else
+
+//* never change for POST, unless directly requested to change:
 
 	if (POST) {
 		data_check_my_task(true);
@@ -2170,11 +2195,7 @@ function data_aim($task_changing_params = false) {
 		return $target;
 	}
 
-//* check arguments for task changing:
-
-	if (is_array($task_changing_params)) {
-		extract($task_changing_params);
-	}
+//* check extracted arguments:
 
 	if (!is_array($skip_threads)) {
 		$skip_threads = array();
@@ -2185,7 +2206,7 @@ function data_aim($task_changing_params = false) {
 
 //* check personal target list:
 
-	$old_target_thread = data_check_my_task($keep ?: $drop ?: true);
+	$old_target_thread = data_check_my_task($keep ?: $drop ?: true) ?: '';
 
 	if ($old_target_thread) {
 		list($own, $dropped) = mb_split_filter($old_target_thread);
@@ -2194,28 +2215,56 @@ function data_aim($task_changing_params = false) {
 //* prevent automatic change if task is marked to keep and not skipped:
 
 	if (
-		preg_match(DATA_PAT_TRD_PLAY, $own, $m)
+		$own
+	&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
 	&&	($i = $m['id'])
 	&&	in_array($i, $skip_threads)
 	) {
-		$what_change = ARG_CHANGE;
+		$skip_old_target = true;
 		$target['keep'] = false;
+		$what_change = ARG_CHANGE;
 	}
 
-	$change = $what_change ?: $target['drop'];
+	$asked_for_different_type = (
+		$old_target_thread
+	&&	(
+			$target['pic']
+			? ($what_change_to === ARG_DRAW)
+			: ($what_change_to === ARG_DESC)
+		)
+	);
 
-	if (!$change && $target['keep']) {
+	$change = (
+		(
+			$what_change
+		||	$target['drop']
+		||	$asked_for_different_type
+		)
+		? ($what_change_to ?: ARG_ANY)
+		: false
+	);
+
+	if (
+		(!$change && $target['keep'])
+	// ||	(T0 <= $target['time'] + 1)			//* <- only for testing
+	) {
 		$dont_change = true;
 	}
 
 //* prepare list of threads available for manual change:
 
-	$change_from = ($change ? array($own, $dropped, "$i$e") : array());
-	$prefer_unknown = !!$prefer_unknown;
-	$alt = !!$room_type['alternate_reply_type'];
+	$change_from = (
+		$change
+	&&	$old_target_thread
+		? array($own, $dropped, "$i$e")
+		: array()
+	);
+
+	$prefer_unknown = !$u_opts['unknown'];
+	$reply_type_must_be_alternate = !!$room_type['alternate_reply_type'];
 	$counts = array();
 	$u_own = array();
-	$free_tasks = array();
+	$free_task_lists = array();
 
 //* scan threads; ignore skipped, full or held by others:
 
@@ -2233,44 +2282,79 @@ function data_aim($task_changing_params = false) {
 			!in_array($i, $skip_threads)
 		&&	intval($m['hold_t']) < T0		//* <- other's target expired
 		&&	!data_is_thread_full($m['pics'])
-		&&	($room_type['allow_reply_to_self'] || data_get_last_post_u(data_cache($path)) != $u_num)
+		&&	(
+				$room_type['allow_reply_to_self']
+			||	data_get_last_post_u(data_cache($path)) != $u_num
+			)
 		) {
 			$type = (data_is_thread_last_post_pic($path) ? ARG_DESC : ARG_DRAW);
-			$free_tasks['any'][$f] = $i;
-			$free_tasks[$type][$f] = $i;
+			$free_task_lists[ARG_ANY][$f] = $i;
+			$free_task_lists[$type][$f] = $i;
+
 			if ($prefer_unknown && !data_thread_has_posts_by($path, $u_num)) {
-				$free_tasks['any_unknown'][$f] = $i;
-				$free_tasks[$type.'_unknown'][$f] = $i;
+				$free_task_lists[ARG_ANY.'_unknown'][$f] = $i;
+				$free_task_lists[$type.'_unknown'][$f] = $i;
 			}
-			if (!data_thread_has_posts_by($path, $u_num, DATA_FLAG_POST_IMG)) $free_tasks['any_undrawn'][$f] = $i;
+
+			if (!data_thread_has_posts_by($path, $u_num, DATA_FLAG_POST_IMG)) {
+				$free_task_lists[ARG_ANY.'_undrawn'][$f] = $i;
+			}
 		}
 	}
 
 //* invert type for change:
 
-	if ($alt) {
-		if ($change === ARG_DESC) $change = ARG_DRAW; else
-		if ($change === ARG_DRAW) $change = ARG_DESC; else $change = 0;
-	} else $change = 0;
+	if (
+		$reply_type_must_be_alternate
+	&&	!$what_change_to
+	) {
+		if ($change === ARG_DESC) $what_change_to = ARG_DRAW; else
+		if ($change === ARG_DRAW) $what_change_to = ARG_DESC;
+	}
 
 //* throw away irrelevant pools:
 
 	$dont_count = array('undrawn', 'unknown');
-	foreach ($free_tasks as $k => $v) {
-		$typed = (is_prefix($k, ARG_DESC) || is_prefix($k, ARG_DRAW));
+	$task_lists_to_pick = array();
 
-		if (!$alt && $typed) goto dont_count;
-		foreach ($dont_count as $x) if (is_postfix($k, $x)) goto dont_count;
+	foreach ($free_task_lists as $k => $v) {
+
+		$is_collection_by_task_type = (
+			is_prefix($k, ARG_DESC)
+		||	is_prefix($k, ARG_DRAW)
+		);
+
+		if (
+			!$reply_type_must_be_alternate
+		&&	$is_collection_by_task_type
+		) {
+			goto after_count;
+		}
+
+		foreach ($dont_count as $x) if (is_postfix($k, $x)) {
+			goto after_count;
+		}
 
 		$counts[$k] = count($v);
-	dont_count:
+
+	after_count:
+
 		if (
-			$change
-			? (is_prefix($k, $change) || is_prefix($k, 'any'))
-			: $typed
-		) unset($free_tasks[$k]);
+			$what_change_to
+			? (is_prefix($k, $what_change_to) || is_prefix($k, ARG_ANY))
+			: $is_collection_by_task_type
+		) {
+			$task_lists_to_pick[$k] = $free_task_lists[$k];
+		}
 	}
-	$target['count_free_tasks'] = $counts;
+
+	ksort($counts);
+	$target['free_task_counts'] = $counts;
+
+if (TIME_PARTS) time_check_point('got free task lists'
+	.', all = '.get_print_or_none($free_task_lists)
+	.', to pick = '.get_print_or_none($task_lists_to_pick)
+);
 
 	if ($dont_change) {
 		return $target;
@@ -2304,7 +2388,7 @@ function data_aim($task_changing_params = false) {
 		&&	$old_target_thread
 		&&	!data_is_thread_cap()
 		) {
-			$free_tasks['any'][] = '';
+			$task_lists_to_pick[ARG_ANY][] = '';
 		}
 
 //* get random target from top-preferred pool:
@@ -2312,23 +2396,33 @@ function data_aim($task_changing_params = false) {
 		if (
 			$drop
 		||	!(
-				ksort($free_tasks)
-			&&	($fa = end($free_tasks))
-			&&	($f = array_rand($fa))
+				ksort($task_lists_to_pick)
+			&&	($preferred_task_list = end($task_lists_to_pick))
+			&&	($f = array_rand($preferred_task_list))
 			&&	is_file($path = $d.$f)
 			)
 		) {
 			$f = '';
 		}
 
+		if ($f !== $own) {
+			$target_changed = true;
+		}
+
 //* return own back to counts:
 
 		if (
-			$f !== $own
+			!$skip_old_target
+		&&	$target_changed
 		&&	$own_exists
 		&&	$target['task']
 		) {
-			++$counts[$target['pic']?'desc':'draw'];
+			foreach ([
+				($target['pic'] ? ARG_DESC : ARG_DRAW)
+			,	ARG_ANY
+			] as $k) {
+				++$counts[$k];
+			}
 		}
 
 //* forget the old:
@@ -2336,9 +2430,9 @@ function data_aim($task_changing_params = false) {
 		if (!strlen($f)) {
 			$target = $new_target;
 		} else
-		if ($f !== $own) {
+		if ($target_changed) {
 			$target = $new_target;
-			$i = $fa[$f];
+			$i = $preferred_task_list[$f];
 			$t = trim_bom(data_cache($path));
 			$b = data_get_thread_name_tail($t, false);
 			$c = $target['posts'] = mb_substr_count($t, DATA_MARK_IMG) + mb_substr_count($t, DATA_MARK_TXT);
@@ -2348,20 +2442,31 @@ function data_aim($task_changing_params = false) {
 			if ($room_type['single_thread_task']) {
 				if ($p = mb_strpos($t, NL)) $t = mb_substr($t, 0, $p);	//* <- only first post
 			}
+
 			$last_txt = mb_strrpos_after($t, DATA_MARK_TXT);
 			$last_pic = mb_strrpos_after($t, DATA_MARK_IMG);
+
 			if ($last_txt < $last_pic) {
-				$type = 'desc';
+				$type = ARG_DESC;
 				$target['pic' ] = $t = mb_strpos($p = mb_substr($t, $last_pic), '	');
 				$target['task'] = $p = mb_substr($p, 0, $t);		//* <- only filename
 			} else {
-				$type = 'draw';
+				$type = ARG_DRAW;
 				$p = mb_strrpos_after($t, NL);
 				$p = (false === $p ? $t : mb_substr($t, $p));
 				$target['task'] = mb_substr($t, $last_txt);		//* <- only text
 				$target['post'] = $p;					//* <- full last line
 			}
-			if ($counts[$type] > 0) --$counts[$type];
+
+			foreach ([
+				$type
+			,	ARG_ANY
+			] as $k) {
+				if ($counts[$k] > 0) {
+					--$counts[$k];
+				}
+			}
+
 			$target['deadline'] = $t = T0 + get_const('TARGET_'.$type.'_TIME');
 
 //* rename new target as taken (locked):
@@ -2374,11 +2479,13 @@ function data_aim($task_changing_params = false) {
 			$task_line_to_add = T0."	$room	$t	$p";
 		}
 
-		$target['count_free_tasks'] = $counts;
+		$target['free_task_counts'] = $counts;
 	}
 
+//* task changed:
+
 	if (
-		($f !== $own)
+		$target_changed
 	||	(!strlen($f) !== !strlen($old_target_thread))
 	) {
 		save_updated_task_list_file($task_line_to_add);
@@ -2387,7 +2494,7 @@ function data_aim($task_changing_params = false) {
 
 		if (
 			$u_own
-		&&	(!strlen($f) || ($f !== $own))
+		&&	(!strlen($f) || $target_changed)
 		) foreach ($u_own as $f => $i) {
 			$t = data_get_thread_name_tail(data_cache($f = $d.$f), false);
 			data_cache_file_rename($f, "$d$i$t$e");
