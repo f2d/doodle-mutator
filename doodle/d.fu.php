@@ -1114,57 +1114,78 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 }
 
 function get_draw_app_list($allow_upload = true) {
-	global $cfg_draw_app, $tmp_draw_app, $tmp_draw_app_select, $tmp_require_js, $tmp_upload_file, $u_draw_app, $query;
-	$a = $tmp_draw_app_select;
-	if (!$allow_upload && ($k = array_search(DRAW_APP_NONE, $cfg_draw_app)) !== false) unset($cfg_draw_app[$k]);
+	global $cfg_draw_app, $tmp_draw_app;
+
+	$draw_app_selection_text = $GLOBALS['tmp_draw_app_select'];
+
 	if (
-		!($n = $query[ARG_DRAW_APP] ?: $u_draw_app)
+		!$allow_upload
+	&&	false !== ($k = array_search(DRAW_APP_NONE, $cfg_draw_app))
+	) {
+		unset($cfg_draw_app[$k]);
+	}
+
+	if (
+		!($n = $GLOBALS['query'][ARG_DRAW_APP] ?: $GLOBALS['u_draw_app'])
 	||	!in_array($n, $cfg_draw_app)
-	) $n = $cfg_draw_app[0];
-	foreach ($cfg_draw_app as $k => $v) $a .= ($k?',':':').NL.(
+	) {
+		$n = $cfg_draw_app[0];
+	}
+
+	foreach ($cfg_draw_app as $k => $v) $draw_app_selection_text .= ($k?',':':').NL.(
 		$n == $v
 		? $tmp_draw_app[$k]
 		: '<a href="?'.ARG_DRAW_APP.'='.$v.'">'.$tmp_draw_app[$k].'</a>'
 	);
-	$a = array('list' => '
-<p class="hint" id="draw-app-select">'.indent("$a.").'</p>');
+
+	$result_parts = array('list' => '
+<p class="hint" id="draw-app-select">'.indent("$draw_app_selection_text.").'</p>');
+
 	if ($n !== DRAW_APP_NONE) {
 		$f = $n;
 		if (false !== ($s = mb_strrpos	  ($n, '.'))) $n = mb_substr($n, 0, $s); else $f .= DRAW_APP_DEFAULT_EXT;
 		if (false !== ($s = mb_strrpos_after($n, '/'))) $n = mb_substr($n, $s);
 		$ext = get_file_ext($f);
 		$f = ROOTPRFX.$f.(LINK_TIME?'?'.filemtime($f):'');
-		$a['name'] = $n;
+		$result_parts['name'] = $n;
 	}
+
 	if ($ext == 'js') {
-		$a['noscript'] = '
-<noscript>'.indent('<p class="hint">'.$tmp_require_js.'</p>').'</noscript>';
-		$a['embed'] = '
+		$result_parts['noscript'] = '
+<noscript>'.indent('<p class="hint">'.$GLOBALS['tmp_require_js'].'</p>').'</noscript>';
+		$result_parts['embed'] = '
 <div id="draw-app">'.indent('<script id="'.$n.'-vars" src="'.$f.'" data-vars="'.get_draw_vars($allow_upload ? DRAW_SEND : '').'"></script>').'</div>';
 	} else {
-		$a['embed'] = '
+		$result_parts['embed'] = '
 <form method="post" enctype="multipart/form-data">
 	<b>
 		<b><input type="file" name="pic" required></b>
-		<b><input type="submit" value="Submit"></b>
+		<b><input type="submit" value="'.$GLOBALS['tmp_submit'].'"></b>
 	</b>
 	<input type="hidden" name="t0" value="'.T0.'">
 </form>';
 	}
-	return $a;
+
+	return $result_parts;
 }
 
 function get_draw_vars($send = '') {
-	global $cfg_draw_vars, $cfg_wh, $u_opts, $query;
+	global $cfg_draw_vars, $cfg_wh;
+
 	$vars = ($send?"$send;":'').DRAW_REST.
 		';keep_prefix='.DRAW_PERSISTENT_PREFIX
-	.($u_opts['save2common']?'':
+	.($GLOBALS['u_opts']['save2common']?'':
 		';save_prefix='.DRAW_BACKUPCOPY_PREFIX.';saveprfx='.NAMEPRFX
 	);
+
 	foreach ($cfg_draw_vars as $k => $v) {
 		if (($i = $GLOBALS["u_$v"]) || ($i = get_const($v))) $vars .= ";$k=$i";
 	}
-	if (($res = $query['draw_res']) && false !== mb_strpos($res, 'x')) $wh = array_map('intval', mb_split('x', $res, 2));
+
+	if (($res = $GLOBALS['query']['draw_res']) && false !== mb_strpos($res, 'x')) {
+		$wh = array_map('intval', mb_split('x', $res, 2));
+	}
+
 	if ($send) {
 		foreach (array('DEFAULT_', 'LIMIT_') as $i => $j)
 		foreach ($cfg_wh as $k => $l) {
@@ -1172,6 +1193,7 @@ function get_draw_vars($send = '') {
 			if ((!$i && $wh && ($v = $wh[$k])) || ($v = get_const("DRAW_$j$l"))) $vars .= ";$p=$v";
 		}
 	}
+
 	return csv2nl($vars);
 }
 

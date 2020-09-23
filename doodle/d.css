@@ -479,6 +479,9 @@ li {
 .task input[type="file"] {
 	width: 100%;
 }
+.task input[type="file"] {
+	background-color: #777;
+}
 .task li {
 	margin: 0 0 12px 22px;
 }
