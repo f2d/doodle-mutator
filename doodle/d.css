@@ -15,7 +15,8 @@ body > form > *,
 body,
 .task input:not([type="checkbox"]):not([type="radio"]),
 .task select {
-	font-family: Arial, Helvetica, "Nimbus Sans L", "Liberation Sans", FreeSans, sans-serif;
+	/* font-family: Arial, Helvetica, "Nimbus Sans L", "Liberation Sans", FreeSans, sans-serif; */
+	font-family: sans-serif;
 	font-size: 21px;
 	line-height: 28px;
 }
@@ -463,6 +464,7 @@ li {
 }
 .task form > :not(label):not(.l):not(.r) > * {
 	display: table-cell;
+	vertical-align: middle;
 }
 .task form > :not(label):not(.l):not(.r) > :not(:first-child) {
 	width: 150px;
@@ -717,7 +719,7 @@ body,
 }
 .post.hover-menu aside .menu-head:hover .stub {
 	padding: 4px;
-	z-index: 999;
+	/* z-index: 999; */
 }
 .post.hover-menu aside .menu-head:hover {
 	border: 1px solid transparent;
@@ -808,6 +810,7 @@ label {
 .post .caps-btn {
 	position: relative;
 	right: 0;
+	z-index: 1;
 }
 .post .caps-btn-mark {
 	position: absolute;
