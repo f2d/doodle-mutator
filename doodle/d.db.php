@@ -156,18 +156,25 @@ function data_global_announce($type = 'all', $room_in_list = '') {
 //* usage 2: get all contents, or last mod.date:
 
 	switch ($type) {
-		case 'all': $a = array(); break;
-		case 'last': $a = 0; break;
+		case 'all': $result = array(); break;
+		case 'last': $result = (is_dir(DATA_DIR) ? filemtime(DATA_DIR) : 0); break;
 		default: return false;
 	}
+
 	$sep = '_';
+
 	foreach ($tmp_announce as $k => $v) {
 		if (0 === strpos($k, 'new')) {
-			if (is_array($a) && (
-				('new_game' === $k && !$last_user && !is_file(DATA_USERLIST))
-			||	('new_data' === $k && !$room_in_list && $data_maintenance)
-			||	('new_room' === $k && $u_key && $d && !is_dir($d))
-			)) $a[$k] = '';
+			if (
+				is_array($result)
+			&&	(
+					('new_game' === $k && !$last_user && !is_file(DATA_USERLIST))
+				||	('new_data' === $k && !$room_in_list && $data_maintenance)
+				||	('new_room' === $k && $u_key && $d && !is_dir($d))
+				)
+			) {
+				$result[$k] = '';
+			}
 			continue;
 		}
 		if ($i = mb_strpos_after($k, $sep)) {
@@ -178,14 +185,15 @@ function data_global_announce($type = 'all', $room_in_list = '') {
 			$f = DATA_DIR.$k;
 		}
 		if (is_file($f .= DATA_STATIC_EXT)) {
-			if (is_array($a)) {
-				if ($v = trim_bom(file_get_contents($f))) $a[$k] = $v;
+			if (is_array($result)) {
+				if ($v = trim_bom(file_get_contents($f))) $result[$k] = $v;
 			} else {
-				if (($v = filemtime($f)) && $a < $v) $a = $v;
+				if (($v = filemtime($f)) && $result < $v) $result = $v;
 			}
 		}
 	}
-	return $a;
+
+	return $result;
 }
 
 function data_lock($k, $ex = true) {
