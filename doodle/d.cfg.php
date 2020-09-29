@@ -137,7 +137,7 @@ define('DRAW_DEFAULT_WIDTH', 640);
 define('DRAW_DEFAULT_HEIGHT', 360);
 define('DRAW_LIMIT_WIDTH', '100,1920');
 define('DRAW_LIMIT_HEIGHT', '100,1920');
-define('DRAW_MAX_FILESIZE', 8388608);	//* <- bytes, 8MiB = 8*1024*1024
+define('DRAW_MAX_FILESIZE', 9000000);	//* <- bytes, 8MiB = 8*1024*1024 = 8388608
 define('DRAW_MAX_RECOVERY', 9);
 define('DRAW_MAX_UNDO', 99);
 define('DRAW_TIME_IDLE', 300);		//* <- seconds, 5min
