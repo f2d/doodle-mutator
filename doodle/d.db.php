@@ -1983,26 +1983,33 @@ function save_updated_task_list_file($top_line_to_add = false) {
 
 	$result = 'no context';
 
-	if ($u_t_f && is_array($u_task)) {
+	if (strlen($u_t_f) && is_array($u_task)) {
 		if ($top_line_to_add) {
 			array_unshift($u_task, $top_line_to_add);
 		}
 
-		if ($task_list_text = implode(NL, $u_task)) {
-			$result = file_put_mkdir($u_t_f, DATA_LOG_START.$task_list_text);
+		if (strlen($task_list_text = implode(NL, $u_task))) {
+			$result = (
+				file_put_mkdir($u_t_f, DATA_LOG_START.$task_list_text)
+				? true
+				: count($u_task).' tasks left, but cannot save to task file'
+			);
 		} else {
-			$result = (unlink($u_t_f) ? true : false);
+			$result = (
+				!is_file($u_t_f) || unlink($u_t_f)
+				? true
+				: 'no tasks left, but cannot remove task file'
+			);
 		}
 	}
 
-	if (!(
-		$result === true
-	||	$result > 0
-	)) {
+	if ($result === true) {
+		return true;
+	} else {
 		data_log_action("save_updated_task_list_file: $result");
-	}
 
-	return intval($result);
+		return false;
+	}
 }
 
 function data_check_my_task($aim = false) {

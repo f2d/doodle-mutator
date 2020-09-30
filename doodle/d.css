@@ -19,6 +19,7 @@ body,
 	font-family: sans-serif;
 	font-size: 21px;
 	line-height: 28px;
+	color: black;
 }
 body > *,
 .content > * {
@@ -170,19 +171,19 @@ body > *,
 .post .menu-head a {
 	display: block;
 	padding: 0 2px;
-	color: #888;
+	color: gray;
 }
 .post .menu-head a:hover {
-	color: #fff;
+	color: white;
 	background-color: rgba(85, 85, 85, 0.4);
 }
 a,
 .a {
-	color: #888;
+	color: gray;
 }
 a:hover,
 a.u:hover {
-	color: #000;
+	color: black;
 }
 .task a,
 .task .a,
@@ -193,7 +194,7 @@ a.u:hover {
 .task a:hover,
 .task label:hover,
 .menu-list a:hover {
-	color: #fff;
+	color: white;
 }
 .touch,
 .touch a,
@@ -214,7 +215,7 @@ a.u:hover {
 	white-space: normal;
 	text-align: center;
 	background-color: #ace;
-	color: #fff;
+	color: white;
 }
 .anno b {
 	display: block;
@@ -231,7 +232,7 @@ a.at {
 	color: #ff7;
 }
 .report.anno b {
-	color: #fff;
+	color: white;
 }
 .report.r b {
 	display: block;
@@ -455,7 +456,7 @@ li {
 	padding: 0 22px 8px 22px;
 	margin: 0;
 	line-height: 26px;
-	color: #fff;
+	color: white;
 	background-color: #555;
 }
 .task form > :not(label):not(.l):not(.r) {
@@ -523,7 +524,7 @@ li {
 	word-wrap: break-word;
 }
 .post.hover-menu aside:hover {
-	border-color: #000;
+	border-color: black;
 	background-color: #f5f5f5;
 }
 .post {		background-color: #f5f5f5;}
@@ -560,7 +561,7 @@ body,
 .post.goo aside:hover {	border-color: #b0f; background-color: #dcf;}
 .post.ice aside:hover {	border-color: #ace; background-color: #cdf;}
 .post.me aside:hover {	border-color: #4e7; background-color: #cfd;}
-.post.null aside:hover {border-color: #888; background-color: #bbb;}
+.post.null aside:hover {border-color: gray; background-color: #bbb;}
 .post .center {
 	margin: 0 auto;
 	max-width: 500px;
@@ -607,7 +608,7 @@ body,
 	text-align: left;
 }
 .post label:hover {
-	background-color: #fff;
+	background-color: white;
 }
 .post label.ok:hover {
 	background-color: #efe;
@@ -894,7 +895,7 @@ label {
 	padding: 0 4px;
 }
 .post .mod-menu .button-row a:hover {
-	background-color: #fff;
+	background-color: white;
 }
 .post .mod-menu input:not([type="checkbox"]) {
 	display: inline-block;
@@ -941,7 +942,7 @@ label {
 .hint .poem,
 .hint .cite {
 	display: inline-block;
-	border: 1px dashed #888;
+	border: 1px dashed gray;
 	padding: 0 8px;
 }
 .hint .poem {
@@ -1033,7 +1034,7 @@ label {
 	vertical-align: bottom;
 }
 .welcome tr.you.do td.thread {
-	background-color: #fff;
+	background-color: white;
 	vertical-align: top;
 }
 #task > .res:not(:last-child)::after,
