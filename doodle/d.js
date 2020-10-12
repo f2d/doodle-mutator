@@ -2690,13 +2690,18 @@ var	flagVarNames = ['flag', 'flags']
 			];
 			if (a = gn('p', e)[0]) a.innerHTML += '\n<span id="range"></span>';
 			e.innerHTML += (
-				!singlePage && param.total > param.on_page
-				? '<p id="pages"'+(touch?' class="touch"':'')+'></p>'
-				: '<p>'+la.page+': '
-				+	'<span title="'
-				+		encodeTagAttr(la.page_limit_hint)
-				+	'">1*</span>'
-				+ '</p>'
+				singlePage
+				? (
+					'<p>'+la.page+': '
+				+		'<span title="'
+				+			encodeTagAttr(la.page_limit_hint)
+				+		'">1*</span>'
+				+	'</p>'
+				) : (
+					param.total > param.on_page
+					? '<p id="pages"'+(touch?' class="touch"':'')+'></p>'
+					: '<p>'+la.page+': 1</p>'
+				)
 			)+'<div id="thumbs"></div>'+(
 				singlePage
 				? '<p class="hint">* '+la.page_limit_hint+'</p>'
