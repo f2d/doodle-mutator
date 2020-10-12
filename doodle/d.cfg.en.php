@@ -151,6 +151,7 @@ $tmp_mod_post_hint = 'Options for this post or thread.';
 $tmp_mod_user_hint = 'Options for this user.';
 $tmp_mod_user_info = 'Check flags of this user.';
 $tmp_no_change = 'No change.';
+$tmp_no_program_found = 'No suitable program found.';
 $tmp_no_play_hint = 'Game playing turned off for you (no taking targets).';
 $tmp_not_found = 'Not found.';
 $tmp_not_supported = 'This function is not supported.';

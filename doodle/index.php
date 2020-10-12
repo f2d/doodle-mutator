@@ -2653,7 +2653,7 @@ $ri = 0;
 if ($f = $pic_final_path) {
 
 	function pic_opt_get_size($f) {
-		global $ri, $tmp_no_change, $tmp_post_progress, $TO;
+		global $ri, $tmp_no_change, $tmp_no_program_found, $tmp_post_progress, $TO;
 		$old = filesize($f);
 		if ($ri) {
 			echo format_filesize($old).$TO;
@@ -2661,7 +2661,7 @@ if ($f = $pic_final_path) {
 		}
 		$program = optimize_pic($f);
 		if ($old === ($new = filesize($f))) {
-			if ($ri) echo $tmp_no_change;
+			if ($ri) echo ($program ? $tmp_no_change : $tmp_no_program_found);
 			return '';
 		} else {
 			$f = format_filesize($new);
