@@ -2613,8 +2613,8 @@ after_posting:
 if (strlen($v = trim(ob_get_clean()))) data_log_action('POST buffer dump', $v);
 
 if ($p = $post_status) foreach (array(
-	'OK' => get_localized_text('post_ok')
-,	'NO' => get_localized_text('post_err')
+	'OK' => get_localized_text_array('post_ok')
+,	'NO' => get_localized_text_array('post_err')
 ) as $k => $v) {
 	if ($$k = array_key_exists($p, $v)) $msg = $v[$p];
 	else $$k = ($p == (get_const($k) ?: $k));
