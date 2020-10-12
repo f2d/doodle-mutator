@@ -121,6 +121,7 @@ define('COUNT_POST', 'post');
 
 $s = '@#?<>()\[\]\s\\\\/';				//* <- characters not allowed in email parts; keep it simple, for browser-side check
 define('NL', "\n");
+define('TAB', "\t");
 define('BOM', pack('CCC', 239, 187, 191));		//* <- UTF-8 Byte Order Mark
 define('ARCH_DL_HASH_TYPE', 'crc32b');
 define('B64_PRFX', 'base64:');
@@ -196,9 +197,14 @@ if ($v = $_SERVER['HTTP_ACCEPT_LANGUAGE']) {
 	}
 }
 
-replace_header_value('Content-Language', $lang);
+if (!$lang) {
+	$lang = $cfg_langs[0];
+}
 
-require(NAMEPRFX.".cfg.$lang.php");
+define('LANG', $lang);
+replace_header_value('Content-Language', LANG);
+
+require(NAMEPRFX.".localization.$lang.php");
 require(NAMEPRFX.'.db.php');
 
 //* End buffering, hide output. *----------------------------------------------
@@ -361,14 +367,21 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 	if (($reg = trim($_POST[ME])) && $u_qk != $reg) $u_qk = $reg;
 	if ($u_qk && data_check_user($u_qk, $reg)) {
 		$u_name = $usernames[$u_num];
-		if (LOG_IP) data_log_ip();
-		if ($u_flag['ban']) die(get_template_page(array(
-			'title' => $tmp_ban
-		,	'task' => $tmp_ban
-		,	'body' => 'burnt-hell'
-		)));
 
-		if (!$u_flag['god']) unset($cfg_opts_order['admin'], $tmp_options_input['admin']);
+		if (LOG_IP) {
+			data_log_ip();
+		}
+
+		if ($u_flag['ban']) {
+			$message = get_localized_text('ban');
+
+			die(get_template_page(array(
+				'title' => $message
+			,	'task' => $message
+			,	'body' => 'burnt-hell'
+			)));
+		}
+
 		if ($key_value_pairs) {
 			$i = 'input';
 			foreach ($a as $key_value_pair) {
@@ -387,6 +400,7 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 			foreach ($opt_lvls as $i => $a) if ($p = ${"u_opt$i"})
 			foreach ($cfg_opts_order[$a] as $k => $v) if ($x = intval($p[$k])) $u_opts[$v] = $x;
 		}
+
 		if (POST) $post_status = 'user_qk';
 	}
 }
@@ -415,6 +429,7 @@ if (TIME_PARTS) time_check_point('done user settings, GOD = '.GOD
 //* Location access check *----------------------------------------------------
 
 $room_type = array();
+
 if ($qdir) {
 	if ($room_name = $room) {
 		if ($r_type) $room = "$r_type/$room";
@@ -428,7 +443,12 @@ if ($qdir) {
 	&&	!is_prefix($query[LK_MOD_OPT], 'hta')
 	) rewrite_htaccess();
 }
-$top_title = (false !== ($k = array_search($r_type, $cfg_game_type_dir)) ? $tmp_room_types_title[$k] : $tmp_title);
+
+$top_title = (
+	false !== ($k = array_search($r_type, $cfg_game_type_dir))
+	? get_localized_text('room_types_title', $k)
+	: get_localized_text('title')
+);
 
 define('MOD', GOD || $u_flag['mod'] || $u_flag["mod_$room"]);
 define('NO_MOD', !$room_type['mod'] || $u_flag['nor']);
@@ -436,21 +456,25 @@ define('FROZEN_HELL', data_global_announce('stop'));	//* <- after $room is defin
 
 if (FROZEN_HELL && !(MOD || $qd_arch || ($qd_opts && $u_key))) {
 	if (POST) goto after_posting;
-	if (FROZEN_HELL < 0) die(
-		$etc == '-'
-		? $tmp_stop_all
-		: get_template_page(array(
-			'title' => "$tmp_stop_all $top_title."
-		,	'task' => $tmp_stop_all
-		,	'anno' => 1
-		,	'header' => array(
-				'<a href="'.ROOTPRFX.'">'.$top_title.'.</a>'
-			, 'r' =>
-				'<a href="'.ROOTPRFX.DIR_ARCH.'">'.$tmp_archive.'.</a>'.NL.
-				'<a href="'.ROOTPRFX.DIR_OPTS.'">'.$tmp_options.'.</a>'
-			)
-		))
-	);
+	if (FROZEN_HELL < 0) {
+		$message = get_localized_text('stop_all');
+
+		die(
+			$etc == '-'
+			? $message
+			: get_template_page(array(
+				'title' => "$message $top_title."
+			,	'task' => $message
+			,	'anno' => 1
+			,	'header' => array(
+					'<a href="'.ROOTPRFX.'">'.$top_title.'.</a>'
+				, 'r' =>
+					'<a href="'.ROOTPRFX.DIR_ARCH.'">'.get_localized_text('archive').'.</a>'.NL.
+					'<a href="'.ROOTPRFX.DIR_OPTS.'">'.get_localized_text('options').'.</a>'
+				)
+			))
+		);
+	}
 }
 
 if ($u_key && isset($_REQUEST[LK_ARCH_DL])) {
@@ -478,7 +502,8 @@ if (GOD && (
 	$qday = 'day';
 	$qid = 'id';
 	$qpath = 'path';
-	$a = array_keys($tmp_mod_pages);
+	$a = array_keys(get_localized_text_array('mod_pages'));
+
 	if ($q) {
 		$q = "$query[$qmod]" ?: reset($a);
 		$do = "$query[$qdo]";
@@ -488,13 +513,14 @@ if (GOD && (
 		$q = $a[intval($etc)-1];
 		if ($i = strpos($etc, '-')) {
 			$i = intval(substr($etc, $i+1));
-			$a = array_keys($tmp_mod_files);
+			$a = array_keys(get_localized_text_array('mod_files'));
 			$do = $a[$i-1];
 		}
 	}
+
 	if ($q === LK_USERLIST && $i) {
 		die(get_template_page(array(
-			'title' => "$tmp_mod_pages[$q]: $i, $usernames[$i]"
+			'title' => get_localized_text('mod_pages', $q).": $i, $usernames[$i]"
 		,	'content' => (
 				($a = data_get_user_info($i))
 				? array_merge(array(
@@ -502,7 +528,7 @@ if (GOD && (
 				,	'User ID' => $i
 				,	'User name' => $usernames[$i]
 				), $a)
-				: $tmp_empty
+				: get_localized_text('empty')
 			)
 		,	'listing' => array(
 				'key-value' => ':'.NL
@@ -510,11 +536,15 @@ if (GOD && (
 			)
 		)));
 	}
+
 	$lnk = $t = '';
-	$mod_title = $mod_page = $tmp_mod_pages[$q] ?: $tmp_empty;
+	$mod_title = $mod_page = (
+		get_localized_or_empty_text('mod_pages', $q)
+	?:	get_localized_text('empty')
+	);
 
 	if ($q === 'welcome') {
-		$page['welcome'] = $tmp_welcome_parts;
+		$page['welcome'] = get_localized_text_array('welcome_parts');
 	} else
 	if ($q === 'logs') {
 		$day = $query[$qday] ?: $etc;
@@ -546,19 +576,20 @@ flags = a
 		}
 	} else
 	if ($q === 'files') {
-		$a = array(
+		$mod_file_actions = get_localized_text_array('mod_files');
+		$check_functions = array(
 			'opcache_check' => 'opcache_get_status'
 		,	'opcache_reset' => 'opcache_reset'
 		,	'opcache_inval' => 'opcache_invalidate'
 		);
-		foreach ($a as $k => $v) if (!function_exists($v)) unset($tmp_mod_files[$k]);
-		foreach ($tmp_mod_files as $k => $v) $lnk .= "
+		foreach ($check_functions as $k => $v) if (!function_exists($v)) unset($mod_file_actions[$k]);
+		foreach ($mod_file_actions as $k => $v) $lnk .= "
 <li><a href=\"?$qmod=$q&$qdo=$k\">".mb_str_replace_first(' ', '</a> ', $v).'</li>';
 		$lnk = '
 <ul'.(isset($query[$qpath]) ? ' class="hid"' : '').'>'.indent($lnk).'</ul>';
-		if (!$do) $do = end(array_keys($tmp_mod_files));
-		if ($do && array_key_exists($do, $tmp_mod_files)) {
-			if ($a = $tmp_mod_files[$do]) $lnk .= '
+		if (!$do) $do = end(array_keys($mod_file_actions));
+		if ($do && array_key_exists($do, $mod_file_actions)) {
+			if ($a = $mod_file_actions[$do]) $lnk .= '
 <p>'.rtrim($a, ':.').':</p>';
 			ignore_user_abort(true);
 			data_lock($lk = LK_MOD_ACT);
@@ -717,7 +748,7 @@ $x
 			} else {
 				$t = data_fix($do);
 			}
-			if (!$t) $t = $tmp_no_change;
+			if (!$t) $t = get_localized_text('no_change');
 			data_unlock($lk);
 		}
 	} else
@@ -752,7 +783,7 @@ $x
 			}
 		}
 	} else
-	if ($q && array_key_exists($q, $tmp_mod_pages)) {
+	if ($q && array_key_exists($q, get_localized_text_array('mod_pages'))) {
 		data_lock($q, false);
 
 		exit_if_not_mod(data_get_mod_log($q, 1));
@@ -762,8 +793,8 @@ $x
 archives = $arch_list_href
 profiles = ".ROOTPRFX.DIR_USER."
 left_link = .?$qmod=$q&$qid=
-left = $tmp_mod_user_info
-right = $tmp_mod_user_hint
+left = ".get_localized_text('mod_user_info')."
+right = ".get_localized_text('mod_user_hint')."
 flags = cgu
 v,$u_num,u	v
 $t";
@@ -791,7 +822,7 @@ $t";
 			$page['js']['mod']++;
 			$page['js'][0]++;
 		}
-	} else $lnk = $tmp_empty;
+	} else $lnk = get_localized_text('empty');
 	$page['task'] = "
 <p$attr>$mod_page:</p>$lnk";
 } else
@@ -801,11 +832,11 @@ $t";
 if (isset($query[ARG_ABOUT])) {
 	$about_open = preg_split('~\W+~u', $query[ARG_ABOUT], 0, PREG_SPLIT_NO_EMPTY);
 
-	$page['task'] = "<p>$tmp_about:</p>";
-	$page['welcome'] = $tmp_welcome_parts;
+	$page['task'] = '<p>'.get_localized_text('about').':</p>';
+	$page['welcome'] = get_localized_text_array('welcome_parts');
 	$page['js'][0]++;
 
-	foreach ($tmp_rules as $k => $v) {
+	foreach (get_localized_text_array('rules') as $k => $v) {
 		if (is_array($hint = $v['hint'] ?? $v['list'])) {
 			$s = '';
 			foreach ($hint as $i) $s .= NL.'<li>'.indent(get_template_hint($i)).'</li>';
@@ -832,24 +863,24 @@ if ($qd_user) {
 	) {
 		exit_if_not_mod($a['last modified']);
 
-		$name = $usernames[$i] ?: $tmp_not_found;
+		$name = $usernames[$i] ?: get_localized_text('not_found');
 		$r = array();
 		if (($t = $a['email']) && $t['show']) {
-			$r['email'] = "<p>$tmp_user_email: $t[addr]</p>";
+			$r['email'] = '<p>'.get_localized_text('user_email').": $t[addr]</p>";
 		}
 		if ($t = $a['about'] ?: '') {
 			$t = get_template_profile_html($t);
-			$r['about'] = '<p>'.indent("$tmp_user_about:<br><br>$t").'</p>';
+			$r['about'] = '<p>'.indent(get_localized_text('user_about').":<br><br>$t").'</p>';
 		}
 		if ($r) {
-			array_unshift($r, "<p>$tmp_user_name: $name</p>");
-			$page['task'] = "<p>$tmp_user:</p>";
+			array_unshift($r, '<p>'.get_localized_text('user_name').": $name</p>");
+			$page['task'] = '<p>'.get_localized_text('user').":</p>";
 			$page['profile'] = implode(NL, $r);
 		}
 	}
 	if (!$page['profile']) {
 		$page['task'] =
-		$page['profile'] = $tmp_empty;
+		$page['profile'] = get_localized_text('empty');
 	}
 } else
 
@@ -899,25 +930,39 @@ last = <a href="'.$thread_count.'.htm">'.$thread_count.'</a><!-- static link for
 		exit_if_not_mod($visible['last']);
 
 		if (!$search) {
-			if ($c = !$u_opts['count']) $page['content'] = "
-$tmp_arch_last	$tmp_arch_count";
+			if ($c = !$u_opts['count']) {
+				$page['content'] = (
+					NL
+					.get_localized_text('arch_last')
+					.TAB
+					.get_localized_text('arch_count')
+				);
+			}
 			$prev_type = false;
 			foreach ($visible['list'] as $room => $n) {
 				$room_type = get_room_type($room);
 				$a = mb_split_filter($room);
 				$room = array_pop($a);
+
 				if (!$r_type && ($prev_type !== ($type = implode('/', $a)))) {
 					if (false !== ($k = array_search($type, $cfg_game_type_dir))) {
 						$page['content'] .= "
 
 type = $type
-type_title = $tmp_room_types_title[$k]$top";
+type_title = ".get_localized_text('room_types_title', $k);
 					}
 					$prev_type = $type;
 				}
-				if ($v = $room_type['arch_pages']) $n['count'] .= '*'.$v;
-				$page['content'] .= ($c ? "
-$n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
+
+				if ($v = $room_type['arch_pages']) {
+					$n['count'] .= '*'.$v;
+				}
+
+				$page['content'] .= NL.(
+					$c
+					? "$n[last]	$n[count]	$room"
+					: NB.TAB.NB.TAB.$room
+				);
 			}
 			$room = '';
 			$page['data']['content']['type'] = 'archive rooms';
@@ -927,21 +972,32 @@ $n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
 //* archive posts search ------------------------------------------------------
 
 	if (is_array($search)) {
-		$t = array('r' => sprintf(sprintf($tmp_regex_hint, HINT_REGEX_LINK, HINT_REGEX_FORMAT), $lang, $tmp_regex_hint_pat));
-		if (!($search || $room)) $t[''] = $tmp_archive_hint;
+		$t = array(
+			'r' => sprintf(
+				sprintf(
+					get_localized_text('regex_hint')
+				,	HINT_REGEX_LINK
+				,	HINT_REGEX_FORMAT
+				)
+			,	LANG
+			,	get_localized_text('regex_hint_pat')
+			)
+		);
+
+		if (!($search || $room)) $t[''] = get_localized_text('archive_hint');
 		$page['task'] = get_template_form(
 			array(
-				'head' =>	$tmp_archive
-			,	'select' =>	$tmp_archive_find_by
-			,	'submit' =>	$tmp_archive_find
-			,	'hint' =>	$t
-			,	'min' =>	FIND_MIN_LENGTH
+				'head'		=> get_localized_text('archive')
+			,	'submit'	=> get_localized_text('archive_find')
+			,	'select'	=> get_localized_text_array('archive_find_by')
+			,	'hint'		=> $t
+			,	'min'		=> FIND_MIN_LENGTH
 			)
 		);
 		if ($search) {
 			$research = '';
 			foreach ($search as $k => $v) {
-				$t = $tmp_archive_find_by[$k];
+				$t = get_localized_text('archive_find_by', $k);
 				$t = $t['found by'] ?: $t['select'];
 				$research .=
 					($research?',':'')
@@ -954,7 +1010,7 @@ $n[last]	$n[count]	$room" : NL.NB.'	'.NB.'	'.$room);
 				.	'</a>';
 			}
 			$page['task'] .= '
-<p class="hint" id="research">'.indent($tmp_archive_found.$research).'</p>';
+<p class="hint" id="research">'.indent(get_localized_text('archive_found').$research).'</p>';
 			if ($found = data_archive_find_by($search)) {
 				$t = '';
 				foreach ($found as $r_i => $threads) {
@@ -989,7 +1045,7 @@ page_ext = ".PAGE_EXT.get_flag_vars(
 		}
 		$page['js'][0]++;
 	}
-	if (!$page['content']) $page['task'] .= $tmp_empty;
+	if (!$page['content']) $page['task'] .= get_localized_text('empty');
 } else
 
 //* draw test -----------------------------------------------------------------
@@ -999,8 +1055,8 @@ if ($draw_test = (($qd_opts || !$qdir) && GET_Q)) {
 	$n = get_draw_app_list(false);
 	$page['icon'] = $draw_test = $n['name'];
 	$page['task'] = '
-<p>'.$tmp_draw_free.':</p>
-<p class="hint">'.$tmp_draw_hint.'</p>'.$n['noscript'];
+<p>'.get_localized_text('draw_free').':</p>
+<p class="hint">'.get_localized_text('draw_hint').'</p>'.$n['noscript'];
 	$page['subtask'] = $n['embed'].'
 <div class="task">'.indent($n['list']).'</div>';
 } else
@@ -1036,34 +1092,40 @@ if ($u_key) {
 				}
 			}
 
-			$u_flag_text = NL.$tmp_options_flags.$t.implode('<br>', array_merge($u_flag_lines, $u_flag_lines_with_time));
+			$u_flag_text = (
+				NL
+				.get_localized_text('options_flags')
+				.$t
+				.implode('<br>', array_merge($u_flag_lines, $u_flag_lines_with_time))
+			);
 		}
 
 		$a = '" onChange="allowApply(\'user\')">';
 
 		$c['user'] =
-NL.$tmp_options_name.$t.(
+NL.get_localized_text('options_name').$t.(
 	$u_profile
 	? '<a href="'.ROOTPRFX.DIR_USER.$u_num.'">'
 	.	preg_replace('~\s+~u', '&nbsp;', $u_name)
 	.'</a>'
 	: $u_name
 ).$u_flag_text
-.NL.$tmp_options_qk.$t.'<div class="half-hidden" title="'.$tmp_options_qk_hint.'">'.$u_key.'</div>'
-.NL.$tmp_options_email.',<label><input type="checkbox"'
+.NL.get_localized_text('options_qk').$t.'<div class="half-hidden" title="'.get_localized_text('options_qk_hint').'">'.$u_key.'</div>'
+.NL.get_localized_text('options_email').',<label><input type="checkbox"'
 .(
 	$u_email['show'] ? ' checked' : ''
-).' name="email_show'.$a.$tmp_options_email_show.':</label>	<input type="text" name="email" id="email" value="'
+).' name="email_show'.$a.get_localized_text('options_email_show').':</label>	<input type="text" name="email" id="email" value="'
 .(
 	$u_email['addr'] ?: ''
 ).(
 	$u_email['verified'] ? '" data-verified="1' : ''
 ).'" pattern="'.PAT_EMAIL_FORMAT.'" placeholder="'
-.$tmp_options_email_hint.'" title="'
-.$tmp_options_email_hint.$a
-.NL.$tmp_options_self_intro.$t.'<textarea name="about" placeholder="'
-.$tmp_options_self_intro_hint.'" title="'
-.$tmp_options_self_intro_hint.$a
+.get_localized_text('options_email_hint').'" title="'
+.get_localized_text('options_email_hint').$a
+.NL
+.get_localized_text('options_self_intro').$t.'<textarea name="about" placeholder="'
+.get_localized_text('options_self_intro_hint').'" title="'
+.get_localized_text('options_self_intro_hint').$a
 .(
 	get_template_profile_text($u_profile['about']) ?: ''
 ).'</textarea>	&nbsp;';
@@ -1073,30 +1135,42 @@ NL.$tmp_options_name.$t.(
 		$d = '';
 		$draw_app = implode($sp, array(
 			(array_search($u_draw_app, $cfg_draw_app) ?: 0)
-		,	implode($so, $tmp_draw_app)
+		,	implode($so, get_localized_text_array('draw_app'))
 		,	implode($so, $cfg_draw_app)
 		,	DRAW_APP_NONE
 		,	'?'.ARG_DRAW_APP.'=*'
 		));
-		foreach ($tmp_options_input as $i => $o)
-		foreach ($o as $k => $line) {
-			$r = get_abbr($k).'='.(
-				$i === 'input'
-				? (
-					$$k ?: (
-						!$qdir && $k == 'room_default'
-						? (${"u_$k"} ?: get_const($k))
-						: ${"u_$k"}
-					).$so.get_const($k)
-				) : ($u_opts[$k]?1:'')
-			);
-			if ($i === 'admin') $line = '<span class="gloom">'.$line.'</span>';
-			$d .= NL.$line.$t.$r;
+		foreach (get_localized_text_array('options_input') as $i => $o) {
+			if (
+				!$u_flag['god']
+			&&	$i === 'admin'
+			) {
+				continue;
+			}
+
+			foreach ($o as $k => $line) {
+				$r = get_abbr($k).'='.(
+					$i === 'input'
+					? (
+						$$k ?: (
+							!$qdir && $k == 'room_default'
+							? (${"u_$k"} ?: get_const($k))
+							: ${"u_$k"}
+						).$so.get_const($k)
+					) : ($u_opts[$k]?1:'')
+				);
+
+				if ($i === 'admin') {
+					$line = '<span class="gloom">'.$line.'</span>';
+				}
+
+				$d .= NL.$line.$t.$r;
+			}
 		}
 
 		$c['view'] = $d
-.NL.$tmp_options_time.$t.date('e, T, P')
-.NL.$tmp_options_time_client.$t.'<time id="time-zone"></time>';
+.NL.get_localized_text('options_time').$t.date('e, T, P')
+.NL.get_localized_text('options_time_client').$t.'<time id="time-zone"></time>';
 
 //* archive downloader --------------------------------------------------------
 
@@ -1104,7 +1178,7 @@ NL.$tmp_options_name.$t.(
 			$a = $b = '';
 			$j = ARG_NAMING_VAR_PREFIX;
 			$s = ARCH_DL_NAME_PART_SEPARATOR;
-			foreach ($tmp_archiver_naming_parts as $k => $v) {
+			foreach (get_localized_text_array('archiver_naming_parts') as $k => $v) {
 				$a .= ($a ? ', ' : '')."$j$k".($v ? " = $v" : '');
 				if ($k === 'i') $b .= "$j$k";
 				else if ($k === 'width' || $k === 'bytes') $b .= "<$j$k";
@@ -1112,8 +1186,8 @@ NL.$tmp_options_name.$t.(
 				else if ($k === 'fbytes') $b .= " B, $j$k$s>";
 				else $b .= "<$j$k$s>";
 			}
-			$tmp_archiver_naming_hint = $a;
-			$tmp_archiver_naming_default = $b;
+			$archiver_naming_hint = $a;
+			$archiver_naming_default = $b;
 			$a = '<input type="checkbox" name="';
 			$d = '<label>';
 			$b = '</label>';
@@ -1124,22 +1198,22 @@ NL.$tmp_options_name.$t.(
 arch_dl_list_ext = '.ARCH_DL_LIST_EXT.'
 arch_dl_path = '.ROOTPRFX.DIR_ARCH_DL
 .NL
-.$d.$a.'by_user_id"'.$i.'by_user_names'.$j.$tmp_archiver_by_user_id.$b.'	'
-.$d.$tmp_archiver_from_arch.$a.'from_arch" checked'.$i.'from_room'.$j.$b
+.$d.$a.'by_user_id"'.$i.'by_user_names'.$j.get_localized_text('archiver_by_user_id').$b.'	'
+.$d.get_localized_text('archiver_from_arch').$a.'from_arch" checked'.$i.'from_room'.$j.$b
 .NL
-.$d.$a.'by_user_names" checked'.$i.'by_user_id'.$j.$tmp_archiver_by_user_names.':'.$b.'	'
-.$d.$tmp_archiver_from_room.$a.'from_room" checked'.$i.'from_arch'.$j.$b
+.$d.$a.'by_user_names" checked'.$i.'by_user_id'.$j.get_localized_text('archiver_by_user_names').':'.$b.'	'
+.$d.get_localized_text('archiver_from_room').$a.'from_room" checked'.$i.'from_arch'.$j.$b
 .NL
 .'<textarea name="names" placeholder="'
-.$tmp_archiver_by_user_names_hint.'" title="'
-.$tmp_archiver_by_user_names_hint.'">'.$u_name.'</textarea>	&nbsp;'
+.get_localized_text('archiver_by_user_names_hint').'" title="'
+.get_localized_text('archiver_by_user_names_hint').'">'.$u_name.'</textarea>	&nbsp;'
 .NL
-.$tmp_archiver_naming.':<br>'
+.get_localized_text('archiver_naming').':<br>'
 .'<input type="text" name="naming" placeholder="'
-.$tmp_archiver_naming_hint.'" title="'
-.$tmp_archiver_naming_hint.'" value="'.$tmp_archiver_naming_default.'">	&nbsp;
+.$archiver_naming_hint.'" title="'
+.$archiver_naming_hint.'" value="'.$archiver_naming_default.'">	&nbsp;
 |<input type="submit" name="'.LK_ARCH_DL.'" value="'
-.$tmp_archiver_button.'" onClick="return prepareArchiveDownload(this)">';
+.get_localized_text('archiver_button').'" onClick="return prepareArchiveDownload(this)">';
 		}
 
 //* manage save data, log off, etc --------------------------------------------
@@ -1164,7 +1238,7 @@ arch_dl_path = '.ROOTPRFX.DIR_ARCH_DL
 		,	'skip'	=> array($j, 'id="unskip')
 		,	'out'	=> array($i, 'name="quit')
 		) as $k => $v) {
-			$d .= $v[0].$tmp_options_drop[$k].'" '.$v[1].'">';
+			$d .= $v[0].get_localized_text('options_drop', $k).'" '.$v[1].'">';
 		}
 
 		$c['save'] = $d;
@@ -1173,9 +1247,9 @@ arch_dl_path = '.ROOTPRFX.DIR_ARCH_DL
 
 		if (!$qdir) {
 			if (GOD && WS_NGINX) $page['content'] .= vsprintf('
-||<b class="anno report">%s<br><a href=".?'.LK_MOD_ACT.'=files&'.LK_MOD_OPT.'=nginx">%s</a></b>', $tmp_options_warning);
+||<b class="anno report">%s<br><a href=".?'.LK_MOD_ACT.'=files&'.LK_MOD_OPT.'=nginx">%s</a></b>', get_localized_text_array('options_warning'));
 			$page['content'] .= '
-||<b class="anno">'.sprintf($tmp_options_first, $tmp_options_apply, $room_list_href).'</b>';
+||<b class="anno">'.sprintf(get_localized_text('options_first'), get_localized_text('options_apply'), $room_list_href).'</b>';
 		}
 		$a = '" class="apply" name="'.OPT_PRFX.'apply_';
 		$j = ':
@@ -1184,22 +1258,22 @@ apply_change = ';
 		$k = '
 		';
 
-		$page['task'] = "<p>$tmp_options:</p>";
+		$page['task'] = '<p>'.get_localized_text('options').':</p>';
 		$page['content'] .= '
 opt_prefix = '.OPT_PRFX.'
 separator = '.$so.'
 sep_select = '.$sp.'
 <form method="post">'
-.($c['user'] ? $k.$tmp_options_area['user'].$j.'user'.$c['user'].$i.$tmp_options_apply.$a.'user" disabled>'
-//.NL.$tmp_options_profile.$t.'<a href="'.ROOTPRFX.DIR_USER.$u_num.'">'.$tmp_options_profile_link.'</a>'
+.($c['user'] ? $k.get_localized_text('options_area', 'user').$j.'user'.$c['user'].$i.get_localized_text('options_apply').$a.'user" disabled>'
+//.NL.get_localized_text('options_profile').$t.'<a href="'.ROOTPRFX.DIR_USER.$u_num.'">'.get_localized_text('options_profile_link').'</a>'
 .$k.$b : '')
-.($c['view'] ? $k.$tmp_options_area['view'].$j.'view'.$c['view'].$i.$tmp_options_apply.$a.'view"'.($qdir?' disabled':'').'>
+.($c['view'] ? $k.get_localized_text('options_area', 'view').$j.'view'.$c['view'].$i.get_localized_text('options_apply').$a.'view"'.($qdir?' disabled':'').'>
 </form><form method="post">'
 .$k.$b : '')
-.($c['arch'] ? $k.$tmp_options_area['arch'].':'.$c['arch'].'
+.($c['arch'] ? $k.get_localized_text('options_area', 'arch').':'.$c['arch'].'
 </form><form method="post">'
 .$k.$b : '')
-.($c['save'] ? $k.$tmp_options_area['save'].':'.$c['save']
+.($c['save'] ? $k.get_localized_text('options_area', 'save').':'.$c['save']
 : '').'
 </form>';
 		$page['js'][0]++;
@@ -1210,7 +1284,11 @@ sep_select = '.$sp.'
 	if ($qd_room) {
 		if ($room) {
 			if (!MOD && FROZEN_HELL) {
-				$page['task'] = $tmp_stop_room ?: $tmp_stop_all;
+				$page['task'] = (
+					get_localized_or_empty_text('stop_room')
+				?:	get_localized_text('stop_all')
+				);
+
 				goto template;
 			}
 
@@ -1257,18 +1335,23 @@ sep_select = '.$sp.'
 								is_array($t)
 								? '>'.(
 									$sending
-									? $tmp_sending
-									: $tmp_target_status[$t[0]].(
-										$u_opts['task_timer']
-										? ". $tmp_time_limit: ".format_time_units($t[1])
-										: ''
+									? get_localized_text('sending')
+									: get_localized_text('target_status', $t[0]).(
+										!$u_opts['task_timer']
+										? ''
+										: (
+											'. '
+											.get_localized_text('time_limit')
+											.': '
+											.format_time_units($t[1])
+										)
 									)
 								)
 								: (
 									$sending
 									? ' id="confirm-sending"'
 									: ''
-								).'>'.$tmp_target_status[$t]
+								).'>'.get_localized_text('target_status', $t)
 							).'</title>'
 							.NL.(
 								($t = $target['task'])
@@ -1292,13 +1375,13 @@ sep_select = '.$sp.'
 					,	'textarea' =>	($is_report_page = 1)
 				/*	,	'checkbox' =>	array(
 							'name' => 'freeze'
-						,	'label' => $tmp_report_freeze
+						,	'label' => get_localized_text('report_freeze')
 						)*/
 					,	'radiogroup' => array(
 							'name' => 'freeze'
 						,	'options' => array(
-								1 => $tmp_report_freeze
-							,	0 => $tmp_report_hotfix
+								1 => get_localized_text('report_freeze')
+							,	0 => get_localized_text('report_hotfix')
 							)
 						)
 					)
@@ -1414,12 +1497,12 @@ check_task_keep = .?check_task=keep';
 
 				if ($vts = $visible['threads']) {
 					if (MOD || !NO_MOD) $t = (
-						MOD ? "
-left = $tmp_mod_post_hint
-right = $tmp_mod_user_hint"
-						: "
-left = $tmp_report_post_hint
-right = $tmp_report_user_hint"
+						MOD ? '
+left = '.get_localized_text('mod_post_hint').'
+right = '.get_localized_text('mod_user_hint')
+						: '
+left = '.get_localized_text('report_post_hint').'
+right = '.get_localized_text('report_user_hint')
 					)."
 report_to = .?report_post=$t";
 					$t .= "
@@ -1528,8 +1611,8 @@ if (TIME_PARTS) time_check_point('done sort + join');
 					$left = (GOD || !NO_MOD?'v':'');
 					$flags = get_flag_vars(array('flags' => array('vgmn', array(1, GOD, MOD, NO_MOD))));
 					$page['content'] = "$t
-left = $tmp_empty
-right = $tmp_empty$flags
+left = ".get_localized_text('empty')."
+right = ".get_localized_text('empty')."$flags
 
 0,0	$left	v";	//* <- dummy thread for JS drop-down menus
 				} else $page['content'] = $t;
@@ -1537,19 +1620,19 @@ right = $tmp_empty$flags
 				$task_content = $target['task'];
 				if ($draw < 0) {
 					$page['task'] = '
-<p>'.indent($tmp_room_thread_cap).'</p>
-<p class="hint">'.indent(get_template_hint($tmp_room_thread_cap_hint)).'</p>';
+<p>'.indent(get_localized_text('room_thread_cap')).'</p>
+<p class="hint">'.indent(get_template_hint(get_localized_text('room_thread_cap_hint'))).'</p>';
 				} else {
 					if ($draw) {
 						$n = get_draw_app_list(true);
 						$head = (
 							$target['pic']
-							? $tmp_draw_next.':'
+							? get_localized_text('draw_next').':'
 							: (
 								$task_content
-								? $tmp_draw_this.':
+								? get_localized_text('draw_this').':
 <span id="task-text">'.$task_content.'</span>'
-								: $tmp_draw_free.':'
+								: get_localized_text('draw_free').':'
 							)
 						);
 						$page['task'] = '
@@ -1563,7 +1646,7 @@ right = $tmp_empty$flags
 							$w = explode(',', DRAW_LIMIT_WIDTH);
 							$h = explode(',', DRAW_LIMIT_HEIGHT);
 							$limit_hint = sprintf(
-								$tmp_draw_limit_hint
+								get_localized_text('draw_limit_hint')
 							,	$w[0], $h[0]
 							,	$w[1], $h[1]
 							,	DRAW_MAX_FILESIZE
@@ -1584,15 +1667,15 @@ right = $tmp_empty$flags
 							$task_content
 							? (
 								$target['pic']
-								? $tmp_describe_this
-								: $tmp_describe_next.':
+								? get_localized_text('describe_this')
+								: get_localized_text('describe_next').':
 <span id="task-text">'.$task_content.'</span>'
 							)
 							: (
 								$room_type['single_active_thread']
 							||	!$room_type['allow_image_reply']
-								? $tmp_describe_free
-								: $tmp_describe_new
+								? get_localized_text('describe_free')
+								: get_localized_text('describe_new')
 							)
 						);
 						$page['task'] = get_template_form(
@@ -1602,12 +1685,19 @@ right = $tmp_empty$flags
 							,	'min' =>	DESCRIBE_MIN_LENGTH
 							,	'max' =>	DESCRIBE_MAX_LENGTH
 							,	'head' =>	$head
-							,	'hint' =>	$tmp_describe_hint.($u_flag['nop'] ? '\\'.$tmp_no_play_hint : '')
+							,	'hint' =>	(
+									get_localized_text('describe_hint')
+									.(
+										$u_flag['nop']
+										? '\\'.get_localized_text('no_play_hint')
+										: ''
+									)
+								)
 							,	'filter' =>	$filter
 							,	'checkbox' => (
 									$u_opts['kbox']
 									? array(
-										'label' => $tmp_check_required
+										'label' => get_localized_text('check_required')
 									,	'required' => 1
 									)
 									: ''
@@ -1678,8 +1768,13 @@ right = $tmp_empty$flags
 				$t = !$u_opts['times'];
 				$c = !$u_opts['count'];
 				$s = ', ';
-				$top = ($c?"
-$tmp_room_count_threads	$tmp_room_count_posts":'');
+				$top = (
+					!$c
+					? ''
+					: NL.get_localized_text('room_count_threads')
+					.TAB.get_localized_text('room_count_posts')
+				);
+
 				$page['content'] = "
 archives = $arch_list_href$y
 separator = \"$s\"
@@ -1693,7 +1788,7 @@ $top";
 							$page['content'] .= "
 
 type = $type
-type_title = $tmp_room_types_title[$k]$top";
+type_title = ".get_localized_text('room_types_title', $k).$top;
 						}
 						$prev_type = $type;
 					}
@@ -1721,12 +1816,22 @@ $left	$right	$mid";
 				//* announce/frozen:
 
 					if ($a = $n['anno']) {
-						if (!$a['room_anno']) $page['content'] .= '	';
-						foreach ($a as $k => $v) $page['content'] .= "	$tmp_announce[$k]: ".trim(
-							preg_replace('~\s+~u', ' ',
-							preg_replace('~<[^>]*>~', '',
-							preg_replace('~<br[ /]*>~i', NL,
-						$v))));
+						if (!$a['room_anno']) {
+							$page['content'] .= TAB;
+						}
+
+						foreach ($a as $k => $v) {
+							$page['content'] .= (
+								TAB
+								.get_localized_text('announce', $k)
+								.': '
+								.trim(
+									preg_replace('~\s+~u', ' ',
+									preg_replace('~<[^>]*>~', '',
+									preg_replace('~<br[ /]*>~i', NL,
+								$v))))
+							);
+						}
 					}
 				}
 				unset($room);
@@ -1734,9 +1839,9 @@ $left	$right	$mid";
 			$t = array();
 			$a = '{';
 			$b = ($c = '}').NL;
-			$x = $tmp_room_types_name_example ?: 'test';
+			$x = get_localized_or_empty_text('room_types_name_example') ?: 'test';
 			$e = ", $x: ";
-			foreach ($cfg_room_types as $k => $v) if ($r = $tmp_room_types_names[$k]) {
+			foreach ($cfg_room_types as $k => $v) if ($r = get_localized_or_empty_text('room_types_names', $k)) {
 				$n = $v['name_example'] ?: $x;
 				if ($i =
 					$v['if_name_length']
@@ -1753,10 +1858,11 @@ $left	$right	$mid";
 			$j = '`filterPrefix(\'';
 			$l = '\')';
 			$m = '}\\'.NL;
-			$r = $tmp_room_types_title['all'] ?: '*';
-			$f = ($r_type ? '' : "$tmp_room_types_select:\\
+			$r = get_localized_or_empty_text('room_types_title', 'all') ?: '*';
+			$f = ($r_type ? '' : get_localized_text('room_types_select').":\\
 $a#$j$l|$r$m");
-			foreach ($tmp_room_types as $k => $v) if ($r = $tmp_room_types_title[$k]) {
+			foreach (get_localized_text_array('room_types') as $k => $v)
+			if ($r = get_localized_or_empty_text('room_types_title', $k)) {
 				if ($i = $cfg_game_type_dir[$k]) {
 					$k = "$i/";
 					$n = get_room_type("$i/$x", 'name_example') ?: $x;
@@ -1768,23 +1874,27 @@ $a#$j$l|$r$m");
 				$t[1] .= "$a$room_list_href$k|$r$c: $v$e$a$room_list_href$n/|$n$b";
 				if ($f) $f .= "$a#$i/$j$i/$l|$r$m";
 			}
+
 			if ($t) {
 				foreach ($t as &$v) if ($v) $v = '[p|'.indent($v).']';
 				unset($v);
 				$t = trim(implode('', $t)).'\\';
-				$tmp_rooms_hint .= ($f ? '\\
+				$rooms_hint = get_localized_text('rooms_hint').($f ? '\\
 [buttons r|\\'.indent($f).']' : '').'\\
-[a|'.$tmp_room_types_hint.']\\
+[a|'.get_localized_text('room_types_hint').']\\
 [hid|'.indent($t).']';
 			}
+
 			$page['task'] = get_template_form(
 				array(
 					'method' =>	'post'
 				,	'name' =>	$qredir
+				,	'hint' =>	$rooms_hint
 				,	'min' =>	ROOM_NAME_MIN_LENGTH
 				,	'filter' =>	'/'
 				)
 			);
+
 			$page['data']['content']['type'] = 'rooms';
 			$page['js'][0]++;
 		}
@@ -1805,7 +1915,7 @@ $a#$j$l|$r$m");
 	if ($etc) die('x');
 	foreach ($cfg_dir as $k => $v) unset(${"qd_$k"});
 	$page['signup'] = true;
-	$page['welcome'] = $tmp_welcome_parts;
+	$page['welcome'] = get_localized_text_array('welcome_parts');
 	$page['task'] = get_template_form(
 		array(
 			'method' =>	'post'
@@ -1820,34 +1930,40 @@ $a#$j$l|$r$m");
 template:
 
 define('S', '. ');
-$room_title = ($room_name == ROOM_DEFAULT ? $tmp_room_default : "$tmp_room $room_name");
+
+$room_title = (
+	$room_name == ROOM_DEFAULT
+	? get_localized_text('room_default')
+	: get_localized_text('room')." .$room_name"
+);
+
 $page['title'] = (
 	$mod_title
-	? "$tmp_mod_panel - $mod_title".S.(
+	? get_localized_text('mod_panel')." - $mod_title".S.(
 		$ymd && $room
 		? $room_title.S
 		: ''
 	)
 	: (
 		$qd_opts == 1
-		? $tmp_options.S
+		? get_localized_text('options').S
 		: (
 			$qd_arch
 			? (
 				$room
 				? $room_title.S
 				: ''
-			).$tmp_archive.S
+			).get_localized_text('archive').S
 			: (
 				$qd_room
 				? (
 					$room
 					? (
 						$is_report_page
-						? $tmp_report.S
+						? get_localized_text('report').S
 						: ''
 					).$room_title.S
-					: $tmp_rooms.S
+					: get_localized_text('rooms').S
 				)
 				: ''
 			)
@@ -1855,11 +1971,11 @@ $page['title'] = (
 	)
 ).(
 	$qd_user
-	? "$tmp_user: $name".S
+	? get_localized_text('user').": $name".S
 	: ''
 ).$top_title.(
 	$qd_opts == 2
-	? S.$tmp_draw_app_select
+	? S.get_localized_text('draw_app_select')
 	: ''
 );
 
@@ -1871,13 +1987,13 @@ if (!$is_report_page) {
 	$short = !!$u_opts['head'];
 	$a_head = array(
 		'/' => $top_title
-	,	'..' => $tmp_rooms
+	,	'..' => get_localized_text('rooms')
 	,	'.' => $room_title
-	,	'a' => $tmp_archive
-	,	'*' => $tmp_archives
-	,	'?' => $tmp_options
-	,	'~' => $tmp_draw_test
-	,	'#' => $tmp_mod_panel
+	,	'a' => get_localized_text('archive')
+	,	'*' => get_localized_text('archives')
+	,	'?' => get_localized_text('options')
+	,	'~' => get_localized_text('draw_test')
+	,	'#' => get_localized_text('mod_panel')
 	);
 	foreach ($a_head as $k => &$v) $v = '">'.(
 		$short
@@ -1889,7 +2005,7 @@ if (!$is_report_page) {
 	if (MOD && ($t = $query[LK_MOD_ACT_LOG])) $page['mod_act_log'] = $t;
 	if (GOD) {
 		define('M', A.'.?'.LK_MOD_ACT);
-		foreach ($tmp_mod_pages as $k => $v) $mod_list .= M.'='.$k.'">'.$v.AB;
+		foreach (get_localized_text_array('mod_pages') as $k => $v) $mod_list .= M.'='.$k.'">'.$v.AB;
 		$mod_link_menu = get_template_menu(M.$a_head['#'], $mod_list);
 	}
 
@@ -1929,7 +2045,7 @@ if (!$is_report_page) {
 		foreach ($cfg_langs as $v) {
 			$i_b[] = (
 				A.ROOTPRFX.'?lang='.$v.'">'
-			.	($v === $lang ? CHK_ON : CHK_OFF)
+			.	($v === LANG ? CHK_ON : CHK_OFF)
 			.	strtoupper($v)
 			.	AB
 			);
@@ -1959,7 +2075,7 @@ if (!$is_report_page) {
 			.	'#'.$v.'/"'
 			.	($is_room_list ? ' onclick="filterPrefix(\''.$v.'/\')"' : '')
 			.	'>'
-			.	($tmp_room_types_title[$k] ?: $v ?: $k)
+			.	(get_localized_or_empty_text('room_types_title', $k) ?: $v ?: $k)
 			.	AB
 			);
 		}
@@ -1971,7 +2087,7 @@ if (!$is_report_page) {
 		foreach ($cfg_header_links as $k => $v) {
 			$i_b[] = (
 				A.$v.'">'
-			.	$tmp_header_links[$k]
+			.	get_localized_text('header_links', $k)
 			.	AB
 			);
 		}
@@ -2012,7 +2128,7 @@ if (!$is_report_page) {
 	$footer = $links = $took = '';
 
 	if (!$u_opts['names'] && defined('FOOT_NOTE')) {
-		$links = vsprintf(FOOT_NOTE, $tmp_foot_notes);
+		$links = vsprintf(FOOT_NOTE, get_localized_text_array('foot_notes'));
 	}
 	if (!$u_opts['times'] && $u_key) {
 		define('TOOK', $took = '<!--?-->');
@@ -2020,7 +2136,7 @@ if (!$is_report_page) {
 			time_check_point('inb4 template');
 			$took = '<a href="javascript:'.(++$page['js'][0]).',toggleHide(took),took.scrollIntoView()">'.$took.'</a>';
 		}
-		$took = get_time_html().mb_str_replace_first(' ', NL, sprintf($tmp_took, $took));
+		$took = get_time_html().mb_str_replace_first(' ', NL, sprintf(get_localized_text('took'), $took));
 	}
 	foreach (array(
 		'l' => $took
@@ -2147,7 +2263,7 @@ if ($u_key) {
 				foreach ($act as $v) {
 					$m = data_mod_action($v);	//* <- act = array(option name, thread, row, column)
 					if ($m) {
-						if (array_key_exists($m, $tmp_post_err)) ++$result[$m];
+						if (array_key_exists($m, get_localized_text_array('post_err'))) ++$result[$m];
 						else ++$done;
 					} else ++$failed;
 				}
@@ -2497,8 +2613,8 @@ after_posting:
 if (strlen($v = trim(ob_get_clean()))) data_log_action('POST buffer dump', $v);
 
 if ($p = $post_status) foreach (array(
-	'OK' => $tmp_post_ok
-,	'NO' => $tmp_post_err
+	'OK' => get_localized_text('post_ok')
+,	'NO' => get_localized_text('post_err')
 ) as $k => $v) {
 	if ($$k = array_key_exists($p, $v)) $msg = $v[$p];
 	else $$k = ($p == (get_const($k) ?: $k));
@@ -2616,8 +2732,7 @@ if ($OK) {
 			array_filter($query, 'is_desc_arg', ARRAY_FILTER_USE_KEY)
 		?:	array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY)
 		);
-	} else
- {
+	} else {
 		unset($query);
 	}
 } else {
@@ -2653,7 +2768,7 @@ $ri = 0;
 if ($f = $pic_final_path) {
 
 	function pic_opt_get_size($f) {
-		global $ri, $tmp_no_change, $tmp_no_program_found, $tmp_post_progress, $TO;
+		global $ri, $TO;
 		$old = filesize($f);
 		if ($ri) {
 			echo format_filesize($old).$TO;
@@ -2661,11 +2776,15 @@ if ($f = $pic_final_path) {
 		}
 		$program = optimize_pic($f);
 		if ($old === ($new = filesize($f))) {
-			if ($ri) echo ($program ? $tmp_no_change : $tmp_no_program_found);
+			if ($ri) echo (
+				$program
+				? get_localized_text('no_change')
+				: get_localized_text('post_progress', 'no_program')
+			);
 			return '';
 		} else {
 			$f = format_filesize($new);
-			if ($ri) echo "$f, $tmp_post_progress[program]: $program.";
+			if ($ri) echo "$f, ".get_localized_text('post_progress', 'used_program').": $program.";
 			return $f;
 		}
 	}
@@ -2704,10 +2823,10 @@ if ($f = $pic_final_path) {
 		header("Refresh: $ri; url=$refresh_location");
 
 		echo '<!doctype html>
-<html lang="'.$lang.'">
+<html lang="'.LANG.'">
 <head>
 	<meta charset="'.ENC.'">
-	<title>'.$tmp_sending.'</title>
+	<title>'.get_localized_text('sending').'</title>
 	<style>
 		html {background-color: #eee;}
 		body {background-color: #f5f5f5; margin: 1em; padding: 1em; font-family: sans-serif; font-size: 14px;}
@@ -2717,7 +2836,13 @@ if ($f = $pic_final_path) {
 	</style>
 </head>
 <body>
-<p>'.get_time_html()."$AT$tmp_post_progress[starting].".pic_opt_get_time()."$tmp_post_progress[opt_full]: ";
+<p>'
+.get_time_html()
+.$AT
+.get_localized_text('post_progress', 'starting')
+.pic_opt_get_time()
+.get_localized_text('post_progress', 'opt_full')
+.': ';
 	}
 	$changed = pic_opt_get_size($f);
 
@@ -2726,7 +2851,7 @@ if ($f = $pic_final_path) {
 		$x = DRAW_PREVIEW_WIDTH;
 		$y = round($h/$w*$x);
 		$z = filesize($f);
-		if ($ri) echo pic_opt_get_time()."$tmp_post_progress[low_res]: $w$BY$h$TO$x$BY$y";
+		if ($ri) echo pic_opt_get_time().get_localized_text('post_progress', 'low_res').": $w$BY$h$TO$x$BY$y";
 		$p = imageCreateTrueColor($x,$y);
 		imageAlphaBlending($p, false);
 		imageSaveAlpha($p, true);
@@ -2734,11 +2859,11 @@ if ($f = $pic_final_path) {
 		imageDestroy($pic);
 		$i = "image$file_type";
 		$i($p, $f = get_pic_resized_path($f));
-		if ($ri) echo pic_opt_get_time()."$tmp_post_progress[opt_res]: ";
+		if ($ri) echo pic_opt_get_time().get_localized_text('post_progress', 'opt_res').': ';
 		pic_opt_get_size($f);
 
 		if ($file_type == 'png' && ($z < filesize($f))) {
-			if ($ri) echo pic_opt_get_time()."$tmp_post_progress[low_bit]: 255";
+			if ($ri) echo pic_opt_get_time().get_localized_text('post_progress', 'low_bit').': 255';
 			$c = imageCreateTrueColor($x,$y);
 			imageCopyMerge($c, $p, 0,0,0,0, $x,$y, 100);
 			imageTrueColorToPalette($p, false, 255);
@@ -2746,7 +2871,7 @@ if ($f = $pic_final_path) {
 			imageDestroy($c);
 			$i($p, $f);
 			imageDestroy($p);
-			if ($ri) echo pic_opt_get_time()."$tmp_post_progress[opt_res]: ";
+			if ($ri) echo pic_opt_get_time().get_localized_text('post_progress', 'opt_res').': ';
 			pic_opt_get_size($f);
 		} else {
 			imageDestroy($p);
@@ -2756,7 +2881,7 @@ if ($f = $pic_final_path) {
 
 	if ($ri) {
 		echo pic_opt_get_time().$msg.'</p>
-<p>'.sprintf($tmp_post_progress['refresh'], $refresh_location, format_time_units($ri)).'</p>
+<p>'.sprintf(get_localized_text('post_progress', 'refresh'), $refresh_location, format_time_units($ri)).'</p>
 </body>
 </html>';
 	} else ob_end_clean();

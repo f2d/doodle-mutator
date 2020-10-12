@@ -4,6 +4,16 @@
 
 define('DATA_VERSION', '2018-01-15 18:44');	//* <- change this to autoupdate old data formats
 
+define('DATA_ANNOUNCE_TYPES', [
+	'anno',
+	'stop',
+	'room_anno',
+	'room_stop',
+	'new_game',
+	'new_room',
+	'new_data',
+]);
+
 define('DATA_FUNC_EXPORT', 'json_encode');
 define('DATA_FUNC_IMPORT', 'json_decode');
 
@@ -141,12 +151,12 @@ function data_log($file_path, $line, $n = DATA_LOG_START, $report_errors = true)
 }
 
 function data_global_announce($type = 'all', $room_in_list = '') {
-	global $u_key, $last_user, $room, $tmp_announce, $data_maintenance;
+	global $u_key, $last_user, $room, $data_maintenance;
 	if ($d = ($room_in_list ?: $room ?: '')) $d = DATA_DIR_ROOM."$d/";
 
 //* usage 1: check top level flag standing:
 
-	if (array_key_exists($type, $tmp_announce)) {
+	if (in_array($type, DATA_ANNOUNCE_TYPES)) {
 		$f = $type.DATA_STATIC_EXT;
 		if (is_file(DATA_DIR.$f)) return -1;	//* <- global freeze
 		if ($d && is_file($d.$f)) return 1;	//* <- room freeze
@@ -163,30 +173,30 @@ function data_global_announce($type = 'all', $room_in_list = '') {
 
 	$sep = '_';
 
-	foreach ($tmp_announce as $k => $v) {
-		if (0 === strpos($k, 'new')) {
+	foreach (DATA_ANNOUNCE_TYPES as $check_anno_type) {
+		if (0 === strpos($check_anno_type, 'new')) {
 			if (
 				is_array($result)
 			&&	(
-					('new_game' === $k && !$last_user && !is_file(DATA_USERLIST))
-				||	('new_data' === $k && !$room_in_list && $data_maintenance)
-				||	('new_room' === $k && $u_key && $d && !is_dir($d))
+					('new_game' === $check_anno_type && !$last_user && !is_file(DATA_USERLIST))
+				||	('new_data' === $check_anno_type && !$room_in_list && $data_maintenance)
+				||	('new_room' === $check_anno_type && $u_key && $d && !is_dir($d))
 				)
 			) {
-				$result[$k] = '';
+				$result[$check_anno_type] = '';
 			}
 			continue;
 		}
-		if ($i = mb_strpos_after($k, $sep)) {
+		if ($i = mb_strpos_after($check_anno_type, $sep)) {
 			if (!$d) continue;
-			$f = $d.mb_substr($k, $i);
+			$f = $d.mb_substr($check_anno_type, $i);
 		} else {
 			if ($room_in_list) continue;
-			$f = DATA_DIR.$k;
+			$f = DATA_DIR.$check_anno_type;
 		}
 		if (is_file($f .= DATA_STATIC_EXT)) {
 			if (is_array($result)) {
-				if ($v = trim_bom(file_get_contents($f))) $result[$k] = $v;
+				if ($v = trim_bom(file_get_contents($f))) $result[$check_anno_type] = $v;
 			} else {
 				if (($v = filemtime($f)) && $result < $v) $result = $v;
 			}
@@ -244,7 +254,7 @@ function data_unlock($k = '') {
 //* ---------------------------------------------------------------------------
 
 function data_fix($what = '') {
-	global $cfg_game_type_dir, $tmp_announce;
+	global $cfg_game_type_dir;
 	if (!$what) {
 		$n = DATA_VERSION;
 		$f = DATA_DIR.'version'.DATA_STATIC_EXT;
@@ -389,7 +399,9 @@ function data_fix($what = '') {
 			//	,	"$old/room"	=> DATA_DIR_ROOM
 				,	"$old/actions"	=> DATA_DIR.DATA_SUB_ACT
 				);
-				foreach ($tmp_announce as $k => $v) $a["$old/$k$s"] = DATA_DIR.$k.$s;
+				foreach (DATA_ANNOUNCE_TYPES as $check_anno_type) {
+					$a["$old/$check_anno_type$s"] = DATA_DIR.$check_anno_type.$s;
+				}
 				foreach (get_dir_contents($d = $old_meta = "$old/room/") as $room) {
 					$a["$d$room"] = DATA_DIR_ROOM."$g$room";
 				}
@@ -1377,7 +1389,7 @@ function data_del_tree($d, $del_pics = false) {
 //* Mod actions: --------------------------------------------------------------
 
 function data_mod_action($a) {		//* <- array(option name, thread, row, column, option num)
-	global $u_num, $u_flag, $r_type, $room, $merge, $cfg_game_type_dir, $tmp_announce;
+	global $u_num, $u_flag, $r_type, $room, $merge, $cfg_game_type_dir;
 
 	if (!MOD) return 0;
 

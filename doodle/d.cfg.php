@@ -5,7 +5,7 @@
 //* Omit anything and you'll get constant name as its value, or array errors.
 //* ---------------------------------------------------------------------------
 
-$cfg_langs = array($lang = 'en', 'ru');
+$cfg_langs = array('en', 'ru');
 $cfg_link_schemes = array('http', 'https');
 $cfg_link_canon = 'https://www.example.com/';	//* <- main domain address, for search engines
 $cfg_dir = array(
@@ -359,10 +359,10 @@ $cfg_header_links = array(
 
 //* ---------------------------------------------------------------------------
 
-define('FOOT_NOTE', '
-<a href="'.ROOTPRFX.'?'.ARG_ABOUT.'">%s</a>,
-<a href="https://github.com/f2d/doodle-mutator">%s</a>,
-<a href="https://github.com/f2d/">%s</a>, 2013-2020,
+define('FOOT_NOTE', '2013-2020.
+<a href="'.ROOTPRFX.'?'.ARG_ABOUT.'">%s</a> /
+<a href="https://github.com/f2d/doodle-mutator">%s</a> /
+<a href="https://github.com/f2d/">%s</a> /
 <a href="'.BOARD_LINK.'">%s</a>%s');
 /*
  * Format lang-specific %s:

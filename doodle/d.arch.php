@@ -15,6 +15,7 @@ define('ARCH_PAT_PLACEHOLDER', '
 	)?
 	(?P<PlaceholderComment>\s*?<!--.*?-->)?
 ');
+
 define('ARCH_PAT_POST_PLACEHOLDER', '~^'.ARCH_PAT_PLACEHOLDER.'$~uix');
 define('ARCH_PAT_POST_PLACEHOLDER_SPAN', '~^
 	<span\s+title="\s*
@@ -27,6 +28,7 @@ define('ARCH_PAT_POST_PLACEHOLDER_SPAN', '~^
 	(?P<Text>'.ARCH_PAT_PLACEHOLDER_TEXT.')
 	</span>
 $~uix');
+
 define('ARCH_PAT_POST', '~^
 	(?P<Date>
 		[^'.ARCH_POST_FIELD_SEPARATOR.']*
@@ -42,12 +44,25 @@ define('ARCH_PAT_POST', '~^
 		)
 	)
 $~uix');
+
 define('ARCH_PAT_POST_PIC', '~
 	(?P<open><a\s+[^>]+>)?
 	(?P<image><img\s+[^>]+?(?P<width>\s+width="\d+")?(?P<height>\s+height="\d+")?(?:\s+[^>]+?)?>)
 	(?P<close></a>)?
 	(?P<csv>(?:[;,]\s*[^;,]+)+\s+B)
 ~uix');
+
+define('ARCH_SEARCH_ARG_ORDER', [
+	'post',
+	'file',
+	'bytes',
+	'width',
+	'height',
+	'time',
+	'used',
+	'name',
+	ARG_FULL_NAME,
+]);
 
 function data_archive_get_visible_rooms($type = '') {
 	$last = 0;
@@ -583,16 +598,15 @@ function data_archive_rename_last_pic($old, $new, $n_last_pages = 0) {
 }
 
 function data_archive_get_search_terms($query, $caseless = true) {
-	global $tmp_archive_find_by;
 	$terms = array();
 
 	if ($query && is_array($query)) {
-		foreach ($tmp_archive_find_by as $k => $v) if (	//* <- fixed order to canonically sort query arguments
-			array_key_exists($k, $query)
-		&&	strlen($q = $query[$k])
-		&&	strlen($q = trim_post(fix_encoding($q), FIND_MAX_LENGTH))
+		foreach (ARCH_SEARCH_ARG_ORDER as $arg_name) if (	//* <- fixed order to canonically sort query arguments
+			array_key_exists($arg_name, $query)
+		&&	strlen($arg_value = $query[$arg_name])
+		&&	strlen($arg_value = trim_post(fix_encoding($arg_value), FIND_MAX_LENGTH))
 		) {
-			$terms[$k] = $q;
+			$terms[$arg_name] = $arg_value;
 		}
 	}
 
