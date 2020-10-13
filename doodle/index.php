@@ -755,31 +755,79 @@ $x
 	if (is_prefix($q, 'vars')) {
 		exit_if_not_mod();				//* <- never exits, to check HTTP_IF_MODIFIED_SINCE, etc
 		$sort = (is_postfix($q, 'sort'));
-		$headers = headers_list();
 		$t = '';
-		foreach (array('DATE_RFC822', 'DATE_RFC2822') as $k) if ($v = get_const($k)) {
-			$t .= "$k = ".gmdate($v, T0).NL;
-		}
-		foreach (array('strip_magic_slashes', 'normalizer_normalize') as $k) if ($v = function_exists($k)) {
-			$t .= "$k = $v".NL;
-		}
-		$v = array_map('trim', explode(',', '
-			mb_regex_encoding, mb_regex_set_options
-		,	get_system_memory_info, sys_getloadavg
-		,	ROOTPRFX, NAMEPRFX, DATA_VERSION, HTML_VERSION, HTACCESS_VERSION
-		,	cfg_room_prefix_chars, cfg_room_prefixes
-		,	qfix, qpath, query, room, room_type, headers
-		,	_COOKIE, _ENV, _GET, _POST, _SERVER, _SESSION, gd_info
-		'));
-		foreach ($v as $k) if ($v = (function_exists($k) ? $k() : (get_const($k) ?: $$k))) {
-			if ($sort && is_array($v)) {
-				if (isset($v[0])) natsort($v);
-				else ksort($v);
+
+		foreach (
+			array(
+				'DATE_RFC822',
+				'DATE_RFC2822',
+			) as $k
+		) {
+			if ($v = get_const($k)) {
+				$t .= "$k = ".gmdate($v, T0).NL;
 			}
-			if ($v = trim(print_r($v, true))) {
-				$v = fix_encoding($v);
-				$e = end($fix_encoding_chosen);
-				$t .= "$k: $e = $v".NL;
+		}
+
+		foreach (
+			array(
+				'shmop_open',
+				'strip_magic_slashes',
+				'normalizer_normalize',
+			) as $k
+		) {
+			if ($v = function_exists($k)) {
+				$t .= "$k: function exists".NL;
+			}
+		}
+
+		foreach (
+			array(
+				'mb_regex_encoding',
+				'mb_regex_set_options',
+				'PHP_OS',
+				'sys_getloadavg',
+				'get_system_memory_info',
+
+				'ROOTPRFX',
+				'NAMEPRFX',
+				'DATA_VERSION',
+				'HTML_VERSION',
+				'HTACCESS_VERSION',
+
+				'cfg_room_prefix_chars',
+				'cfg_room_prefixes',
+				'qfix',
+				'qpath',
+				'query',
+				'room',
+				'room_type',
+
+				'_COOKIE',
+				'_ENV',
+				'_GET',
+				'_POST',
+				'_SERVER',
+				'_SESSION',
+
+				'headers_list',
+				'gd_info',
+			) as $k
+		) {
+			if ($v = (
+				function_exists($k)
+				? $k()
+				: (get_const($k) ?: $$k)
+			)) {
+				if ($sort && is_array($v)) {
+					if (isset($v[0])) natsort($v);
+					else ksort($v);
+				}
+
+				if ($v = trim(print_r($v, true))) {
+					$v = fix_encoding($v);
+					$e = end($fix_encoding_chosen);
+					$t .= "$k: $e = $v".NL;
+				}
 			}
 		}
 	} else

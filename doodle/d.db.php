@@ -27,12 +27,15 @@ define('DATA_SUB_ACT', 'actions/');
 define('DATA_SUB_REP', 'reports/');
 define('DATA_SUB_TRD', 'threads/');
 
-define('DATA_DIR', 'data/');			//* <- all data not viewable directly by URL
-define('DATA_DIR_LOCK', DATA_DIR.'lock_files/');	//* <- lock files, empty and disposable
-define('DATA_DIR_ROOM', DATA_DIR.'rooms/');	//* <- keep separated, like rooms/meta/subtype/room_name
-define('DATA_DIR_USER', DATA_DIR.'users/');	//* <- per user files
+define('DATA_DIR', 'data/');					//* <- all data not viewable directly by URL
+define('DATA_DIR_LOCK', DATA_DIR.'lock_files/');		//* <- lock files, empty and disposable
+define('DATA_DIR_ROOM', DATA_DIR.'rooms/');			//* <- keep separated, like rooms/meta/subtype/room_name
+define('DATA_DIR_USER', DATA_DIR.'users/');			//* <- per user files
 define('DATA_USERLIST', DATA_DIR.'users'.DATA_LOG_EXT);		//* <- user list filename
 define('DATA_REF_LIST', DATA_DIR.'reflinks'.DATA_LOG_EXT);	//* <- reflinks list filename
+
+define('DATA_USE_SHARED_MEM', function_exists('shmop_open'));
+define('DATA_USERLIST_SHARED_MEM_KEY', 0x646F6F64);		//* <- "dood" in hex
 
 define('DATA_U_ABOUT', 'about');
 define('DATA_U_FLAG', 'flag');
@@ -206,13 +209,13 @@ function data_global_announce($type = 'all', $room_in_list = '') {
 	return $result;
 }
 
-function data_lock($k, $ex = true) {
+function data_lock($k, $is_writable = true) {
 	global $lock;
 	$d = DATA_DIR_LOCK;
 	$e = DATA_LOCK_EXT;
 	$i = 0;
 	$l = (
-		$ex
+		$is_writable
 		? LOCK_EX		//* <- exclusive, to read/write, waits for EX and SH
 		: LOCK_SH		//* <- shared, read-only, waits only for EX release
 	);
@@ -222,7 +225,7 @@ function data_lock($k, $ex = true) {
 		if (!is_array($lock)) $lock = array();
 		if (isset($lock[$k]) && ($v = $lock[$k])) {
 			if (flock($v, $l)) ++$i;
-			else data_log_action("Unable to change lock $path to ex=$ex type!");
+			else data_log_action("Unable to change lock $path to ex=$is_writable type!");
 		} else
 		if (
 			($v = fopen(mkdir_if_none("$d$k$e"), 'a'))
@@ -231,7 +234,7 @@ function data_lock($k, $ex = true) {
 			$lock[$k] = $v;
 			++$i;
 		} else {
-			$n = data_log_action($m = "Unable to lock $path to ex=$ex type!");
+			$n = data_log_action($m = "Unable to lock $path to ex=$is_writable type!");
 			die("$m $n");
 		}
 	}
@@ -513,43 +516,233 @@ function data_fix($what = '') {
 
 //* ---------------------------------------------------------------------------
 
-function data_get_user_flags($u_num) {
-	$r = array();
-	if ($u_num) {
-		$d = DATA_DIR_USER;
-		$e = DATA_U_FLAG;
-		$sep = '	';
-
-		data_lock(LK_USER.$u_num, false);
-		foreach (get_file_lines("$d$e/$u_num.$e") as $line) {
-			$a = mb_split($sep, $line);
-			$flag = end($a);
-			$time = reset($a);
-			$r[$flag] = $time;
-		}
-	}
-	return $r;
+function data_import_from_file($file_path) {
+	return data_import_from_string($file_path, true);
 }
+
+function data_import_from_string($value, $is_file_path = false) {
+	if (function_exists($func_name = DATA_FUNC_IMPORT)) {
+		if ($is_file_path) {
+			$value = file_get_contents($value);
+		}
+
+		return (
+			$func_name === 'json_decode'
+			? $func_name($value, true)
+			: $func_name($value)
+		);
+	}
+
+	if ($is_file_path) {
+		return include($value);
+	}
+}
+
+function data_export_to_file($file_path, $data_obj_to_save) {
+	$content = data_export_to_string($data_obj_to_save, true);
+
+	return file_put_contents($file_path, $content);
+}
+
+function data_export_to_string($value, $allow_file_fallback = false) {
+	if (function_exists($func_name = DATA_FUNC_EXPORT)) {
+		return (
+			$func_name === 'json_encode'
+			? $func_name($value, JSON_NUMERIC_CHECK | JSON_BIGINT_AS_STRING | JSON_PRETTY_PRINT)
+			: $func_name($value)
+		);
+	}
+
+	if ($allow_file_fallback) {
+		return '<?php return '.var_export($value, true).';?>';
+	}
+}
+
+function data_get_null_terminated_string($value) {
+	return "$value\0";
+}
+
+function data_read_null_terminated_string(&$value, $start_offset = 0) {
+	$i = strpos($value, "\0", $start_offset);
+
+	return (
+		$i === false
+		? $value
+		: substr($value, $start_offset, $i)
+	);
+}
+
+function data_get_cached_userlist_shared_key() {
+	return (
+		stripos(PHP_OS, 'WIN') === 0	//* <- https://stackoverflow.com/q/5879043/#comment93332238_5879078
+		? filemtime(DATA_USERLIST)	//* <- possible mem leaking of leftover segments under abandoned keys
+		: DATA_USERLIST_SHARED_MEM_KEY	//* <- using single predefined key crashes PHP 7.4 Apache2.4 module on Windows 10
+	);
+}
+
+function data_get_readonly_cached_userlist_handle() {
+	if (!function_exists('shmop_open')) {
+		return;
+	}
+
+	// global $data_userlist_readonly_shared_mem_handle;
+	// return $data_userlist_readonly_shared_mem_handle ?: (
+		// $data_userlist_readonly_shared_mem_handle = @shmop_open(data_get_cached_userlist_shared_key(), 'a', 0, 0)
+	// );
+
+/* Note: "@" prefix to hide this useless warning from PHP 7 on Windows 10:
+	shmop_open(): unable to attach or create shared memory segment 'No error'
+*/
+	return @shmop_open(data_get_cached_userlist_shared_key(), 'a', 0, 0);
+}
+
+function data_get_writable_cached_userlist_handle($mem_size) {
+	if (!function_exists('shmop_open')) {
+		return;
+	}
+
+	return @shmop_open(data_get_cached_userlist_shared_key(), 'c', 0660, $mem_size);
+}
+
+function data_get_cached_userlist() {
+	if (!function_exists('shmop_read')) {
+		return;
+	}
+
+	if ($shared_mem_handle = data_get_readonly_cached_userlist_handle()) {
+		$mem_content = shmop_read($shared_mem_handle, 0, 0);
+		shmop_close($shared_mem_handle);
+
+		if (false !== $mem_content) {
+			$data_content = data_read_null_terminated_string($mem_content);
+			$data_obj = data_import_from_string($data_content);
+
+if (LOCALHOST) time_check_point('done shmop_read('.strlen($mem_content)." bytes), filesize = $data_obj[filesize], filemtime = $data_obj[filemtime]");
+
+			return $data_obj;
+		} else
+if (LOCALHOST) time_check_point('done shmop_read, '.$mem_content);
+
+	}
+}
+
+function data_clear_cached_userlist() {
+	if (!function_exists('shmop_delete')) {
+		return;
+	}
+
+	if ($shared_mem_handle = data_get_readonly_cached_userlist_handle()) {
+		$result = shmop_delete($shared_mem_handle);
+		shmop_close($shared_mem_handle);
+
+		return $result;
+	}
+
+	return null;
+
+/* Note: https://www.php.net/manual/en/function.shmop-delete.php#46487
+	Although when using shmop on windows you can delete a segment and later open a new segment with the SAME KEY in the same script no problem, YOU CANNOT IN LINUX/UNIX - the segment will still exist - it's not immediately deleted - but will be marked for deletion and you'll get errors when trying to create the new one.
+*/
+	// return data_write_cached_userlist('');
+}
+
+function data_save_cached_userlist($data_obj) {
+	$data_content = data_export_to_string($data_obj);
+
+if (LOCALHOST) time_check_point("inb4 shmop_write: filesize = $data_obj[filesize], filemtime = $data_obj[filemtime]");
+
+	return data_write_cached_userlist($data_content);
+}
+
+function data_write_cached_userlist($data_content) {
+	if (!function_exists('shmop_write')) {
+		return;
+	}
+
+	data_clear_cached_userlist();
+
+	$mem_content = data_get_null_terminated_string($data_content);
+	$mem_size = strlen($mem_content);
+
+	if ($shared_mem_handle = data_get_writable_cached_userlist_handle($mem_size)) {
+		$result = shmop_write($shared_mem_handle, $mem_content, 0);
+		shmop_close($shared_mem_handle);
+
+if (LOCALHOST) time_check_point("done shmop_write($mem_size bytes) = $result");
+
+		return $result;
+	}
+}
+
+//* ---------------------------------------------------------------------------
 
 function data_check_user($u, $reg = false) {
 	global $u_key, $u_num, $u_flag, $usernames, $last_user;
 	$sep = '	';
 
 	data_lock($lk = LK_USERLIST, false);
-	foreach (get_file_lines(DATA_USERLIST) as $line) if (false !== mb_strpos($line, $sep)) {
-		list($i, $k, $t, $name) = mb_split($sep, $line);
-		$i = intval($i);
-		if ($last_user < $i) $last_user = $i;
-		if ($u === $k) {
-			$u_key = $k;
-			$u_num = $i;
-			if ($reg) break;
+	if (
+		($cached_userlist = data_get_cached_userlist())
+	&&	is_array($cached_userlist)
+	&&	filesize(DATA_USERLIST) === $cached_userlist['filesize']
+	&&	filemtime(DATA_USERLIST) === $cached_userlist['filemtime']
+	) {
+		$user_keys = $cached_userlist['keys'] ?: array();
+		$usernames = $cached_userlist['names'] ?: array();
 
-			$u_flag = data_get_user_flags($u_num);
+		$i = array_search($u, $user_keys);
+		$last_user = array_key_last($user_keys);	//* <- since PHP 7.3.0
+
+		if (false !== $i) {
+			$u_key = $user_keys[$i];
+			$u_num = intval($i);
 		}
-		if (!$reg) $usernames[$i] = $name;
+	} else {
+		if (DATA_USE_SHARED_MEM) {
+			$user_keys = array();
+			$usernames = array();
+		}
+
+		foreach (get_file_lines(DATA_USERLIST) as $line) if (false !== mb_strpos($line, $sep)) {
+			list($i, $k, $t, $name) = mb_split($sep, $line);
+			$i = intval($i);
+
+			if ($last_user < $i) {
+				$last_user = $i;
+			}
+
+			if ($u === $k) {
+				$u_key = $k;
+				$u_num = $i;
+
+				if ($reg && !DATA_USE_SHARED_MEM) {
+					break;
+				}
+			}
+
+			if (DATA_USE_SHARED_MEM) {
+				$user_keys[$i] = $k;
+			}
+
+			if (DATA_USE_SHARED_MEM || !$reg) {
+				$usernames[$i] = $name;
+			}
+		}
+
+		if (DATA_USE_SHARED_MEM) {
+			data_save_cached_userlist(array(
+				'filesize' => filesize(DATA_USERLIST)
+			,	'filemtime' => filemtime(DATA_USERLIST)
+			,	'keys' => $user_keys
+			,	'names' => $usernames
+			));
+		}
 	}
 	data_unlock($lk);
+
+	if (!$reg) {
+		$u_flag = data_get_user_flags($u_num);
+	}
 
 	return $u_num;
 }
@@ -560,17 +753,48 @@ function data_log_user($u_key, $u_name) {
 	$t = T0.'+'.M0;
 
 	data_lock($lk = LK_USERLIST);
-	$r = data_log(DATA_USERLIST, "$u_num	$u_key	$t	$u_name");
-	if ($r && !$last_user) data_set_u_flag($u_num, 'god', 1);	//* <- 1st registered = top supervisor
+	data_clear_cached_userlist();
+	if ($result = data_log(DATA_USERLIST, "$u_num	$u_key	$t	$u_name")) {
+		if (!$last_user) {
+			data_set_u_flag($u_num, 'god', 1);	//* <- 1st registered = top supervisor
+		}
+	}
 	data_unlock($lk);
 
-	return $r;
+	return $result;
+}
+
+function data_get_user_flags($u_num) {
+	$result = array();
+
+	if ($u_num) {
+		$d = DATA_DIR_USER;
+		$e = DATA_U_FLAG;
+		$sep = '	';
+
+		data_lock(LK_USER.$u_num, false);
+		foreach (get_file_lines("$d$e/$u_num.$e") as $line) {
+			$a = mb_split($sep, $line);
+			$flag = end($a);
+			$time = reset($a);
+			$result[$flag] = $time;
+		}
+	}
+
+	return $result;
 }
 
 function data_collect($f, $data, $unique = true) {
 	foreach ((array)$data as $v) {
 		$v = "	$v";
-		if (!$unique || !is_file($f) || false === mb_strpos(data_cache($f).NL, $v.NL)) data_log($f, T0.'+'.M0.$v, '');
+
+		if (
+			!$unique
+		||	!is_file($f)
+		||	false === mb_strpos(data_cache($f).NL, $v.NL)
+		) {
+			data_log($f, T0.'+'.M0.$v, '');
+		}
 	}
 }
 
@@ -581,10 +805,10 @@ function data_log_ip() {
 	data_collect("$d$e/$u_num.$e", $_SERVER['REMOTE_ADDR']);
 }
 
-function data_log_ref($r) {
-	if ($r) {
+function data_log_ref($text) {
+	if ($text) {
 		data_lock($lk = LK_REF_LIST);	//* <- so parallel checks won't miss each other with duplicates
-		data_collect(DATA_REF_LIST, $r);
+		data_collect(DATA_REF_LIST, $text);
 		data_unlock($lk);
 	}
 }
@@ -1018,6 +1242,7 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 	$sep = '	';
 	if ($on < 0) {
 		$report = '';
+
 		if ($u) {
 			data_lock($lk = LK_USERLIST);
 			if ($a = get_file_lines($f = DATA_USERLIST)) {
@@ -1028,8 +1253,12 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 						$report = "$u already has this name: $old";
 					} else {
 						$line = mb_substr($line, 0, $i).$name;
-						$s = (file_put_mkdir($f, implode(NL, $a)) ? 'renamed' : 'rename failed');
-						$report = "$u $s: $old -> $name";
+						$content = implode(NL, $a);
+
+						data_clear_cached_userlist();
+						$result = file_put_mkdir($f, $content);
+						$status = ($result ? 'renamed' : 'rename failed');
+						$report = "$u $status: $old -> $name";
 					}
 					break;
 				}
@@ -1037,6 +1266,7 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 			}
 			data_unlock($lk);
 		}
+
 		return $report ?: "no user with ID $u";
 	}
 
@@ -1775,9 +2005,6 @@ function data_get_visible_rooms($type = '') {
 	$e = DATA_COUNT_EXT;
 	$g = DATA_DIR_ROOM;
 	$mod_marks = array('stopped', 'deleted');
-	foreach (array('export', 'import') as $f) {
-		if (($$f = get_const("DATA_FUNC_$f")) && !function_exists($$f)) $$f = 0;
-	}
 	$last = 0;
 	$a = array();
 	$c = count($rooms = get_dir_rooms($g, '', F_NATSORT | F_HIDE, $type));
@@ -1789,20 +2016,12 @@ if (TIME_PARTS) time_check_point("done scan: $c rooms, inb4 room iteration".NL);
 recheck_file:
 		if (
 			is_file($cf = "$d$b$e")
-		&&	($im = (
-				$import
-			&&	($t = file_get_contents($cf))
-				? (
-					$import == 'json_decode'
-					? $import($t, true)
-					: $import($t)
-				) : include($cf)
-			))
-		&&	is_array($im)
-		&&	($last_time_in_room = $im['last modified'])
+		&&	($data_obj = data_import_from_file($cf))
+		&&	is_array($data_obj)
+		&&	($last_time_in_room = $data_obj['last modified'])
 		) {
-			$c	= $im['counts'];
-			$mod	= $im['marked'];
+			$c	= $data_obj['counts'];
+			$mod	= $data_obj['marked'];
 			$t = data_global_announce('last', $r);
 			if ($last_time_in_room < $t) $last_time_in_room = $t;
 		} else {
@@ -1844,19 +2063,12 @@ recheck_file:
 			,	'pics'		=> $count_pics
 			,	'desc'		=> $count_desc
 			);
-			$save = array(
+			$data_obj_to_save = array(
 				'last modified'	=> $last_time_in_room
 			,	'counts'	=> $c
 			,	'marked'	=> $mod
 			);
-			file_put_contents($cf,
-				$export
-				? (
-					$export == 'json_encode'
-					? $export($save, JSON_NUMERIC_CHECK | JSON_BIGINT_AS_STRING | JSON_PRETTY_PRINT)
-					: $export($save)
-				) : '<?php return '.var_export($save, true).';?>'
-			);
+			data_export_to_file($cf, $data_obj_to_save);
 			data_unlock($lk);
 		}
 		if ($o = trim_bom(ob_get_clean())) data_log_action("include($cf) buffer dump: $o");

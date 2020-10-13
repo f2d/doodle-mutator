@@ -305,17 +305,11 @@ function get_localized_or_empty_text(...$keys) {
 function get_localized_text(...$keys) {
 	$value = get_localized_or_empty_text(...$keys);
 
-	if (!strlen($value)) {
-		foreach ($keys as $key) {
-			$value = (
-				strlen($value)
-				? "$value => $key"
-				: "$key"
-			);
-		}
-	}
-
-	return $value;
+	return (
+		strlen($value)
+		? $value
+		: implode(' => ', $keys)
+	);
 }
 
 function get_abbr($a, $sep = '_') {
