@@ -572,27 +572,30 @@ function data_read_null_terminated_string(&$value, $start_offset = 0) {
 	);
 }
 
+/* Note:
+	Reallocating or deleting shared memory segment with single constant key crashes Apache 2.4 worker with PHP 7.4 module on Windows 10.
+	Thus, change the key for each reallocation.
+	This may cause leftover segments under abandoned keys, leaking memory.
+*/
+
 function data_get_cached_userlist_shared_key() {
 	return (
 		stripos(PHP_OS, 'WIN') === 0	//* <- https://stackoverflow.com/q/5879043/#comment93332238_5879078
-		? filemtime(DATA_USERLIST)	//* <- possible mem leaking of leftover segments under abandoned keys
-		: DATA_USERLIST_SHARED_MEM_KEY	//* <- using single predefined key crashes PHP 7.4 Apache2.4 module on Windows 10
+		? filemtime(DATA_USERLIST)
+		: DATA_USERLIST_SHARED_MEM_KEY
 	);
 }
+
+/* Note:
+	Use "@" prefix to hide this useless PHP warning, given before any segment exists:
+	shmop_open(): unable to attach or create shared memory segment 'No error'
+*/
 
 function data_get_readonly_cached_userlist_handle() {
 	if (!function_exists('shmop_open')) {
 		return;
 	}
 
-	// global $data_userlist_readonly_shared_mem_handle;
-	// return $data_userlist_readonly_shared_mem_handle ?: (
-		// $data_userlist_readonly_shared_mem_handle = @shmop_open(data_get_cached_userlist_shared_key(), 'a', 0, 0)
-	// );
-
-/* Note: "@" prefix to hide this useless warning from PHP 7 on Windows 10:
-	shmop_open(): unable to attach or create shared memory segment 'No error'
-*/
 	return @shmop_open(data_get_cached_userlist_shared_key(), 'a', 0, 0);
 }
 
@@ -639,11 +642,6 @@ function data_clear_cached_userlist() {
 	}
 
 	return null;
-
-/* Note: https://www.php.net/manual/en/function.shmop-delete.php#46487
-	Although when using shmop on windows you can delete a segment and later open a new segment with the SAME KEY in the same script no problem, YOU CANNOT IN LINUX/UNIX - the segment will still exist - it's not immediately deleted - but will be marked for deletion and you'll get errors when trying to create the new one.
-*/
-	// return data_write_cached_userlist('');
 }
 
 function data_save_cached_userlist($data_obj) {
@@ -682,7 +680,8 @@ function data_check_user($u, $reg = false) {
 
 	data_lock($lk = LK_USERLIST, false);
 	if (
-		($cached_userlist = data_get_cached_userlist())
+		DATA_USE_SHARED_MEM
+	&&	($cached_userlist = data_get_cached_userlist())
 	&&	is_array($cached_userlist)
 	&&	filesize(DATA_USERLIST) === $cached_userlist['filesize']
 	&&	filemtime(DATA_USERLIST) === $cached_userlist['filemtime']
@@ -722,9 +721,9 @@ function data_check_user($u, $reg = false) {
 
 			if (DATA_USE_SHARED_MEM) {
 				$user_keys[$i] = $k;
-			}
-
-			if (DATA_USE_SHARED_MEM || !$reg) {
+				$usernames[$i] = $name;
+			} else
+			if (!$reg) {
 				$usernames[$i] = $name;
 			}
 		}
@@ -805,10 +804,10 @@ function data_log_ip() {
 	data_collect("$d$e/$u_num.$e", $_SERVER['REMOTE_ADDR']);
 }
 
-function data_log_ref($text) {
-	if ($text) {
+function data_log_ref($data) {
+	if ($data) {
 		data_lock($lk = LK_REF_LIST);	//* <- so parallel checks won't miss each other with duplicates
-		data_collect(DATA_REF_LIST, $text);
+		data_collect(DATA_REF_LIST, $data);
 		data_unlock($lk);
 	}
 }

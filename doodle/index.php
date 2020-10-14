@@ -785,6 +785,7 @@ $x
 				'mb_regex_encoding',
 				'mb_regex_set_options',
 				'PHP_OS',
+				'php_uname',
 				'sys_getloadavg',
 				'get_system_memory_info',
 
