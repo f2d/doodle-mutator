@@ -23,19 +23,19 @@ define('LOCALIZATION_TEXT', [
 		,	'placeholder'	=> 'Enter part of a file name here, e.g.: 0123abcdef.png, jpg, res, etc.'
 		]
 	,	'bytes' => [
-			'select'	=> 'file size (bytes]'
+			'select'	=> 'file size (bytes)'
 		,	'placeholder'	=> 'List file size ranges here, e.g.: > 0, < 123kb, 4m-4.5mb, = 67890, etc.'
 		]
 	,	'width' => [
-			'select'	=> 'image width (pixels]'
+			'select'	=> 'image width (pixels)'
 		,	'placeholder'	=> 'List image width ranges here, e.g.: > 0, < 640, 640-800, = 800, etc.'
 		]
 	,	'height' => [
-			'select'	=> 'image height (pixels]'
+			'select'	=> 'image height (pixels)'
 		,	'placeholder'	=> 'List image height ranges here, e.g.: > 0, < 360, 360-800, = 800, etc.'
 		]
 	,	'time' => [
-			'select'	=> 'drawn in time (seconds]'
+			'select'	=> 'drawn in time (seconds)'
 		,	'placeholder'	=> 'List time ranges here, e.g.: > 0, < 10:20:30, 40-50, = 60, etc.'
 		]
 	,	'used' => [
@@ -43,34 +43,34 @@ define('LOCALIZATION_TEXT', [
 		,	'placeholder'	=> 'Enter used feature here, e.g.: app name, undo, read file, text, etc.'
 		]
 	,	'name' => [
-			'select'	=> 'author name (part]'
+			'select'	=> 'author name (part)'
 		,	'placeholder'	=> 'Enter part of a post author name here.'
 		]
 	,	ARG_FULL_NAME => [
-			'select'	=> 'author name (exact]'
+			'select'	=> 'author name (exact)'
 		,	'placeholder'	=> 'Enter full author name here.'
 		]
 	]
 ,	'archive_found' => 'Search results for'
 ,	'archive_hint' => 'Hidden rooms are not shown.'
 ,	'archiver_button' => 'Prepare archive'
-,	'archiver_by_user_id' => 'By your profile ID (not available in archives]'
-,	'archiver_by_user_names' => 'By specfied full author names (one per line]'
-,	'archiver_by_user_names_hint' => 'List of full author names (one per line].'
+,	'archiver_by_user_id' => 'By your profile ID (not available in archives)'
+,	'archiver_by_user_names' => 'By specfied full author names (one per line)'
+,	'archiver_by_user_names_hint' => 'List of full author names (one per line).'
 ,	'archiver_from_arch' => 'From archived threads'
-,	'archiver_from_room' => 'From active (unfinished]'
+,	'archiver_from_room' => 'From active (unfinished)'
 ,	'archiver_hidden_room' => 'hidden room'
 ,	'archiver_naming' => 'File naming inside archive'
 ,	'archiver_naming_parts' => [
 		'author' => ''
 	,	'room' => ''
-	,	'thread' => 'number (only in archive]'
+	,	'thread' => 'number (only in archive)'
 	,	'date' => ''
 	/*,	'width' => ''
 	,	'height' => ''
 	,	'bytes' => ''
 	,	'fbytes' => 'formatted as K/M/etc.'
-	*/,	'i' => 'image ID (mandatory, appended if omitted]. Text in <angle brackets> is omitted if any variable inside is empty.'
+	*/,	'i' => 'image ID (mandatory, appended if omitted). Text in <angle brackets> is omitted if any variable inside is empty.'
 	]
 ,	'archives' => 'Archives'
 ,	'arch_count' => 'threads'
@@ -111,7 +111,7 @@ define('LOCALIZATION_TEXT', [
 ,	'draw_app_select' => 'Drawing tool variant'
 ,	'draw_free' => 'Draw anything'
 ,	'draw_hint' => 'This page shares browser memory with the actual game. May be used to restore, offline edit, save to file, etc.'
-,	'draw_limit_hint' => 'Attach you own drawing, limited in size from %sx%s to %sx%s pixels, up to %s bytes (%s], in a file of any of these types: %s.'
+,	'draw_limit_hint' => 'Attach you own drawing, limited in size from %sx%s to %sx%s pixels, up to %s bytes (%s), in a file of any of these types: %s.'
 ,	'draw_next' => 'Try to draw what happens after this'
 ,	'draw_test' => 'Test drawing pad'
 ,	'draw_this' => 'Try to draw'
@@ -124,7 +124,7 @@ define('LOCALIZATION_TEXT', [
 	,	' for contact.'
 	]
 ,	'header_links' => [
-		'drawpile' => 'Drawpile (online collab.]'
+		'drawpile' => 'Drawpile (online collab.)'
 	,	'index' => 'etc.'
 	]
 ,	'me' => 'Name yourself'
@@ -133,7 +133,7 @@ define('LOCALIZATION_TEXT', [
 ,	'mod_files' => [
 		'arch' =>		'Rewrite all archives with newest template.'
 	,	'arch_pix_404' =>	'Rewrite all archives, replacing not found images with 404 placeholder, or vice versa.'
-	,	'arch_pix_hash' =>	'Rewrite all archives, recalculate file hashes (for zip, not filenames] + 404 placeholder.'
+	,	'arch_pix_hash' =>	'Rewrite all archives, recalculate file hashes (for zip, not filenames) + 404 placeholder.'
 	,	'img2orphan_check' =>	'Find pics not used in any room thread or archive.'
 	,	'img2orphan' =>		'Move pics not used in any room thread or archive to separate backup folder.'
 	,	'img2subdir' =>		'Move pics in pic folder root to subfolders.'
@@ -141,7 +141,7 @@ define('LOCALIZATION_TEXT', [
 	,	'logs' =>		'Convert old report logs to current format.'
 	,	'room_list_reset' =>	'Clear cached post counts for room list.'
 	,	'hta_check' =>		'Check .htaccess template for Apache2.'
-	,	'hta_write' =>		'Rewrite .htaccess (automatically done for each admin\'s main page visit].'
+	,	'hta_write' =>		'Rewrite .htaccess (automatically done for each admin\'s main page visit).'
 	,	'nginx' =>		'Nginx config example to apply manually.'
 	,	'opcache_reset' =>	'Clear PHP OpCache globally.'
 	,	'opcache_inval' =>	'Clear PHP OpCache for this folder only.'
@@ -162,7 +162,7 @@ define('LOCALIZATION_TEXT', [
 ,	'mod_user_hint' => 'Options for this user.'
 ,	'mod_user_info' => 'Check flags of this user.'
 ,	'no_change' => 'No change.'
-,	'no_play_hint' => 'Game playing turned off for you (no taking targets].'
+,	'no_play_hint' => 'Game playing turned off for you (no taking targets).'
 ,	'not_found' => 'Not found.'
 ,	'not_supported' => 'This function is not supported.'
 ,	'options' => 'Options'
@@ -174,21 +174,21 @@ define('LOCALIZATION_TEXT', [
 	,	'save' => 'Available save data'
 	]
 ,	'options_drop' => [
-		'out'	=> 'Log out (quit]'
+		'out'	=> 'Log out (quit)'
 	,	'save'	=> 'Delete autosaved drawings from memory'
 	,	'skip'	=> 'Forget task skipping'
 	,	'pref'	=> 'Reset options'
 	]
 ,	'options_first' => 'Press %s or <a href="%s">select a room</a> to continue.'
 ,	'options_flags' => 'Status'
-,	'options_input' => [	//* ID => [setting description, default value (yes], toggled value (no]], or as string 'desc|yes|no'
+,	'options_input' => [	//* ID => [setting description, default value (yes), toggled value (no)], or as string 'desc|yes|no'
 		'input' => [
 			ARG_DRAW_APP		=> 'Drawing tool variant'
 		,	'draw_max_recovery'	=> 'Drawing autosaved recovery slots'
 		,	'draw_max_undo'		=> 'Drawing undo history length'
 		,	'draw_time_idle'	=> 'Drawing idle time minimum, in seconds'
 		,	'trd_per_page'		=> 'Threads per page'
-		,	'room_default'		=> 'Home room (single dot = room list]'
+		,	'room_default'		=> 'Home room (single dot = room list)'
 		]
 	,	'check' => [
 			'head'			=> 'Page top links|full|short'
@@ -204,8 +204,8 @@ define('LOCALIZATION_TEXT', [
 		,	'modtime304'		=> 'When a page has no new content|use your browser cache|reload anyway'
 		,	'unknown'		=> 'Prefer tasks|from unknown threads first|any available'
 		,	'task_timer'		=> 'Task timer while page is open|hide + autoupdate|show + countdown to zero'
-		,	'capture_altclick'	=> 'Capture posts (Ctrl/Shift + click: mark posts, Alt + click: save]'
-		,	'capture_textselection'	=> 'Capture posts with selected text (with buttons around text]'
+		,	'capture_altclick'	=> 'Capture posts (Ctrl/Shift + click: mark posts, Alt + click: save)'
+		,	'capture_textselection'	=> 'Capture posts with selected text (with buttons around text)'
 		]
 	,	'admin' => [
 			'time_check_points'	=> 'Work time check points in footer|show|hide'
@@ -299,7 +299,7 @@ define('LOCALIZATION_TEXT', [
 	]
 ,	'room_types' => [
 		'1dpd' => 'single drawing per description, a.k.a. the "blind phone" game'
-	,	'simd' => 'multiple drawings under single description (topic] in each thread'
+	,	'simd' => 'multiple drawings under single description (topic) in each thread'
 	,	'draw' => 'multiple drawings, no text posts, like "continue a story"'
 	,	'text' => 'multiple text posts, no drawings, like "continue a story" again'
 	,	'1trd' => 'single active thread per room, no thread locking, random mess'
@@ -327,10 +327,10 @@ define('LOCALIZATION_TEXT', [
 	Misfired pic makes a new thread with copy of your task, a text post just starts a new one.'
 			,	'If your task is empty, you can try to change it anytime, if not — once in '.TARGET_CHANGE_TIME.'s, by entering or refreshing room.
 	Do not open the same room in multiple tabs, the site keeps only single target per room for you, and it will change.
-	If, after some time or room actions, you finally decide to perform your task, but disabled automatic task checking, be sure to check it with the timer button (at right]. This check is also performed automatically when sending a post.
-	Note: while any message in a [report|red bar] is displayed at top, or in-room draw app selection is used, refreshing the room in-place (i.e., using the F5 key] will not change the task. Сlicking the room link at the top will drop this effect.'
-			,	'Threads stay full at '.TRD_MAX_POSTS.' pics for '.TRD_ARCH_TIME.'s (to let reports and moderation], then go to archive when the next new thread is created.
-	Single-letter rooms keep only 1 page in archive (no more than '.TRD_PER_PAGE.' threads], have no reports and moderation, and full threads go to archive right away.'
+	If, after some time or room actions, you finally decide to perform your task, but disabled automatic task checking, be sure to check it with the timer button (at right). This check is also performed automatically when sending a post.
+	Note: while any message in a [report|red bar] is displayed at top, or in-room draw app selection is used, refreshing the room in-place (i.e., using the F5 key) will not change the task. Сlicking the room link at the top will drop this effect.'
+			,	'Threads stay full at '.TRD_MAX_POSTS.' pics for '.TRD_ARCH_TIME.'s (to let reports and moderation), then go to archive when the next new thread is created.
+	Single-letter rooms keep only 1 page in archive (no more than '.TRD_PER_PAGE.' threads), have no reports and moderation, and full threads go to archive right away.'
 			]
 		]
 	,	'data' => [
