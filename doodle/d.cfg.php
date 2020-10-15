@@ -64,7 +64,9 @@ define('DESCRIBE_MAX_LENGTH', 900);
 
 define('DRAW_APP_NONE', 'no');
 define('DRAW_APP_DEFAULT_EXT', '.js');
-define('PIC_OPT_ADD_TIMEOUT', 30);	//* <- seconds added per each program tried
+
+define('POST_PIC_WAIT', 5);		//* <- seconds; wait before refreshing the page after processing posted images
+define('PIC_OPT_ADD_TIMEOUT', 30);	//* <- seconds; added per each program tried to prevent abort by interpreter if running too long
 define('PIC_OPT_TRY_GLOBAL_EXEC', false);
 /*
  * Global exec notes:
@@ -147,21 +149,21 @@ define('DRAW_SEND', 'send=layers.json, log.json, pic.png, jpg>1002003; check=che
 define('DRAW_REST', 'resize_style=body, #task; resize_min_id=header');
 
 define('QK_KEEP_AFTER_LOGOUT', false);
-define('QK_EXPIRES', 100200300);	//* <- seconds; renewed with every successful POST, incl.options
-define('POST_PIC_WAIT', 5);	//* <- seconds
+define('QK_EXPIRES', 100200300);		//* <- seconds; renewed with every successful POST, incl.options
 
-define('TARGET_AUTOUPDATE_INTERVAL', 3600);//* 1h
-define('TARGET_CHANGE_TIME', 600);//* 10min
-define('TARGET_DESC_TIME', 1200);	//* 20min
-define('TARGET_DRAW_TIME', 7200);	//* 2h
-define('TARGET_LONG_TIME', 86400);//* 24h
-define('TRD_ARCH_TIME', 86400);	//* 24h
+define('TARGET_AUTOUPDATE_INTERVAL', 3600);	//* <- seconds, 1h
+define('TARGET_CHANGE_TIME', 600);		//* <- seconds, 10min
+define('TARGET_DESC_TIME', 1200);		//* <- seconds, 20min
+define('TARGET_DRAW_TIME', 7200);		//* <- seconds, 2h
+define('TARGET_LONG_TIME', 86400);		//* <- seconds, 24h
+define('TRD_ARCH_TIME', 86400);			//* <- seconds, 24h
+
 define('TRD_MAX_POSTS', 10);
 define('TRD_MAX_PER_ROOM', 30);
 define('TRD_MAX_SKIP_PER_ROOM', 5);
 define('TRD_PER_PAGE', 30);
 
-define('POST_LINE_BREAK', '/');	//* <- used with spaces around
+define('POST_LINE_BREAK', '/');		//* <- used with spaces around
 define('ARCH_DL_NAME_PART_SEPARATOR', ' - ');
 define('ARCH_DL_EXT', '.zip');
 define('ARCH_DL_LIST_EXT', '.txt');
@@ -174,7 +176,7 @@ define('ENC_FALLBACK', '
 	windows-1251
 ,	windows-1252
 ,	iso-8859-1
-,	Shift_JIS');		//* <- comma-separated list (whitespace is ignored), to convert search requests from weird browsers into ENC
+,	Shift_JIS');			//* <- comma-separated list (whitespace is ignored), to convert search requests from weird browsers into ENC
 define('NOR', '&mdash;');		//* <- static placeholder for no request, remains in content
 define('NB', '&#8203;');//&nbsp;	//* <- dynamic placeholder for empty table fields
 define('SUBPAT_OOM_LETTERS', '(?:([kк])|([mм])|([gг])|([tт])|([pп])|([eэе])|([zз])|([yий]))[bб]*');	//* <- orders of magnitude for archive search
