@@ -383,7 +383,7 @@ function data_archive_fix_post_date(&$posts, $i, $increment = false) {
 
 function data_archive_is_a_content_line($line) {return (false !== mb_strpos($line, '	'));}
 function data_archive_get_page_html($room, $num, $tsv) {
-	global $data_archive_rewrite_params, $cfg_langs, $cfg_link_canon;
+	global $data_archive_rewrite_params;
 
 	if (!is_array($data_archive_re_params)) {
 		$data_archive_re_params = array();
@@ -440,7 +440,7 @@ function data_archive_get_page_html($room, $num, $tsv) {
 		return false;
 	}
 
-	$full_link_prefix = rtrim($cfg_link_canon, './');
+	$full_link_prefix = rtrim($GLOBALS['cfg_link_canonical_base'], './');
 	$link_here = ROOTPRFX.DIR_ARCH."$room/$num".PAGE_EXT;
 	$thumbnail = ROOTPRFX.DIR_ARCH."$room/".DIR_THUMB.$num.THUMB_EXT;
 
@@ -451,8 +451,8 @@ function data_archive_get_page_html($room, $num, $tsv) {
 	return get_template_page(
 		array(
 			'title' => $room
-		,	'lang' => $cfg_langs[0]
-		,	'link' => $link_here
+		,	'lang' => $GLOBALS['cfg_langs'][0]
+		,	'link_here' => $link_here
 		,	'links' => array(
 				'prev' => ($p > 0 ? $p.PAGE_EXT : '')
 			,	'next' => ($n > 0 ? $n.PAGE_EXT : '')
@@ -464,7 +464,7 @@ function data_archive_get_page_html($room, $num, $tsv) {
 			,	'og:title' => $description
 			,	'og:site_name' => ARCH_SITE_NAME
 			)
-		,	'body' => get_date_class($date_span['min'], $date_span['max'])
+		,	'page_class' => get_date_class($date_span['min'], $date_span['max'])
 		,	'task' => ($p > 0 ? '<a href="'.$p.PAGE_EXT.'" title="previous">'.$num.'</a>' : $num)
 		,	'content' => $tsv
 		,	'js' => array('capture' => 1, 'arch' => 1)

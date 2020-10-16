@@ -7,7 +7,7 @@
 
 $cfg_langs = array('en', 'ru');
 $cfg_link_schemes = array('http', 'https');
-$cfg_link_canon = 'https://www.example.com/';	//* <- main domain address, for search engines
+$cfg_link_canonical_base = 'https://www.example.com/';	//* <- main protocol and domain address, for search engines
 $cfg_dir = array(
 //* Format: ID => subfolder
 //* real folder with accessible static files:
@@ -29,16 +29,16 @@ $cfg_game_type_dir = array(
 define('GAME_TYPE_DEFAULT', reset($cfg_game_type_dir));	//* <- if this or none of types is empty, no-subfolder will not be allowed
 
 define('BOARD_LINK', '/board/');	//* <- prepend ROOTPRFX (the script folder) here for a relative link
-define('DIR_ARCH_DL', 'dl/');	//* <- real folder to keep listfiles for zip streaming
+define('DIR_ARCH_DL', 'dl/');		//* <- real folder to keep listfiles for zip streaming
 define('DIR_PICS', 'i/');		//* <- real folder
 define('DIR_PICS_DEL', DIR_PICS.'deleted/');
 define('DIR_PICS_ORPHAN', DIR_PICS.'orphan/');
-define('DIR_THUMB', 'th/');	//* <- subfolder in each room archive
-define('PIC_404', 'err.png');	//* <- filename for htaccess and nginx cfg example
+define('DIR_THUMB', 'th/');		//* <- subfolder in each room archive
+define('PIC_404', 'err.png');		//* <- filename for htaccess and nginx cfg example
 
-define('DIR_DOTS', false);	//* <- use href="./.." in top menu
-define('LINK_TIME', false);	//* <- src=file?modtime to force reload at clients
-define('LOG_IP', true);		//* <- for each visit, add IP Address to separate file per user
+define('DIR_DOTS', false);		//* <- use href="./.." in top menu
+define('LINK_TIME', false);		//* <- src=file?modtime to force reload at clients
+define('LOG_IP', true);			//* <- for each visit, add IP Address to separate file per user
 define('LOG_UA', false);		//* <- for each post with pic, add User-Agent field to the post itself
 define('PIC_SUB', false);		//* <- true: img src="/i/p/0/0123.png", false: src="/i/0123.png" and leave it to rewrite rule
 define('ARCH_DL_ENABLED', false);	//* <- currently requires nginx build with zip streaming module

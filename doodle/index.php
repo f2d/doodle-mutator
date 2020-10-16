@@ -378,7 +378,7 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 			die(get_template_page(array(
 				'title' => $message
 			,	'task' => $message
-			,	'body' => 'burnt-hell'
+			,	'page_class' => 'burnt-hell'
 			)));
 		}
 
@@ -530,7 +530,7 @@ if (GOD && (
 				), $a)
 				: get_localized_text('empty')
 			)
-		,	'listing' => array(
+		,	'data_listing' => array(
 				'key-value' => ':'.NL
 			,	'next-item' => NL.'<hr>'
 			)
@@ -2813,27 +2813,39 @@ if ($query && is_array($query)) {
 
 //* show pic processing progress ----------------------------------------------
 
-$ri = 0;
+$page_reload_after_pause = 0;
+
 if ($f = $pic_final_path) {
 
 	function pic_opt_get_size($f) {
-		global $ri, $TO;
+		global $page_reload_after_pause, $TO;
+
 		$old = filesize($f);
-		if ($ri) {
+
+		if ($page_reload_after_pause) {
 			echo format_filesize($old).$TO;
 			flush();
 		}
+
 		$program = optimize_pic($f);
+
 		if ($old === ($new = filesize($f))) {
-			if ($ri) echo (
-				$program
-				? get_localized_text('no_change')
-				: get_localized_text('post_progress', 'no_program')
-			);
+			if ($page_reload_after_pause) {
+				echo (
+					$program
+					? get_localized_text('no_change')
+					: get_localized_text('post_progress', 'no_program')
+				);
+			}
+
 			return '';
 		} else {
 			$f = format_filesize($new);
-			if ($ri) echo "$f, ".get_localized_text('post_progress', 'used_program').": $program.";
+
+			if ($page_reload_after_pause) {
+				echo "$f, ".get_localized_text('post_progress', 'used_program').": $program.";
+			}
+
 			return $f;
 		}
 	}
@@ -2847,11 +2859,14 @@ if ($f = $pic_final_path) {
 	if ($u_opts['picprogress']) {
 		ob_start();
 	} else {
-		if (false === mb_strpos('.,;:?!', mb_substr($msg, -1))) $msg .= '.';
+		if (false === mb_strpos('.,;:?!', mb_substr($msg, -1))) {
+			$msg .= '.';
+		}
+
 		$AT = ' &mdash; ';
 		$BY = ' x ';
 		$TO = ' &#x2192; ';
-		$ri = max(intval(POST_PIC_WAIT), 1);
+		$page_reload_after_pause = max(intval(POST_PIC_WAIT), 1);
 
 	//* this is not working here anyway, must set in php.ini:
 
@@ -2860,7 +2875,7 @@ if ($f = $pic_final_path) {
 	//		ini_set('output_buffering', 'Off');
 	//	}
 
-	//* this is for nginx and gzip:
+	//* this is for nginx and gzip, to allow showing progress as soon as available:
 
 		if (WS_NGINX) {
 			header('X-Accel-Buffering: no');
@@ -2869,7 +2884,7 @@ if ($f = $pic_final_path) {
 
 	//* this is for the browser, some may be configured to prevent though:
 
-		header("Refresh: $ri; url=$refresh_location");
+		header("Refresh: $page_reload_after_pause; url=$refresh_location");
 
 		echo '<!doctype html>
 <html lang="'.LANG.'">
@@ -2893,14 +2908,23 @@ if ($f = $pic_final_path) {
 .get_localized_text('post_progress', 'opt_full')
 .': ';
 	}
+
 	$changed = pic_opt_get_size($f);
 
 	if ($pic && $resize) {
-		if ($changed) data_rename_last_pic($fn, $fwh.$changed);	//* <- rewriting already stored post is a crutch, but nothing better for now
+		if ($changed) {
+			//* rewriting already stored post is a crutch, but nothing better for now:
+			data_rename_last_pic($fn, $fwh.$changed);
+		}
+
 		$x = DRAW_PREVIEW_WIDTH;
 		$y = round($h/$w*$x);
 		$z = filesize($f);
-		if ($ri) echo pic_opt_get_time().get_localized_text('post_progress', 'low_res').": $w$BY$h$TO$x$BY$y";
+
+		if ($page_reload_after_pause) {
+			echo pic_opt_get_time().get_localized_text('post_progress', 'low_res').": $w$BY$h$TO$x$BY$y";
+		}
+
 		$p = imageCreateTrueColor($x,$y);
 		imageAlphaBlending($p, false);
 		imageSaveAlpha($p, true);
@@ -2908,11 +2932,21 @@ if ($f = $pic_final_path) {
 		imageDestroy($pic);
 		$i = "image$file_type";
 		$i($p, $f = get_pic_resized_path($f));
-		if ($ri) echo pic_opt_get_time().get_localized_text('post_progress', 'opt_res').': ';
+
+		if ($page_reload_after_pause) {
+			echo pic_opt_get_time().get_localized_text('post_progress', 'opt_res').': ';
+		}
+
 		pic_opt_get_size($f);
 
-		if ($file_type == 'png' && ($z < filesize($f))) {
-			if ($ri) echo pic_opt_get_time().get_localized_text('post_progress', 'low_bit').': 255';
+		if (
+			$file_type == 'png'
+		&&	($z < filesize($f))
+		) {
+			if ($page_reload_after_pause) {
+				echo pic_opt_get_time().get_localized_text('post_progress', 'low_bit').': 255';
+			}
+
 			$c = imageCreateTrueColor($x,$y);
 			imageCopyMerge($c, $p, 0,0,0,0, $x,$y, 100);
 			imageTrueColorToPalette($p, false, 255);
@@ -2920,7 +2954,11 @@ if ($f = $pic_final_path) {
 			imageDestroy($c);
 			$i($p, $f);
 			imageDestroy($p);
-			if ($ri) echo pic_opt_get_time().get_localized_text('post_progress', 'opt_res').': ';
+
+			if ($page_reload_after_pause) {
+				echo pic_opt_get_time().get_localized_text('post_progress', 'opt_res').': ';
+			}
+
 			pic_opt_get_size($f);
 		} else {
 			imageDestroy($p);
@@ -2928,12 +2966,20 @@ if ($f = $pic_final_path) {
 	}
 	data_unlock();
 
-	if ($ri) {
+	if ($page_reload_after_pause) {
+		$page_reload_msg = sprintf(
+			get_localized_text('post_progress', 'refresh')
+		,	$refresh_location
+		,	format_time_units($page_reload_after_pause)
+		);
+
 		echo pic_opt_get_time().$msg.'</p>
-<p>'.sprintf(get_localized_text('post_progress', 'refresh'), $refresh_location, format_time_units($ri)).'</p>
+<p>'.$page_reload_msg.'</p>
 </body>
 </html>';
-	} else ob_end_clean();
+	} else {
+		ob_end_clean();
+	}
 }
 
 //* use Refresh header for printing content.

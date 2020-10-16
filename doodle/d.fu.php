@@ -322,11 +322,11 @@ function get_abbr($a, $sep = '_') {
 	return $r;
 }
 
-function get_imploded_non_empty_lines($a) {
+function get_imploded_non_empty_lines($a, $separator = NL) {
 	if (is_array($a)) {
 		$a = array_map('get_imploded_non_empty_lines', $a);
 		$a = array_filter($a, 'strlen');
-		return implode(NL, $a);
+		return implode($separator, $a);
 	}
 	return trim("$a");
 }
@@ -1918,17 +1918,22 @@ function get_template_menu($top_line, $hidden_content) {
 	);
 }
 
-function get_template_content($p, $static = 0, $tag = '', $attr = '', $LN = '') {
-	if ($LN) {
+function get_template_content($p, $is_static_page = false, $tag = '', $attr = '', $data_listing = '') {
+	if ($data_listing) {
 		$a = (array)$p;
 		$p = '';
-		if (is_array($LN)) {
-			$NL = $LN['next-item'] ?? NL;
-			$LN = $LN['key-value'] ?? NL;
-		} else $NL = NL;
-		foreach ($a as $k => $v) {
-			$p .= ($p ? $NL : '').$k.$LN.$v;
+
+		if (is_array($data_listing)) {
+			$separator = $data_listing['next-item'] ?? NL;
+			$data_listing = $data_listing['key-value'] ?? NL;
+		} else {
+			$separator = NL;
 		}
+
+		foreach ($a as $k => $v) {
+			$p .= ($p ? $separator : '').$k.$data_listing.$v;
+		}
+
 		$p = "
 <pre$attr>$p
 </pre>";
@@ -1936,6 +1941,7 @@ function get_template_content($p, $static = 0, $tag = '', $attr = '', $LN = '') 
 	if (is_array($p)) {
 		$a = $p;
 		$p = '';
+
 		foreach ($a as $k => $v) if (!$k) {
 			$p .= $v;
 		} else if ($v) {
@@ -1944,7 +1950,7 @@ function get_template_content($p, $static = 0, $tag = '', $attr = '', $LN = '') 
 	}
 
 	if (strlen($p)) {
-		if (GOD && !$static && ($v = $GLOBALS[$k = 'fix_encoding_chosen'])) {
+		if (GOD && !$is_static_page && ($v = $GLOBALS[$k = 'fix_encoding_chosen'])) {
 			$v = implode(',', (array)$v);
 			$p = "
 $k = $v$p";
@@ -1956,13 +1962,21 @@ $k = $v$p";
 <noscript>".indent(
 	'<p class="hint report">'
 	.(
-		$static
+		$is_static_page
 		? 'JavaScript support required.'
 		: get_localized_text('require_js')
 	)
 	.'</p>'
 ).'</noscript>';
-		$p = '<div class="'.($static ? 'thread' : 'content" id="content').'">'.indent($p).'</div>';
+		$p = (
+			'<div class="'.(
+				$is_static_page
+				? 'thread'
+				: 'content" id="content'
+			).'">'
+			.	indent($p)
+			.'</div>'
+		);
 
 		return $p;
 	}
@@ -1976,12 +1990,21 @@ function get_template_page($page) {
 	if (!is_array($j = $page['js'] ?: array())) {
 		$j = array($j => 1);
 	}
-	$R = !!$j['arch'];
-	$RL = $page['link'] ?? '';
-	$LN = $page['listing'] ?? '';
-	$N = ROOTPRFX.NAMEPRFX;
-	$static = ($LN || $R);
-	$class = (($v = $page['body']) ? (array)$v : array());
+
+	$file_path_prefix = ROOTPRFX.NAMEPRFX;
+
+	$data_listing = $page['data_listing'] ?? $page['listing'] ?? '';
+	$link_here = $page['link_here'] ?? $page['link'] ?? '';
+
+	$is_archived_page = !!$j['arch'];
+	$is_static_page = !!($data_listing || $is_archived_page);
+
+	$page_class = (
+		($v = $page['page_class'] ?? $page['body'])
+		? (array)$v
+		: array()
+	);
+
 	$anno = array();
 
 	if ($page['anno']) {
@@ -1993,29 +2016,51 @@ function get_template_page($page) {
 			} else {
 				$c = 'new';
 			}
+
 			$anno[$c][] = get_localized_text('announce', $k).$v;
 		}
 	}
 
-	if (!$static) {
-		$L = LINK_TIME;
+	if (!$is_static_page) {
+		$is_linked_file_modtime_needed = LINK_TIME;
+
 		if ($a = $page['report']) {
 			$e_class = array(
 				'trd_arch' => 'trd-arch'
 			,	'trd_miss' => 'trd-miss'
 			);
-			if (!is_array($a)) $a = mb_split_filter($a, ARG_ERROR_SPLIT);
+
+			if (!is_array($a)) {
+				$a = mb_split_filter($a, ARG_ERROR_SPLIT);
+			}
+
 			foreach ($a as $v) if ($v = trim($v)) {
 				$anno[$e_class[$v] ?: 'report'][] = get_localized_text('post_err', $v);
 			}
 		}
-		if (($t = $page['mod_act_log']) && ($a = data_get_mod_log($t))) $anno['mod_act_log al'] = (array)$a;
-		if (FROZEN_HELL) $class[] = 'frozen-hell';
-		if ($d = get_date_class()) $class = array_merge($class, $d);
+
+		if (
+			($t = $page['mod_act_log'])
+		&&	($a = data_get_mod_log($t))
+		) {
+			$anno['mod_act_log al'] = (array)$a;
+		}
+
+		if (FROZEN_HELL) {
+			$page_class[] = 'frozen-hell';
+		}
+
+		if ($d = get_date_class()) {
+			$page_class = array_merge($page_class, $d);
+		}
 	}
 
 	if ($a = $page[$k = 'welcome']) {
-		if (is_array($a) ? ($a = get_template_welcome($a)) : $a) {
+		if (
+			is_array($a)
+			? ($a = get_template_welcome($a))
+			: $a
+		) {
 			$$k = '<div class="'.$k.'">'.indent($a).'</div>';
 		}
 	}
@@ -2026,26 +2071,28 @@ function get_template_page($page) {
 
 	if ($a = $page[$k = 'content']) {
 		$attr = get_template_attr($page['data'][$k]);
-		$content = get_template_content($a, $static, '', $attr, $LN);
+		$content = get_template_content($a, $is_static_page, '', $attr, $data_listing);
 	}
 
-	if ($RL || !ME_VAL) {
-		$k = (array)($GLOBALS['cfg_link_canon'] ?: $GLOBALS['cfg_link_schemes'] ?: '');
+	if ($link_here || !ME_VAL) {
+		$k = (array)($GLOBALS['cfg_link_canonical_base'] ?: $GLOBALS['cfg_link_schemes'] ?: '');
 		if ($k = $k[0]) {
 			if (false === strpos($k, '/')) {
 				$k = "$k://$_SERVER[SERVER_NAME]";
 			}
+
 			if ($draw_test) {
 				$v = ROOTPRFX.'?'.ARG_DRAW_APP.'='.$draw_test;
 			} else
 			if ($page['signup']) {
 				$v = ROOTPRFX;
 			} else {
-				$v = $RL ?: $_SERVER['REQUEST_URI'];
+				$v = $link_here ?: $_SERVER['REQUEST_URI'];
 			}
+
 			$k = rtrim($k, '/.');
 			$v = ltrim($v, '/.');
-			$canon = "$k/$v";
+			$canonical_full_link = "$k/$v";
 		}
 	}
 
@@ -2053,19 +2100,34 @@ function get_template_page($page) {
 
 	$head['meta'] = array(
 		'<meta charset="'.ENC.'">'
-	,	($LN?'':'<meta name="viewport" content="width=690">')
+	,	($data_listing?'':'<meta name="viewport" content="width=690">')
 	);
 
 	$head['links'] = array(
-		($LN?'':'<link rel="stylesheet" type="text/css" href="'.$N.($v = '.css').($L?'?'.filemtime(NAMEPRFX.$v):'').'">')
-	,	'<link rel="shortcut icon" type="image/png" href="'.(($v = $page['icon'])?ROOTPRFX.$v:$N).'.png">'
-	,	($canon?'<link rel="canonical" href="'.$canon.'">':'')
+		(
+			$data_listing
+			? ''
+			: '<link rel="stylesheet" type="text/css" href="'
+			.	$file_path_prefix.($v = '.css')
+			.	($is_linked_file_modtime_needed ? '?'.filemtime(NAMEPRFX.$v) : '')
+			.'">'
+		)
+	,	'<link rel="shortcut icon" type="image/png" href="'.(
+			($v = $page['icon'])
+			? ROOTPRFX.$v
+			: $file_path_prefix
+		).'.png">'
 	,	(
-			$R || ME_VAL
+			$canonical_full_link
+			? '<link rel="canonical" href="'.$canonical_full_link.'">'
+			: ''
+		)
+	,	(
+			$is_archived_page || ME_VAL
 			? '<link rel="index" href="//'.$_SERVER['SERVER_NAME'].ROOTPRFX.(
-				$R || $room
+				$is_archived_page || $room
 				? '" data-room="'.(
-					$R
+					$is_archived_page
 					? ($page['room'] ?: $page['title'])
 					: $room
 				)
@@ -2098,7 +2160,7 @@ function get_template_page($page) {
 			if (is_array($v)) foreach ($v as $line) {
 				$block .= NL.'<b>'.indent($line).'</b>';
 			}
-			$anno_lines .= NL.'<p class="'.$i.($k?" $k":'').'">'.indent($block ?: $v).'</p>';
+			$anno_lines .= NL.'<p class="'.$i.($k ? " $k" : '').'">'.indent($block ?: $v).'</p>';
 		}
 		if ($page['anno']) {
 			$header .= $anno_lines;
@@ -2109,7 +2171,7 @@ function get_template_page($page) {
 	if ($a = $page[$k = 'header']) {
 		if (is_array($a)) {
 			foreach ($a as $i => &$v) if ($v) {
-				$v = ($i?'<u class="'.$i.'">':'<u>').indent($v).'</u>';
+				$v = ($i ? '<u class="'.$i.'">' : '<u>').indent($v).'</u>';
 			}
 			unset($v);
 			$a = implode(NL, $a);
@@ -2133,7 +2195,7 @@ function get_template_page($page) {
 		if ($sub = $page['subtask']) {
 			$v = '<div class="task">'.indent($v).'</div>'.$sub;
 		} else
-		if (!$static) {
+		if (!$is_static_page) {
 			$attr = ' class="task"'.$attr;
 		}
 
@@ -2148,7 +2210,7 @@ function get_template_page($page) {
 		$task = '<div id="task"'.$attr.'>'.indent($anno_lines.$v).'</div>';
 	} else
 	if ($v = $$txt) {
-		$content .= get_template_content($anno_lines.$v, $static, $txt);
+		$content .= get_template_content($anno_lines.$v, $is_static_page, $txt);
 	}
 
 	if ($v = $page['footer']) {
@@ -2158,35 +2220,69 @@ function get_template_page($page) {
 				$t = get_time_elapsed($t);
 				$t_diff = ltrim(sprintf('%.6f', $t - $t_prev), '0.');
 				$t = sprintf('%.6f', $t_prev = $t);
-				$comment = mb_str_replace(NL, '<br>-', is_array($comment)?implode('<br>', $comment):$comment);
-				$took_list .= NL."<tr><td>$t +</td><td>$t_diff:</td><td>$comment</td></tr>";
+
+				$comment = mb_str_replace(NL, '<br> - ', (
+					is_array($comment)
+					? implode('<br>', $comment)
+					: $comment
+				));
+
+				$took_list .= (
+					NL
+					."<tr><td>$t +</td><td>$t_diff:</td><td>$comment</td></tr>"
+				);
 			}
 		}
 		if ($took_list) {
-			$v .= NL.'<table id="took" style="display:none">'.indent($took_list).'</table>';
+			$v .= (
+				NL
+				.'<table id="took" style="display:none">'
+				.	indent($took_list)
+				.'</table>'
+			);
 		}
 
 		$footer = '<footer>'.indent($v).'</footer>';
 	}
 
 	if ($j) foreach ($j as $k => $v) {
-		$scripts .= NL.'<script src="'.$N.($v = ($k?".$k":'').'.js').($L?'?'.filemtime(NAMEPRFX.$v):'').'"></script>';
+		$scripts .= (
+			NL
+			.'<script src="'
+			.	$file_path_prefix.($v = ($k ? ".$k" : '').'.js')
+			.	($is_linked_file_modtime_needed ? '?'.filemtime(NAMEPRFX.$v) : '')
+			.'"></script>'
+		);
 	}
+
+	$page_class = (
+		$page_class
+		? ' class="'.get_imploded_non_empty_lines($page_class, ' ').'"'
+		: ''
+	);
+
+	$after_content = (
+		indent($footer, 1)
+	.	indent($scripts, 1)
+	);
 
 	return (
 '<!doctype html>
-<html lang="'.($page['lang'] ?: LANG ?: $cfg_langs[0] ?: 'en').'">
+<html lang="'.($page['lang'] ?: get_const('LANG') ?: $cfg_langs[0] ?: 'en').'">
 <head>'
 .indent(get_imploded_non_empty_lines($head))
 .'</head>
-<body'.($class?' class="'.implode(' ', $class).'"':'').'>'
+<body'.$page_class.'>'
 .indent($header, 1)
 .indent($task, 1)
 .indent($welcome, 1)
 .indent($profile, 1)
-.indent($content, 1).(($t =
- indent($footer, 1)
-.indent($scripts, 1)) && ($k = get_const('TOOK')) ? str_replace($k, round(get_time_elapsed(), 9), $t) : $t)
+.indent($content, 1)
+.(
+	$after_content && ($k = get_const('TOOK'))
+	? str_replace($k, round(get_time_elapsed(), 9), $after_content)
+	: $after_content
+)
 .'</body>
 </html>'
 	);
