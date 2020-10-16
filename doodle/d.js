@@ -1543,7 +1543,7 @@ var	i = param.on_page
 	}
 	k = ', '+param.current.range.join('-');			//* <- currently shown threads
 	document.title = param.title.join(k);
-	if (j = id('range')) j.innerHTML = room+k;
+	if (j = id('range')) j.innerHTML = decodeURIComponent(room) + k;
 	if (j = id('thumbs')) j.innerHTML = param.current.thumbsHTML;
 	if (j = id('pages')) {
 		k = Math.ceil(param.total / param.on_page);
