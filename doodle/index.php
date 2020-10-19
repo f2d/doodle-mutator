@@ -1046,9 +1046,9 @@ type_title = ".get_localized_text('room_types_title', $k);
 		if ($search) {
 			$research = '';
 			foreach ($search as $k => $v) {
-				$t = get_localized_text('archive_find_by', $k);
-				$t = $t['found by'] ?: $t['select'];
-				$research .=
+				$t = get_localized_text_array('archive_find_by', $k);
+				$t = $t['found_by'] ?: $t['found by'] ?: $t['select'];
+				$research .= (
 					($research?',':'')
 				.	NL
 				.	'<a name="'.$k.'">'
@@ -1056,7 +1056,8 @@ type_title = ".get_localized_text('room_types_title', $k);
 				.		'<span>'
 				.			htmlspecialchars(data_archive_get_search_value($v))
 				.		'</span>'
-				.	'</a>';
+				.	'</a>'
+				);
 			}
 			$page['task'] .= '
 <p class="hint" id="research">'.indent(get_localized_text('archive_found').$research).'</p>';

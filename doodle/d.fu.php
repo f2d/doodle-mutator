@@ -255,7 +255,7 @@ function log_preg_last_error($none_too = true) {
 		}
 
 		$v = PCRE_VERSION;
-		time_check_point("PCRE ver.$v, preg_last_error = $e");
+		time_check_point("PCRE ver.$v, preg_last_error = $e, debug_backtrace = ".get_print_or_none(debug_backtrace(0)));
 	}
 }
 
@@ -2221,7 +2221,7 @@ function get_template_page($page) {
 				$t_diff = ltrim(sprintf('%.6f', $t - $t_prev), '0.');
 				$t = sprintf('%.6f', $t_prev = $t);
 
-				$comment = mb_str_replace(NL, '<br> - ', (
+				$comment = preg_replace('~\v+~u', '<br> - ', (
 					is_array($comment)
 					? implode('<br>', $comment)
 					: $comment
