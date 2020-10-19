@@ -1756,7 +1756,7 @@ function get_template_form($t) {
 			if (!$name) $name = $k;
 			$n .= NL."	$k	$v[select]	$v[placeholder]";
 		}
-		$select = htmlspecialchars($n).NL;
+		$select = htmlspecialchars($n, ENT_COMPAT).NL;
 	}
 
 	if ($name) {

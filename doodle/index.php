@@ -1052,9 +1052,9 @@ type_title = ".get_localized_text('room_types_title', $k);
 					($research?',':'')
 				.	NL
 				.	'<a name="'.$k.'">'
-				.	($t ? "$t: " : '')
+				.		($t ? "$t: " : '')
 				.		'<span>'
-				.			htmlspecialchars(data_archive_get_search_value($v))
+				.			htmlspecialchars(data_archive_get_search_value($v), ENT_NOQUOTES)
 				.		'</span>'
 				.	'</a>'
 				);
