@@ -1756,7 +1756,7 @@ function get_template_form($t) {
 			if (!$name) $name = $k;
 			$n .= NL."	$k	$v[select]	$v[placeholder]";
 		}
-		$select = htmlspecialchars($n, ENT_COMPAT).NL;
+		$select = htmlspecialchars($n, ENT_COMPAT | ENT_SUBSTITUTE | ENT_HTML5).NL;
 	}
 
 	if ($name) {
@@ -1774,6 +1774,7 @@ function get_template_form($t) {
 	if ($a = $filter) $attr .= ' id="filter" data-filter="'.$a.'"';
 	if ($a = $placeholder ?: ($a ? get_localized_text('filter_placeholder') : '')) $attr .= ' placeholder="'.$a.'"';
 	if (!$GLOBALS['u_opts']['focus']) $attr .= ' autofocus';
+
 	if ($name) {
 		$name = ' name="'.$name.'"'.$attr.' required';
 		if ($min||$max) $name .= (

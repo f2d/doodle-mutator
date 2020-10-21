@@ -1033,7 +1033,10 @@ type_title = ".get_localized_text('room_types_title', $k);
 			)
 		);
 
-		if (!($search || $room)) $t[''] = get_localized_text('archive_hint');
+		if (!($search || $room)) {
+			$t[''] = get_localized_text('archive_hint');
+		}
+
 		$page['task'] = get_template_form(
 			array(
 				'head'		=> get_localized_text('archive')
@@ -1043,26 +1046,34 @@ type_title = ".get_localized_text('room_types_title', $k);
 			,	'min'		=> FIND_MIN_LENGTH
 			)
 		);
+
 		if ($search) {
 			$research = '';
+
 			foreach ($search as $k => $v) {
 				$t = get_localized_text_array('archive_find_by', $k);
 				$t = $t['found_by'] ?: $t['found by'] ?: $t['select'];
+
+				$v = data_archive_get_search_value($v);
+
 				$research .= (
 					($research?',':'')
 				.	NL
 				.	'<a name="'.$k.'">'
 				.		($t ? "$t: " : '')
 				.		'<span>'
-				.			htmlspecialchars(data_archive_get_search_value($v), ENT_NOQUOTES)
+				.			htmlspecialchars($v, ENT_NOQUOTES | ENT_SUBSTITUTE | ENT_HTML5)
 				.		'</span>'
 				.	'</a>'
 				);
 			}
+
 			$page['task'] .= '
 <p class="hint" id="research">'.indent(get_localized_text('archive_found').$research).'</p>';
+
 			if ($found = data_archive_find_by($search)) {
 				$t = '';
+
 				foreach ($found as $r_i => $threads) {
 					if (!$room) $t .= ($t ? NL.NL : NL)."room = $r_i";
 					foreach ($threads as $t_i => $posts) {
@@ -1075,6 +1086,7 @@ type_title = ".get_localized_text('room_types_title', $k);
 						}
 					}
 				}
+
 				$page['content'] = "
 arch_term_name = ".ARG_FULL_NAME."
 archives = $arch_list_href
@@ -1090,9 +1102,11 @@ page_ext = ".PAGE_EXT.get_flag_vars(
 					,	'caps' => 0
 					)
 				).$t;
+
 				$page['data']['content']['type'] = 'archive found';
 			}
 		}
+
 		$page['js'][0]++;
 	}
 	if (!$page['content']) $page['task'] .= get_localized_text('empty');

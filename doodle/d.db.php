@@ -36,6 +36,7 @@ define('DATA_REF_LIST', DATA_DIR.'reflinks'.DATA_LOG_EXT);	//* <- reflinks list 
 
 define('DATA_USE_SHARED_MEM', function_exists('shmop_open'));
 define('DATA_USERLIST_SHARED_MEM_KEY', 0x646F6F64);		//* <- "dood" in hex
+define('DATA_LK_SHARED_MEM_USERLIST', 'data_mem_users');
 
 define('DATA_U_ABOUT', 'about');
 define('DATA_U_FLAG', 'flag');
@@ -591,57 +592,65 @@ function data_get_cached_userlist_shared_key() {
 	shmop_open(): unable to attach or create shared memory segment 'No error'
 */
 
-function data_get_readonly_cached_userlist_handle() {
+function data_get_cached_userlist_handle($mem_size = 0) {
 	if (!function_exists('shmop_open')) {
 		return;
 	}
 
-	return @shmop_open(data_get_cached_userlist_shared_key(), 'a', 0, 0);
-}
-
-function data_get_writable_cached_userlist_handle($mem_size) {
-	if (!function_exists('shmop_open')) {
-		return;
-	}
-
-	return @shmop_open(data_get_cached_userlist_shared_key(), 'c', 0660, $mem_size);
+	return (
+		$mem_size > 0
+		? @shmop_open(data_get_cached_userlist_shared_key(), 'c', 0660, $mem_size)
+		: @shmop_open(data_get_cached_userlist_shared_key(), 'a', 0, 0)
+	);
 }
 
 function data_get_cached_userlist() {
-	if (!function_exists('shmop_read')) {
+	if (!DATA_USE_SHARED_MEM || !function_exists('shmop_read')) {
 		return;
 	}
 
-	if ($shared_mem_handle = data_get_readonly_cached_userlist_handle()) {
+	$result = null;
+
+	data_lock($lk = DATA_LK_SHARED_MEM_USERLIST, false);
+
+	if ($shared_mem_handle = data_get_cached_userlist_handle()) {
 		$mem_content = shmop_read($shared_mem_handle, 0, 0);
 		shmop_close($shared_mem_handle);
 
 		if (false !== $mem_content) {
 			$data_content = data_read_null_terminated_string($mem_content);
-			$data_obj = data_import_from_string($data_content);
+			$result = data_import_from_string($data_content);
 
-if (LOCALHOST) time_check_point('done shmop_read('.strlen($mem_content)." bytes), filesize = $data_obj[filesize], filemtime = $data_obj[filemtime]");
+		}
 
-			return $data_obj;
-		} else
-if (LOCALHOST) time_check_point('done shmop_read, '.$mem_content);
+if (LOCALHOST) time_check_point('done shmop_read'.(
+			false === $mem_content
+			? ', result = false'
+			: '('.strlen($mem_content)." bytes), filesize = $result[filesize], filemtime = $result[filemtime]"
+		));
 
 	}
+
+	data_unlock($lk);
+
+	return $result;
 }
 
 function data_clear_cached_userlist() {
-	if (!function_exists('shmop_delete')) {
+	if (!DATA_USE_SHARED_MEM || !function_exists('shmop_delete')) {
 		return;
 	}
 
-	if ($shared_mem_handle = data_get_readonly_cached_userlist_handle()) {
+	$result = null;
+
+	data_lock(DATA_LK_SHARED_MEM_USERLIST);
+
+	if ($shared_mem_handle = data_get_cached_userlist_handle()) {
 		$result = shmop_delete($shared_mem_handle);
 		shmop_close($shared_mem_handle);
-
-		return $result;
 	}
 
-	return null;
+	return $result;
 }
 
 function data_save_cached_userlist($data_obj) {
@@ -653,23 +662,28 @@ if (LOCALHOST) time_check_point("inb4 shmop_write: filesize = $data_obj[filesize
 }
 
 function data_write_cached_userlist($data_content) {
-	if (!function_exists('shmop_write')) {
+	if (!DATA_USE_SHARED_MEM || !function_exists('shmop_write')) {
 		return;
 	}
+
+	$result = null;
 
 	data_clear_cached_userlist();
 
 	$mem_content = data_get_null_terminated_string($data_content);
 	$mem_size = strlen($mem_content);
 
-	if ($shared_mem_handle = data_get_writable_cached_userlist_handle($mem_size)) {
+	if ($shared_mem_handle = data_get_cached_userlist_handle($mem_size)) {
 		$result = shmop_write($shared_mem_handle, $mem_content, 0);
 		shmop_close($shared_mem_handle);
 
 if (LOCALHOST) time_check_point("done shmop_write($mem_size bytes) = $result");
 
-		return $result;
 	}
+
+	data_unlock(DATA_LK_SHARED_MEM_USERLIST);
+
+	return $result;
 }
 
 //* ---------------------------------------------------------------------------
@@ -679,6 +693,7 @@ function data_check_user($u, $reg = false) {
 	$sep = '	';
 
 	data_lock($lk = LK_USERLIST, false);
+
 	if (
 		DATA_USE_SHARED_MEM
 	&&	($cached_userlist = data_get_cached_userlist())
@@ -737,6 +752,7 @@ function data_check_user($u, $reg = false) {
 			));
 		}
 	}
+
 	data_unlock($lk);
 
 	if (!$reg) {
@@ -753,11 +769,14 @@ function data_log_user($u_key, $u_name) {
 
 	data_lock($lk = LK_USERLIST);
 	data_clear_cached_userlist();
+
 	if ($result = data_log(DATA_USERLIST, "$u_num	$u_key	$t	$u_name")) {
 		if (!$last_user) {
 			data_set_u_flag($u_num, 'god', 1);	//* <- 1st registered = top supervisor
 		}
 	}
+
+	data_unlock(DATA_LK_SHARED_MEM_USERLIST);
 	data_unlock($lk);
 
 	return $result;
@@ -1256,6 +1275,8 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 
 						data_clear_cached_userlist();
 						$result = file_put_mkdir($f, $content);
+						data_unlock(DATA_LK_SHARED_MEM_USERLIST);
+
 						$status = ($result ? 'renamed' : 'rename failed');
 						$report = "$u $status: $old -> $name";
 					}
