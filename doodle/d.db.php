@@ -540,16 +540,16 @@ function data_import_from_string($value, $is_file_path = false) {
 }
 
 function data_export_to_file($file_path, $data_obj_to_save) {
-	$content = data_export_to_string($data_obj_to_save, true);
+	$content = data_export_to_string($data_obj_to_save, true, true);
 
 	return file_put_contents($file_path, $content);
 }
 
-function data_export_to_string($value, $allow_file_fallback = false) {
+function data_export_to_string($value, $allow_file_fallback = false, $human_readable = false) {
 	if (function_exists($func_name = DATA_FUNC_EXPORT)) {
 		return (
 			$func_name === 'json_encode'
-			? $func_name($value, JSON_NUMERIC_CHECK | JSON_BIGINT_AS_STRING | JSON_PRETTY_PRINT)
+			? $func_name($value, JSON_NUMERIC_CHECK | JSON_BIGINT_AS_STRING | ($human_readable ? JSON_PRETTY_PRINT : 0))
 			: $func_name($value)
 		);
 	}
@@ -623,7 +623,7 @@ function data_get_cached_userlist() {
 
 		}
 
-if (LOCALHOST) time_check_point('done shmop_read'.(
+		time_check_point('done shmop_read'.(
 			false === $mem_content
 			? ', result = false'
 			: '('.strlen($mem_content)." bytes), filesize = $result[filesize], filemtime = $result[filemtime]"
@@ -656,7 +656,7 @@ function data_clear_cached_userlist() {
 function data_save_cached_userlist($data_obj) {
 	$data_content = data_export_to_string($data_obj);
 
-if (LOCALHOST) time_check_point("inb4 shmop_write: filesize = $data_obj[filesize], filemtime = $data_obj[filemtime]");
+	time_check_point("inb4 shmop_write: filesize = $data_obj[filesize], filemtime = $data_obj[filemtime]");
 
 	return data_write_cached_userlist($data_content);
 }
@@ -677,8 +677,9 @@ function data_write_cached_userlist($data_content) {
 		$result = shmop_write($shared_mem_handle, $mem_content, 0);
 		shmop_close($shared_mem_handle);
 
-if (LOCALHOST) time_check_point("done shmop_write($mem_size bytes) = $result");
+		if (LOCALHOST) file_put_contents(DATA_USERLIST.'_shared_mem_content.txt', $mem_content);
 
+		time_check_point("done shmop_write($mem_size bytes) = $result");
 	}
 
 	data_unlock(DATA_LK_SHARED_MEM_USERLIST);
