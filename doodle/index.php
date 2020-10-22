@@ -2818,7 +2818,6 @@ if ($query && is_array($query)) {
 	&&	$k !== ARG_CHANGE_TO
 	&&	$k !== ARG_DROP
 	&&	$k !== ARG_KEEP
-	&&	$k !== LK_MOD_ACT_LOG
 	) {
 		$refresh_args[] = (strlen($v) ? "$k=$v" : $k);
 	}
