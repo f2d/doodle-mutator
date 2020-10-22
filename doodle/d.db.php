@@ -46,8 +46,9 @@ define('DATA_U_TASK_KEEP', 'keep');
 define('DATA_U_TASK_CHANGE', 'change');
 
 define('DATA_LOG_START', BOM.NL);
-define('DATA_MARK_TXT', '		');
-define('DATA_MARK_IMG', '	<	');
+define('DATA_FIELD_SEPARATOR', "\t");
+define('DATA_MARK_TXT', "\t\t");
+define('DATA_MARK_IMG', "\t<\t");
 
 define('DATA_RE_LE', mb_escape_regex(DATA_LOG_EXT));
 define('DATA_RE_MI', mb_escape_regex(DATA_MARK_IMG, '~', '\\s'));
@@ -57,8 +58,8 @@ define('DATA_PAT_IMG', '~
 		(?:<a\\s+href|<img\\s+src)="?
 	|	'.DATA_RE_MI.'
 	)
-	(?P<path>[^">\\t]+)
-	(?=[">\\t]|$)
+	(?P<path>[^">'.DATA_FIELD_SEPARATOR.']+)
+	(?=[">'.DATA_FIELD_SEPARATOR.']|$)
 ~iux');
 
 define('DATA_PAT_TRD_PLAY', '~^
@@ -104,6 +105,7 @@ define('DATA_FLAG_POST_ANY', 4);
 
 function data_cache($file_path) {
 	global $data_cache_file;
+
 	return $data_cache_file[$file_path] ?: (
 		$data_cache_file[$file_path] = file_get_contents($file_path)
 	);
@@ -111,71 +113,125 @@ function data_cache($file_path) {
 
 function data_cache_file_rename($from, $to) {
 	global $data_cache_file;
-	if (rename($from, $to)) $data_cache_file[$to] = $data_cache_file[$from];
+
+	if (rename($from, $to)) {
+		$data_cache_file[$to] = $data_cache_file[$from];
+	}
 }
 
 //* ---------------------------------------------------------------------------
 
+function data_fields_to_text_line(...$fields) {
+	return implode(DATA_FIELD_SEPARATOR, $fields);
+}
+
 function data_post_refresh($r = '') {
 	global $room;
-	$d = DATA_DIR_ROOM;
+
 	if ($r === true) {
-		foreach (get_dir_rooms($d) as $r) if ($r = data_post_refresh($r)) {
-			$report .= ($report?NL:'').$r;
+		foreach (get_dir_rooms(DATA_DIR_ROOM) as $r) if ($r = data_post_refresh($r)) {
+			$report .= ($report ? NL : '').$r;
 		}
 	} else
 	if ($r || ($r = $room)) {
 		data_lock(LK_ROOM.$r);
-		if (is_file($f = "$d$r/".COUNT_POST.DATA_COUNT_EXT)) {
-			$r = (unlink($f)?'deleted':'cannot delete');
-			return "$r $f";
+
+		if (is_file($file_path = DATA_DIR_ROOM.$r.'/'.COUNT_POST.DATA_COUNT_EXT)) {
+			$result = (unlink($file_path) ? 'deleted' : 'cannot delete');
+
+			return "$result $file_path";
 		}
 	}
+
 	return $report;
 }
 
-function data_log($file_path, $line, $n = DATA_LOG_START, $report_errors = true) {
-	if ($old = is_file($file_path)) $old_size = filesize($file_path);
-	$line = ($old_size?NL:$n).$line;
-	$written = file_put_contents(mkdir_if_none($file_path), $line, FILE_APPEND);
+function data_log($file_path, $line, $params = null) {
+	if (is_array($params)) {
+		extract($params);
+	}
+
+	if ($old = is_file($file_path)) {
+		$old_size = filesize($file_path);
+	}
+
+	$append = !($overwrite ?? false);
+
+	$text_to_write = (
+		$append && $old_size
+		? NL
+		: ($empty_file_prefix ?? DATA_LOG_START)
+	).$line;
+
+	$written = file_put_contents(
+		mkdir_if_none($file_path)
+	,	$text_to_write
+	,	($append ? FILE_APPEND : 0)
+	);
+
 	if (!$written) {
 		if ($old) {
 			$log = "Cannot write to existing $file_path (possibly wrong file permissions)";
+
 			if (
 				rename($file_path, $old = $file_path.'.old'.T0.'.bak')
-			&&	($written = file_put_contents($file_path, ($old_size?file_get_contents($old):'').$line))
+			&&	($written = file_put_contents(
+					$file_path
+				,	(
+						$append && $old_size
+						? file_get_contents($old)
+						: ''
+					).$text_to_write
+				))
 			) {
-				$del = (unlink($old)?'deleted':'cannot delete');
-				$log .= NL."Renamed to $old ($old_size bytes, $del), made new file ($written bytes)";
+				$del_result = (unlink($old) ? 'deleted' : 'cannot delete');
+				$log .= NL."Renamed to $old ($old_size bytes, $del_result), made new file ($written bytes)";
 			}
-		} else $log = "Cannot create $file_path (possibly wrong dir permissions, or not enough space)";
+		} else {
+			$log = "Cannot create $file_path (possibly wrong dir permissions, or not enough space)";
+		}
 	}
-	if ($log && $report_errors) data_log_action($log);
+
+	if ($log && ($report_errors ?? true)) {
+		data_log_action($log);
+	}
+
 	return $written;
 }
 
 function data_global_announce($type = 'all', $room_in_list = '') {
 	global $u_key, $last_user, $room, $data_maintenance;
-	if ($d = ($room_in_list ?: $room ?: '')) $d = DATA_DIR_ROOM."$d/";
+
+	if ($d = ($room_in_list ?: $room ?: '')) {
+		$d = DATA_DIR_ROOM."$d/";
+	}
 
 //* usage 1: check top level flag standing:
 
 	if (in_array($type, DATA_ANNOUNCE_TYPES)) {
 		$f = $type.DATA_STATIC_EXT;
-		if (is_file(DATA_DIR.$f)) return -1;	//* <- global freeze
-		if ($d && is_file($d.$f)) return 1;	//* <- room freeze
+
+		if (is_file(DATA_DIR.$f)) {
+			return -1;	//* <- global freeze
+		}
+
+		if ($d && is_file($d.$f)) {
+			return 1;	//* <- room freeze
+		}
+
 		return 0;
 	}
 
 //* usage 2: get all contents, or last mod.date:
 
-	switch ($type) {
-		case 'all': $result = array(); break;
-		case 'last': $result = (is_dir(DATA_DIR) ? filemtime(DATA_DIR) : 0); break;
-		default: return false;
+	if ($type === 'all') {
+		$result = array();
+	} else
+	if ($type === 'last') {
+		$result = (is_dir(DATA_DIR) ? filemtime(DATA_DIR) : 0);
+	} else {
+		return false;
 	}
-
-	$sep = '_';
 
 	foreach (DATA_ANNOUNCE_TYPES as $check_anno_type) {
 		if (0 === strpos($check_anno_type, 'new')) {
@@ -189,20 +245,31 @@ function data_global_announce($type = 'all', $room_in_list = '') {
 			) {
 				$result[$check_anno_type] = '';
 			}
+
 			continue;
 		}
-		if ($i = mb_strpos_after($check_anno_type, $sep)) {
-			if (!$d) continue;
+		if ($i = mb_strpos_after($check_anno_type, '_')) {
+			if (!$d) {
+				continue;
+			}
+
 			$f = $d.mb_substr($check_anno_type, $i);
 		} else {
-			if ($room_in_list) continue;
+			if ($room_in_list) {
+				continue;
+			}
+
 			$f = DATA_DIR.$check_anno_type;
 		}
 		if (is_file($f .= DATA_STATIC_EXT)) {
 			if (is_array($result)) {
-				if ($v = trim_bom(file_get_contents($f))) $result[$check_anno_type] = $v;
+				if ($v = trim_bom(file_get_contents($f))) {
+					$result[$check_anno_type] = $v;
+				}
 			} else {
-				if (($v = filemtime($f)) && $result < $v) $result = $v;
+				if (($v = filemtime($f)) && $result < $v) {
+					$result = $v;
+				}
 			}
 		}
 	}
@@ -212,25 +279,37 @@ function data_global_announce($type = 'all', $room_in_list = '') {
 
 function data_lock($k, $is_writable = true) {
 	global $lock;
+
 	$d = DATA_DIR_LOCK;
 	$e = DATA_LOCK_EXT;
 	$i = 0;
-	$l = (
+	$lock_type = (
 		$is_writable
 		? LOCK_EX		//* <- exclusive, to read/write, waits for EX and SH
 		: LOCK_SH		//* <- shared, read-only, waits only for EX release
 	);
-	if ($k === LK_ROOM) $k = get_dir_rooms(DATA_DIR_ROOM, $k);
+
+	if ($k === LK_ROOM) {
+		$k = get_dir_rooms(DATA_DIR_ROOM, $k);
+	}
+
 	$keys = (array)$k;
+
 	foreach ($keys as $k) if ($k) {
-		if (!is_array($lock)) $lock = array();
+		if (!is_array($lock)) {
+			$lock = array();
+		}
+
 		if (isset($lock[$k]) && ($v = $lock[$k])) {
-			if (flock($v, $l)) ++$i;
-			else data_log_action("Unable to change lock $path to ex=$is_writable type!");
+			if (flock($v, $lock_type)) {
+				++$i;
+			} else {
+				data_log_action("Unable to change lock $path to ex=$is_writable type!");
+			}
 		} else
 		if (
 			($v = fopen(mkdir_if_none("$d$k$e"), 'a'))
-		&&	flock($v, $l)	//* <- acquire the lock
+		&&	flock($v, $lock_type)	//* <- acquire the lock
 		) {
 			$lock[$k] = $v;
 			++$i;
@@ -239,15 +318,23 @@ function data_lock($k, $is_writable = true) {
 			die("$m $n");
 		}
 	}
+
 	return $i;
 }
 
 function data_unlock($k = '') {
 	global $lock;
-	if (!is_array($lock)) return;
 
-	if ($k === LK_ROOM) $k = get_dir_rooms(DATA_DIR_ROOM, $k);
+	if (!is_array($lock)) {
+		return;
+	}
+
+	if ($k === LK_ROOM) {
+		$k = get_dir_rooms(DATA_DIR_ROOM, $k);
+	}
+
 	$keys = (array)($k ?: array_keys($lock));
+
 	foreach ($keys as $k) if ($v = $lock[$k]) {
 		flock($v, LOCK_UN);	//* <- release the lock
 		fclose($v);
@@ -259,28 +346,43 @@ function data_unlock($k = '') {
 
 function data_fix($what = '') {
 	global $cfg_game_type_dir;
+
 	if (!$what) {
 		$n = DATA_VERSION;
 		$f = DATA_DIR.'version'.DATA_STATIC_EXT;
 
 		data_lock($lk = LK_VERSION, false);
-		if (!is_file($f) || file_get_contents($f) !== $n) {
+
+		if (
+			!is_file($f)
+		||	file_get_contents($f) !== $n
+		) {
 			$v = 'none';
 			ignore_user_abort(true);
 
 			data_lock($lk);
-			if (!is_file($f) || ($v = file_get_contents($f)) !== $n) {
+
+			if (
+				!is_file($f)
+			||	($v = file_get_contents($f)) !== $n
+			) {
 				time_check_point($v = "version check, $f: $v -> $n");
 				$report = data_fix(true) ?: 'no change';
 				data_log_action($a = 'automatic data fix', $v.NL.$report);
 				file_put_mkdir($f, $n);
 				time_check_point("done $a");
 			}
+
 			data_lock($lk, false);
 		}
+
 		return;
 	}
-	if ($what === true) $what = '';
+
+	if ($what === true) {
+		$what = '';
+	}
+
 	$e = DATA_LOG_EXT;
 	$old = 'l';
 
@@ -295,6 +397,7 @@ function data_fix($what = '') {
 			$i = 0;
 			if ($files = glob("$d/*$e", GLOB_NOSORT) ?: glob("$d?*$e", GLOB_NOSORT)) {
 				natcasesort($files);	//* <- to keep file write dates in ascending order alongside IDs
+
 				foreach ($files as $f) if (
 					strlen($n = trim(get_file_name($f), "u$e"))
 				&&	intval($n) == $n
@@ -303,41 +406,60 @@ function data_fix($what = '') {
 					$i++;
 					$flags = array();
 					$ips = array();
+
 					foreach (($csv = explode(',', trim_bom(array_shift($tasks)))) as $flag) {
-						if (rtrim($flag, '1234567890.')) $flags[] = $flag;
-						else $ips[] = ($ips?'':'old').'	'.$flag;
+						if (rtrim($flag, '1234567890.')) {
+							$flags[] = $flag;
+						} else {
+							$ips[] = ($ips ? '' : 'old').DATA_FIELD_SEPARATOR.$flag;
+						}
 					}
-					$done .= NL."$i	$f";
+
+					$done .= NL.$i.DATA_FIELD_SEPARATOR.$f;
+
 					foreach ($data_types as $x) {
 						$s = $x.'s';
 						if ($j = trim(implode(NL, $$s))) {
-							$done .= "	$s = ".count($$s);
+							$done .= "\t$s = ".count($$s);
 							file_put_contents("$d/$n.$x", $j);
 						}
 					}
 				}
 			}
+
 			if ($i) {
 				$done .= NL.($i = "done $i $t -> split lists");
 				time_check_point($i);
 			}
+
 			foreach ($data_types as $t) {
 				$i = 0;
 				if ($files = glob("$d/*.$t", GLOB_NOSORT)) {
 					natcasesort($files);
+
 					foreach ($files as $f) if (is_file($f)) {
 						$i++;
 						$n = get_file_name($f);
 						$n = mkdir_if_none("$d/$t/$n");
+
 						if (is_file($n)) {	//* <- e.g. new IP log was created
-							$x = DATA_LOG_START.trim_bom(file_get_contents($f)).NL.trim_bom(file_get_contents($n));
+							$x = (
+								DATA_LOG_START
+								.trim_bom(file_get_contents($f))
+								.NL
+								.trim_bom(file_get_contents($n))
+							);
+
 							if ($r = file_put_contents($n, $x)) {
-								$del = (unlink($f)?'':' not');
+								$del = (unlink($f) ? '' : ' not');
 								$r = "combined $r bytes, old was$del deleted";
-							} else $r = 'failed to rewrite existing';
+							} else {
+								$r = 'failed to rewrite existing';
+							}
 						} else {
-							$r = (rename($f, $n)?'OK':'failed to move');
+							$r = (rename($f, $n) ? 'OK' : 'failed to move');
 						}
+
 						$done .= NL."$f -> $n = $r";
 					}
 				}
@@ -362,14 +484,20 @@ function data_fix($what = '') {
 				natcasesort($a);
 				$i = 0;
 				$dest = "$d$room/$t/";
+
 				foreach ($a as $f) if (is_file($f)) {
 					$i++;
 					$n = get_file_name($f);
-					if ($t === 'reports') $n = intval($n).$e;
+
+					if ($t === 'reports') {
+						$n = intval($n).$e;
+					}
+
 					$n = mkdir_if_none($dest.$n);
-					$r = (rename($f, $n)?'OK':'failed to move');
+					$r = (rename($f, $n) ? 'OK' : 'failed to move');
 					$done .= NL."$i: $f -> $n = $r";
 				}
+
 				if ($i) {
 					$done .= NL.($i = "done $i $t in $room");
 					time_check_point($i);
@@ -391,7 +519,10 @@ function data_fix($what = '') {
 				$i = 0;
 				$s = DATA_STATIC_EXT;
 				$bak = '.bak.'.T0;
-				if ($g = GAME_TYPE_DEFAULT) $g = "$g/";
+
+				if ($g = GAME_TYPE_DEFAULT) {
+					$g = "$g/";
+				}
 
 		//* gather old paths, from => to:
 
@@ -403,21 +534,29 @@ function data_fix($what = '') {
 			//	,	"$old/room"	=> DATA_DIR_ROOM
 				,	"$old/actions"	=> DATA_DIR.DATA_SUB_ACT
 				);
+
 				foreach (DATA_ANNOUNCE_TYPES as $check_anno_type) {
 					$a["$old/$check_anno_type$s"] = DATA_DIR.$check_anno_type.$s;
 				}
+
 				foreach (get_dir_contents($d = $old_meta = "$old/room/") as $room) {
 					$a["$d$room"] = DATA_DIR_ROOM."$g$room";
 				}
+
 				foreach (get_dir_contents($d = DIR_ROOM) as $room) {
 					$a["$d$room"] = DATA_DIR_ROOM."$g$room/".DATA_SUB_TRD;
 				}
+
 				foreach (get_dir_contents($d = DIR_ARCH) as $room) {
 					$r = "$d$room";
 					if ($g) {
-						if (!in_array($room, $cfg_game_type_dir)) $a[$r] = "$d$g$room";
+						if (!in_array($room, $cfg_game_type_dir)) {
+							$a[$r] = "$d$g$room";
+						}
 					} else {
-						if (in_array($room, $cfg_game_type_dir) && is_dir($r.DIR_THUMB)) $a[$r] = "$r$bak";
+						if (in_array($room, $cfg_game_type_dir) && is_dir($r.DIR_THUMB)) {
+							$a[$r] = "$r$bak";
+						}
 					}
 				}
 
@@ -427,11 +566,21 @@ function data_fix($what = '') {
 					delay_timeout();
 					$i++;
 					$n = trim($n, '/');
+
 					if (is_file($n) || is_dir($n)) {
-						$r = (rename($n, $b = "$n$bak")?'kept for back up':'failed to move out');
+						$r = (
+							rename($n, $b = "$n$bak")
+							? 'kept for back up'
+							: 'failed to move out'
+						);
 						$done .= NL."$i: $n -> $b = $r";
 					}
-					$r = (rename($f, mkdir_if_none($n))?'OK':'failed to move');
+
+					$r = (
+						rename($f, mkdir_if_none($n))
+						? 'OK'
+						: 'failed to move'
+					);
 					$done .= NL."$i: $f -> $n = $r";
 				}
 
@@ -439,16 +588,27 @@ function data_fix($what = '') {
 
 				foreach (array($old_meta, $old, DIR_ROOM) as $d) if (is_dir($d) && !get_dir_contents($d)) {
 					$i++;
-					$r = (rmdir($d)?'OK':'failed');
+					$r = (rmdir($d) ? 'OK' : 'failed');
 					$done .= NL."$i: old empty dir $d -> delete $r";
 				}
+
 				if ($i) {
 					$done .= NL.($i = "done $i changes, $old -> $new");
 					time_check_point($i);
 				}
-			} else die("Fatal error: could not create data folder \"$new\"!".($done ? '<hr>Done: '.nl2br($done) : ''));
+			} else {
+				die(
+					"Fatal error: could not create data folder \"$new\"!"
+					.(
+						$done
+						? '<hr>Done: '.nl2br($done)
+						: ''
+					)
+				);
+			}
 		}
 	}
+
 	if (($d = 'threads') === ($t = $what ?: $d)) {
 		foreach (get_dir_contents($d = DATA_DIR_ROOM) as $room) {
 			$i = 0;
@@ -463,17 +623,20 @@ function data_fix($what = '') {
 			) {
 				$i++;
 				$lines = mb_split_filter($content, NL);
+
 				foreach ($lines as $k => $v) if (
 					false !== ($pic_start = mb_strpos_after($v, DATA_MARK_IMG))
 				) {
 					delay_timeout();
-					$pic_end = mb_strpos($v, '	', $pic_start);
+					$pic_end = mb_strpos($v, DATA_FIELD_SEPARATOR, $pic_start);
 					$pic = mb_substr($v, $pic_start, $pic_end - $pic_start);
 					$pic = get_post_pic_field_with_fixed_info($pic);
 					$line = mb_substr($v, 0, $pic_start).$pic.mb_substr($v, $pic_end);
 					if ($v !== $line) $lines[$k] = $line;
 				}
+
 				$new = DATA_LOG_START.implode(NL, $lines);
+
 				if ($new !== $old) {
 					$r = (
 						(
@@ -499,13 +662,13 @@ function data_fix($what = '') {
 			}
 		}
 	}
+
 	if (($d = 'archive') === ($t = $what ?: $d)) {
 		require_once(NAMEPRFX.'.arch.php');
-		if ($i = data_archive_rewrite(array(
-			'recheck_img' => array(
-				'exists' => true
-			)
-		))) {
+
+		if ($i = data_archive_rewrite(
+			['recheck_img' => ['exists' => true]]
+		)) {
 			$done .= NL.$i;
 			time_check_point($i);
 		}
@@ -689,9 +852,12 @@ function data_write_cached_userlist($data_content) {
 
 //* ---------------------------------------------------------------------------
 
-function data_check_user($u, $reg = false) {
+function data_check_user($u_key_requested, $reg = false) {
 	global $u_key, $u_num, $u_flag, $usernames, $last_user;
-	$sep = '	';
+
+	if (!strlen($u_key_requested)) {
+		return;
+	}
 
 	data_lock($lk = LK_USERLIST, false);
 
@@ -702,10 +868,10 @@ function data_check_user($u, $reg = false) {
 	&&	filesize(DATA_USERLIST) === $cached_userlist['filesize']
 	&&	filemtime(DATA_USERLIST) === $cached_userlist['filemtime']
 	) {
-		$user_keys = $cached_userlist['keys'] ?: array();
-		$usernames = $cached_userlist['names'] ?: array();
+		$user_keys = $cached_userlist['keys'] ?: array('');
+		$usernames = $cached_userlist['names'] ?: array('');
 
-		$i = array_search($u, $user_keys);
+		$i = array_search($u_key_requested, $user_keys);
 		$last_user = array_key_last($user_keys);	//* <- since PHP 7.3.0
 
 		if (false !== $i) {
@@ -714,19 +880,19 @@ function data_check_user($u, $reg = false) {
 		}
 	} else {
 		if (DATA_USE_SHARED_MEM) {
-			$user_keys = array();
-			$usernames = array();
+			$user_keys = array('');
+			$usernames = array('');
 		}
 
-		foreach (get_file_lines(DATA_USERLIST) as $line) if (false !== mb_strpos($line, $sep)) {
-			list($i, $k, $t, $name) = mb_split($sep, $line);
+		foreach (get_file_lines(DATA_USERLIST) as $line) if (false !== mb_strpos($line, DATA_FIELD_SEPARATOR)) {
+			list($i, $k, $t, $name) = mb_split(DATA_FIELD_SEPARATOR, $line);
 			$i = intval($i);
 
 			if ($last_user < $i) {
 				$last_user = $i;
 			}
 
-			if ($u === $k) {
+			if ($u_key_requested === $k) {
 				$u_key = $k;
 				$u_num = $i;
 
@@ -765,13 +931,15 @@ function data_check_user($u, $reg = false) {
 
 function data_log_user($u_key, $u_name) {
 	global $last_user;
+
 	$u_num = $last_user+1;
 	$t = T0.'+'.M0;
+	$data_to_add = data_fields_to_text_line($u_num, $u_key, $t, $u_name);
 
 	data_lock($lk = LK_USERLIST);
 	data_clear_cached_userlist();
 
-	if ($result = data_log(DATA_USERLIST, "$u_num	$u_key	$t	$u_name")) {
+	if ($result = data_log(DATA_USERLIST, $data_to_add)) {
 		if (!$last_user) {
 			data_set_u_flag($u_num, 'god', 1);	//* <- 1st registered = top supervisor
 		}
@@ -789,11 +957,11 @@ function data_get_user_flags($u_num) {
 	if ($u_num) {
 		$d = DATA_DIR_USER;
 		$e = DATA_U_FLAG;
-		$sep = '	';
 
 		data_lock(LK_USER.$u_num, false);
-		foreach (get_file_lines("$d$e/$u_num.$e") as $line) {
-			$a = mb_split($sep, $line);
+
+		foreach (get_file_lines("$d$e/$u_num.$e") as $line) if (strlen($line = trim_bom($line))) {
+			$a = mb_split(DATA_FIELD_SEPARATOR, $line);
 			$flag = end($a);
 			$time = reset($a);
 			$result[$flag] = $time;
@@ -804,21 +972,30 @@ function data_get_user_flags($u_num) {
 }
 
 function data_collect($f, $data, $unique = true) {
+	$t = T0.'+'.M0;
+	$padded_log_content = null;
+
 	foreach ((array)$data as $v) {
-		$v = "	$v";
+		$v = DATA_FIELD_SEPARATOR.$v;
 
 		if (
 			!$unique
 		||	!is_file($f)
-		||	false === mb_strpos(data_cache($f).NL, $v.NL)
+		||	!strlen(
+				$padded_log_content === null
+				? ($padded_log_content = data_cache($f).NL)
+				: $padded_log_content
+			)
+		||	false === mb_strpos($padded_log_content, $v.NL)
 		) {
-			data_log($f, T0.'+'.M0.$v, '');
+			data_log($f, $t.$v, ['empty_file_prefix' => '']);
 		}
 	}
 }
 
 function data_log_ip() {
 	global $u_num;
+
 	$d = DATA_DIR_USER;
 	$e = DATA_U_IP;
 	data_collect("$d$e/$u_num.$e", $_SERVER['REMOTE_ADDR']);
@@ -834,15 +1011,23 @@ function data_log_ref($data) {
 
 function data_log_action($text, $dump = '') {	//* <- write to logs of administrative actions, filename by date
 	global $u_num, $room;
+
 	$f = ($room ? DATA_DIR_ROOM."$room/" : DATA_DIR).DATA_SUB_ACT.date('Y-m-d', T0).DATA_LOG_EXT;
 	$t = T0.'+'.M0;
-	$u = (GOD?'g':(MOD?'m':'r')).$u_num;
-	if ($dump) $text .= ': ['.indent($dump).']';
-	return data_log($f, "$t	$u	$text", DATA_LOG_START, false);
+	$u = (GOD ? 'g' : (MOD ? 'm' : 'r')).$u_num;
+
+	if ($dump) {
+		$text .= ': ['.indent($dump).']';
+	}
+
+	$data_to_add = data_fields_to_text_line($t, $u, $text);
+
+	return data_log($f, $data_to_add, ['report_errors' => false]);
 }
 
 function data_log_report($a) {			//* <- write to user report logs, filename by thread
 	global $u_num, $room;
+
 	$d = ($room ? DATA_DIR_ROOM."$room/" : DATA_DIR);
 
 //* find matching file:
@@ -890,30 +1075,49 @@ function data_log_report($a) {			//* <- write to user report logs, filename by t
 			$p = $a['post'] ?: $a['row'] ?: 0;
 			$s = $a['side'] ?: $a['column'] ?: 0;
 			$f = $d.DATA_SUB_REP.$i.DATA_LOG_EXT;
-			if (data_log($f, "$t	$p	$s	$text")) {
+
+			$data_to_add = data_fields_to_text_line($t, $p, $s, $text);
+
+			if (data_log($f, $data_to_add)) {
 				data_post_refresh();
-				return data_log_action("$a[0]	$act: $text");
+
+				return data_log_action($a[0].DATA_FIELD_SEPARATOR."$act: $text");
 			}
 		}
 		break;
 	}
+
 	return 0;
 }
 
 function data_get_mod_log_file($f, $mt = false) {	//* <- (full_file_path, 1|0)
-	if (is_file($f)) return ($mt ? filemtime($f) : trim_bom(file_get_contents($f)));
+	if (is_file($f)) {
+		return (
+			$mt
+			? filemtime($f)
+			: trim_bom(file_get_contents($f))
+		);
+	}
 }
 
 function data_fix_mod_log_line_tabs($match) {
 	global $usernames;
+
 	if (
 		($i = $match['UserID'])
 	&&	($i = intval($i))
 	&&	($name = $usernames[$i])
 	) {
 		$name = ": $name";
+	} else {
+		$name = '';
 	}
-	return "$match[Date]	$match[User]$name	$match[Text]";
+
+	return data_fields_to_text_line(
+		$match['Date']
+	,	$match['User'].$name
+	,	$match['Text']
+	);
 }
 
 function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
@@ -923,13 +1127,15 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 
 	if ($t === LK_REF_LIST) {
 		$t = data_get_mod_log_file(DATA_REF_LIST, $mt);
+
 		if (!$mt) {
 			$t = preg_replace(
-				'~(\d+)([^\d\s]\V+)?	(\V+)~u'
-			,	'$1	$3'		//* <- arrange data fields
+				data_fields_to_text_line('~(\d+)([^\d\s]\V+)?', '(\V+)~u')
+			,	data_fields_to_text_line('$1', '$3')	//* <- arrange data fields
 			,	$t
 			);
 		}
+
 		return htmlspecialchars($t);
 	}
 
@@ -937,6 +1143,7 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 
 	if ($t === LK_USERLIST) {
 		$t = data_get_mod_log_file(DATA_USERLIST, $mt);
+
 		if (!$mt) {
 			foreach (array(
 				DATA_U_FLAG => array(
@@ -963,15 +1170,21 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 						: $f
 					)))
 				) {
-					$t = preg_replace("~^$i	[^	]+~mu", "$0, $fe: [$f]", $t);
+					$t = preg_replace(
+						data_fields_to_text_line('~^'.$i, '[^', ']+~mu')
+					,	"$0, $fe: [$f]"
+					,	$t
+					);
 				}
 			}
+
 			$t = preg_replace(
-				'~(\V+)(	\V+)	(\V+)\+\V+(	\V+?)~Uu'
-			,	'$3,$1$4$2'		//* <- arrange data fields
+				data_fields_to_text_line('~(\V+)', '(\V+)', '(\V+)\+\V+', '(\V+?)~Uu')
+			,	data_fields_to_text_line('$3,$1', '$4', '$2')	//* <- arrange data fields
 			,	$t
 			);
 		}
+
 		return htmlspecialchars($t);
 	}
 
@@ -1015,9 +1228,9 @@ preg_replace_callback('~
 	(?P<User>[^\s\d]*(?P<UserID>\d*)\S*?)\s+
 	(?P<Text>\S+)
 ~ux', 'data_fix_mod_log_line_tabs',
-//preg_replace('~(\v\S+)\s+(\S+)\s+~u', '$1	$2	',	//* <- arrange data fields
+//preg_replace('~(\v\S+)\s+(\S+)\s+~u', data_fields_to_text_line('$1', '$2', ''),	//* <- arrange data fields
 preg_replace('~\h+~u', ' ',
-preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1	',	//* <- keep multiline entries atomic
+preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1'.DATA_FIELD_SEPARATOR,		//* <- keep multiline entries atomic
 preg_replace('~\v+~u', '<br>',
 NL.htmlspecialchars($v)))));
 
@@ -1026,11 +1239,16 @@ NL.htmlspecialchars($v)))));
 				if ($t0) {
 					$v = mb_split(NL, $v);
 					$v = array_filter(array_map(function($line) use ($t0, $u_num) {
-						$tab = mb_split('	\D*', $line, 3);
+						$tab = mb_split(DATA_FIELD_SEPARATOR.'\D*', $line, 3);
+
 						return (
-							intval($tab[0]) == $t0
-						&&	intval($tab[1]) == $u_num
-						) ? $tab[2] : '';
+							(
+								intval($tab[0]) == $t0
+							&&	intval($tab[1]) == $u_num
+							)
+							? $tab[2]
+							: ''
+						);
 					}, $v));
 					$a = array_merge($a, $v);
 				} else {
@@ -1043,8 +1261,12 @@ NL.htmlspecialchars($v)))));
 			if ($a < $v) $a = $v;
 		}
 		if (!$mt) {
-			if ($t0) return $a;
+			if ($t0) {
+				return $a;
+			}
+
 			ksort($a);
+
 			return implode(NL, $a);
 		}
 	} else {
@@ -1059,12 +1281,14 @@ NL.htmlspecialchars($v)))));
 		ksort($a);
 		foreach ($a as $k => $v) natsort($a[$k]);
 	}
+
 	return $a;
 }
 
 function data_put_count($i = 0, $type = COUNT_ROOM, $r = '') {
 	if ($r || ($r = $GLOBALS['room'])) {
 		$f = DATA_DIR_ROOM."$r/$type".DATA_COUNT_EXT;
+
 		return file_put_mkdir($f, $i);
 	}
 }
@@ -1094,28 +1318,56 @@ function data_get_mtime($type = COUNT_ROOM, $r = '', $uncached = false) {
 	return data_get_count($type, $r, $uncached, 'filemtime', 'get_dir_top_filemtime');
 }
 
-function data_is_thread_full($n) {return $n === 'f' || intval($n) >= TRD_MAX_POSTS;}
+function data_is_thread_full($n) {
+	return (
+		$n === 'f'
+	||	intval($n) >= TRD_MAX_POSTS
+	);
+}
+
 function data_is_thread_cap($r = '') {
 	if ($r || ($r = $GLOBALS['room'])) {
 		foreach (get_dir_contents(DATA_DIR_ROOM."$r/".DATA_SUB_TRD) as $f) if (
 			preg_match(DATA_PAT_TRD_MOD, $f, $match)
 		&&	!$match['deleted']				//* <- "burnt" not counted
 		&&	++$n >= TRD_MAX_PER_ROOM
-		) return $n;
+		) {
+			return $n;
+		}
 	}
+
 	return 0;
 }
 
 function data_thread_has_posts_by($t, $u_num, $flags = DATA_FLAG_POST_ANY) {
-	$u_tab = "	$u_num".($flags & DATA_FLAG_POST_IMG ? DATA_MARK_IMG : DATA_MARK_TXT);
 	$t = data_get_thread_content($t);
-	if ($flags & DATA_FLAG_POST_ANY) $t = mb_str_replace(DATA_MARK_IMG, DATA_MARK_TXT, $t);
-	return false !== mb_strpos($t, $u_tab);
+
+	if ($flags & DATA_FLAG_POST_ANY) {
+		$t = mb_str_replace(DATA_MARK_IMG, DATA_MARK_TXT, $t);
+	}
+
+	$padded_u_num = DATA_FIELD_SEPARATOR.$u_num.(
+		$flags & DATA_FLAG_POST_IMG
+		? DATA_MARK_IMG
+		: DATA_MARK_TXT
+	);
+
+	return false !== mb_strpos($t, $padded_u_num);
 }
 
-function data_get_last_post_u($t) {return data_get_tab_by_file_line($t, 'user', -1);}
+function data_get_last_post_u($t) {
+	return data_get_tab_by_file_line($t, 'user', -1);
+}
+
 function data_get_last_post_time($t) {
-	if (is_array($t)) return intval($t['last_t'] ?: ($t['hold_u'] ? 0 : $t['hold_t']));	//* <- for legacy time mark format
+	if (is_array($t)) {
+		return intval(
+			$t['last_t'] ?: ($t['hold_u']
+			? 0
+			: $t['hold_t']
+		));	//* <- for legacy time mark format
+	}
+
 	return intval(mb_substr($t, mb_strrpos_after($t, NL)));
 }
 
@@ -1123,73 +1375,115 @@ function data_is_thread_last_post_pic($t) {
 	$t = trim_bom(data_get_thread_content($t));
 	$last_txt = mb_strrpos_after($t, DATA_MARK_TXT);
 	$last_pic = mb_strrpos_after($t, DATA_MARK_IMG);
+
 	return $last_txt < $last_pic;
 }
 
-function data_get_thread_content($t) {return (false === mb_strpos($t, '	') ? data_cache($t) : $t);}
+function data_get_thread_content($t) {
+	return (
+		false === mb_strpos($t, DATA_FIELD_SEPARATOR)
+		? data_cache($t)
+		: $t
+	);
+}
+
 function data_get_thread_pics($t, $full_path = false) {
 	$a = array();
 	$t = file_get_contents($t);
-	if (preg_match(PAT_CONTENT, $t, $match)) $t = $match['content'];
+
+	if (preg_match(PAT_CONTENT, $t, $match)) {
+		$t = $match['content'];
+	}
+
 	if (preg_match_all(DATA_PAT_IMG, $t, $match)) {
 		$m = array_map($full_path ? 'get_pic_subpath' : 'get_file_name', $match['path']);
+
 		foreach ($m as $path) {
 			if (($i = mb_strpos($path, ';')) !== false) {
 				$a[] = get_pic_resized_path($path = mb_substr($path, 0, $i));
 			}
 			$a[] = $path;
 		}
+
 		return array_unique($a);
 	}
+
 	return $a;
 }
 
 function data_get_thread_name_tail($t, $count_pics = true) {
 	global $room_type;
+
 	$tt = !!$room_type['lock_taken_task'];
 
 //* locked thread:
 
 	if (is_array($t)) {
-		if ($tt) list($hold_t, $hold_u) = $t;
+		if ($tt) {
+			list($hold_t, $hold_u) = $t;
+		}
 
 //* unlocked thread:
 
-	} else if ($t) {
+	} else
+	if ($t) {
 		$pics = mb_substr_count($t, DATA_MARK_IMG);
+
 		if ($tt) {
 			$last_u = data_get_last_post_u($t);
 			$last_t = data_get_last_post_time($t);
-		} else $count_pics = false;
+		} else {
+			$count_pics = false;
+		}
 
 //* always mark a full thread:
 
-		if (!$count_pics && $pics < TRD_MAX_POSTS) unset($pics);
+		if (
+			!$count_pics
+		&&	$pics < TRD_MAX_POSTS
+		) {
+			unset($pics);
+		}
 	}
+
 	$tail = '';
+
 	foreach (array(
 		'p' => 'pics'
 	,	'l' => 'last_t'
 	,	'a' => 'last_u'
 	,	't' => 'hold_t'
 	,	'u' => 'hold_u'
-	) as $k => $v) if (isset($$v)) $tail .= ".$k${$v}";
+	) as $k => $v) if (isset($$v)) {
+		$tail .= ".$k${$v}";
+	}
+
 	return $tail;
 }
 
 function data_put_thread_rename_if_free($f, $t = '', $m = '') {
-	if (!file_put_mkdir($f, $t)) return false;
+	if (!file_put_mkdir($f, $t)) {
+		return false;
+	}
+
 	if (is_array($m)) {
 
 //* if task is free:
 
-		if ($m['pics'] || strpos($m['etc'], 'p') || mb_substr_count($t, DATA_MARK_IMG) >= TRD_MAX_POSTS) {
+		if (
+			$m['pics']
+		||	strpos($m['etc'], 'p')
+		||	mb_substr_count($t, DATA_MARK_IMG) >= TRD_MAX_POSTS
+		) {
 			$t = data_get_thread_name_tail($t);
 		} else
 
 //* if task is taken:
 
-		if ($m['hold_u'] || strpos($m['etc'], 'u')) {
+		if (
+			$m['hold_u']
+		||	strpos($m['etc'], 'u')
+		) {
 			$t = '';
 		} else {
 
@@ -1197,26 +1491,57 @@ function data_put_thread_rename_if_free($f, $t = '', $m = '') {
 
 			$t = data_get_thread_name_tail($t, false);
 		}
-		if ($t) $n = get_file_dir($f)."/$m[id]$t$m[ext]$m[inactive]";
+
+		if ($t) {
+			$n = get_file_dir($f)."/$m[id]$t$m[ext]$m[inactive]";
+		}
 	}
-	if ($n && $n !== $f) rename($f, $n);
+
+	if ($n && $n !== $f) {
+		rename($f, $n);
+	}
+
 	return true;
 }
 
 function data_get_thread_by_num($n) {
 	global $room, $data_cache_d, $data_cache_t;				//* <- ids/paths/content cached for batch processing
-	if (!is_array($data_cache_t)) $data_cache_t = array(); else
-	if (($t = $data_cache_t[$n]) && is_file($t[0].$t[1])) return $t;
-	if ($data_cache_d || is_dir($data_cache_d = DATA_DIR_ROOM."$room/".DATA_SUB_TRD))
-	foreach (get_dir_contents($data_cache_d) as $f) if (
-		preg_match(DATA_PAT_TRD_MOD, $f, $match)
-	&&	strlen($n == $match['id'])
-	) return ($data_cache_t[$n] = array($data_cache_d, $f, $match));	//* <- dir/path/, filename, name parts array(num,etc,ext,.stop)
+
+	if (!is_array($data_cache_t)) {
+		$data_cache_t = array();
+	} else
+	if (
+		($t = $data_cache_t[$n])
+	&&	is_file($t[0].$t[1])
+	) {
+		return $t;
+	}
+
+	if (
+		$data_cache_d
+	||	is_dir($data_cache_d = DATA_DIR_ROOM."$room/".DATA_SUB_TRD)
+	) {
+		foreach (get_dir_contents($data_cache_d) as $filename) if (
+			preg_match(DATA_PAT_TRD_MOD, $filename, $match)
+		&&	strlen($n == $match['id'])
+		) {
+			return (
+				$data_cache_t[$n] = array(
+					$data_cache_d	//* <- dir/path/
+				,	$filename
+				,	$match		//* <- name parts array(num, etc, ext, .stop)
+				)
+			);
+		}
+	}
+
 	return 0;
 }
 
 function data_get_tab_by_file_line($f, $tab = 0, $line = 0) {
-	if (!$f) return 0;
+	if (!$f) {
+		return 0;
+	}
 
 //* find last in file:
 
@@ -1226,39 +1551,57 @@ function data_get_tab_by_file_line($f, $tab = 0, $line = 0) {
 //* find in given line of file:
 
 	if ($line > 0) {
-		if ($line >= count($f = get_file_lines($f))) return 0;
+		if ($line >= count($f = get_file_lines($f))) {
+			return 0;
+		}
+
 		$f = $f[$line];
 	}
-	$sep = '	';
-	if ($tab === 'file') return (
-		false !== ($i = mb_strrpos_after($f, DATA_MARK_IMG))
-		? mb_substr($f, $i, mb_strpos($f, $sep, $i)-$i)
-		: 0
-	);
+
+	if ($tab === 'file') {
+		return (
+			false !== ($i = mb_strrpos_after($f, DATA_MARK_IMG))
+			? mb_substr($f, $i, mb_strpos($f, DATA_FIELD_SEPARATOR, $i) - $i)
+			: 0
+		);
+	}
+
 	if ($tab === 'user') {
 		$i = max(mb_strrpos($f, DATA_MARK_IMG), mb_strrpos($f, DATA_MARK_TXT));
 		$f = mb_substr($f, 0, $i);
-		return mb_substr($f, mb_strrpos_after($f, $sep));
+
+		return mb_substr($f, mb_strrpos_after($f, DATA_FIELD_SEPARATOR));
 	}
+
 	return 0;
 }
 
 function data_get_u_by_post($a) {
 	global $data_cache_u;
-	if (!is_array($data_cache_u)) $data_cache_u = array(); else
-	if ($p = $data_cache_u[$n = "$a[0]-$a[1]"]) return $p;
-	if (list($d, $f) = data_get_thread_by_num($a[0]))
-	return ($data_cache_u[$n] = data_get_tab_by_file_line($d.$f, 'user', $a[1]));
+
+	if (!is_array($data_cache_u)) {
+		$data_cache_u = array();
+	} else
+	if ($p = $data_cache_u[$n = "$a[0]-$a[1]"]) {
+		return $p;
+	}
+
+	if (list($d, $f) = data_get_thread_by_num($a[0])) {
+		return ($data_cache_u[$n] = data_get_tab_by_file_line($d.$f, 'user', $a[1]));
+	}
+
 	return 0;
 }
 
 function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 	global $u_num, $u_flag, $room;
-	if (is_array($u)) $u = data_get_u_by_post($u);
+
+	if (is_array($u)) {
+		$u = data_get_u_by_post($u);
+	}
 
 //* rename user:
 
-	$sep = '	';
 	if ($on < 0) {
 		$report = '';
 
@@ -1266,8 +1609,9 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 			data_lock($lk = LK_USERLIST);
 			if ($a = get_file_lines($f = DATA_USERLIST)) {
 				foreach ($a as &$line) if (intval($line) == $u) {
-					$i = mb_strrpos_after($line, $sep);
+					$i = mb_strrpos_after($line, DATA_FIELD_SEPARATOR);
 					$old = mb_substr($line, $i);
+
 					if ($old === $name) {
 						$report = "$u already has this name: $old";
 					} else {
@@ -1281,6 +1625,7 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 						$status = ($result ? 'renamed' : 'rename failed');
 						$report = "$u $status: $old -> $name";
 					}
+
 					break;
 				}
 				unset($line);
@@ -1293,14 +1638,25 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 
 //* modify user flags:
 
-	if (!$u || !$name) return 0;
+	if (!$u || !$name) {
+		return 0;
+	}
 
 	$d = DATA_DIR_USER;
 	$e = DATA_U_FLAG;
 	$f = "$d$e/$u.$e";
-	$replace = ($on && $on !== true && $on !== intval($on) && $on !== $name ? $on : '');
+
+	$replace = (
+		$on
+	&&	$on !== true
+	&&	$on !== intval($on)
+	&&	$on !== $name
+		? $on
+		: ''
+	);
+
 	$add = ($on && !$replace);
-	$text = T0.'+'.M0.'	'.($replace ?: $name);
+	$new_data_text = trim_bom(data_fields_to_text_line(T0.'+'.M0, $replace ?: $name));
 	$flags = data_get_user_flags($u);
 
 	data_lock(LK_USER.$u);
@@ -1314,47 +1670,89 @@ function data_set_u_flag($u, $name, $on = -1, $harakiri = false) {
 				$flags['god']
 			||	(
 					$on
-				&&	$name == 'ban'			//* <- mods cannot ban mods
+				&&	$name == 'ban'				//* <- mods cannot ban mods
 				&&	($flags['mod'] || $flags["mod_$room"])
 				)
 			||	(
 					!$on
 				&&	!$harakiri
 				&&	$u == $u_num
-				&&	substr($name,0,3) == 'mod'	//* <- mods cannot self-resign
+				&&	substr($name,0,3) == 'mod'		//* <- mods cannot self-resign
 				)
 			)
-		) return -$u;
+		) {
+			return -$u;
+		}
 
 //* check if set:
 
 		foreach ($flags as $k => $v) if ($k == $name) {
-			if ($add) return $u;		//* <- add, exists
-			unset($flags[$k]);		//* <- remove
+			if ($add) {
+				return $u;					//* <- add, exists
+			}
+
+			unset($flags[$k]);					//* <- remove
 			++$removed;
 		}
 
 //* modify:
 
-		if ($add) data_log($f, $text, '');	//* <- add
-		else if (!$removed) return 0;		//* <- remove, did not exist
-		else if ($text = data_get_flags_text_from_array($flags).($replace ? NL.$text : '')) file_put_mkdir($f, $text);
-		else unlink($f);			//* <- removed all, nothing left
-	} else if ($add) file_put_mkdir($f, $text);	//* <- add, new file
-	else $u = 0;
+		if ($add) {
+			data_log($f, $new_data_text);				//* <- add
+		} else
+		if (!$removed) {
+			return 0;						//* <- remove, did not exist
+		} else
+		if (strlen(
+			$new_data_text = data_get_flags_text_from_array(
+				$flags
+			,	($replace ? $new_data_text : '')
+			)
+		)) {
+			data_log($f, $new_data_text, ['overwrite' => true]);
+		} else {
+			unlink($f);						//* <- removed all, nothing left
+		}
+	} else
+	if ($add) {
+		if (strlen($new_data_text)) {
+			data_log($f, $new_data_text, ['overwrite' => true]);	//* <- add, new file
+		} else {
+			unlink($f);
+		}
+	} else {
+		$u = 0;
+	}
+
 	return $u;
 }
 
-function data_get_flags_text_from_array($a) {
-	$r = array();
-	foreach ($a as $k => $v) $r[] = ($k == $v ? $k : "$v	$k");
-	return implode(NL, $r);
+function data_get_flags_text_from_array($flags, ...$new_lines) {
+	$lines = array();
+
+	foreach ($flags as $k => $v) {
+		$lines[] = (
+			$k === $v
+			? $k
+			: data_fields_to_text_line($v, $k)
+		);
+	}
+
+	foreach ($new_lines as $line) if (strlen($line)) {
+		$lines[] = $line;
+	}
+
+	return trim_bom(implode(NL, $lines));
 }
 
 function data_replace_u_flag($f, $from, $to = '') {
-	if (!$from || $from === $to) return;
+	if (!$from || $from === $to) {
+		return;
+	}
+
 	$d = DATA_DIR_USER;
 	$e = DATA_U_FLAG;
+
 	if ($f) {
 		$u = intval(get_file_name($f));
 		if ($u = data_set_u_flag($u, $from, $to)) {
@@ -1364,17 +1762,19 @@ function data_replace_u_flag($f, $from, $to = '') {
 	foreach (get_dir_contents("$d$e") as $f) if (get_file_ext($f) == $e) {
 		$log .= data_replace_u_flag($f, $from, $to);
 	}
+
 	return $log;
 }
 
 function data_prepend_line_time($match) {
 	$t = get_time_html($match[1]);
-	return "$t	$match[0]";
+
+	return data_fields_to_text_line($t, $match[0]);
 }
 
 function data_get_user_info($u_num) {
-	$r = array();
 	$d = DATA_DIR_USER;
+	$result = array();
 
 	data_lock($lk = LK_USER.$u_num, false);
 	foreach (array(
@@ -1392,11 +1792,11 @@ function data_get_user_info($u_num) {
 		)
 	&&	($f = trim_bom(file_get_contents($f)))
 	) {
-		$r[$v] = preg_replace_callback('~^(\d{10,})\D~m', 'data_prepend_line_time', $f);
+		$result[$v] = preg_replace_callback('~^(\d{10,})\D~m', 'data_prepend_line_time', $f);
 	}
 	data_unlock($lk);
 
-	return $r;
+	return $result;
 }
 
 function data_get_user_profile($u_num, $array = true) {
@@ -1404,42 +1804,59 @@ function data_get_user_profile($u_num, $array = true) {
 	$e = DATA_U_ABOUT;
 	$f = "$d$e/$u_num.$e";
 
-	if (!$array) return is_file($f);
+	if (!$array) {
+		return is_file($f);
+	}
 
 	data_lock($lk = LK_USER.$u_num, false);
-	$a = get_file_lines(is_file($f) ? $f : $f.DATA_HIDDEN_EXT);
+	$lines = get_file_lines(is_file($f) ? $f : $f.DATA_HIDDEN_EXT);
 	data_unlock($lk);
 
-	$sep = '	';
-	$r = array();
-	foreach ($a as $line) {
-		$tab = mb_split_filter($line, $sep);
+	$result = array();
+
+	foreach ($lines as $line) {
+		$tab = mb_split_filter($line, DATA_FIELD_SEPARATOR);
 		$k = array_shift($tab);
 		$k = trim($k, '[]():. =->');
+
 		if ($k == 'email') {
 			$v = array('addr' => array_shift($tab));
 			foreach ($tab as $i) $v[$i] = $i;
 		} else {
 			$v = (count($tab) > 1 ? $tab : $tab[0]);
 		}
-		if ($v && trim_bom("$v")) $r[$k] = $v;
+
+		if ($v && trim_bom("$v")) {
+			$result[$k] = $v;
+		}
 	}
-	return $r;
+
+	return $result;
 }
 
 function data_save_user_profile($a, $write = true) {
 	global $u_num;
-	if (is_array($m = $a['email'] ?? '')) $a['email'] = implode('	', $m);
+
 	$t = T0.'+'.M0;
-	$new = (
-		$a
-		? BOM."
-last modified:	$t
-email:	$a[email]
-about:	$a[about]
-"
-		: ''
-	);
+
+	if (is_array($a) && $a) {
+		if (is_array($m = $a['email'] ?? '')) {
+			$a['email'] = data_fields_to_text_line(...$m);
+		}
+
+		$new = DATA_LOG_START;
+
+		foreach (array(
+			'last modified:' => $t
+		,	'email:' => $a['email']
+		,	'about:' => $a['about']
+		) as $k => $v) {
+			$new .= data_fields_to_text_line($k, $v).NL;
+		}
+	} else {
+		$new = '';
+	}
+
 	if ($write) {
 		$d = DATA_DIR_USER;
 		$e = DATA_U_ABOUT;
@@ -1453,16 +1870,21 @@ about:	$a[about]
 				? trim_bom(file_get_contents($f))
 				: ''
 			);
+
 			if ($old) {
-				$old = preg_replace('~(
-last modified:	)\V*~u', '$1'.$t, $old);
+				$old = preg_replace('~('.NL.'last modified:'.DATA_FIELD_SEPARATOR.')\V*~u', '$1'.$t, $old);
+
 				break;
 			}
 		}
+
 		if ($old !== $new) {
 
 			data_lock($lk = LK_USER.$u_num);
-			foreach ($about_files as $f) if (is_file($f)) unlink($f);
+			foreach ($about_files as $f) if (is_file($f)) {
+				unlink($f);
+			}
+
 			if ($new) {
 				$f = (
 					($a['about'] || ($m && $m['show']))
@@ -1475,30 +1897,41 @@ last modified:	)\V*~u', '$1'.$t, $old);
 
 		}
 	}
+
 	return $new;
 }
 
 function data_get_full_threads($get_content = true) {
 	global $room, $room_type, $usernames;
+
 	$wait = !!$room_type['arch_wait'];
-	$sep = '	';
 	$threads = array();
+
 	foreach (get_dir_contents($d = DATA_DIR_ROOM."$room/".DATA_SUB_TRD) as $f) if (
 		preg_match(DATA_PAT_TRD_PLAY, $f, $match)
 	&&	data_is_thread_full($count = $match['pics'])
 	&&	!($wait && ($t = data_get_last_post_time($match)) && ($t + TRD_ARCH_TIME > T0))
 	&&	is_file($f = $d.$f)
 	) {
-		if (!$get_content) return true;
+		if (!$get_content) {
+			return true;
+		}
+
 		$last_time = 0;
 		$a = array('name' => $f);
-		foreach (get_file_lines($f) as $line) if (false !== mb_strpos($line, $sep)) {
-			$tab = mb_split($sep, $line);
+
+		foreach (get_file_lines($f) as $line) if (false !== mb_strpos($line, DATA_FIELD_SEPARATOR)) {
+			$tab = mb_split(DATA_FIELD_SEPARATOR, $line);
+
 			if ($tab[0]) {
 				if ($last_time < $tab[0]) $last_time = $tab[0];
 				$tab[0] = date(CONTENT_DATETIME_FORMAT, $tab[0]);
 			}
-			if ($tab[1] && ($i = intval($tab[1])) && isset($usernames[$i])) $tab[1] = $usernames[$i];
+
+			if ($tab[1] && ($i = intval($tab[1])) && isset($usernames[$i])) {
+				$tab[1] = $usernames[$i];
+			}
+
 			if ($tab[2]) {
 
 			//* image markup for scriptless view, autofixed by archive template:
@@ -1507,57 +1940,85 @@ function data_get_full_threads($get_content = true) {
 				if (!isset($a['thumb'])) $a['thumb'] = get_pic_subpath($src);
 				$tab[3] = '<img src="'.get_pic_url($src).'">'.($res ? ";$res" : '');
 			}
+
 			unset($tab[2], $tab[5]);
-			$a['content'] .= NL.implode($sep, $tab);
+
+			$a['content'] .= NL.implode(DATA_FIELD_SEPARATOR, $tab);
 		}
-		if ($count === 'f' || !$wait || ($last_time + TRD_ARCH_TIME < T0)) $threads["$last_time-$f"] = $a;
+
+		if (
+			$count === 'f'
+		||	!$wait
+		||	($last_time + TRD_ARCH_TIME < T0)
+		) {
+			$threads["$last_time-$f"] = $a;
+		}
 	}
-	if (!$get_content) return false;
+
+	if (!$get_content) {
+		return false;
+	}
+
 	ksort($threads);
+
 	return $threads;
 }
 
 function data_archive_ready_go() {
 	if ($threads = data_get_full_threads()) {
 		require_once(NAMEPRFX.'.arch.php');
+
 		return data_archive_full_threads($threads);
 	}
 }
 
 function data_get_post_pic_info($post_content, $check_file = 1) {
 	list($pic, $csv) = mb_split(';', $post_content, 2);
+
 	return get_post_pic_info($pic, $csv, $check_file);
 }
 
 function data_find_by($terms, $caseless = true, $include_hidden = false) {
 	global $r_type, $room, $usernames;
+
 	$results = array();
-	if (!$terms) return $results;
+
+	if (!$terms) {
+		return $results;
+	}
 
 if (TIME_PARTS) time_check_point('inb4 active data search prep, terms = '.get_print_or_none($terms));
+
 	$d = DATA_DIR_ROOM;
 	$e = DATA_LOG_EXT;
 	$elen = -strlen($e);
 	$rooms = (array)($room ?: get_dir_rooms($d, '', F_NATSORT | ($include_hidden ? 0 : F_HIDE), $r_type));
 	$c = count($rooms);
+
 if (TIME_PARTS) time_check_point("got $c rooms, inb4 search iteration".NL);
 
 	foreach ($rooms as $r) {
 		$files = array();
 
 		data_lock($lk = LK_ROOM.$r);
+
 		foreach (get_dir_contents($dr = "$d$r/".DATA_SUB_TRD, F_NATSORT) as $f) if (
 			substr($f, $elen) === $e
 		&&	is_file($path = "$dr/$f")
-		) $files[$path] = intval($f);
+		) {
+			$files[$path] = intval($f);
+		}
+
 if (TIME_PARTS) {$n_found = 0; time_check_point(count($files)." files in $dr");}
 
 		foreach ($files as $path => $i) if (
 			$t = trim_bom(file_get_contents($path))
 		) {
+
 if (TIME_PARTS) $n_check = '';
+
 			foreach (mb_split_filter($t, NL) as $line) {
-				$tab = mb_split('	', $line);
+				$tab = mb_split(DATA_FIELD_SEPARATOR, $line);
 				$post = array_filter(array(
 					'date' => intval($tab[0]) ?: '?'
 				,	'username' => $usernames[$tab[1]] ?: '?'
@@ -1565,14 +2026,22 @@ if (TIME_PARTS) $n_check = '';
 				,	'post' => $tab[3] ?: '?'
 				,	'meta' => $tab[4]
 				));
+
 				if ($found = is_post_matching($post, $terms, $caseless)) {
 					$results[$r]["hide_id_$i"][] = get_post_fields_to_display($post);
+
 if (TIME_PARTS) {++$n_found; $n_check .= "=$n_found: $found";}
+
 				}
 			}
+
 if (TIME_PARTS) time_check_point("done $i$n_check");
-		} else
+
+		} else {
+
 if (TIME_PARTS) time_check_point("$i: content not found in $path");
+
+		}
 
 		data_unlock($lk);
 	}
@@ -1583,25 +2052,43 @@ if (TIME_PARTS) time_check_point("$i: content not found in $path");
 //* Deletions: ----------------------------------------------------------------
 
 function data_del_pic_file($f, $keep = '') {
-	if (!is_file($f)) return false;
+
+	if (!is_file($f)) {
+		return false;
+	}
+
 	$d = 'unlink';
+
 	return (
-		$keep
-		? rename($f, $d = $keep.get_file_name($f))
-		: $d($f)
-	)?$d:'';
+		(
+			$keep
+			? rename($f, $d = $keep.get_file_name($f))
+			: $d($f)
+		)
+		? $d
+		: ''
+	);
 }
 
 function data_del_pic($f, $keep = '') {
 	global $room;
-	if ($keep) mkdir_if_none($keep = DIR_PICS_DEL."$room/");
-	foreach (array(get_pic_resized_path($f), $f) as $f) $status = data_del_pic_file($f, $keep);
+
+	if ($keep) {
+		mkdir_if_none($keep = DIR_PICS_DEL."$room/");
+	}
+
+	foreach (array(get_pic_resized_path($f), $f) as $f) {
+		$status = data_del_pic_file($f, $keep);
+	}
+
 	return $status;
 }
 
 function data_del_thread($f, $del_pics = false) {
 	global $room;
+
 	$count = array();
+
 	if (is_file($f)) {
 		if ($del_pics && ($files = data_get_thread_pics($f, true))) {
 			$k = (
@@ -1609,31 +2096,44 @@ function data_del_thread($f, $del_pics = false) {
 				? 'pics moved to trash'
 				: 'pics erased'
 			);
-			foreach ($files as $path) if (data_del_pic($path, $to_trash)) $count[$k]++;
+
+			foreach ($files as $path) if (data_del_pic($path, $to_trash)) {
+				$count[$k]++;
+			}
 		}
+
 		if (unlink($f)) {
 			$count['files']++;
 			$f = DATA_DIR_ROOM."$room/".DATA_SUB_REP.intval(get_file_name($f)).DATA_LOG_EXT;
-			if (is_file($f) && unlink($f)) $count['reports']++;
+
+			if (is_file($f) && unlink($f)) {
+				$count['reports']++;
+			}
 		}
 	}
+
 	return $count;
 }
 
 function data_del_tree($d, $del_pics = false) {
 	$count = array();
+
 	if (is_dir($d)) {
 		foreach (get_dir_contents($d) as $sub)
 		foreach (data_del_tree("$d/$sub", $del_pics) as $k => $v) {
 			$count[$k] += $v;
 		}
-		if (rmdir($d)) $count['dirs']++;
+
+		if (rmdir($d)) {
+			$count['dirs']++;
+		}
 	} else
 	if (is_file($d)) {
 		foreach (data_del_thread($d, $del_pics) as $k => $v) {
 			$count[$k] += $v;
 		}
 	}
+
 	return $count;
 }
 
@@ -1642,11 +2142,16 @@ function data_del_tree($d, $del_pics = false) {
 function data_mod_action($a) {		//* <- array(option name, thread, row, column, option num)
 	global $u_num, $u_flag, $r_type, $room, $merge, $cfg_game_type_dir;
 
-	if (!MOD) return 0;
+	if (!MOD) {
+		return 0;
+	}
 
 	$q = explode('+', array_shift($a));
 	$o = array_shift($q);
-	if (NO_MOD && !GOD && $o != 'room announce') return 0;
+
+	if (NO_MOD && !GOD && $o != 'room announce') {
+		return 0;
+	}
 
 	$e = DATA_LOG_EXT;
 	$ok = 0;
@@ -1664,7 +2169,10 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 			} else {
 				if (rename($d.$f, "$d$m[id].pf$e")) $ok = 'OK';	//* <- get ready
 				if ($ok && !$un && is_array($r = data_archive_ready_go())) {
-					foreach ($r as $k => $v) if ($v) $ok .= ", $v $k";
+					foreach ($r as $k => $v) if ($v) {
+						$ok .= ", $v $k";
+					}
+
 					$return = 'trd_arch';
 				}
 			}
@@ -1674,7 +2182,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 	if (substr($o,0,8) == 'freeze t') {
 		if (
 			(list($d,$f,$m) = data_get_thread_by_num($a[0]))
-		&&	$f != ($n = $m['active'].($un > 1?'.del':($un?'':'.stop')))
+		&&	$f != ($n = $m['active'].($un > 1 ? '.del' : ($un ? '' : '.stop')))
 		&&	rename($d.$f, $d.$n)
 		) {
 			$ok = 'OK';
@@ -1798,7 +2306,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 		//* check line-separated "key: value" pairs: ------------------
 
 				$lsv = array();
-				$keys = explode(',', 're,text,file,meta'.(GOD?',user,time,browser':''));
+				$keys = explode(',', 're,text,file,meta'.(GOD ? ',user,time,browser' : ''));
 				foreach (preg_split('~\v+~u', $msg) as $line)
 				if (
 					preg_match('~^(\w+)[\s:=]\s*(\S.*)$~u', trim($line), $match)
@@ -1812,13 +2320,12 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 					$lsv[$k] = $v;
 				}
 
-			//	if (!$lsv) $lsv['text'] = preg_replace('~\s+~u', ' ', $msg);
 				if ($lsv) {
 					$ok .= NL.'data = '.get_print_or_none($lsv);
 					$tab = (
 						$un < 2
-						? array(T0, $u_num)		//* <- add, insert (own post from now, if not specified)
-						: mb_split('	', $old)	//* <- edit, replace (assume old post as valid)
+						? array(T0, $u_num)			//* <- add, insert (own post from now, if not specified)
+						: mb_split(DATA_FIELD_SEPARATOR, $old)	//* <- edit, replace (assume old post as valid)
 					);
 
 			//* timestamp/ID, accept digits > 0 only, or no change:
@@ -1829,7 +2336,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 			//* text, just make a post and be done:
 
 					if ($v = $lsv['text']) {
-						$new = "$tab[0]	$tab[1]".DATA_MARK_TXT.format_post_text($v);
+						$new = $tab[0].DATA_FIELD_SEPARATOR.$tab[1].DATA_MARK_TXT.format_post_text($v);
 					}
 
 			//* file/info, edit parts if post with file, or replace full post if enough values:
@@ -1852,9 +2359,11 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 						if ($v && $t) {
 							if ($b) $tab[5] = $b;
 							$tab[3] = get_post_pic_field_with_fixed_info($tab[3], 2);
-							$new = implode('	', $tab);
+							$new = implode(DATA_FIELD_SEPARATOR, $tab);
 						}
-					} else $new = implode('	', $tab);
+					} else {
+						$new = implode(DATA_FIELD_SEPARATOR, $tab);
+					}
 				}
 
 		//* save result: ----------------------------------------------
@@ -1881,10 +2390,12 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 
 	if ($o == 'ban'			) $ok = data_set_u_flag($a, 'ban', !$un); else
 	if ($o == 'can report'		) $ok = data_set_u_flag($a, 'nor', $un); else
-	if ($o == 'give mod'		) $ok = data_set_u_flag($a, $room? "mod_$room":'mod', !$un); else
-	if (substr($o,0,4) == 'hara'	) $ok = data_set_u_flag($u_num, $room?"mod_$room":'mod', 0, 1); else
+	if ($o == 'give mod'		) $ok = data_set_u_flag($a, $room ? "mod_$room" : 'mod', !$un); else
+	if (substr($o,0,4) == 'hara'	) $ok = data_set_u_flag($u_num, $room ? "mod_$room" : 'mod', 0, 1); else
 
-	if (!GOD && $o != 'room announce') return 0; else
+	if (!GOD && $o != 'room announce') {
+		return 0;
+	} else
 
 //* god right-side menu -------------------------------------------------------
 
@@ -1901,9 +2412,9 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 	) && (	($n = strpos($o, 'announce'))
 	+	($z = strpos($o, 'freeze'))
 	)) {
-		$f = ($r ? DATA_DIR_ROOM."$room/" : DATA_DIR).($n?'anno':'stop').DATA_STATIC_EXT;
+		$f = ($r ? DATA_DIR_ROOM."$room/" : DATA_DIR).($n ? 'anno' : 'stop').DATA_STATIC_EXT;
 		$ok = (
-			($n?$msg:!$un)
+			($n ? $msg : !$un)
 			? ((file_put_mkdir($f, $msg) === strlen($msg)) ? ($msg ?: '-') : 0)
 			: (is_file($f) && unlink($f))
 		);
@@ -1912,7 +2423,9 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 //* god left-side menu --------------------------------------------------------
 
 	if ($o == 'rename room') {
-		if (!($msg = trim_room($msg))) return 0;
+		if (!($msg = trim_room($msg))) {
+			return 0;
+		}
 
 		if ($r_type) $msg = "$r_type/$msg";
 		if (!$r_type && in_array($msg, $cfg_game_type_dir)) {
@@ -1956,9 +2469,11 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 				foreach (array(DATA_DIR_ROOM, DIR_ARCH) as $f) {
 					$old = $f.$room;
 					$new = $f.$msg;
-					$ok .= ",$f:"
-						.(is_dir($new) && rename($new, $new.'.'.T0.'.old') ?'old_bak+':'')
-						.(is_dir($old) && rename($old, $new) ?1:0);
+					$ok .= (
+						",$f:"
+						.(is_dir($new) && rename($new, $new.'.'.T0.'.old') ? 'old_bak+' : '')
+						.(is_dir($old) && rename($old, $new) ? 1 : 0)
+					);
 				}
 				$ok .= data_replace_u_flag(0, "mod_$room", "mod_$msg");
 				data_post_refresh($room = $msg);
@@ -1966,7 +2481,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 		}
 	} else
 	if ($o == 'nuke room') {
-		$del_pics = ($un?2:1);
+		$del_pics = ($un ? 2 : 1);
 		$k = DATA_DIR_ROOM."$room/";
 		$a = array();
 		$count = array();
@@ -1990,15 +2505,23 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 		global $data_cache_d, $data_cache_t;
 		unset($data_cache_d, $data_cache_t);
 		clearstatcache(true);	//* <- useless?
-	} else
+	} else {
 
 //* no action -----------------------------------------------------------------
 
-	return 0;
+		return 0;
+	}
 
-	if ($un) $o .= '+'.end($q);
-	if (is_array($a)) $a = implode('-', $a);
-	$logged = data_log_action("$a	$o: $ok");
+	if ($un) {
+		$o .= '+'.end($q);
+	}
+
+	if (is_array($a)) {
+		$a = implode('-', $a);
+	}
+
+	$logged = data_log_action($a.DATA_FIELD_SEPARATOR."$o: $ok");
+
 	return $return ?: $logged;
 }
 
@@ -2008,20 +2531,25 @@ function data_get_visible_images($room = '') {
 	$a = array();
 	$d = DATA_DIR_ROOM;
 	$rooms = ($room ? (array)$room : get_dir_rooms($d));
+
 	foreach ($rooms as $r) if (is_dir($s = "$d$r/".DATA_SUB_TRD)) {
 		data_lock($lk = LK_ROOM.$r);
 		foreach (get_dir_contents($s) as $f) if (is_file($path = $s.$f)) {
 			foreach (data_get_thread_pics($path) as $i) {
-				if (false === array_search($i, $a)) $a[] = $i;
+				if (false === array_search($i, $a)) {
+					$a[] = $i;
+				}
 			}
 		}
 		data_unlock($lk);
 	}
+
 	return $a;
 }
 
 function data_get_visible_rooms($type = '') {
 	global $u_flag;
+
 	$b = COUNT_POST;
 	$e = DATA_COUNT_EXT;
 	$g = DATA_DIR_ROOM;
@@ -2029,7 +2557,9 @@ function data_get_visible_rooms($type = '') {
 	$last = 0;
 	$a = array();
 	$c = count($rooms = get_dir_rooms($g, '', F_NATSORT | F_HIDE, $type));
+
 if (TIME_PARTS) time_check_point("done scan: $c rooms, inb4 room iteration".NL);
+
 	foreach ($rooms as $r) if (is_dir($s = ($d = "$g$r/").DATA_SUB_TRD)) {
 		ob_start();
 		$last_time_in_room = 0;
@@ -2044,7 +2574,10 @@ recheck_file:
 			$c	= $data_obj['counts'];
 			$mod	= $data_obj['marked'];
 			$t = data_global_announce('last', $r);
-			if ($last_time_in_room < $t) $last_time_in_room = $t;
+
+			if ($last_time_in_room < $t) {
+				$last_time_in_room = $t;
+			}
 		} else {
 			data_lock($lk = LK_ROOM.$r);
 
@@ -2059,22 +2592,34 @@ recheck_file:
 			$count_desc =
 			$count_pics = 0;
 			$mod = array();
+
 			foreach (get_dir_contents($s) as $f) if (is_file($path = $s.$f)) {
 				$thread_time = data_get_last_post_time($t = file_get_contents($path));
-				if ($last_post_time < $thread_time) $last_post_time = $thread_time;
+
+				if ($last_post_time < $thread_time) {
+					$last_post_time = $thread_time;
+				}
+
 				$count_trds ++;
 				$count_desc += mb_substr_count($t, DATA_MARK_TXT);
 				$count_pics += mb_substr_count($t, DATA_MARK_IMG);
+
 				if (preg_match(DATA_PAT_TRD_PLAY, $f, $match)) {
-					if (data_is_thread_full($match['pics'])) ++$mod['full'];
+					if (data_is_thread_full($match['pics'])) {
+						++$mod['full'];
+					}
 				} else
 				if (preg_match(DATA_PAT_TRD_MOD, $f, $match)) {
-					foreach ($mod_marks as $k) if ($match[$k]) ++$mod[$k];
+					foreach ($mod_marks as $k) if ($match[$k]) {
+						++$mod[$k];
+					}
 				}
 			}
+
 			foreach (get_dir_contents($s = $d.DATA_SUB_REP) as $f) if (is_file($path = $s.$f)) {
 				$mod['reports'] += mb_substr_count(file_get_contents($path), NL);
 			}
+
 			$c = array(
 				'threads now'	=> $count_trds
 			,	'threads ever'	=> data_get_count(COUNT_ROOM, $r)
@@ -2084,39 +2629,63 @@ recheck_file:
 			,	'pics'		=> $count_pics
 			,	'desc'		=> $count_desc
 			);
+
 			$data_obj_to_save = array(
 				'last modified'	=> $last_time_in_room
 			,	'counts'	=> $c
 			,	'marked'	=> $mod
 			);
+
 			data_export_to_file($cf, $data_obj_to_save);
 			data_unlock($lk);
 		}
-		if ($o = trim_bom(ob_get_clean())) data_log_action("include($cf) buffer dump: $o");
-		if ($last < $last_time_in_room) $last = $last_time_in_room;
+
+		if ($o = trim_bom(ob_get_clean())) {
+			data_log_action("include($cf) buffer dump: $o");
+		}
+
+		if ($last < $last_time_in_room) {
+			$last = $last_time_in_room;
+		}
+
 		if ($mod = array_filter($mod)) {
-			if (!GOD) unset($mod['deleted']);
+			if (!GOD) {
+				unset($mod['deleted']);
+			}
+
 			if (
 				NOT_MOD_SEE_ROOM_MARKERS
 			||	GOD
 			||	$u_flag['mod']
 			||	$u_flag["mod_$r"]
-			) $c['marked'] = $mod;
+			) {
+				$c['marked'] = $mod;
+			}
 		}
-		if ($t = data_global_announce('all', $r)) $c['anno'] = $t;
+
+		if ($t = data_global_announce('all', $r)) {
+			$c['anno'] = $t;
+		}
+
 		$a[$r] = array_filter($c);
+
 if (TIME_PARTS) time_check_point("done room $r");
+
 	}
-	return $a ? array(
-		'last' => $last
-	,	'list' => $a
-	) : $a;
+
+	return (
+		!$a ? $a :
+		array(
+			'last' => $last
+		,	'list' => $a
+		)
+	);
 }
 
 function data_get_visible_threads() {
 	global $u_num, $u_flag, $room, $room_type, $data_cache_u;
+
 	$show_unknown = !$room_type['hide_unknown_threads'];
-	$sep = '	';
 	$d = DATA_DIR_USER;
 	$e = DATA_U_FLAG;
 	$g = DATA_LOG_EXT;
@@ -2131,14 +2700,19 @@ function data_get_visible_threads() {
 
 	data_lock($lk = LK_ROOM.$room, false);
 	$c = count($files = get_dir_contents($td, F_NATSORT));
+
 if (TIME_PARTS) time_check_point("done scan: $c files in $td, inb4 thread iteration".NL);
+
 	foreach ($files as $fn) if (
 		is_file($path = $td.$fn)
 	&&	($f = data_cache($path))
 	) {
 		$adm = preg_match(DATA_PAT_TRD_MOD, $fn, $m_adm);
 		$act = preg_match(DATA_PAT_TRD_PLAY, $fn, $m_act);
-		if (!$adm && !$act) continue;
+
+		if (!$adm && !$act) {
+			continue;
+		}
 
 		$i = $m_adm['id'];
 		$frz = !!$m_adm['stopped'];
@@ -2156,81 +2730,116 @@ if (TIME_PARTS) time_check_point("done scan: $c files in $td, inb4 thread iterat
 			if ($last < $t) $last = $t;
 			$last_post_time = 0;
 			$posts = array();
-			foreach (mb_split_filter($f, NL) as $line) if (false !== mb_strpos($line = trim($line), $sep)) {
-				$tab = mb_split($sep, $line);
+
+			foreach (mb_split_filter($f, NL) as $line) if (false !== mb_strpos($line = trim($line), DATA_FIELD_SEPARATOR)) {
+				$tab = mb_split(DATA_FIELD_SEPARATOR, $line);
 				$t = intval($tab[0]);
-				if ($last < $t) $last = $t;
-				if ($last_post_time < $t) $last_post_time = $t;
+
+				if ($last < $t) {
+					$last = $t;
+				}
+
+				if ($last_post_time < $t) {
+					$last_post_time = $t;
+				}
+
 				$u = $tab[1];
-				$f = ($u == $u_num?'u':0);
+				$f = ($u == $u_num ? 'u' : 0);
+
 				if (!$f && MOD) {		//* <- mods see other's status as color
 					if (!isset($data_cache_u[$u])) {
 						$data_cache_u[$u] = 0;
+
 						if ($flags = data_get_user_flags($u)) {
 							foreach ($u_marks as $k) if (isset($flags[$k])) {
 								$data_cache_u[$u] = $k[0];
+
 								break;
 							}
 						}
 						data_unlock(LK_USER.$u);
 					}
+
 					$f = $data_cache_u[$u];
 				}
+
 				$t = array(
 					'flag' => $f
 				,	'user' => $u
 				,	'time' => $t
 				,	'post' => $tab[3]
 				);
+
 				if ($tab[2]) {
 					$t['pic'] = true;
 					if (count($tab) > 4) $t['used'] = $tab[4];
 					if (count($tab) > 5) $t['browser'] = $tab[5];
 				}
+
 				$posts[] = $t;
 			}
-			$f = $m_adm['deleted'] ?: $m_adm['stopped'] ?: (data_is_thread_full($m_act['pics'])?'f':'');
+
+			$f = (
+				$m_adm['deleted'] ?:
+				$m_adm['stopped'] ?:
+				(data_is_thread_full($m_act['pics']) ? 'f' : '')
+			);
+
 			$threads[$tid = "$last_post_time/$i$f"] = $posts;
 
 			if ((MOD || $frz || NOT_MOD_SEE_ACTIVE_TRD_REPORTS) && is_file($repf)) {
 				$repl = array();
+
 				foreach (get_file_lines($repf) as $line) if (
 					trim_bom($line)
-				&&	count($tab = mb_split($sep, $line, 4)) > 3
+				&&	count($tab = mb_split(DATA_FIELD_SEPARATOR, $line, 4)) > 3
 				) {
 					$t = intval($tab[0]);
-					if ($last < $t) $last = $t;
+
+					if ($last < $t) {
+						$last = $t;
+					}
+
 					$repl
 					[$tab[1]-1]	//* <- row (postnum) saved starting with 1; $posts[] - with zero
 					[$tab[2]]	//* <- column (left/right)
 					[$t]		//* <- time
 					= $tab[3];	//* <- content
 				}
-				if ($repl) $reports[$tid] = $repl;
+
+				if ($repl) {
+					$reports[$tid] = $repl;
+				}
 			}
 		}
+
 if (TIME_PARTS) time_check_point("done trd $fn, last = $last");
+
 	}
 	data_unlock($lk);
 
 	sort($changes);
 
-	return $threads ? array(
-		'last' => $last
-	,	'threads' => $threads
-	,	'reports' => $reports
-	,	'changes' => $changes
-	) : $threads;
+	return (
+		!$threads ? $threads :
+		array(
+			'last' => $last
+		,	'threads' => $threads
+		,	'reports' => $reports
+		,	'changes' => $changes
+		)
+	);
 }
 
-function save_updated_task_list_file($top_line_to_add = false) {
+function save_updated_task_list_file(...$new_task_data) {
 	global $u_task, $u_t_f;
 
 	$result = 'no context';
 
 	if (strlen($u_t_f) && is_array($u_task)) {
-		if ($top_line_to_add) {
-			array_unshift($u_task, $top_line_to_add);
+
+		if (strlen($new_task_line = data_fields_to_text_line(...$new_task_data))) {
+			array_unshift($u_task, $new_task_line);
 		}
 
 		if (strlen($task_list_text = implode(NL, $u_task))) {
@@ -2273,15 +2882,14 @@ function data_check_my_task($aim = false) {
 	$d = DATA_DIR_USER;
 	$e = DATA_U_TASK;
 	$g = GAME_TYPE_DEFAULT;
-	$sep = '	';
 	$u_task = get_file_lines($u_t_f = "$d$e/$u_num.$e");
 
 	foreach ($u_task as $k => $line) if (
 
 //* check if line is a task:
 
-		false !== mb_strpos($line, $sep)
-	&&	(list($t, $r, $thread, $post) = mb_split($sep, $line, 4))
+		false !== mb_strpos($line, DATA_FIELD_SEPARATOR)
+	&&	(list($t, $r, $thread, $post) = mb_split(DATA_FIELD_SEPARATOR, $line, 4))
 	&&	$r && $thread && $post
 	) {
 		if ($g && false === mb_strpos($r, '/')) $r = "$g/$r";
@@ -2292,7 +2900,7 @@ function data_check_my_task($aim = false) {
 			if (!$target || !$target['task']) $target = array(
 				'drop'	=> (false !== strpos($t, DATA_U_TASK_CHANGE))
 			,	'keep'	=> (false !== strpos($t, DATA_U_TASK_KEEP))
-			,	'pic'	=> (false === ($i = mb_strrpos_after($post, $sep)))
+			,	'pic'	=> (false === ($i = mb_strrpos_after($post, DATA_FIELD_SEPARATOR)))
 			,	'post'	=> $post
 			,	'posts'	=> ($thread && count($posts_count = mb_split_filter($thread)) > 2 ? $posts_count[2] : 0)
 			,	'task'	=> ($i ? mb_substr($post, $i) : $post)
@@ -2325,14 +2933,14 @@ function data_check_my_task($aim = false) {
 				if (!$target['keep']) {
 					$target['keep'] = true;
 
-					save_updated_task_list_file("$start_time/".DATA_U_TASK_KEEP."	$room	$thread	$post");
+					save_updated_task_list_file("$start_time/".DATA_U_TASK_KEEP, $room, $thread, $post);
 				}
 			}
 
 	//* change task to another, or none:
 
 			if ($aim === DATA_U_TASK_CHANGE) {
-				save_updated_task_list_file("$start_time/".DATA_U_TASK_CHANGE."	$room	$thread	$post");
+				save_updated_task_list_file("$start_time/".DATA_U_TASK_CHANGE, $room, $thread, $post);
 			}
 		} else {
 
@@ -2414,7 +3022,7 @@ function data_check_my_task($aim = false) {
 
 		$thread = $target['thread'] = "$taken/$dropped/$posts_count";
 
-		save_updated_task_list_file("$start_time	$room	$thread	$post");
+		save_updated_task_list_file($start_time, $room, $thread, $post);
 
 		return array($status, $td);
 	}
@@ -2424,10 +3032,12 @@ function data_check_my_task($aim = false) {
 
 function data_aim($task_changing_params = false) {
 	global $u_num, $u_flag, $u_opts, $room, $room_type, $target;
+
 	$d = DATA_DIR_ROOM."$room/".DATA_SUB_TRD;
 	$e = DATA_LOG_EXT;
 	$target = array();
 	$new_target = array('time' => T0);
+
 	if (
 		FROZEN_HELL
 	||	$room_type['single_active_thread']
@@ -2622,7 +3232,7 @@ if (TIME_PARTS) time_check_point('got free task lists'
 
 //* change task if thread is missing or taken, or enough time passed since taking last task:
 
-	$task_line_to_add = '';
+	$new_task = array();
 	$f = $own ?: '';
 	$own_exists = (
 		is_file($path = $d.$own)
@@ -2708,7 +3318,7 @@ if (TIME_PARTS) time_check_point('got free task lists'
 
 			if ($last_txt < $last_pic) {
 				$type = ARG_DESC;
-				$target['pic' ] = $t = mb_strpos($p = mb_substr($t, $last_pic), '	');
+				$target['pic' ] = $t = mb_strpos($p = mb_substr($t, $last_pic), DATA_FIELD_SEPARATOR);
 				$target['task'] = $p = mb_substr($p, 0, $t);		//* <- only filename
 			} else {
 				$type = ARG_DRAW;
@@ -2736,7 +3346,7 @@ if (TIME_PARTS) time_check_point('got free task lists'
 			$dropped = "$i$b$e";
 			$t = $target['thread'] = "$taken/$dropped/$c";
 			data_cache_file_rename($path, $d.$taken);
-			$task_line_to_add = T0."	$room	$t	$p";
+			$new_task = array(T0, $room, $t, $p);
 		}
 
 		$target['free_task_counts'] = $counts;
@@ -2748,7 +3358,7 @@ if (TIME_PARTS) time_check_point('got free task lists'
 		$target_changed
 	||	(!strlen($f) !== !strlen($old_target_thread))
 	) {
-		save_updated_task_list_file($task_line_to_add);
+		save_updated_task_list_file(...$new_task);
 
 //* rename old targets as dropped (unlocked):
 
@@ -2768,16 +3378,20 @@ if (TIME_PARTS) time_check_point('got free task lists'
 
 function data_log_post($post) {
 	global $u_num, $room, $room_type, $target;
+
 	$d = DATA_DIR_ROOM."$room/".DATA_SUB_TRD;
 	$e = DATA_LOG_EXT;
-	$u = T0."	$u_num";
+	$u = T0.DATA_FIELD_SEPARATOR.$u_num;
 	$result = array();
 
-	if ($pic = is_array($post)) $post[0] = get_post_pic_field_with_fixed_info($post[0]);
-	$post_type = ($pic?'image':'text');
+	if ($pic = is_array($post)) {
+		$post[0] = get_post_pic_field_with_fixed_info($post[0]);
+	}
+
+	$content_type = ($pic ? 'image' : 'text');
 	$post = $u.(
 		$pic
-		? DATA_MARK_IMG.implode('	', $post)
+		? DATA_MARK_IMG.implode(DATA_FIELD_SEPARATOR, $post)
 		: DATA_MARK_TXT.$post
 	);
 
@@ -2814,16 +3428,19 @@ function data_log_post($post) {
 		||	data_get_last_post_u(data_cache($f)) != $u_num
 		)
 	)) {
-		$post_type .= '_reply';
+		$relation = 'reply';
 	} else {
-		$post_type .= ($target['post']?'_reply':'_op');
+		$relation = ($target['post'] ? 'reply' : 'op');
 		$new = 1;
 	}
+
+	$post_type = $content_type.'_'.$relation;
 
 //* check if post type allowed:
 
 	if (!$room_type["allow_$post_type"]) {
 		$result[ARG_DENY."_$post_type"] = 1;
+
 		return $result;
 	}
 
@@ -2853,15 +3470,23 @@ function data_log_post($post) {
 			$result['fork'] = 1;
 		} else
 		if ($pic) {
-			$fork = (T0 - 1)."	$u_num".DATA_MARK_TXT.NOR;
-			if ($target['task']) $fork .= '<!-- '.htmlspecialchars("$target[time]: $target[task]").' -->';
+			$fork = (T0 - 1).DATA_FIELD_SEPARATOR.$u_num.DATA_MARK_TXT.NOR;
+
+			if ($target['task']) {
+				$fork .= '<!-- '.htmlspecialchars("$target[time]: $target[task]").' -->';
+			}
 		}
-		if ($fork) $post = $fork.NL.$post;
+		if ($fork) {
+			$post = $fork.NL.$post;
+		}
 
 //* create new thread, thread IDs start at 1 (was at 0 before):
 
 		data_put_count($i = data_get_count()+1);
-		if ($i <= 1) data_set_u_flag($u_num, "mod_$room", 1);
+
+		if ($i <= 1) {
+			data_set_u_flag($u_num, "mod_$room", 1);
+		}
 
 		$t = data_get_thread_name_tail($post);
 		$f = $new = "$d$i$t$e";
@@ -2878,7 +3503,11 @@ function data_log_post($post) {
 
 //* archive full threads after each post:
 
-		if (!$room_type['arch_wait'] && !$result['arch'] && ($a = data_archive_ready_go())) {
+		if (
+			!$room_type['arch_wait']
+		&&	!$result['arch']
+		&&	($a = data_archive_ready_go())
+		) {
 			$result['arch'] = $a;
 		}
 
@@ -2893,18 +3522,26 @@ function data_log_post($post) {
 
 function data_rename_last_pic($old, $new) {
 	global $room;
-	if ($new === $old || !strlen($f = $GLOBALS['data_thread_file_path'])) return;
+
+	if ($new === $old || !strlen($f = $GLOBALS['data_thread_file_path'])) {
+		return;
+	}
+
 	if (false === mb_strpos($f, DATA_LOG_EXT)) {
 		require_once(NAMEPRFX.'.arch.php');
+
 		return data_archive_rename_last_pic($old, $new, $f);
 	}
+
 	if (is_file($f)) {
 		$t = file_get_contents($f);
 		$pos_before = mb_strrpos_after($t, DATA_MARK_IMG);
-		$pos_after = mb_strpos($t, '	', $pos_before);
+		$pos_after = mb_strpos($t, DATA_FIELD_SEPARATOR, $pos_before);
+
 		if (mb_substr($t, $pos_before, $pos_after - $pos_before) === $old) {
 			$before = mb_substr($t, 0, $pos_before);
 			$after = mb_substr($t, $pos_after);
+
 			return file_put_contents($f, "$before$new$after");
 		}
 	}

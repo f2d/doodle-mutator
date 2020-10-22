@@ -205,11 +205,15 @@ function get_print_or_none($a) {return $a ? trim(print_r($a, true)) : 'none';}
 
 function fix_encoding($text) {
 	global $fix_encoding_chosen;
+
 	if (mb_check_encoding($text)) {
 		$fix_encoding_chosen[] = ENC;
+
 		goto normalize;
 	}
+
 	$a = array_filter(explode(',', "$_REQUEST[_charset_],".get_const('ENC_FALLBACK')));
+
 	if (function_exists('iconv')) {
 		foreach ($a as $e) if (
 			strlen($e = trim($e))
@@ -218,21 +222,28 @@ function fix_encoding($text) {
 		) {
 			$fix_encoding_chosen[] = $e;
 			$text = $fix;
+
 			goto normalize;
 		}
 	}
+
 	if (false !== ($e = mb_detect_encoding($text, implode(',', $a), true))) {
 		$fix_encoding_chosen[] = $e;
 		$text = mb_convert_encoding($text, ENC, $e);
+
 		goto normalize;
 	}
+
 	return $text;
+
 normalize:
 	return function_exists($f = 'normalizer_normalize') ? $f($text) : $text;
 }
 
 function log_preg_last_error($none_too = true) {
-	if (!TIME_PARTS) return;
+	if (!TIME_PARTS) {
+		return;
+	}
 
 	if (($e = preg_last_error()) || $none_too) {
 
@@ -312,13 +323,15 @@ function get_localized_text(...$keys) {
 	);
 }
 
-function get_abbr($a, $sep = '_') {
+function get_abbr($a, $separator = '_') {
 	if (!is_array($a)) {
-		$a = mb_split_filter($a, $sep);
+		$a = mb_split_filter($a, $separator);
 	}
+
 	foreach ($a as $word) {
 		$r .= mb_substr($word,0,1);
 	}
+
 	return $r;
 }
 
@@ -326,21 +339,34 @@ function get_imploded_non_empty_lines($a, $separator = NL) {
 	if (is_array($a)) {
 		$a = array_map('get_imploded_non_empty_lines', $a);
 		$a = array_filter($a, 'strlen');
+
 		return implode($separator, $a);
 	}
+
 	return trim("$a");
 }
 
-function mb_escape_regex($s, $delim = '/', $extend = '') {return preg_replace("~[\\\\|\\$delim$extend\\[\\](){}^$.:?*+-]~u", '\\\\$0', $s);}
-function mb_normalize_slash($s) {return mb_str_replace('\\', '/', $s);}
-function mb_sanitize_filename_char($match) {return $match[0] === '"' ? "'" : '_';}
+function mb_escape_regex($s, $delim = '/', $extend = '') {
+	return preg_replace("~[\\\\|\\$delim$extend\\[\\](){}^$.:?*+-]~u", '\\\\$0', $s);
+}
+
+function mb_normalize_slash($s) {
+	return mb_str_replace('\\', '/', $s);
+}
+
+function mb_sanitize_filename_char($match) {
+	return $match[0] === '"' ? "'" : '_';
+}
+
 function mb_sanitize_filename($s) {
 	return preg_replace_callback('~[\\/":?*<>]~u', 'mb_sanitize_filename_char', $s);
 //	return strtr($s, array('"' => "'", ':' => '_', '?' => '_', '*' => '_', '<' => '_', '>' => '_'));
 }
 
 if (!function_exists($f = 'mb_str_split')) {
-	function mb_str_split($s) {return preg_split('//u', $s);}
+	function mb_str_split($s) {
+		return preg_split('//u', $s);
+	}
 }
 
 function mb_split_filter($s, $by = '/', $limit = 0) {
@@ -359,7 +385,10 @@ function mb_substr_before($where, $what, $offset = 0) {
 	);
 }
 
-function mb_substr_after ($where, $what, $offset = 0) {return mb_substr($where, mb_strrpos_after($where, $what, $offset));}
+function mb_substr_after ($where, $what, $offset = 0) {
+	return mb_substr($where, mb_strrpos_after($where, $what, $offset));
+}
+
 function mb_strpos_after ($where, $what, $offset = 0) {
 	return (
 		false !== ($pos = mb_strpos ($where, $what, $offset))
@@ -376,7 +405,10 @@ function mb_strrpos_after($where, $what, $offset = 0) {
 	);
 }
 
-function mb_str_replace($what, $to, $where) {return implode($to, preg_split('/('.mb_escape_regex($what).')/u', $where));}
+function mb_str_replace($what, $to, $where) {
+	return implode($to, preg_split('/('.mb_escape_regex($what).')/u', $where));
+}
+
 function mb_str_replace_first($what, $to, $where) {
 	return (
 		false === ($pos = mb_strpos($where, $what))
@@ -396,13 +428,20 @@ function str_replace_first($what, $to, $where) {
 function trim_slash_dots($path, $remove_edge_slashes = true) {
 	$path = preg_replace('~(^|/)(\.*/+|\.+$)+~u', '$1', $path);
 	if ($remove_edge_slashes) $path = trim($path, '/');
+
 	return $path;
 }
 
-function trim_bom($str) {return trim(str_replace(BOM, '', $str));}
+function trim_bom($str) {
+	return trim(str_replace(BOM, '', $str));
+}
+
 function trim_post($text, $len = 0) {
 	$s = trim(preg_replace('~\s+~u', ' ', fix_encoding($text)));
-	if ($len > 0) $s = mb_substr($s, 0, $len);
+	if ($len > 0) {
+		$s = mb_substr($s, 0, $len);
+	}
+
 	return POST ? htmlspecialchars($s) : $s;
 }
 
@@ -410,6 +449,7 @@ function trim_room($name, $also_allow_chars = '') {
 	$t = mb_escape_regex("$GLOBALS[cfg_room_prefix_chars]$also_allow_chars");
 	$x = ROOM_NAME_ALLOWED_CHARS;
 	$w = "-\\w$x$t";
+
 	return mb_substr(
 		preg_replace("/([^0-9a-z$x])\\1+/u", '$1',
 		preg_replace("/[^$w]+/u", '_',
@@ -425,32 +465,42 @@ function encode_URL_parts($path, $raw = false) {
 }
 
 function encode_opt_value($v) {
-	if (URLencode($v) !== $v) return B64_PRFX.str_replace(
+	if (URLencode($v) === "$v") {
+		return $v;
+	}
+
+	return B64_PRFX.str_replace(
 		array('/', '+')
 	,	array('_', '-')
 	,	base64_encode($v)
 	);
-	return $v;
 }
 
 function decode_opt_value($v) {
-	if (0 === strpos($v, B64_PRFX)) return base64_decode(str_replace(
+	if (0 !== strpos($v, B64_PRFX)) {
+		return $v;
+	}
+
+	return base64_decode(str_replace(
 		array('_', '-')
 	,	array('/', '+')
 	,	substr($v, strlen(B64_PRFX))
 	));
-	return $v;
 }
 
 function is_url_equivalent($a, $b) {
 	$funcs = array('', 'URLdecode', 'rawURLdecode');
+
 	foreach ($funcs as $f)
 	foreach ($funcs as $g) {
 		if (
 			($f ? $f($a) : $a)
 		===	($g ? $g($b) : $b)
-		) return true;
+		) {
+			return true;
+		}
 	}
+
 	return false;
 }
 
@@ -458,8 +508,12 @@ function is_url_external($url) {
 	if ($url && ($s = $_SERVER['SERVER_NAME'])) {
 		$i = (strpos($url, '://'  ) ?: 0)+3;
 		$j = (strpos($url, '/', $i) ?: 0);
-		if ($s !== substr($url, $i, $j-$i)) return true;
+
+		if ($s !== substr($url, $i, $j-$i)) {
+			return true;
+		}
 	}
+
 	return false;
 }
 
@@ -473,6 +527,7 @@ function is_not_dot($path) {return !!trim($path, './\\');}
 function is_not_draw_none($var) {return $var !== DRAW_APP_NONE;}
 function is_not_hidden($room) {
 	global $u_flag;
+
 	return (
 		GOD
 	||	$u_flag['mod']
@@ -487,7 +542,10 @@ function mkdir_if_none($file_path) {
 	&&	($d = mb_substr($file_path, 0, $i))
 	&&	!is_dir($d)
 	&&	!is_file($d)
-	) mkdir($d, 0755, true);
+	) {
+		mkdir($d, 0755, true);
+	}
+
 	return $file_path;
 }
 
@@ -497,24 +555,38 @@ function file_put_mkdir($file_path, $content = '') {
 
 function get_dir_contents($path = '.', $flags = 0) {
 	$a = (is_dir($path) ? array_filter(scandir($path), 'is_not_dot') : array());
-	if ($a && ($flags & F_HIDE)) $a = array_filter($a, 'is_not_hidden');
-	if ($a && ($flags & F_NATSORT)) natcasesort($a);
+
+	if ($a && ($flags & F_HIDE)) {
+		$a = array_filter($a, 'is_not_hidden');
+	}
+
+	if ($a && ($flags & F_NATSORT)) {
+		natcasesort($a);
+	}
+
 	return $a;
 }
 
 function get_dir_rooms($source_subdir = '', $output_subdir = '', $flags = 0, $type = '') {
 	global $cfg_game_type_dir;
+
 	if ($s = $source_subdir ?: '') $s = trim($s, '/.').'/';
 	if ($o = $output_subdir ?: '') $o = trim($o, '/.').'/';
-	$a = array();
+
+	$result = array();
 	$types = (array)($type ?: $cfg_game_type_dir);
+
 	foreach ($types as $t) {
 		if ($t) $t = "$t/";
+
 		foreach (get_dir_contents("$s$t", $flags) as $r) {
-			if (($t || !in_array($r, $cfg_game_type_dir)) && is_dir("$s$t$r")) $a[] = "$o$t$r";
+			if (($t || !in_array($r, $cfg_game_type_dir)) && is_dir("$s$t$r")) {
+				$result[] = "$o$t$r";
+			}
 		}
 	}
-	return $a;
+
+	return $result;
 }
 
 function get_file_lines($path) {
@@ -544,6 +616,7 @@ function get_file_name($path, $flags = F_GET_FULL_IF_NONE, $delim = '/') {
 
 function get_room_skip_list($add = '', $room = '') {
 	$a = array();
+
 	if (
 		!$GLOBALS['room_type']['single_active_thread']
 	&&	($r = $room ?: $GLOBALS['room'])
@@ -594,6 +667,7 @@ function get_room_skip_list($add = '', $room = '') {
 
 			array_unshift($a, $add);
 			$v = implode($skip_sep, $a);
+
 			return "$q=$r$room_sep$v";
 		}
 	}
@@ -623,7 +697,11 @@ function get_room_name_length($name, $as_arr = false) {
 
 	$name_length = mb_strlen($name);
 
-	return ($as_arr ? array($name_length, $name, $found_prefixes) : $name_length);
+	return (
+		$as_arr
+		? array($name_length, $name, $found_prefixes)
+		: $name_length
+	);
 }
 
 function get_room_type($room, $type = '') {
@@ -635,10 +713,14 @@ function get_room_type($room, $type = '') {
 //* 1) check game types in room subfolders:
 
 	if ($type) {
-		if ($v = $cfg_game_type_dir[$type]) return ($v ? in_array($v, $sub) : !$sub);
+		if ($v = $cfg_game_type_dir[$type]) {
+			return ($v ? in_array($v, $sub) : !$sub);
+		}
+
 		$result = 0;
 	} else {
 		$result = array();
+
 		foreach ((array)($sub ?: GAME_TYPE_DEFAULT) as $v) if (false !== ($k = array_search($v, $cfg_game_type_dir))) {
 			$result['game_type'] = $k;
 		}
@@ -661,10 +743,15 @@ function get_room_type($room, $type = '') {
 //* latest found values for a key overwrite any previous:
 
 		if ($type) {
-			if (array_key_exists($type, $set)) $result = $set[$type];
+			if (array_key_exists($type, $set)) {
+				$result = $set[$type];
+			}
 		} else {
 			$result['set'][] = $set_id;
-			foreach ($set as $k => $v) $result[$k] = $v;
+
+			foreach ($set as $k => $v) {
+				$result[$k] = $v;
+			}
 		}
 	}
 
@@ -673,13 +760,28 @@ function get_room_type($room, $type = '') {
 
 function get_dir_top_file_id($d, $e = '') {
 	$i = 0;
-	foreach (get_dir_contents($d) as $f) if (($n = intval($f)) && (!$e || $f === "$n$e") && $i < $n) $i = $n;
+
+	foreach (get_dir_contents($d) as $f) if (
+		($n = intval($f))
+	&&	(!$e || $f === "$n$e")
+	&&	$i < $n
+	) {
+		$i = $n;
+	}
+
 	return $i;
 }
 
 function get_dir_top_filemtime($d) {
 	$t = 0;
-	foreach (get_dir_contents($d) as $f) if (($m = filemtime("$d/$f")) && $t < $m) $t = $m;
+
+	foreach (get_dir_contents($d) as $f) if (
+		($m = filemtime("$d/$f"))
+	&&	$t < $m
+	) {
+		$t = $m;
+	}
+
 	return $t;
 }
 
@@ -703,6 +805,7 @@ function get_pic_normal_path($p) {
 
 function get_pic_resized_path($p) {
 	$s = '_res';
+
 	return (
 		false === ($i = mb_strrpos($p, '.'))
 		? $p.$s
@@ -716,6 +819,7 @@ function get_pic_subpath($p) {
 	$e = mb_substr($p,$i,1);
 	$n = mb_substr($p,0,1);
 	$p = DIR_PICS."$e/$n/$p";
+
 	return $p;
 }
 
@@ -742,42 +846,74 @@ function get_search_ranges($criteria, $caseless = true) {
 		if (strlen($t = $criteria[$type])) {
 			$sub_ranges = array();
 			$min = false;
+
 			while (preg_match("~$before$pattern~iux", $t, $match)) {
 				$t = substr($t, strlen($match[0]));
 				$prefix = $match['before'] ?: '';
 				$minus = $match['minus'] ?: '';
-				if (strlen($minus) && !strlen($prefix) && false !== $min) {$prefix = '-'; $minus = '';}
+
+				if (
+					strlen($minus)
+				&&	!strlen($prefix)
+				&&	false !== $min
+				) {
+					$prefix = '-';
+					$minus = '';
+				}
+
 				if (strlen($v = $match['csv'])) {
 					$v = get_time_seconds($x = "$minus$v");
 				} else {
 					$v = intval($match['number']);
 					$x = "$minus$v";
-					if (($oom = $match['oom']) && preg_match($pat_oom, $oom, $m)) {
+
+					if (
+						($oom = $match['oom'])
+					&&	preg_match($pat_oom, $oom, $m)
+					) {
 						$v = (float)"$x$match[float]";
 						$x = "$v$oom";
 						$i = 0;
-						do { $v *= 1024; } while (!$m[++$i] && $i < 255);
+
+						do {
+							$v *= 1024;
+						} while (
+							!$m[++$i]
+						&&	$i < 255
+						);
 					} else {
 						$v = intval($x);
 					}
 				}
 				$k = '';
-				if (strlen($prefix)) foreach ($signs as $sign) if (false !== mb_strpos($prefix, $sign)) {$k = $sign; break;}
+
+				if (strlen($prefix)) {
+					foreach ($signs as $sign) if (false !== mb_strpos($prefix, $sign)) {
+						$k = $sign;
+
+						break;
+					}
+				}
+
 				if ('-' === $k && false !== $min) {
 					array_pop($sub_ranges);
+
 					$sub_ranges[] = (
 						$min < $v
 						? array('min' => $min, 'max' => $v, 'min_arg' => $min_arg, 'max_arg' => $x)
 						: array('min' => $v, 'max' => $min, 'min_arg' => $x, 'max_arg' => $min_arg)
 					);
+
 					$min = false;
 				} else {
-					if ($k) $min = false;
-					else {
+					if ($k) {
+						$min = false;
+					} else {
 						$k = '=';
 						$min = $v;
 						$min_arg = $x;
 					}
+
 					$sub_ranges[] = array(
 						'operator' => $k
 					,	'argument' => $x
@@ -785,8 +921,12 @@ function get_search_ranges($criteria, $caseless = true) {
 					);
 				}
 			}
-			if ($sub_ranges) $result[$type] = $sub_ranges;
+
+			if ($sub_ranges) {
+				$result[$type] = $sub_ranges;
+			}
 		}
+
 		unset($criteria[$type]);
 	}
 
@@ -796,8 +936,15 @@ function get_search_ranges($criteria, $caseless = true) {
 		$result[$type] = get_search_ranges($value, $caseless);
 	} else {
 		$value = "$value";
-		if ($caseless) $value = mb_strtolower($value);
-		if (preg_match('~\v~u', $value)) $value = mb_split_filter($value, NL);
+
+		if ($caseless) {
+			$value = mb_strtolower($value);
+		}
+
+		if (preg_match('~\v~u', $value)) {
+			$value = mb_split_filter($value, NL);
+		}
+
 		$result[$type] = $value;
 	}
 
@@ -805,13 +952,20 @@ function get_search_ranges($criteria, $caseless = true) {
 }
 
 function is_arg_type_any_of($type) {
-	return ($type === ARG_ANY_OF || intval($type) !== 0);
+	return (
+		$type === ARG_ANY_OF
+	||	intval($type) !== 0
+	);
 }
 
 function is_post_text_matching($post_text, $search_value, $type = false, $caseless = false, $is_regex = false) {
 	foreach ((array)$post_text as $t) if (strlen($t)) {
 		$t = html_entity_decode($t);
-		if ($caseless) $t = mb_strtolower($t);
+
+		if ($caseless) {
+			$t = mb_strtolower($t);
+		}
+
 		if (
 			(
 				$type === ARG_FULL_NAME
@@ -819,7 +973,9 @@ function is_post_text_matching($post_text, $search_value, $type = false, $casele
 				: false !== mb_strpos($t, $search_value)
 			)
 		||	($is_regex && @preg_match($search_value, $t))
-		) return true;
+		) {
+			return true;
+		}
 	}
 
 	return false;
@@ -829,7 +985,9 @@ function is_post_matching($post, $criteria, $caseless = true) {
 	if (!(
 		is_array($post) && $post
 	&&	is_array($criteria) && $criteria
-	)) return false;
+	)) {
+		return false;
+	}
 
 	$is_image_post = isset($post['meta']);
 
@@ -840,6 +998,7 @@ function is_post_matching($post, $criteria, $caseless = true) {
 					continue 2;
 				}
 			}
+
 			return false;
 		}
 
@@ -854,9 +1013,12 @@ function is_post_matching($post, $criteria, $caseless = true) {
 			$t = $post['user_id'];
 		} else
 		if ($type == 'post') {
-			if ($is_image_post) return false;
+			if ($is_image_post) {
+				return false;
+			}
 
 			$t = $post['post'];				//* <- text-only post content
+
 			if (false !== mb_strpos($t, '<')) {
 				$t = preg_replace('~<[^>]+>~u', '', mb_str_replace('<br>', NL, $t));
 			}
@@ -872,24 +1034,32 @@ function is_post_matching($post, $criteria, $caseless = true) {
 		if ($type == 'width' || $type == 'height' || $type == 'bytes') {
 			$t = $post['post'];
 			$pat = ($type == 'bytes' ? PAT_POST_PIC_BYTES : PAT_POST_PIC_W_X_H);
+
 			if (preg_match($pat, mb_substr_after($t, '>'), $match)) {
 				$t = intval($match[$type == 'height'?2:1]);
-			} else return false;
+			} else {
+				return false;
+			}
 		} else
 		if ($type == 'time') {
 			if (preg_match('~^[\d:-]+~i', $post['meta'], $match)) {
 				$t = $match[0];
+
 				if (mb_strrpos($t, '-')) {
 					$t1 = $t0 = false;
+
 					foreach (mb_split('-', $t) as $n) if (strlen($n)) {
 						if (false === $t0) $t0 = $n;
 						$t1 = $n;
 					}
+
 					$t = intval(($t1-$t0)/1000);	//* <- msec. from JS
 				} else {
 					$t = get_time_seconds($t);
 				}
-			} else return false;
+			} else {
+				return false;
+			}
 		} else {
 			$t = $post['meta'];				//* <- what was used to draw
 		}
@@ -907,7 +1077,9 @@ if (TIME_PARTS && LOCALHOST) time_check_point("$type: $t vs ".get_print_or_none(
 				if (
 					(is_array($cond) ? count($cond) : strlen($cond))
 				&&	($found = is_post_text_matching($t, $cond, $cond_type, $caseless))
-				) break;
+				) {
+					break;
+				}
 			} else
 			if (
 				(
@@ -927,14 +1099,23 @@ if (TIME_PARTS && LOCALHOST) time_check_point("$type: $t vs ".get_print_or_none(
 			) {
 				if ($type == 'time') {
 					$found = "drawn in $t sec.";
-				} else $found = "found $t";
+				} else {
+					$found = "found $t";
+				}
+
 				break;
 			}
 		} else {
-			if (!is_array($value)) $is_regex = preg_match(PAT_REGEX_FORMAT, $value);
+			if (!is_array($value)) {
+				$is_regex = preg_match(PAT_REGEX_FORMAT, $value);
+			}
+
 			$found = is_post_text_matching($t, $value, $type, $caseless, $is_regex);
 		}
-		if (!$found) return false;
+
+		if (!$found) {
+			return false;
+		}
 	}
 
 	return $found;
@@ -942,24 +1123,35 @@ if (TIME_PARTS && LOCALHOST) time_check_point("$type: $t vs ".get_print_or_none(
 
 function get_post_fields_to_display($post) {
 	global $post_data_to_hide;
+
 	if (!isset($post_data_to_hide)) {
 		$post_data_to_hide = array(PAT_POST_PIC_BYTES, PAT_POST_PIC_CRC32);
 	}
+
 	if (is_array($post)) {
-		if (isset($post['meta'])) $old = $post['post'];
+		if (isset($post['meta'])) {
+			$old = $post['post'];
+		}
 	} else {
 		$old = $post;
 	}
+
 	if (isset($old)) {
 		$new = $old;
+
 		foreach ($post_data_to_hide as $pat) {
 			$new = preg_replace($pat, '', $new);
 		}
+
 		if ($new !== $old) {
-			if (is_array($post)) $post['post'] = $new;
-			else $post = $new;
+			if (is_array($post)) {
+				$post['post'] = $new;
+			} else {
+				$post = $new;
+			}
 		}
 	}
+
 	return $post;
 }
 
@@ -985,6 +1177,7 @@ function get_post_pic_to_display($p, $return_array = false) {
 
 function get_post_pic_info($p, $csv = '', $check_file = 0) {
 	list($filename, $etc) = mb_split(';', $p, 2);
+
 	$a = array(
 		'file_name_ext' => ($p = trim(
 			$check_file
@@ -993,10 +1186,12 @@ function get_post_pic_info($p, $csv = '', $check_file = 0) {
 		))
 	,	'csv' => trim($csv) ?: trim($etc) ?: ''
 	);
+
 	if ($check_file || $csv) {
 		$a['rel_path'] = ($p = get_pic_subpath($p));
 		$a['full_url'] = get_pic_url($p);
 	}
+
 	if ($csv = $a['csv']) {
 		if (preg_match(PAT_POST_PIC_W_X_H, $csv, $match_res)) {
 			$a['full_res'] = array(
@@ -1004,41 +1199,51 @@ function get_post_pic_info($p, $csv = '', $check_file = 0) {
 			,	$match_res['height']
 			);
 		}
+
 		if (preg_match(PAT_POST_PIC_BYTES, $csv, $match_bytes)) {
 			$a['full_bytes'] = $b = $match_bytes['bytes'];
 			$a['full_bytes_f'] = format_filesize($b);
 		}
+
 		if (preg_match(PAT_POST_PIC_CRC32, $csv, $match_crc32)) {
 			$a['crc32'] = $match_crc32['crc32'];
 		}
 	}
+
 	if ($check_file && is_file($p)) {
 		if ($check_file > 1 || !$a['full_res']) {
 			$a['full_res'] = getImageSize($p);
 		}
+
 		if ($check_file > 1 || !$a['full_bytes'] || !$a['full_bytes_f']) {
 			$a['full_bytes'] = $b = filesize($p);
 			$a['full_bytes_f'] = format_filesize($b);
 		}
+
 		if ($check_file > 1 || !$a['crc32']) {
 			$a['crc32'] = hash_file(ARCH_DL_HASH_TYPE, $p);
 		}
 	}
+
 	return $a;
 }
 
 function get_post_pic_field_with_fixed_info($p, $check_file = 1) {
 	$a = get_post_pic_info($p, '', $check_file);
 	$res = $a['full_res'];
+
 	return "$a[file_name_ext];$res[0]*$res[1], $a[full_bytes_f], $a[full_bytes] B, 0x$a[crc32]";
 }
 
 function get_archiver_dl_list($caseless = true, $include_hidden = true) {
 	global $u_num;
+
 	$user_id = ($_REQUEST['by_user_id'] ? "$u_num" : '');
 	$names = ($_REQUEST['by_user_names'] ? (fix_encoding($_REQUEST['names']) ?: '') : '');
 
-	if (!strlen($user_id) && !strlen($names)) return '';
+	if (!strlen($user_id) && !strlen($names)) {
+		return '';
+	}
 
 	$criteria = get_search_ranges(
 		array(
@@ -1050,6 +1255,7 @@ function get_archiver_dl_list($caseless = true, $include_hidden = true) {
 		)
 	,	$caseless
 	);
+
 	$sources = array(
 		'from_arch' => array(
 			'require' => NAMEPRFX.'.arch.php'
@@ -1062,6 +1268,7 @@ function get_archiver_dl_list($caseless = true, $include_hidden = true) {
 		,	'post_parser_func' => 'data_get_post_pic_info'
 		)
 	);
+
 	$naming = fix_encoding($_REQUEST['naming']) ?: '';
 	$s = ARCH_DL_NAME_PART_SEPARATOR;
 	$first = 0;
@@ -1078,23 +1285,29 @@ function get_archiver_dl_list($caseless = true, $include_hidden = true) {
 			? $f($criteria, $caseless, $include_hidden)
 			: array()
 		);
+
 		foreach ($found as $room => $threads) {
 			if (get_room_type($room, 'hide_in_room_list')) {
 				$room = '[ '.get_localized_text('archiver_hidden_room').' #'.strtoupper(hash(ARCH_DL_HASH_TYPE, $room)).' ]';
 			}
+
 			foreach ($threads as $thread => $posts) {
 				if (intval($thread) <= 0) {
 					$thread = '';
 				}
+
 				foreach ($posts as $post) {
 					$f = $source['post_parser_func'];
 					$a = (function_exists($f) ? $f($post['post']) : array());
+
 					if (
 						strlen($crc32 = $a['crc32'] ?: '') < 8	//* <- zip stream will restart partial dl without crc32
 					||	!strlen($f = $a['file_name_ext'] ?: '')
 					||	!strlen($rel_path = $a['rel_path'] ?: '')
 					||	!is_file($rel_path)			//* <- zip stream will abort on file access errors
-					) continue;
+					) {
+						continue;
+					}
 
 					$i = get_file_name_no_ext($f);
 					$ext = get_file_ext($f);
@@ -1125,14 +1338,24 @@ function get_archiver_dl_list($caseless = true, $include_hidden = true) {
 							);
 						}
 					}
-					if (!strlen($name = trim($name))) $name = $i;
-					else if (false === mb_strpos($name, $i)) $name .= $s.$i;
+
+					if (!strlen($name = trim($name))) {
+						$name = $i;
+					} else if (false === mb_strpos($name, $i)) {
+						$name .= $s.$i;
+					}
 
 					if (strlen($name = mb_sanitize_filename("$name.$ext"))) {
 						if ($time) {
-							if (!$first || $first > $time) $first = $time;
-							if ($last < $time) $last = $time;
+							if (!$first || $first > $time) {
+								$first = $time;
+							}
+
+							if ($last < $time) {
+								$last = $time;
+							}
 						}
+
 						$total_size += $bytes = $a['full_bytes'];
 						$full_path = ROOTPRFX.$rel_path;
 						$file_list[$name] = "$crc32 $bytes $full_path $name";
@@ -1141,6 +1364,7 @@ function get_archiver_dl_list($caseless = true, $include_hidden = true) {
 			}
 		}
 	}
+
 	if ($file_list) {
 		ksort($file_list, SORT_NATURAL);
 		$content = implode(NL, $file_list);
@@ -1151,28 +1375,42 @@ function get_archiver_dl_list($caseless = true, $include_hidden = true) {
 		$last = date(FILENAME_DATETIME_FORMAT, $last);
 		$f = "$first$s$last$s$size in $count files$s$hash".ARCH_DL_EXT;
 		$f = preg_replace('~\s+~u', '_', $f);
-		if (!is_file($p = DIR_ARCH_DL.$f.ARCH_DL_LIST_EXT)) file_put_mkdir($p, $content);
-	} else $f = '';
+
+		if (!is_file($p = DIR_ARCH_DL.$f.ARCH_DL_LIST_EXT)) {
+			file_put_mkdir($p, $content);
+		}
+	} else {
+		$f = '';
+	}
 	data_unlock($lk);
 
 	return $f;
 }
 
 function get_first_arg($text, $before = '"', $after = '"') {
-	if ($i = mb_strpos_after($text, $before)) return (
-		false !== ($j = mb_strpos($text, $after, $i))
-		? mb_substr($text, $i, $j-$i)
-		: mb_substr($text, $i)
-	);
+	if ($i = mb_strpos_after($text, $before)) {
+		return (
+			false !== ($j = mb_strpos($text, $after, $i))
+			? mb_substr($text, $i, $j-$i)
+			: mb_substr($text, $i)
+		);
+	}
+
 	return $text;
 }
 
 function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for archive pages; default = current date
 	global $cfg_date_class, $date_classes;
-	if (!$t_first && !$t_last && $date_classes) return $date_classes;
+
+	if (!$t_first && !$t_last && $date_classes) {
+		return $date_classes;
+	}
+
 	if (!$t_first) $t_first = T0;
 	if (!$t_last) $t_last = $t_first;
+
 	$date_classes = array();
+
 	foreach ($cfg_date_class as $a) if (is_array($a) && $a[0] && $a[1]) {
 		$now = array(
 			date($a[1], $t_first)
@@ -1183,6 +1421,7 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 		$flag = ($a[4] ?: 2);
 		$wrap = ($due1 !== false && $due2 !== false && $due1 > $due2);	//* <- wrap around new year, etc
 		if (!$flag) $flag = 7;
+
 		for ($i = 0; $i < 2; $i++) if ($flag & (1<<$i)) {
 			$check = array(
 				($due1 === false || $now[$i] >= $due1)
@@ -1193,10 +1432,12 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 			:	($check[0] && $check[1])
 			) {
 				$date_classes[] = $a[0];
+
 				break;
 			}
 		}
 	}
+
 	return $date_classes;
 }
 
@@ -1286,7 +1527,9 @@ function get_draw_vars($send = '') {
 
 function get_flag_vars($a) {
 	global $page, $u_opts;
+
 	$r = '';
+
 	foreach ($a as $k => $v) {
 		if (!is_array($v)) {
 			$mode = $v;
@@ -1312,29 +1555,37 @@ caps_width = ".DRAW_PREVIEW_WIDTH;
 			}
 		}
 	}
+
 	return $r;
 }
 
 function get_time_html($t = 0) {
-	$sep = 'T';
+	$separator = 'T';
 	$f = date(DATE_ATOM, $uint = ($t ?: T0));
-	$i = mb_strpos($f, $sep);
+	$i = mb_strpos($f, $separator);
 	$d = mb_substr($f, 0, $i);
-	$t = mb_substr($f, $i + mb_strlen($sep), 8);
+	$t = mb_substr($f, $i + mb_strlen($separator), 8);
+
 	return '<time datetime="'.$f.'" data-t="'.$uint.'">'.$d.' <small>'.$t.'</small></time>';
 }
 
 function get_time_elapsed($t = 0) {
 	$t = explode(' ', $t ?: microtime());
+
 	return ($t[1]-T0) + ($t[0]-M0);
 }
 
 function get_time_seconds($t) {
 	if (mb_strrpos($t, ':') > 0) {
 		$sec = 0;
-		foreach (explode(':', $t) as $n) $sec = $sec*60 + intval($n);
+
+		foreach (explode(':', $t) as $n) {
+			$sec = $sec*60 + intval($n);
+		}
+
 		return ($t[0] == '-'?-$sec:$sec);
 	}
+
 	return floor($t);	//* <- 32-bit signed integer overflow workaround
 }
 
@@ -1342,6 +1593,7 @@ function format_time_units($t) {
 	while (is_array($t)) {
 		$t = reset($t);
 	}
+
 	foreach (get_localized_text_array('time_units') as $k => $v) if ($t >= $k) {
 		if ($k) {$rem = $t%$k; $t = floor($t/$k);}
 		$i = count($v)-1;
@@ -1353,21 +1605,26 @@ function format_time_units($t) {
 		$r .= ($r?' ':'').$t.' '.$v[$i];
 		if ($rem) $t = $rem; else break;
 	}
+
 	return $r;
 }
 
 function format_filesize($b = 0, $frac = 2) {
 	$m = 'BkMGTPEZY';
+
 	if ($i = floor((strlen($b) - 1) / 3)) {
 		$b = sprintf("%.{$frac}f", $b/pow(1024, $i));
+
 		return "$b $m[$i]$m[0]";
 	}
+
 	return "$b $m[0]";
 }
 
 function format_matched_link($a) {
 	if ($m = $a['a'] ?: $a['img']) {
 		$url = $text = $m;
+
 		if ($a['img']) {
 			$text = '<img src="'.$url.'" alt="'.$text.'" class="'
 			.(
@@ -1377,13 +1634,18 @@ function format_matched_link($a) {
 				: 'center'
 			).'">';
 		}
+
 		return '<a href="'.$url.'" rel="nofollow">'.$text.'</a>';
 	}
+
 	return $a[0];
 }
 
 function format_post_text($text, $uncut = '') {
-	if (!$uncut) $uncut = $text;
+	if (!$uncut) {
+		$uncut = $text;
+	}
+
 	if (
 		is_prefix($uncut, POST_LINE_BREAK)
 	&&	is_postfix($uncut, POST_LINE_BREAK)
@@ -1396,6 +1658,7 @@ function format_post_text($text, $uncut = '') {
 			))
 		.'</i>';
 	}
+
 	return $text;
 }
 
@@ -1463,6 +1726,7 @@ function optimize_pic($filepath) {
 				foreach ($not_supported_text_parts as $not_supported_text_part) {
 					if (false !== strpos($output_line, $not_supported_text_part)) {
 						$not_supported = true;
+
 						break 2;
 					}
 				}
@@ -1553,15 +1817,19 @@ Shell output: $o"
 
 //* https://stackoverflow.com/a/1455610
 function get_system_memory_info() {
-	if (function_exists($f = 'win32_ps_stat_mem')) return $f();
+	if (function_exists($f = 'win32_ps_stat_mem')) {
+		return $f();
+	}
 
 	$array = array();
+
 	if ($lines = get_file_lines('/proc/meminfo')) {
 		foreach ($lines as $line) {
 			list($key, $val) = explode(':', $line);
 			$array[$key] = trim($val);
 		}
 	}
+
 	return $array;
 }
 
@@ -1603,35 +1871,50 @@ function indent($t, $n = 0) {
 					$add = false;
 				} else {
 					$add = $before;
-					if ($tag = $match['openTag']) $in = $tag;
+
+					if ($tag = $match['openTag']) {
+						$in = $tag;
+					}
 				}
+
 				if ($in && ($tag = $match['closeTag']) && ($in === $tag)) {
 					$in = false;
-					if (!$add && !$match['openTag']) $add = $before;
+
+					if (!$add && !$match['openTag']) {
+						$add = $before;
+					}
 				}
+
 				return $add ? $add.$match[0] : $match[0];
 			}
 		,	$t
 		).NL;
 		log_preg_last_error(false);
 	}
+
 	return $t;
 }
 
 function csv2nl($v, $c = ';', $n = 1) {
 	$d = "\s*[$c]+\s*";
-	$n = NL.($n > 0?str_repeat("\t", $n):'');
+	$n = NL.($n > 0 ? str_repeat("\t", $n) : '');
+
 	return $n.implode($c.$n, preg_split("~$d~u", preg_replace("~^$d|$d$~u", '', $v))).$c.NL;
 }
 
 function get_template_attr($a = '', $prefix = 'data-') {
-	foreach ((array)$a as $k => $v) if (strlen($v)) $line .= ' '.$prefix.$k.'="'.$v.'"';
+	foreach ((array)$a as $k => $v) if (strlen($v)) {
+		$line .= ' '.$prefix.$k.'="'.$v.'"';
+	}
+
 	return $line ?: '';
 }
 
-function get_template_welcome_row($sep, $a, $cfg_k = '') {
+function get_template_welcome_row($separator, $a, $cfg_k = '') {
 	global $cfg_welcome_links;
+
 	$a = (array)$a;
+
 	foreach ($a as $k => $v) if ($v) {
 		if ($cfg_k && ($i = $cfg_welcome_links[$cfg_k][$k])) {
 			$txt = $v;
@@ -1640,17 +1923,22 @@ function get_template_welcome_row($sep, $a, $cfg_k = '') {
 		if ($k !== intval($k)) {
 			$txt = $k;
 			$url = $v;
-		} else continue;
+		} else {
+			continue;
+		}
 
 		if (
 			false === ($i = mb_strpos($txt, '<img'))
 		||	false === ($j = mb_strpos_after($txt, '>', $i))
-		) continue;
+		) {
+			continue;
+		}
 
 		if (is_array($url)) {
 			list($f, $g) = $url;
 			$url = (function_exists($f) ? $f($g) : $g);
 		}
+
 		$a[$k] = indent(
 			mb_substr($txt, 0, $i)
 		.NL.	'<a href="'.$url.'" target="_blank">'
@@ -1659,7 +1947,8 @@ function get_template_welcome_row($sep, $a, $cfg_k = '') {
 		.NL.	mb_substr($txt, $j)
 		);
 	}
-	return implode($sep, $a);
+
+	return implode($separator, $a);
 }
 
 function get_template_welcome_see_do($c, $u, $see = '', $do = '') {
@@ -1667,27 +1956,30 @@ function get_template_welcome_see_do($c, $u, $see = '', $do = '') {
 	$skip = NL.'<td>	...	</td>';
 	$class = '<td class="thread">';
 	$td = '<td></td><td></td>';
-	return '<tr class="'.$c.' see">'.indent(
-		$user.$skip.$class.get_template_welcome_row(
-			'</td>'.NL.'<td class="then"></td>'.$class
-		,	$see ?: array(
-				"$u[desc_see]:"
-			,	"$u[pic_see]:"
-			,	"$u[desc_see]:"
-			)
-		,	$see?'see':''
-		).'</td>'.$skip.$user
-	).NL.'</tr><tr class="'.$c.' do">'.indent(
-		$td.NL.$class.get_template_welcome_row(
-			'</td><td></td>'.NL.$class
-		,	$do ?: array(
-				$u['desc_do']
-			,	$u['pic_do']
-			,	$u['desc_do']
-			)
-		,	$do?'do':''
-		).'</td>'.NL.$td
-	).'</tr>';
+
+	return (
+		'<tr class="'.$c.' see">'.indent(
+			$user.$skip.$class.get_template_welcome_row(
+				'</td>'.NL.'<td class="then"></td>'.$class
+			,	$see ?: array(
+					"$u[desc_see]:"
+				,	"$u[pic_see]:"
+				,	"$u[desc_see]:"
+				)
+			,	$see?'see':''
+			).'</td>'.$skip.$user
+		).NL.'</tr><tr class="'.$c.' do">'.indent(
+			$td.NL.$class.get_template_welcome_row(
+				'</td><td></td>'.NL.$class
+			,	$do ?: array(
+					$u['desc_do']
+				,	$u['pic_do']
+				,	$u['desc_do']
+				)
+			,	$do?'do':''
+			).'</td>'.NL.$td
+		).'</tr>'
+	);
 }
 
 function get_template_welcome_interleave($c = '', $t = '') {
@@ -1696,6 +1988,7 @@ function get_template_welcome_interleave($c = '', $t = '') {
 	$d = '<td></td>';
 	$a = NL.$d.$d;
 	$b = NL.'<td class="thread">'.$t.'</td>';
+
 	return "<tr$c>".indent("$a$b$d$b$d$b$a").'</tr>';
 }
 
@@ -1715,18 +2008,24 @@ function get_template_welcome($a) {
 		,	"$u[pic_do]	$i.3b$e"
 		)
 	);
-	return (($i = $a['header']) ? "<p>$i</p>".NL : '')
-	.'<table>'.indent(
-		get_template_welcome_interleave('prev', $a['head']).$sdo
-	.	get_template_welcome_interleave('prev').$sdu
-	.	get_template_welcome_interleave('next').$sdo
-	.	get_template_welcome_interleave('next', $a['tail'])
-	).'</table>'
-	.(($i = $a['footer']) ? NL."<p>$i</p>" : '');
+
+	return (
+		(($i = $a['header']) ? "<p>$i</p>".NL : '')
+		.'<table>'
+		.indent(
+			get_template_welcome_interleave('prev', $a['head']).$sdo
+		.	get_template_welcome_interleave('prev').$sdu
+		.	get_template_welcome_interleave('next').$sdo
+		.	get_template_welcome_interleave('next', $a['tail'])
+		)
+		.'</table>'
+		.(($i = $a['footer']) ? NL."<p>$i</p>" : '')
+	);
 }
 
 function get_template_profile_text($t) {
 	$p = strtolower($_SERVER['REQUEST_SCHEME'] ?: 'http');
+
 	return mb_str_replace(RELATIVE_LINK_PREFIX, "$p://$_SERVER[SERVER_NAME]/", $t);
 }
 
@@ -1740,6 +2039,7 @@ function get_template_profile_html($t) {
 	$t = get_template_profile_text($t);
 	$t = preg_replace_callback($pat, 'format_matched_link', $t);
 	$t = preg_replace('~(<br>)+~u', '$0'.NL, $t);
+
 	return $t;
 }
 
@@ -1752,10 +2052,12 @@ function get_template_form($t) {
 
 	if (is_array($a = $select)) {
 		$n = '';
+
 		foreach ((array)$a as $k => $v) {
 			if (!$name) $name = $k;
 			$n .= NL."	$k	$v[select]	$v[placeholder]";
 		}
+
 		$select = htmlspecialchars($n, ENT_COMPAT | ENT_SUBSTITUTE | ENT_HTML5).NL;
 	}
 
@@ -1795,7 +2097,16 @@ function get_template_form($t) {
 		$hint = '';
 		foreach ((array)$a as $k => $v) $hint .= NL
 		.'<p class="hint'.($k?" $k":'').'">'
-		.	indent(get_template_hint(is_array($v) ? implode(',', array_map(function($a) {return is_array($a)?$a[0]:$a;}, $v)) : $v))
+		.	indent(get_template_hint(
+				is_array($v)
+				? implode(',', array_map(
+					function($a) {
+						return is_array($a) ? $a[0] : $a;
+					}
+				,	$v
+				))
+				: $v
+			))
 		.'</p>';
 	}
 

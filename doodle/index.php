@@ -268,6 +268,7 @@ if ($a = mb_split_filter($p)) {
 		$qredir = ($qpath['dir'] = $qdir = $d).'s';
 		foreach ($cfg_dir as $k => $v) if ($qdir == $v) {
 			${"qd_$k"} = 1;
+
 			break;
 		}
 
@@ -364,8 +365,17 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 		$u_qk = array_shift($a);
 		$key_value_pairs = $a;
 	}
-	if (($reg = trim($_POST[ME])) && $u_qk != $reg) $u_qk = $reg;
-	if ($u_qk && data_check_user($u_qk, $reg)) {
+
+	if (
+		isset($_POST[ME])
+	&&	strlen($_POST[ME])
+	&&	strlen($reg = trim($_POST[ME]))
+	&&	($u_qk !== $reg)
+	) {
+		$u_qk = $reg;
+	}
+
+	if (data_check_user($u_qk, $reg)) {
 		$u_name = $usernames[$u_num];
 
 		if (LOG_IP) {
@@ -669,7 +679,11 @@ if (TIME_PARTS) time_check_point('ignore user abort');
 			if ($do === 'opcache_inval') {
 				$t = implode(NL, array_filter(array_map(
 					function($f) {
-						return get_file_ext($f) === 'php' ? "$f\t".opcache_invalidate($f) : '';
+						return (
+							get_file_ext($f) === 'php'
+							? "$f\t".opcache_invalidate($f)
+							: ''
+						);
 					}
 				,	get_dir_contents()
 				)));
@@ -694,7 +708,11 @@ if (TIME_PARTS && $i) time_check_point("done $i pics");
 
 				function move_leftover_files($d) {
 					global $check, $links, $t, $i, $k;
-					if (!is_dir($d)) return;
+
+					if (!is_dir($d)) {
+						return;
+					}
+
 					foreach (get_dir_contents($d) as $f) if (is_file($old = "$d$f")) {
 						if (false === array_search($f, $links)) {
 							if ($check) {
@@ -937,7 +955,10 @@ if ($qd_user) {
 
 if ($qd_arch) {
 	require_once(NAMEPRFX.'.arch.php');
-	$q = data_archive_get_search_url($search = data_archive_get_search_terms($query));
+
+	$search = data_archive_get_search_terms($query);
+	$q = data_archive_get_search_url($search);
+
 	if (
 		strlen($query_in_url)
 	&&	!is_url_equivalent($q, $query_in_url)
@@ -954,7 +975,10 @@ if ($qd_arch) {
 			if ($a = abs($room_type['arch_pages'] ?: 0)) {
 				$a *= TRD_PER_PAGE;
 				$start = max(0, $thread_count - $a);
-			} else $start = 0;
+			} else {
+				$start = 0;
+			}
+
 			$page['content'] = '
 images = '.DIR_THUMB.'
 image_ext = '.THUMB_EXT.'
@@ -987,7 +1011,9 @@ last = <a href="'.$thread_count.'.htm">'.$thread_count.'</a><!-- static link for
 					.get_localized_text('arch_count')
 				);
 			}
+
 			$prev_type = false;
+
 			foreach ($visible['list'] as $room => $n) {
 				$room_type = get_room_type($room);
 				$a = mb_split_filter($room);
@@ -1013,6 +1039,7 @@ type_title = ".get_localized_text('room_types_title', $k);
 					: NB.TAB.NB.TAB.$room
 				);
 			}
+
 			$room = '';
 			$page['data']['content']['type'] = 'archive rooms';
 		}
@@ -1075,13 +1102,18 @@ type_title = ".get_localized_text('room_types_title', $k);
 				$t = '';
 
 				foreach ($found as $r_i => $threads) {
-					if (!$room) $t .= ($t ? NL.NL : NL)."room = $r_i";
+					if (!$room) {
+						$t .= ($t ? NL.NL : NL)."room = $r_i";
+					}
+
 					foreach ($threads as $t_i => $posts) {
 						$t .= NL."t = $t_i";
+
 						foreach ($posts as $v) {
 							if (isset($v['meta'])) {
 								$v['post'] = get_post_pic_to_display($v['post']);
 							}
+
 							$t .= NL.implode('	', $v);
 						}
 					}
@@ -1109,7 +1141,9 @@ page_ext = ".PAGE_EXT.get_flag_vars(
 
 		$page['js'][0]++;
 	}
-	if (!$page['content']) $page['task'] .= get_localized_text('empty');
+	if (!$page['content']) {
+		$page['task'] .= get_localized_text('empty');
+	}
 } else
 
 //* draw test -----------------------------------------------------------------
@@ -1204,6 +1238,7 @@ NL.get_localized_text('options_name').$t.(
 		,	DRAW_APP_NONE
 		,	'?'.ARG_DRAW_APP.'=*'
 		));
+
 		foreach (get_localized_text_array('options_input') as $i => $o) {
 			if (
 				!$u_flag['god']
@@ -1293,6 +1328,7 @@ arch_dl_path = '.ROOTPRFX.DIR_ARCH_DL
 			[NAMEPRFX, DRAW_BACKUPCOPY_PREFIX]
 		,	array_filter($cfg_draw_app, 'is_not_draw_none')
 		));
+
 		foreach (array(
 			'save'	=> array($j, 'id="unsave'
 				.'" data-prefixes-to-keep="'.$prefixes_to_keep
@@ -2561,6 +2597,7 @@ file: $upload[name]";
 
 			if ($sz = getImageSize($f)) {
 				unset($file_content, $post_data);
+
 				foreach ($cfg_wh as $k => $v)
 				if ($a = (
 					get_const("DRAW_LIMIT_$v")
@@ -2569,19 +2606,25 @@ file: $upload[name]";
 					list($a, $b) = preg_split('~\D+~u', $a, 0, PREG_SPLIT_NO_EMPTY);
 					$y = ($b ?: $a);
 					$z = ${mb_strtolower(mb_substr($v,0,1))} = $sz[$k];
+
 					if (($a && $z < $a) || ($y && $z > $y)) {
 						$x = 0;
 						$post_status = 'pic_size';
 						$log = "$sz[0]x$sz[1]";
+
 						break;
 					}
 				}
+
 				if ((($resize = ($w > DRAW_PREVIEW_WIDTH)) || $x < 9000) && $x > 0) {
 					$post_status = 'pic_fill';
 					$i = "imageCreateFrom$file_type";
 					$log = imageColorAt($pic = $i($f), 0, 0);
+
 					for ($x = $w; --$x;)
-					for ($y = $h; --$y;) if (imageColorAt($pic, $x, $y) != $log) break 2;
+					for ($y = $h; --$y;) if (imageColorAt($pic, $x, $y) != $log) {
+						break 2;
+					}
 				}
 
 	//* invalid image:
@@ -2709,12 +2752,22 @@ if ($query[LK_MOD_ACT]) {
 		if (!$r_type) foreach ($a as $v) {
 			if ($r_type) {
 				$room = $v;
+
 				break;
 			} else
-			if (in_array($v, $cfg_game_type_dir)) $r_type = $v;
+			if (in_array($v, $cfg_game_type_dir)) {
+				$r_type = $v;
+			}
 		}
-		if (!$r_type) $r_type = GAME_TYPE_DEFAULT;
-		if (!$room && ($r_type || !GAME_TYPE_DEFAULT)) $room = reset($a);
+
+		if (!$r_type) {
+			$r_type = GAME_TYPE_DEFAULT;
+		}
+
+		if (!$room && ($r_type || !GAME_TYPE_DEFAULT)) {
+			$room = reset($a);
+		}
+
 		$qpath = array($qdir, $r_type, $room);
 	} else
 
@@ -2866,6 +2919,7 @@ if ($f = $pic_final_path) {
 
 	function pic_opt_get_time() {
 		global $AT;
+
 		return '</p>
 <p>'.get_time_elapsed().$AT;
 	}

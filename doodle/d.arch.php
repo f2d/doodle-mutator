@@ -69,7 +69,10 @@ function data_archive_get_visible_rooms($type = '') {
 	$a = array();
 
 	foreach (get_dir_rooms(DIR_ARCH, '', F_NATSORT | F_HIDE, $type) as $r) if ($mt = data_get_mtime(COUNT_ARCH, $r)) {
-		if ($last < $mt) $last = $mt;
+		if ($last < $mt) {
+			$last = $mt;
+		}
+
 		$a[$r] = array(
 			'last' => $mt
 		,	'count' => data_get_count(COUNT_ARCH, $r)
@@ -90,7 +93,9 @@ function data_archive_get_images($room = '') {
 	foreach ($rooms as $r) if (is_dir($s = "$d$r/")) {
 		foreach (get_dir_contents($s) as $f) if (is_file($path = $s.$f)) {
 			foreach (data_get_thread_pics($path) as $i) {
-				if (false === array_search($i, $a)) $a[] = $i;
+				if (false === array_search($i, $a)) {
+					$a[] = $i;
+				}
 			}
 		}
 	}
@@ -99,21 +104,37 @@ function data_archive_get_images($room = '') {
 }
 
 function data_archive_get_thumb($src, $xMax = 0, $yMax = 0) {
-	if (!is_file($src)) return false;
+	if (!is_file($src)) {
+		return false;
+	}
 
 	ob_start();
 	$data = getImageSize($src);
 	$data['w'] = $width = $data[0];
 	$data['h'] = $height = $data[1];
+
 	switch ($data['mime']) {
-		case 'image/jpg': case 'image/jpeg': case 'image/pjpeg':
-					$orig = imageCreateFromJPEG($src);	break;
-		case 'image/png': case 'image/x-png':
-					$orig = imageCreateFromPNG($src);	break;
-//		case 'image/gif':	$orig = imageCreateFromGIF($src);	break;
+		case 'image/jpg':
+		case 'image/jpeg':
+		case 'image/pjpeg':
+		{
+			$orig = imageCreateFromJPEG($src);
+
+			break;
+		}
+		case 'image/png':
+		case 'image/x-png':
+		{
+			$orig = imageCreateFromPNG($src);
+
+			break;
+		}
 	}
 	ob_end_clean();
-	if (!$orig) return 0;
+
+	if (!$orig) {
+		return 0;
+	}
 
 	imageAlphaBlending($orig, false);
 	imageSaveAlpha($orig, true);
@@ -132,24 +153,25 @@ function data_archive_get_thumb($src, $xMax = 0, $yMax = 0) {
 		$data['w'] = $w;
 		$data['h'] = $h;
 		$data['imgdata'] = $res;
-	} else $data['imgdata'] = $orig;
+	} else {
+		$data['imgdata'] = $orig;
+	}
 
 	return $data;
 }
 
 function data_archive_put_thumb($src, $dest, $xMax = 0, $yMax = 0) {
-	if (!is_array($data = data_archive_get_thumb($src, $xMax, $yMax))) return false;
-/*
-	switch ($data['mime']) {
-		case 'image/jpg': case 'image/jpeg': case 'image/pjpeg':
-					return imageJPEG($data['imgdata'], $dest);
-//		case 'image/gif':	return imageGIF($data['imgdata'], $dest);
+	if (!is_array($data = data_archive_get_thumb($src, $xMax, $yMax))) {
+		return false;
 	}
-*/
+
 	return imagePNG($data['imgdata'], $dest);
 }
 
-function data_archive_get_post_date($line) {return intval(mb_substr_before($line, ','));}
+function data_archive_get_post_date($line) {
+	return intval(mb_substr_before($line, ','));
+}
+
 function data_archive_get_post_pic_info($img_html, $check_file = 1) {
 	$a = mb_split($b = '>', $img_html);
 
@@ -169,6 +191,7 @@ function data_archive_fix_image_path($post_content) {
 	) as $i) {
 		$x = mb_split($i, $post_content);
 		$post_content = array_shift($x);
+
 		foreach ($x as $y) {
 			$src = mb_substr($y, 0, $q = mb_strpos($y, '"'));	//* <- web path
 			$n = mb_substr($src, mb_strrpos_after($src, '/'));	//* <- pic filename
@@ -180,7 +203,9 @@ function data_archive_fix_image_path($post_content) {
 }
 
 function data_archive_fix_image_html_and_meta($post_content, $recheck = false) {
-	if (!$recheck) $recheck = array();
+	if (!$recheck) {
+		$recheck = array();
+	}
 
 	$a = data_archive_get_post_pic_info($post_content, $recheck['hash'] ? 2 : 1);
 
@@ -193,24 +218,34 @@ function data_archive_fix_image_html_and_meta($post_content, $recheck = false) {
 	if ($full_res && $full_res[0] > DRAW_PREVIEW_WIDTH) {
 		$a['resized_path'] = $post_content = get_pic_resized_path($a['rel_path']);
 		$a['resized_url'] = get_pic_url($post_content);
+
 		if (is_file($post_content)) {
 			$a['resized_res'] = getImageSize($post_content);
 		}
-		$post_content = '<a href="'.$a['full_url'].'">'
-		.	'<img src="'.$a['resized_url'].(
-				($resized_res = $a['resized_res'])
-				? '" width="'.$resized_res[0].'" height="'.$resized_res[1]
+
+		$post_content = (
+			'<a href="'.$a['full_url'].'">'
+			.	'<img src="'.$a['resized_url'].(
+					($resized_res = $a['resized_res'])
+					? '" width="'.$resized_res[0].'" height="'.$resized_res[1]
+					: ''
+				).'">'
+			.'</a>'
+		);
+	} else {
+		$post_content = (
+			'<img src="'.$a['full_url'].(
+				$full_res
+				? '" width="'.$full_res[0].'" height="'.$full_res[1]
 				: ''
 			).'">'
-		.'</a>';
-	} else {
-		$post_content = '<img src="'.$a['full_url'].(
-			$full_res
-			? '" width="'.$full_res[0].'" height="'.$full_res[1]
-			: ''
-		).'">';
+		);
 	}
-	if ($csv) $post_content .= "; $csv";
+
+	if ($csv) {
+		$post_content .= "; $csv";
+	}
+
 	if ($recheck['exists'] && !is_file($a['rel_path'])) {
 		$post_content = "<!--$post_content-->".ARCH_PIC_NOT_FOUND;
 	}
@@ -381,7 +416,10 @@ function data_archive_fix_post_date(&$posts, $i, $increment = false) {
 	return intval($changed);
 }
 
-function data_archive_is_a_content_line($line) {return (false !== mb_strpos($line, '	'));}
+function data_archive_is_a_content_line($line) {
+	return (false !== mb_strpos($line, ARCH_POST_FIELD_SEPARATOR));
+}
+
 function data_archive_get_page_html($room, $num, $tsv) {
 	global $data_archive_rewrite_params;
 
@@ -396,7 +434,9 @@ function data_archive_get_page_html($room, $num, $tsv) {
 	$data_archive_rewrite_params['date_span'] = &$date_span;
 	$data_archive_rewrite_params['meta'] = &$meta;
 
-	if ($num <= 0) return false;
+	if ($num <= 0) {
+		return false;
+	}
 
 	$p = $num-1;
 	$n = $num+1;
@@ -474,11 +514,14 @@ function data_archive_get_page_html($room, $num, $tsv) {
 
 function data_archive_full_threads($threads) {
 	global $room, $room_type;
+
 	if (!(
 		is_array($threads)
 	&&	count($threads)
 	&&	$room
-	)) return false;
+	)) {
+		return false;
+	}
 
 	data_lock($lk = LK_ARCH.$r, true);
 
@@ -528,37 +571,56 @@ function data_archive_full_threads($threads) {
 
 function data_archive_rewrite($params = false) {
 	global $data_archive_rewrite_params, $date_classes;
+
 	$data_archive_rewrite_params = (array)$params;
 	$a = 0;
 	$d = DIR_ARCH;
 	$elen = -strlen(PAGE_EXT);
+
 	data_lock($lk = LK_ARCH.$r, true);
 	foreach (get_dir_rooms($d, '', F_NATSORT) as $room) {
 		$t = 0;
+
 		foreach (get_dir_contents($dr = "$d$room", F_NATSORT) as $fn) if (
 			substr($fn, $elen) == PAGE_EXT
 		&&	is_file($f = "$dr/$fn")
 		&&	preg_match(PAT_CONTENT, $old = file_get_contents($f), $match)
 		) {
 			$new = data_archive_get_page_html($room, intval($fn), $match['content']);
-			if ($old == $new) $x = 'same';
-			else if (!$new) $x = 'error';
-			else {
-				if (!rename($f, $x = "$f.bak")) $x = 'rename old to bak failed'; else
-				if (!($sz = file_put_contents($f, $new))) $x = 'save new failed'; else
-				if (!unlink($x)) $x = 'delete old failed'; else
-				$x = strlen($old)." => $sz bytes";
+
+			if ($old === $new) {
+				$status = 'same';
+			} else
+			if (!$new) {
+				$status = 'error generating new content';
+			} else
+			if (!rename($f, $f_bak = "$f.bak")) {
+				$status = 'rename old to bak failed';
+			} else
+			if (!($sz = file_put_contents($f, $new))) {
+				$status = 'save new failed';
+			} else
+			if (!unlink($f_bak)) {
+				$status = 'delete old failed';
+			} else {
+				$status = strlen($old)." => $sz bytes";
 			}
+
 			$date_span = array();
+
 			foreach ($data_archive_rewrite_params['date_span'] as $k => $v) {
 				$date_span[$k] = date(CONTENT_DATETIME_FORMAT, $v);
 			}
-			$dc = ($date_classes ? '	'.implode(' ', $date_classes) : '');
-			$text_report .= NL."$f	$x	$date_span[min] - $date_span[max]$dc";
+
+			$dc = ($date_classes ? ARCH_POST_FIELD_SEPARATOR.implode(' ', $date_classes) : '');
+			$text_report .= NL.implode(ARCH_POST_FIELD_SEPARATOR, array($f, $status, "$date_span[min] - $date_span[max]$dc"));
 			++$t;
 		}
+
 		++$a;
+
 if (TIME_PARTS && $t) time_check_point("done $a: $room, $t threads");
+
 	}
 	data_unlock($lk);
 
@@ -566,31 +628,47 @@ if (TIME_PARTS && $t) time_check_point("done $a: $room, $t threads");
 }
 
 function data_archive_rename_last_pic($old, $new, $n_last_pages = 0) {
-	if ($new === $old) return 0;
+	if ($new === $old) {
+		return 0;
+	}
+
 	$c = intval($n_last_pages);
 	$d = DIR_ARCH.$room;
 	$e = PAGE_EXT;
 	$j = ';';
+
 	list($old_name, $old_size) = mb_split($j, $old, 2);
 	list($new_name, $new_size) = mb_split($j, $new, 2);
 
 	data_lock($lk = LK_ARCH.$r, true);
-	if ($i = get_dir_top_file_id($d, $e)) while ($i > 0) {
-		if (
-			is_file($f = "$d$i$e")
-		&&	preg_match(PAT_CONTENT, file_get_contents($f), $match)
-		&&	false !== ($pos_before = mb_strpos($t = $match['content'], $old_name))
-		&&	false !== ($pos_after = mb_strpos($t, '	', $pos_before))
-		) {
-			$before = mb_substr($t, 0, $pos_before);
-			$after = mb_substr($t, $pos_after);
-			$old = mb_substr($t, $pos_before, $pos_after - $pos_before);
-			$new = mb_str_replace($old, $old_name, $new_name);
-			if ($new_size && false !== ($k = mb_strpos($new, $j))) $new = mb_substr($t, 0, $k).$j.$new_size;
-			if ($new !== $old) $done += file_put_contents($f, "$match[before]$before$new$after$match[after]");
+	if ($i = get_dir_top_file_id($d, $e)) {
+		while ($i > 0) {
+			if (
+				is_file($f = "$d$i$e")
+			&&	preg_match(PAT_CONTENT, file_get_contents($f), $match)
+			&&	false !== ($pos_before = mb_strpos($t = $match['content'], $old_name))
+			&&	false !== ($pos_after = mb_strpos($t, ARCH_POST_FIELD_SEPARATOR, $pos_before))
+			) {
+				$before = mb_substr($t, 0, $pos_before);
+				$after = mb_substr($t, $pos_after);
+				$old = mb_substr($t, $pos_before, $pos_after - $pos_before);
+				$new = mb_str_replace($old, $old_name, $new_name);
+
+				if ($new_size && false !== ($k = mb_strpos($new, $j))) {
+					$new = mb_substr($t, 0, $k).$j.$new_size;
+				}
+
+				if ($new !== $old) {
+					$done += file_put_contents($f, "$match[before]$before$new$after$match[after]");
+				}
+			}
+
+			if ($c > 0 && !(--$c)) {
+				break;
+			}
+
+			--$i;
 		}
-		if ($c > 0 && !(--$c)) break;
-		--$i;
 	}
 	data_unlock($lk);
 
@@ -616,37 +694,62 @@ function data_archive_get_search_terms($query, $caseless = true) {
 function data_archive_get_search_url($terms) {
 	$q = array();
 
-	if (is_array($terms)) foreach ($terms as $k => $v) {
-		if ($k === '_charset_' && $v === ENC) continue;
-		if (strlen($v = data_archive_get_search_value($v))) $q[] = URLencode($k).'='.URLencode($v);
+	if (is_array($terms)) {
+		foreach ($terms as $k => $v) {
+			if ($k === '_charset_' && $v === ENC) {
+				continue;
+			}
+
+			if (strlen($v = data_archive_get_search_value($v))) {
+				$q[] = URLencode($k).'='.URLencode($v);
+			}
+		}
 	}
 
 	return implode('&', $q);
 }
 
 function data_archive_get_search_value($v) {
-	if (is_array($v)) return implode(', ', array_map('data_archive_get_search_array_item', $v));
+	if (is_array($v)) {
+		return implode(', ', array_map('data_archive_get_search_array_item', $v));
+	}
+
 	return $v;
 }
 
 function data_archive_get_search_array_item($v) {
-	if ($v['min_arg']) return "$v[min_arg]-$v[max_arg]";
-	if ($v['min']) return "$v[min]-$v[max]";
-	if (($o = $v['operator']) && $o !== '=') return "$v[operator] $v[argument]";
+	if ($v['min_arg']) {
+		return "$v[min_arg]-$v[max_arg]";
+	}
+
+	if ($v['min']) {
+		return "$v[min]-$v[max]";
+	}
+
+	if (($o = $v['operator']) && $o !== '=') {
+		return "$v[operator] $v[argument]";
+	}
+
 	return "$v[argument]";
 }
 
 function data_archive_find_by($terms, $caseless = true, $include_hidden = false) {
 	global $r_type, $room;
+
 	$results = array();
-	if (!$terms) return $results;
+
+	if (!$terms) {
+		return $results;
+	}
 
 if (TIME_PARTS) time_check_point('inb4 archive pages search prep, terms = '.get_print_or_none($terms));
+
 	$d = DIR_ARCH;
 	$e = PAGE_EXT;
 	$elen = -strlen($e);
 	$rooms = (array)($room ?: get_dir_rooms($d, '', F_NATSORT | ($include_hidden ? 0 : F_HIDE), $r_type));
 	$c = count($rooms);
+
 if (TIME_PARTS) time_check_point("got $c rooms, inb4 search iteration".NL);
 
 	foreach ($rooms as $r) {
@@ -656,15 +759,20 @@ if (TIME_PARTS) time_check_point("got $c rooms, inb4 search iteration".NL);
 		foreach (get_dir_contents($dr = "$d$r", F_NATSORT) as $f) if (
 			substr($f, $elen) === $e
 		&&	is_file($path = "$dr/$f")
-		) $files[$path] = intval($f);
+		) {
+			$files[$path] = intval($f);
+		}
+
 if (TIME_PARTS) {$n_found = 0; time_check_point(count($files)." files in $dr");}
 
 		foreach ($files as $path => $i) if (
 			preg_match(PAT_CONTENT, file_get_contents($path), $match)
 		) {
+
 if (TIME_PARTS) $n_check = '';
+
 			foreach (mb_split_filter($match['content'], NL) as $line) {
-				$tab = mb_split('	', $line);
+				$tab = mb_split(ARCH_POST_FIELD_SEPARATOR, $line);
 				$post = array(
 					'date' => intval($tab[0]) ?: '?'
 				,	'username' => $tab[1] ?: '?'
@@ -674,12 +782,19 @@ if (TIME_PARTS) $n_check = '';
 
 				if ($found = is_post_matching($post, $terms, $caseless)) {
 					$results[$r][$i][] = get_post_fields_to_display($post);
+
 if (TIME_PARTS) {++$n_found; $n_check .= "=$n_found: $found";}
+
 				}
 			}
+
 if (TIME_PARTS && (LOCALHOST || $n_check)) time_check_point("done $i$n_check");
-		} else
+
+		} else {
+
 if (TIME_PARTS) time_check_point("$i: content not found in $path");
+
+		}
 
 		data_unlock($lk);
 	}
