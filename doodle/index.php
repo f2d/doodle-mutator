@@ -2034,7 +2034,7 @@ define('S', '. ');
 $room_title = (
 	$room_name == ROOM_DEFAULT
 	? get_localized_text('room_default')
-	: get_localized_text('room')." .$room_name"
+	: get_localized_text('room')." $room_name"
 );
 
 $page['title'] = (
