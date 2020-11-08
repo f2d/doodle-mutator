@@ -5,8 +5,8 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v1.16.3'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2020-07-24'
+,	INFO_VERSION = 'v1.16.4'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2020-11-08'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -1078,14 +1078,25 @@ var	y = draw.history, l = y.layers, z = y.layer, p = draw.step, n = !mode.shape,
 	c.drawImage(cnv.temp, 0, 0);
 }
 
-function fillCheck(c) {
-	if (c && !(c = draw.history.cur())) return [0,0,0,255];
-var	d = (c?c:ctx.view.getImageData(0, 0, cnv.view.width, cnv.view.height)).data, i = d.length, r = [];
-	while (i--)
-	if (i < 4) r[i] = d[i]; else
-	if (d[i] != d[i%4]) return 0;
-//* fill flood confirmed, return its color:
-	return r;
+function fillCheck(c, returnRGBA) {
+	if (c && !(c = draw.history.cur())) {
+		return returnRGBA ? [0,0,0,255] : true;
+	}
+
+var	d = (
+		c || (
+			draw.view()
+		,	ctx.view.getImageData(0, 0, cnv.view.width, cnv.view.height)
+		)
+	).data
+,	i = d.length
+	;
+
+	while (i-- > 4) if (d[i] !== d[i%4]) return false;
+
+//* fill flood confirmed:
+
+	return returnRGBA ? d.slice(0,4) : true;
 }
 
 function fillScreen(i,t) {
