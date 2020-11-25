@@ -86,6 +86,7 @@ $cfg_optimize_pics = array(
 			'program name or path',
 			'command line format string, first %s = program path, 2nd %s = source file path',
 			[optional number of additional retries],
+			[optional suffix for a throwaway file copy to work on, useful if the program only works in-place],
 		),
 	),
  * JPEG notes:
@@ -101,19 +102,22 @@ $cfg_optimize_pics = array(
 	OxiPng with -Z takes too much CPU if thread count is too high (> 1, and especially > 6).
 	Both remove appended data (e.g. rarpng), but OptiPng - only with -fix option.
  * Overall notes:
+	Leanify only works in-place, so a copy of the image file should be made for safety.
 	All of these programs must be installed manually and PHP must be allowed to run them with exec().
 	Script will try to run them in given order until OK exit code is met.
  * Links to sources of programs:
 	JpegOptim: http://freecode.com/projects/jpegoptim/
 	JpegTran: http://jpegclub.org/jpegtran/
+	Leanify: https://github.com/JayXon/Leanify
 	OptiPng: http://optipng.sourceforge.net/
 	OxiPng: https://github.com/shssoichiro/oxipng
 	PngOptimizer: https://psydk.org/pngoptimizer
 */
 	'jpg' => array(
+		array('leanify', '"%s" -v --jpeg-keep-all "%s" 2>&1', 0, '.out'),
 		array('jpegoptim', '"%s" --all-progressive "%s" 2>&1'),
 		array('jpegtran', '"%1$s" -progressive -optimize -outfile "%2$s.out" "%2$s" 2>&1'),
-	//* remove metadata:
+	//* Remove metadata:
 	//	array('jpegoptim', '"%s" --all-progressive --strip-all "%s" 2>&1'),
 	//	array('jpegtran', '"%1$s" -progressive -optimize -copy none -outfile "%2$s.out" "%2$s" 2>&1'),
 	),
@@ -121,6 +125,8 @@ $cfg_optimize_pics = array(
 		array('optipng', '"%s" -v -i 0 -fix "%s" 2>&1', 1),
 		array('oxipng', '"%s" -v -i 0 --fix -t 1 "%s" 2>&1'),
 		array('pngoptimizercl', '"%1$s" -stdio < "%2$s" > "%2$s.out" 2>&1'),
+	//* Warning, Leanify may corrupt APNG:
+	//	array('leanify', '"%s" -v --iteration 3 --keep-icc "%s" 2>&1', 0, '.out'),
 	),
 );
 

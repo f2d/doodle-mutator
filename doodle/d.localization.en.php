@@ -258,7 +258,7 @@ define('LOCALIZATION_TEXT', [
 	,	'user_reg'	=> 'User registered.'
 	]
 ,	'post_progress' => [
-		'starting'	=> 'Please wait while your image is processed'
+		'starting'	=> 'Please wait while your image is processed...'
 	,	'opt_full'	=> 'Optimizing full image'
 	,	'opt_res'	=> 'Optimizing low-res image copy'
 	,	'low_res'	=> 'Resizing down to fit image into page view'

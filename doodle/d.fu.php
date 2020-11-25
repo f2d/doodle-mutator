@@ -1685,7 +1685,7 @@ function optimize_pic($filepath) {
 
 		foreach ($cfg_optimize_pics as $format => $tool) if ($ext == $format)
 		foreach ($tool as $tool_params) {
-			list($program, $command, $retries) = array_map('mb_normalize_slash', $tool_params);
+			list($program, $command, $retries, $copy_suffix) = array_map('mb_normalize_slash', $tool_params);
 
 			$program_name = get_file_name($program);
 
@@ -1705,9 +1705,19 @@ function optimize_pic($filepath) {
 
 			retry_this_command:
 
+			if (
+				isset($copy_suffix)
+			&&	strlen($copy_suffix)
+			) {
+				$file_path_arg = $f.$copy_suffix;
+				copy($f, $file_path_arg);
+			} else {
+				$file_path_arg = $f;
+			}
+
 			$return_code = $size = 0;
 			$output = array('');
-			$cmd = sprintf($command, $program_path, $f);
+			$cmd = sprintf($command, $program_path, $file_path_arg);
 
 			if ($d !== '/') {
 				$cmd = str_replace('/', $d, $cmd);
