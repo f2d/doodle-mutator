@@ -327,7 +327,7 @@ if (
 	!POST
 &&	!$query[LK_MOD_ACT]
 &&	!is_url_equivalent($qfix, $_SERVER['REQUEST_URI'])
-&&	'index' !== get_file_name_no_ext($_SERVER['REQUEST_URI'], 0)
+&&	(SERVE_AS_INDEX_PAGE || 'index' !== get_file_name_no_ext($_SERVER['REQUEST_URI'], 0))
 ) {
 	exit_redirect($qfix);
 }
@@ -462,7 +462,7 @@ if ($qdir) {
 	) rewrite_htaccess();
 }
 
-$top_title = get_localized_or_empty_text('header_main_page') ?: (
+$top_title = (
 	false !== ($k = array_search($r_type, $cfg_game_type_dir))
 	? get_localized_text('room_types_title', $k)
 	: get_localized_text('title')
@@ -2088,6 +2088,8 @@ $page['title'] = (
 );
 
 if (!$is_report_page) {
+	$index_link_url = (SERVE_AS_INDEX_PAGE ? ROOTPRFX : $_SERVER['PHP_SELF']);
+
 	define('A', NL.'<a href="');
 	define('AB', '</a><br>');
 	define('CHK_ON', '&#x2611; ');
@@ -2147,6 +2149,14 @@ if (!$is_report_page) {
 	if ($a_head['/']) {
 		$i_a = array();
 
+		if (!SERVE_AS_INDEX_PAGE) {
+			$i_a[] = [
+				A.ROOTPRFX.'">'
+			.	get_localized_text('header_main_page')
+			.	AB
+			];
+		}
+
 //* lang selection:
 
 		$i_b = array();
@@ -2204,14 +2214,14 @@ if (!$is_report_page) {
 //* compile menu blocks:
 
 		if ($index_list = implode('&mdash;<br>', array_map('implode', $i_a))) {
-			$index_link_menu = get_template_menu(A.ROOTPRFX.$a_head['/'], $index_list);
+			$index_link_menu = get_template_menu(A.$index_link_url.$a_head['/'], $index_list);
 		}
 	}
 
 	$page['header'] = (
 		$u_key
 		? array(
-			($index_link_menu ?: A.ROOTPRFX.$a_head['/'])
+			($index_link_menu ?: A.$index_link_url.$a_head['/'])
 		.	($short?$room_list_link:'')
 		.	$room_link
 		.	($short?'':$arch_link)
@@ -2223,7 +2233,7 @@ if (!$is_report_page) {
 		.	A.(DIR_DOTS && $qdir && $qd_opts?'.':ROOTPRFX.DIR_OPTS.($r ?: $t)).$a_head['?']
 		)
 		: array(
-			($index_link_menu ?: A.ROOTPRFX.$a_head['/'])
+			($index_link_menu ?: A.$index_link_url.$a_head['/'])
 		.	A.ROOTPRFX.'?draw_test'.$a_head['~']
 		, 'ar' => (
 				is_dir(DIR_ARCH)

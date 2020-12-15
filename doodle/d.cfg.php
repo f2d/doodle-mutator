@@ -36,6 +36,7 @@ define('DIR_PICS_ORPHAN', DIR_PICS.'orphan/');
 define('DIR_THUMB', 'th/');		//* <- subfolder in each room archive
 define('PIC_404', 'err.png');		//* <- filename for htaccess and nginx cfg example
 
+define('SERVE_AS_INDEX_PAGE', true);
 define('DIR_DOTS', false);		//* <- use href="./.." in top menu
 define('LINK_TIME', false);		//* <- src=file?modtime to force reload at clients
 define('LOG_IP', true);			//* <- for each visit, add IP Address to separate file per user
