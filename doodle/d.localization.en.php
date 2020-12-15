@@ -127,6 +127,7 @@ define('LOCALIZATION_TEXT', [
 		'drawpile' => 'Drawpile (online collab.)'
 	,	'index' => 'etc.'
 	]
+,	'header_main_page' => 'Main page'
 ,	'me' => 'Name yourself'
 ,	'me_hint' => 'Your nickname, maximum length — '.USER_NAME_MAX_LENGTH.' letters. Also you may enter your old key here.'
 ,	'me_submit' => 'Enter'

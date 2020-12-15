@@ -2,7 +2,7 @@
 
 //* Constants only for internal use: ------------------------------------------
 
-define('HTML_VERSION', '2019-04-28 09:47');	//* <- change this to autoupdate old browser-cached pages
+define('HTML_VERSION', '2020-12-15 19:29');	//* <- change this to autoupdate old browser-cached pages
 define('HTACCESS_VERSION', '2017-10-27 23:23');	//* <- change this + open index as admin to autoupdate old .htaccess
 
 //* Function argument flags: --------------------------------------------------
@@ -80,14 +80,20 @@ function exit_if_not_mod($new_time_int = 0) {
 		)
 	) {
 		header('HTTP/1.0 304 Not Modified');
+
 		exit;
 	}
 }
 
-function exit_redirect($new_path) {
-	header('HTTP/1.1 303 Redirect: path fix');
-	header("Location: $new_path");
-	exit;
+function exit_redirect($new_path = '', $comment = 'path fix', $pause_seconds = 0) {
+	if (headers_sent()) {
+		die('<meta http-equiv="refresh" content="'.abs(int($pause_seconds)).'; url='.$new_path.'">');
+	} else {
+		header("HTTP/1.1 303 Redirect: $comment");
+		header("Location: $new_path");
+
+		exit;
+	}
 }
 
 function add_cookie_header($name, $value = null) {

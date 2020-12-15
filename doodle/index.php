@@ -2,6 +2,10 @@
 
 $t = microtime();
 
+if (PHP_MAJOR_VERSION >= 8) {
+	error_reporting(~( E_NOTICE | E_STRICT | E_WARNING ));	//* <- TODO many fixes for PHP 8.0 warnings, shut up until then
+}
+
 function is_prefix($s, $p) {return substr($s, 0, strlen($p)) === $p;}
 function is_postfix($s, $p) {return substr($s, -strlen($p)) === $p;}
 function exit_no_access($why) {
@@ -22,14 +26,14 @@ function set_cache_control_header($can_store) {
 	replace_header_value('Cache-Control', "max-age=0; must-revalidate; $can_store");
 }
 
-// remove_header_if_possible('Vary');			//* <- fallback to this in case of problems?
+// remove_header_if_possible('Vary');		//* <- fallback to this in case of problems?
 
 replace_header_value('Vary', 'Accept-Encoding, Accept-Language');
 set_cache_control_header('no-cache');
 header('Expires: Mon, 12 Sep 2016 00:00:00 GMT');
 header('Pragma: no-cache');
 
-if ($_REQUEST['pass']) {
+if (array_key_exists('pass', $_REQUEST)) {
 	exit_no_access('pass');				//* <- ignore spam bot requests
 }
 
@@ -57,11 +61,11 @@ if (function_exists($f = 'get_magic_quotes_gpc') && $f()) {
 	array_walk_recursive($gpc, 'strip_magic_slashes');
 }
 
-$deprecated .= ob_get_clean();
+$debug_dump = array(ob_get_clean());
 
 define('ME', 'me');
 define('ME_VAL', $_POST[ME] ?? $_COOKIE[ME] ?? '');	//* <- don't rely on $_REQUEST and EGPCS order
-define('POST', 'POST' == $_SERVER['REQUEST_METHOD']);
+define('POST', 'POST' === $_SERVER['REQUEST_METHOD']);
 
 if (POST) {
 	set_cache_control_header('no-store');
@@ -149,8 +153,8 @@ require(NAMEPRFX.'.fu.php');
 
 if ($v = $_GET[ARG_LANG] ?? $_POST[ARG_LANG]) {
 	add_cookie_header(ARG_LANG, $v);
-	header('Location: '.($_SERVER['HTTP_REFERER'] ?: ROOTPRFX));
-	die();
+
+	exit_redirect($_SERVER['HTTP_REFERER'] ?: ROOTPRFX, 'change language');
 }
 
 $cfg_wh = array('width', 'height');
@@ -209,11 +213,12 @@ require(NAMEPRFX.'.db.php');
 
 //* End buffering, hide output. *----------------------------------------------
 
-if ($v = trim_bom(ob_get_clean())) {
-	if ($t = trim_bom($deprecated)) {
-		$v .= NL.$t;
-	}
-	data_log_action('cfg buffer dump', $v);
+while ($v = ob_get_clean()) {
+	$debug_dump[] = $v;
+}
+
+if (strlen($v = implode(NL, array_filter(array_map('trim_bom', $debug_dump), 'strlen')))) {
+	data_log_action('debug dump', $v);
 }
 time_check_point('done cfg');
 
@@ -322,7 +327,10 @@ if (
 	!POST
 &&	!$query[LK_MOD_ACT]
 &&	!is_url_equivalent($qfix, $_SERVER['REQUEST_URI'])
-) exit_redirect($qfix);
+&&	'index' !== get_file_name_no_ext($_SERVER['REQUEST_URI'], 0)
+) {
+	exit_redirect($qfix);
+}
 
 time_check_point('done location check');
 
@@ -454,7 +462,7 @@ if ($qdir) {
 	) rewrite_htaccess();
 }
 
-$top_title = (
+$top_title = get_localized_or_empty_text('header_main_page') ?: (
 	false !== ($k = array_search($r_type, $cfg_game_type_dir))
 	? get_localized_text('room_types_title', $k)
 	: get_localized_text('title')
@@ -802,6 +810,7 @@ $x
 			array(
 				'mb_regex_encoding',
 				'mb_regex_set_options',
+				'PHP_VERSION',
 				'PHP_OS',
 				'php_uname',
 				'sys_getloadavg',
@@ -2004,9 +2013,8 @@ $a#$j$l|$r$m");
 
 	if (!$room) {
 		$room = (strlen(trim($u_room_default, '.')) ? "$u_room_default/" : '');
-		header('HTTP/1.1 303 To home room');
-		header("Location: $room_list_href$room");
-		exit;
+
+		exit_redirect($room_list_href.$room, 'home room');
 	}
 } else {
 
@@ -3053,6 +3061,10 @@ if ($f = $pic_final_path) {
 //* use Refresh header for printing content.
 //* use Location header otherwise:
 
-if (!headers_sent()) header("Location: $refresh_location");
+if (headers_sent()) {
+	exit_redirect($refresh_location, 'after post', $page_reload_after_pause);
+} else {
+	header("Location: $refresh_location");
+}
 
 ?>

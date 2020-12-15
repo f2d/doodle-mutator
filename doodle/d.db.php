@@ -1014,7 +1014,10 @@ function data_log_action($text, $dump = '') {	//* <- write to logs of administra
 
 	$f = ($room ? DATA_DIR_ROOM."$room/" : DATA_DIR).DATA_SUB_ACT.date('Y-m-d', T0).DATA_LOG_EXT;
 	$t = T0.'+'.M0;
-	$u = (GOD ? 'g' : (MOD ? 'm' : 'r')).$u_num;
+	$u = (
+		get_const('GOD') ? 'g' : (
+		get_const('MOD') ? 'm' : 'r'
+	)).$u_num;
 
 	if ($dump) {
 		$text .= ': ['.indent($dump).']';

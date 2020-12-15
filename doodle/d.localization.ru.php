@@ -136,6 +136,7 @@ define('LOCALIZATION_TEXT', [
 		'drawpile' => 'Drawpile (порисовать вместе)'
 	,	'index' => 'прочее'
 	]
+,	'header_main_page' => 'Главная страница'
 ,	'me' => 'Назовитесь'
 ,	'me_hint' => 'Ваш псевдоним, не более '.USER_NAME_MAX_LENGTH.' букв. Также тут можно ввести свой старый ключ.'
 ,	'me_submit' => 'Войти'
