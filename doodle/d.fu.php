@@ -2,7 +2,7 @@
 
 //* Constants only for internal use: ------------------------------------------
 
-define('HTML_VERSION', '2020-12-15 21:35');	//* <- change this to autoupdate old browser-cached pages
+define('HTML_VERSION', '2020-12-19 16:19');	//* <- change this to autoupdate old browser-cached pages
 define('HTACCESS_VERSION', '2017-10-27 23:23');	//* <- change this + open index as admin to autoupdate old .htaccess
 
 //* Function argument flags: --------------------------------------------------
@@ -2233,14 +2233,20 @@ function get_template_hint($t) {
 	);
 }
 
-function get_template_menu($top_line, $hidden_content) {
+function get_template_menu($top_line, $items) {
+	if (is_array($items)) {
+		$items = array_map('indent', $items);
+		$items = implode('</u>'.NL.'<u>', $items);
+		$items = "<u>$items</u>";
+	}
+
 	return (
 		'<u class="menu-head">'.indent(
 			$top_line.NL.
 			'<u class="menu-top">'.
 			'<u class="menu-hid">'.
 			'<u class="menu-list">'.indent(
-				$hidden_content
+				$items
 			).'</u></u></u>'
 		).'</u>'
 	);

@@ -149,7 +149,7 @@ define('DRAW_LIMIT_HEIGHT', '100,1920');
 define('DRAW_MAX_FILESIZE', 9000000);	//* <- bytes, 8MiB = 8*1024*1024 = 8388608
 define('DRAW_MAX_RECOVERY', 9);
 define('DRAW_MAX_UNDO', 99);
-define('DRAW_TIME_IDLE', 300);		//* <- seconds, 5min
+define('DRAW_TIME_IDLE', 300);		//* <- seconds, 5 minutes
 define('DRAW_PERSISTENT_PREFIX', NAMEPRFX.'Keep');
 define('DRAW_BACKUPCOPY_PREFIX', NAMEPRFX.'Save');
 define('DRAW_SEND', 'send=layers.json, log.json, pic.png, jpg>1002003; check=checkStatus');
@@ -158,12 +158,12 @@ define('DRAW_REST', 'resize_style=body, #task; resize_min_id=header');
 define('QK_KEEP_AFTER_LOGOUT', false);
 define('QK_EXPIRES', 100200300);		//* <- seconds; renewed with every successful POST, incl.options
 
-define('TARGET_AUTOUPDATE_INTERVAL', 3600);	//* <- seconds, 1h
-define('TARGET_CHANGE_TIME', 600);		//* <- seconds, 10min
-define('TARGET_DESC_TIME', 1200);		//* <- seconds, 20min
-define('TARGET_DRAW_TIME', 7200);		//* <- seconds, 2h
-define('TARGET_LONG_TIME', 86400);		//* <- seconds, 24h
-define('TRD_ARCH_TIME', 86400);			//* <- seconds, 24h
+define('TARGET_AUTOUPDATE_INTERVAL', 3600);	//* <- seconds, 1 hour
+define('TARGET_CHANGE_TIME', 600);		//* <- seconds, 10 minutes
+define('TARGET_DESC_TIME', 1200);		//* <- seconds, 20 minutes
+define('TARGET_DRAW_TIME', 7200);		//* <- seconds, 2 hour
+define('TARGET_LONG_TIME', 86400);		//* <- seconds, 1 day
+define('TRD_ARCH_TIME', 86400);			//* <- seconds, 1 day
 
 define('TRD_MAX_POSTS', 10);
 define('TRD_MAX_PER_ROOM', 30);
@@ -362,8 +362,8 @@ $cfg_welcome_links = array(
 //* ---------------------------------------------------------------------------
 
 $cfg_header_links = array(
-//	'drawpile' => '/drawpile/'
-//,	'index' => '/index.htm'
+	// 'drawpile' => '/drawpile/',
+	// 'index' => '/index.htm',
 );
 
 //* ---------------------------------------------------------------------------

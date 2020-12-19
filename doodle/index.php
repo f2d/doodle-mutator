@@ -2091,7 +2091,7 @@ if (!$is_report_page) {
 	$index_link_url = (SERVE_AS_INDEX_PAGE ? ROOTPRFX : $_SERVER['PHP_SELF']);
 
 	define('A', NL.'<a href="');
-	define('AB', '</a><br>');
+	define('AB', '</a>');
 	define('CHK_ON', '&#x2611; ');
 	define('CHK_OFF', '&#x2610; ');
 	$short = !!$u_opts['head'];
@@ -2213,7 +2213,7 @@ if (!$is_report_page) {
 
 //* compile menu blocks:
 
-		if ($index_list = implode('&mdash;<br>', array_map('implode', $i_a))) {
+		if ($index_list = array_map('implode', $i_a)) {
 			$index_link_menu = get_template_menu(A.$index_link_url.$a_head['/'], $index_list);
 		}
 	}

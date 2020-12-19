@@ -78,6 +78,15 @@ body > *,
 .header ~ footer .hint {
 	line-height: normal;
 }
+.header .menu-list {
+	padding: 0.5em;
+}
+.header .menu-list u + u {
+	margin-top: 0.5em;
+}
+.header .menu-list * {
+	display: block;
+}
 .menu-head {
 	display: inline-block;
 	position: relative;
