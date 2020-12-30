@@ -5,8 +5,8 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v1.16.4'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2020-11-08'
+,	INFO_VERSION = 'v1.16.5'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2020-12-30'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -629,26 +629,28 @@ var	c = ctx[mode.brushView?'draw':'view'], g = tool.grid;
 	c.globalCompositeOperation = SO;
 }
 
-function drawStart(event) {
+function drawStart(evt) {
+	evt = evt || window.event;
+
 	try {
-		showProps(event,1,1);	//* <- check if permission denied to read some property
+		showProps(evt,1,1);	//* <- check if permission denied to read some property
 	} catch (err) {
 		return;		//* <- against FireFox catching clicks on page scrollbar
 	}
 
-	if (!draw.step || (draw.target && draw.target !== event.target)) drawEnd(event);
+	if (!draw.step || (draw.target && draw.target !== evt.target)) drawEnd(evt);
 	if (isMouseIn() <= 0) return false;
 
-	draw.target = event.target;
+	draw.target = evt.target;
 //	cnv.view.focus();
-	eventStop(event).preventDefault();
+	eventStop(evt).preventDefault();
 
 //* Special actions:
-	if (draw.btn && (draw.btn != event.which)) return drawEnd();
-	if (mode.click) return ++mode.click, drawEnd(event);
-	if (event.altKey) draw.turn = {prev: draw.zoom, zoom: 1}; else
-	if (event.ctrlKey) draw.turn = {prev: draw.angle, angle: 1}; else
-	if (event.shiftKey) draw.turn = {prev: draw.pan ? {x: draw.pan.x, y: draw.pan.y} : {x:0,y:0}, pan: 1};
+	if (draw.btn && (draw.btn != evt.which)) return drawEnd();
+	if (mode.click) return ++mode.click, drawEnd(evt);
+	if (evt.altKey) draw.turn = {prev: draw.zoom, zoom: 1}; else
+	if (evt.ctrlKey) draw.turn = {prev: draw.angle, angle: 1}; else
+	if (evt.shiftKey) draw.turn = {prev: draw.pan ? {x: draw.pan.x, y: draw.pan.y} : {x:0,y:0}, pan: 1};
 	if (mode.debug && draw.turn && !draw.turn.pan) {
 		for (i in DRAW_HELPER) ctx.view[i] = DRAW_HELPER[i];
 		ctx.view.beginPath();
@@ -657,7 +659,7 @@ function drawStart(event) {
 		ctx.view.lineTo(cnv.view.width/2, cnv.view.height/2);
 		ctx.view.stroke();
 	}
-	updatePosition(event);
+	updatePosition(evt);
 	if (draw.turn) return draw.turn.origin = getCursorRad();
 
 //* Drawing on cnv.draw:
@@ -676,9 +678,9 @@ var	y = draw.history, i = y.layer, s = select.shape.value, fig = select.shapeFig
 			return draw.step.done = 1;
 		} else draw.step = 0;
 	}
-//	if (event.shiftKey) mode.click = 1;	//* <- draw line/form chains, meh, forget for now
+//	if (evt.shiftKey) mode.click = 1;	//* <- draw line/form chains, meh, forget for now
 
-	if ((draw.btn = event.which) != 1 && draw.btn != 3) return pickColor(), drawEnd();
+	if ((draw.btn = evt.which) != 1 && draw.btn != 3) return pickColor(), drawEnd();
 
 //* start drawing:
 
@@ -687,7 +689,7 @@ var	y = draw.history, i = y.layer, s = select.shape.value, fig = select.shapeFig
 		interval.timer = setInterval(timeElapsed, 1000);
 		interval.save = setInterval(autoSave, 60000);
 	}
-var	i = (event.which == 1)?1:0, j, t = tools[1-i]
+var	i = (evt.which == 1)?1:0, j, t = tools[1-i]
 ,	b = (fig ? t.blur : 0)
 ,	pf = ((sf & 8) && (mode.shape || !mode.step))
 ,	sh = ((sf & 2) && (mode.shape || pf));
@@ -699,22 +701,24 @@ var	i = (event.which == 1)?1:0, j, t = tools[1-i]
 	,	shadowColor: (b ? 'rgb('+t.color+')' : A0)
 	,	shadowBlur: b
 	})) for (j in y) ctx[j][i] = t[i];
-	updatePosition(event);		//* <- update pixel offset based on tool width && draw.active
+	updatePosition(evt);		//* <- update pixel offset based on tool width && draw.active
 	for (i in draw.o) draw.prev[i] = draw.cur[i];
 	for (i in draw.line) draw.line[i] = false;
 	for (i in select.lineCaps) {
 		t = select.options[i][select[i].value];
 		for (j in y) ctx[j][i] = t;
 	}
-	if (sf & 32) return drawEnd(event);
+	if (sf & 32) return drawEnd(evt);
 	ctx.draw.beginPath();
 	ctx.draw.moveTo(draw.cur.x, draw.cur.y);
 }
 
-function drawMove(event) {
-	if (mode.click == 1 && !event.shiftKey) return mode.click = 0, drawEnd(event);
+function drawMove(evt) {
+	evt = evt || window.event;
 
-	updatePosition(event);
+	if (mode.click == 1 && !evt.shiftKey) return mode.click = 0, drawEnd(evt);
+
+	updatePosition(evt);
 	if (draw.turn) return updateViewport(draw.turn.pan?1:draw.turn.delta = getCursorRad() - draw.turn.origin);
 
 var	s = select.shape.value, fig = select.shapeFig[s], sf = select.shapeFlags[s]
@@ -768,9 +772,11 @@ var	s = select.shape.value, fig = select.shapeFig[s], sf = select.shapeFlags[s]
 	if (newLine) for (i in draw.o) draw.prev[i] = draw.cur[i];
 }
 
-function drawEnd(event) {
-	if (!event || draw.turn) return draw.active = draw.step = draw.btn = draw.turn = 0, draw.view(1);
-	if (mode.click == 1 && event.shiftKey) return drawMove(event);
+function drawEnd(evt) {
+	evt = evt || window.event;
+
+	if (!evt || draw.turn) return draw.active = draw.step = draw.btn = draw.turn = 0, draw.view(1);
+	if (mode.click == 1 && evt.shiftKey) return drawMove(evt);
 	if (draw.active) {
 		if (draw.target != cnv.view) return;
 	var	s = select.shape.value, fig = select.shapeFig[s], sf = select.shapeFlags[s]
@@ -826,7 +832,7 @@ function drawEnd(event) {
 		historyAct();
 		draw.active = draw.step = draw.btn = 0;
 		if (cue.autoSave < 0) autoSave(); else cue.autoSave = 1;
-		if (mode.click && event.shiftKey) return mode.click = 0, drawStart(event);
+		if (mode.click && evt.shiftKey) return mode.click = 0, drawStart(evt);
 	}
 	draw.target = 0;
 	updateDebugScreen();
@@ -1153,20 +1159,22 @@ function fillScreen(i,t) {
 	historyAct(t);
 }
 
-function pickColor(event, e, keep) {
+function pickColor(evt, e, keep) {
+	evt = evt || window.event;
+
 	if (e && e.ctx) c = e; else
-	if (event) {
+	if (evt) {
 		if (e && e.length) d = e; else
-		if (event === 1) keep = 1; else
-		if (event.ctx) c = event; else
-		if ((e = event.target) && e.ctx) c = e;
+		if (evt === 1) keep = 1; else
+		if (evt.ctx) c = evt; else
+		if ((e = evt.target) && e.ctx) c = e;
 	}
 //* from gradient palette:
 	if (c) {
-		eventStop(event);
+		eventStop(evt);
 	var	d = getOffsetXY(c)
-	,	x = event.pageX - CANVAS_BORDER - d.x
-	,	y = event.pageY - CANVAS_BORDER - d.y
+	,	x = evt.pageX - CANVAS_BORDER - d.x
+	,	y = evt.pageY - CANVAS_BORDER - d.y
 	,	w = c.width
 	,	h = c.height
 		;
@@ -1193,7 +1201,7 @@ function pickColor(event, e, keep) {
 			e.style.backgroundColor = c;
 			e.rgbArray = hue = c = d;
 		}
-		return keep ? c : updateColor(c, event);
+		return keep ? c : updateColor(c, evt);
 	}
 }
 
@@ -1371,16 +1379,20 @@ function updatePalette() {
 		return linearBlend(c, gray[y < y2?0:2], Math.abs(y-y2), y2);
 	}
 
-	function pickHue(event) {
-		if (event.type === 'mousemove' && (!draw.target || draw.target != event.target)) return;
-		eventStop(event).preventDefault();
+	function pickHue(evt) {
+		evt = evt || window.event;
+
+		if (evt.type === 'mousemove' && (!draw.target || draw.target != evt.target)) return;
+		eventStop(evt).preventDefault();
 		if (!draw.target) draw.target = id('color-wheel-round');
-	var	hue = pickColor(event, draw.target, id('color-wheel-hue'));
+	var	hue = pickColor(evt, draw.target, id('color-wheel-hue'));
 		drawGradient(id('color-wheel-box'), getBoxGradientPixel, hue);
 	}
 
-	function pickCorner(event) {
-		pickColor(event, event.target.rgbArray);
+	function pickCorner(evt) {
+		evt = evt || window.event;
+
+		pickColor(evt, evt.target.rgbArray);
 	}
 
 	function redrawBoxGradient(hue) {
@@ -2099,40 +2111,72 @@ var	e = new Image(), i = 'lcd', lcd = id(i);
 
 //* Hot keys *-----------------------------------------------------------------
 
-function mouseClickBarrier(event) {
-	event.stopPropagation();
-	event.cancelBubble = true;
+function addEventListeners(e, funcByEventName) {
+	for (var i in funcByEventName) {
+		try {
+			e.addEventListener(i, funcByEventName[i], { capture: true, passive: false });
+		} catch (error) {
+			console.error(error);
+
+			e.addEventListener(i, funcByEventName[i], true);
+		}
+	}
+}
+
+function mouseClickBarrier(evt) {
+	evt = evt || window.event;
+
+	evt.stopPropagation();
+	evt.cancelBubble = true;
+
 	return false;
 }
 
-function browserHotKeyPrevent(event) {
-	return ((!draw.active && isMouseIn() > 0) || (event.keyCode == 27))
-	? ((event.returnValue = false) || event.preventDefault() || true)
-	: false;
+function browserHotKeyPrevent(evt) {
+	evt = evt || window.event;
+
+	if (
+		(!draw.active && isMouseIn() > 0)
+	||	(evt.keyCode == 27)
+	) {
+		evt = eventStop(evt);
+		evt.returnValue = false;
+		evt.preventDefault();
+
+		return evt;
+	}
 }
 
-function hotWheel(event) {
-	if (browserHotKeyPrevent(event)) {
-	var	d = event.deltaY || event.detail || event.wheelDelta;
+function stopScroll(evt) {
+	browserHotKeyPrevent(evt);
+
+	return false;
+}
+
+function hotWheel(evt) {
+	if (evt = browserHotKeyPrevent(evt)) {
+	var	d = evt.deltaY || evt.detail || evt.wheelDelta;
 		toolTweak(
-			event.shiftKey	?'G':(
-			event.altKey	?'B':(
-			event.ctrlKey	?'O':'W')), d < 0?0:-1);
+			evt.shiftKey	?'G':(
+			evt.altKey	?'B':(
+			evt.ctrlKey	?'O':'W')), d < 0?0:-1);
 		if (mode.debug) text.debug.innerHTML += ' d='+d;
 	}
+
 	return false;
 }
 
-function hotKeys(event) {
-	if (!loading && browserHotKeyPrevent(event)) {
+function hotKeys(evt) {
+	if (!loading)
+	if (evt = browserHotKeyPrevent(evt)) {
 		function c(s) {return s.charCodeAt(0);}	//* <- only 1st letter is a hotkey
-	var	n = event.keyCode - c('0');
+	var	n = evt.keyCode - c('0');
 		if ((n?n:n=10) > 0 && n < 11) {
-		var	i, k = [event.shiftKey, event.altKey, event.ctrlKey, 1];
+		var	i, k = [evt.shiftKey, evt.altKey, evt.ctrlKey, 1];
 			for (i in k) if (k[i]) return toolTweak(k = BOWL[i], RANGE[k].step < 1 ? n/10 : (n>5 ? (n-5)*10 : n));
 		} else
-		if (event.altKey)
-		switch (event.keyCode) {
+		if (evt.altKey)
+		switch (evt.keyCode) {
 			case 38:	moveLayer(0);	break;
 			case 40:	moveLayer(-1);	break;
 			case 37:	moveLayer();	break;
@@ -2150,16 +2194,16 @@ function hotKeys(event) {
 			case c('Grid'):
 			case c('Blur'):
 			case c('Opacity'):
-			case c('Width'):toolTweak(String.fromCharCode(event.keyCode), -1);
+			case c('Width'):toolTweak(String.fromCharCode(evt.keyCode), -1);
 		} else
-		if (event.shiftKey)
-		switch (event.keyCode) {
+		if (evt.shiftKey)
+		switch (evt.keyCode) {
 			case 38:	selectLayer(-2,0,1);break;
 			case 40:	selectLayer(-1,0,1);break;
 			case 37:	selectLayer('top',0,1);break;
 			case 39:	selectLayer(0,0,1);
 		} else
-		switch (event.keyCode) {
+		switch (evt.keyCode) {
 			case 27:	drawEnd();	break;	//* Esc
 			case 36: updateViewport();	break;	//* Home
 			case 8:
@@ -2204,7 +2248,7 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *,
 			case c('Grid'):
 			case c('Blur'):
 			case c('Opacity'):
-			case c('Width'):toolTweak(String.fromCharCode(event.keyCode), 0); break;
+			case c('Width'):toolTweak(String.fromCharCode(evt.keyCode), 0); break;
 
 			case 106: case 42:
 				for (i = 1, k = ''; i < 3; i++) k += '<br>Save'+i+'.time: '+LS[CR[i].T]
@@ -2218,9 +2262,10 @@ if (text.debug.innerHTML.length)	toggleMode(0);	break;	//* 45=Ins, 42=106=Num *,
 +', '+CT+', '+CL+': '+(CR.length || CR)+(loading?', loading: '+loading:'')+k+'<hr>'+getSendMeta().replace(/[\r\n]+/g, '<br>');
 			break;
 
-			default: if (mode.debug) text.debug.innerHTML += '\n'+String.fromCharCode(event.keyCode)+'='+event.keyCode;
+			default: if (mode.debug) text.debug.innerHTML += '\n'+String.fromCharCode(evt.keyCode)+'='+evt.keyCode;
 		}
 	}
+
 	return false;
 }
 
@@ -2266,14 +2311,16 @@ var	t = '</td><td>', r = '</td></tr>	<tr><td>', a = draw.turn, b = 'turn: ', c =
 +r+'Step_End'+t+'x='+c.cur.x+t+'y='+c.cur.y:'')+'</td></tr></table>'+showProps(tool,1,1)+(a?b+showProps(a,1):'');
 }
 
-function updatePosition(event) {
+function updatePosition(evt) {
+	evt = evt || window.event;
+
 var	i = select.shape.value, g = tool.grid, o = (
 		(!mode.step && mode.shape && (select.shapeFlags[i] & 2))
 	||	(select.shapeFig[i] && !((draw.active ? ctx.draw.lineWidth : tool.width) % 2))
 	? 0 : DRAW_PIXEL_OFFSET);	//* <- maybe not a 100% fix yet
 
-	draw.o.x = (draw.m.x = event.pageX) - CANVAS_BORDER - draw.container.offsetLeft;
-	draw.o.y = (draw.m.y = event.pageY) - CANVAS_BORDER - draw.container.offsetTop;
+	draw.o.x = (draw.m.x = evt.pageX) - CANVAS_BORDER - draw.container.offsetLeft;
+	draw.o.y = (draw.m.y = evt.pageY) - CANVAS_BORDER - draw.container.offsetTop;
 	if (draw.pan && !(draw.turn && draw.turn.pan)) for (i in draw.o) draw.o[i] -= draw.pan[i];
 	if (!draw.turn && (draw.angle || draw.zoom != 1)) {
 	var	r = getCursorRad(2, draw.o.x, draw.o.y);
@@ -2309,10 +2356,23 @@ function isMouseIn() {
 		while (i--) if ((e = a[i]).id) {
 			x = parseInt(e.style.left) || 0;
 			y = parseInt(e.style.top) || 0;
-			if (draw.m.x >= x && draw.m.y >= y && draw.m.x < x+e.offsetWidth && draw.m.y < y+e.offsetHeight) return -1;
+
+			if (
+				draw.m.x >= x
+			&&	draw.m.y >= y
+			&&	draw.m.x < x+e.offsetWidth
+			&&	draw.m.y < y+e.offsetHeight
+			) {
+				return -1;
+			}
 		}
 	}
-	return (draw.o.x >= 0 && draw.o.y >= 0 && draw.o.x <= cnv.view.width && draw.o.y <= cnv.view.height)?1:0;
+	return (
+		draw.o.x >= 0
+	&&	draw.o.y >= 0
+	&&	draw.o.x <= cnv.view.width
+	&&	draw.o.y <= cnv.view.height
+	) ? 1 : 0;
 }
 
 function getOffsetXY(e) {
@@ -2333,7 +2393,7 @@ var	x0 = document.body.scrollLeft || document.documentElement.scrollLeft || 0
 }
 
 function putOnTop(e) {
-var	a = document.getElementsByTagName(e.tagName), i = a.length, zTop = 0, z;
+var	a = document.getElementsByTagName(e.tagName), i = a.length, zTop = 100, z;
 	while (i--) if (zTop < (z = parseInt(a[i].style.zIndex))) zTop = z;
 	e.style.zIndex = zTop+1;
 	return e;
@@ -2341,42 +2401,47 @@ var	a = document.getElementsByTagName(e.tagName), i = a.length, zTop = 0, z;
 
 //* Drag and drop *------------------------------------------------------------
 
-function dragStart(event) {
-	event.stopPropagation();
+function dragStart(evt) {
+	evt = evt || window.event;
+	evt.stopPropagation();
 
-var	e = event.target;
+var	e = evt.target;
 	while (!e.id) e = e.parentNode;
 var	c = getOffsetXY(putOnTop(e));
-	event.dataTransfer.setData('text/plain', e.id
-	+','+	(event.pageX - parseInt(c.x))
-	+','+	(event.pageY - parseInt(c.y))
+	evt.dataTransfer.setData('text/plain', e.id
+	+','+	(evt.pageX - parseInt(c.x))
+	+','+	(evt.pageY - parseInt(c.y))
 	);
 }
 
-function dragMove(event) {
-var	d = event.dataTransfer.getData('text/plain'), e;
+function dragMove(evt) {
+	evt = evt || window.event;
+
+var	d = evt.dataTransfer.getData('text/plain'), e;
 	return (d
 	&& (d.indexOf(NS) === 0)
 	&& (d = d.split(',')).length === 3
 	&& (e = document.getElementById(d[0]))
 	)
-	? putInView(e, event.pageX - parseInt(d[1]), event.pageY - parseInt(d[2]))
+	? putInView(e, evt.pageX - parseInt(d[1]), evt.pageY - parseInt(d[2]))
 	: false;
 }
 
-function dragOver(event) {
-	eventStop(event).preventDefault();
+function dragOver(evt) {
+	evt = eventStop(evt);
+	evt.preventDefault();
 
-var	d = event.dataTransfer.files, e = d && d.length;
-	event.dataTransfer.dropEffect = e?'copy':'move';
-	if (!e) dragMove(event);
+var	d = evt.dataTransfer.files, e = d && d.length;
+	evt.dataTransfer.dropEffect = e?'copy':'move';
+	if (!e) dragMove(evt);
 }
 
-function drop(event) {
-	eventStop(event).preventDefault();
+function drop(evt) {
+	evt = eventStop(evt);
+	evt.preventDefault();
 
 //* Move windows: you can actually drop simple text strings like "NS-info,0,0"
-	if (dragMove(event));
+	if (dragMove(evt));
 	else
 //* Load images: from http://www.html5rocks.com/en/tutorials/file/dndfiles/
 	if (window.FileReader) {
@@ -2394,7 +2459,7 @@ function drop(event) {
 			return ++k;
 		}
 
-	var	d = event.dataTransfer.files, f, i = (d?d.length:0), j = i, k = 0, r, m = /^image/i;
+	var	d = evt.dataTransfer.files, f, i = (d?d.length:0), j = i, k = 0, r, m = /^image/i;
 		while (i--) if (rr()) return;
 		i = j;
 		while (i--) rr(1);
@@ -2430,10 +2495,7 @@ function beforeUnload(evt) {
 
 	var	message = lang.confirm.close;
 
-		if (typeof evt === 'undefined') {
-			evt = window.event;
-		}
-		if (evt) {
+		if (evt = evt || window.event) {
 			evt.returnValue = message;
 		}
 
@@ -2662,23 +2724,35 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 
 	for (i in modes) if (mode[modes[i]]) toggleMode(i, 1);		//* <- only after select lists are defined
 
+	addEventListeners(
+		// canvas
+		cnv.view
+	,	{
+			scroll:		f = stopScroll		//* <- against FireFox always scrolling on mousewheel
+		,	contextmenu:	f
+		}
+	);
+
 //* listen on all page to prevent dead zones:
 //* still fails to catch events outside of document block height less than of browser window.
-	e = window;	//document.body;
-	for (i in {onscroll:0, oncontextmenu:0}) cnv.view.setAttribute(i, 'return false;');
-	for (i in (a = {
-		dragover:	dragOver
-	,	drop:		drop
-	,	mousedown:	drawStart
-	,	mousemove:	drawMove
-	,	mouseup:	drawEnd
-	,	keypress:	browserHotKeyPrevent
-	,	keydown:	hotKeys
-	,	mousewheel:	f = hotWheel
-	,	wheel:		f
-	,	scroll:		f
-	,	beforeunload:	beforeUnload
-	})) e.addEventListener(i, a[i], false);
+
+	addEventListeners(
+		// document.body
+		window
+	,	{
+			dragover:	dragOver
+		,	drop:		drop
+		,	mousedown:	drawStart
+		,	mousemove:	drawMove
+		,	mouseup:	drawEnd
+		,	keypress:	browserHotKeyPrevent
+		,	keydown:	hotKeys
+		,	mousewheel:	f = hotWheel
+		,	wheel:		f
+		,	scroll:		f
+		,	beforeunload:	beforeUnload
+		}
+	);
 
 //* Get ready to work *--------------------------------------------------------
 
