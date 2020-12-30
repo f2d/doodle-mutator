@@ -6,6 +6,8 @@ if (PHP_MAJOR_VERSION >= 8) {
 	error_reporting(~( E_NOTICE | E_STRICT | E_WARNING ));	//* <- TODO many fixes for PHP 8.0 warnings, shut up until then
 }
 
+define('LOCALHOST', $_SERVER['SERVER_ADDR'] === $_SERVER['REMOTE_ADDR']);
+
 function is_prefix($s, $p) {return substr($s, 0, strlen($p)) === $p;}
 function is_postfix($s, $p) {return substr($s, -strlen($p)) === $p;}
 function exit_no_access($why) {
@@ -33,8 +35,8 @@ set_cache_control_header('no-cache');
 header('Expires: Mon, 12 Sep 2016 00:00:00 GMT');
 header('Pragma: no-cache');
 
-if (array_key_exists('pass', $_REQUEST)) {
-	exit_no_access('pass');				//* <- ignore spam bot requests
+if ($_REQUEST['pass']) {
+	exit_no_access(LOCALHOST ? "pass = $_REQUEST[pass]" : 'pass');	//* <- ignore spam bot requests
 }
 
 define('NAMEPRFX', 'd');
@@ -84,7 +86,6 @@ define('M0', $t[0]);
 $s = $_SERVER['SERVER_SOFTWARE'];
 define('WS_NGINX', stripos($s, 'nginx') !== false);
 define('WS_HTACCESS_SUPPORTED', stripos($s, 'apache') !== false);
-define('LOCALHOST', $_SERVER['SERVER_ADDR'] === $_SERVER['REMOTE_ADDR']);
 
 define('GET_Q', strpos($p, '?'));
 define('ARG_ERROR', '!');
