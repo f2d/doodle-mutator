@@ -1,12 +1,13 @@
-﻿//* Global wrapper *-----------------------------------------------------------
+﻿
+//* Global wrapper *-----------------------------------------------------------
 
 var milf = new function () {
 var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align to 8 spaces
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v1.16.5'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2020-12-30'
+,	INFO_VERSION = 'v1.16.6'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2021-01-10'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -773,9 +774,9 @@ var	s = select.shape.value, fig = select.shapeFig[s], sf = select.shapeFlags[s]
 }
 
 function drawEnd(evt) {
-	evt = evt || window.event;
-
 	if (!evt || draw.turn) return draw.active = draw.step = draw.btn = draw.turn = 0, draw.view(1);
+
+	evt = evt || window.event;
 	if (mode.click == 1 && evt.shiftKey) return drawMove(evt);
 	if (draw.active) {
 		if (draw.target != cnv.view) return;

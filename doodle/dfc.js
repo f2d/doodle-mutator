@@ -2,12 +2,12 @@
 
 var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
 
-,	INFO_VERSION = 'v0.9.74'
-,	INFO_DATE = '2013-04-01 — 2020-12-30'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	A0 = 'transparent', IJ = 'image/jpeg', FILL_RULE = 'evenodd'
 ,	CR = 'CanvasRecovery', CT = 'Time', DEFAULT_FONT = '18px sans-serif'
+,	INFO_VERSION = 'v0.9.75'
+,	INFO_DATE = '2013-04-01 — 2021-01-10'
 
 ,	DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1, TAIL_WIDTH = 18, RANGE_MAX = 100, BOTH_PANELS_HEIGHT = 640
 ,	DRAW_HELPER = {
@@ -979,10 +979,10 @@ var	redraw = true
 }
 
 function drawEnd(evt) {
-	evt = evt || window.event;
-
 	draw.target = 0;
 	if (!evt || draw.turn) return draw.active = draw.btn = draw.step = draw.turn = 0, draw.screen();
+
+	evt = evt || window.event;
 	if (mode.click == 1 && evt.shiftKey) return drawMove(evt);
 	if (draw.active) {
 	var	c = c2d, s = select.shape.value, sf = select.shapeFlags[s], m = ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8));
