@@ -6,14 +6,14 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v1.16.6'	//* needs complete rewrite, long ago
+,	INFO_VERSION = 'v1.16.7'	//* needs complete rewrite, long ago
 ,	INFO_DATE = '2014-07-16 — 2021-01-10'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
 ,	LS = this.LS = window.localStorage || localStorage
 ,	DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
-,	DRAW_HELPER = {lineWidth: 1, shadowBlur: 0, shadowColor: A0, strokeStyle: 'rgba(123,123,123,0.5)', globalCompositeOperation: SO}
+,	DRAW_HELPER = {lineWidth: 1, shadowBlur: 0, shadowColor: A0, strokeStyle: 'rgba(123, 123, 123, 0.5)', globalCompositeOperation: SO}
 
 ,	mode = {debug:	false	//* <- safe to define here
 	,	shape:	false	//* <- safe to define here;	straight line	/ fill area	/ copy
@@ -1161,7 +1161,7 @@ function fillScreen(i,t) {
 }
 
 function pickColor(evt, e, keep) {
-	evt = evt || window.event;
+	// evt = evt || window.event;	//* <- breaks getting data without cursor when picking color from canvas
 
 	if (e && e.ctx) c = e; else
 	if (evt) {
@@ -1543,7 +1543,6 @@ var	pt = id('colors')
 }
 
 //* safe palette constructor, step recomended to be: 1, 3, 5, 15, 17, 51, 85, 255
-
 function generatePalette(p, step, slice) {
 	if (!(p = palette[p])) return;
 var	letters = [0, 0, 0], l = p.length;
@@ -3122,7 +3121,7 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #| a {color: #888;}\
 #| a:hover {color: #000;}\
 #| abbr {border-bottom: 1px dotted #111;}\
-#| aside button {border: 1px solid #000; width: 38px; height: 38px; margin: 2px; padding: 2px; line-height: 7px; text-align: center; cursor: pointer;}\
+#| aside button {border: 1px solid #000; width: 38px; height: 38px; margin: 2px; padding: 2px; line-height: 7px; text-align: center; overflow: hidden; cursor: pointer;}\
 #| aside header > a {display: block; float: right; text-decoration: none; color: #eee; margin: 0;}\
 #| aside header {display: block; cursor: move; padding: 2px 2px 4px 2px; margin-bottom: 2px; background-color: #ace; overflow: hidden;}\
 #| aside header:hover {background-color: #5ea6ed;}\
@@ -3176,7 +3175,7 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 +abc.map(function(i) {return '.|-'+i+' .|-'+i;}).join(', ')+' {display: none;}\
 </style>', '}', '\n'), '|', NS)+'\n<div id="'+NS+'">Loading '+NS+'...</div>\n');
 
-//* Generic funcs *------------------------------------------------------------
+//* Generic helper functions *-------------------------------------------------
 
 function repeat(t,n) {return new Array(n+1).join(t);}
 function replaceAll(t,s,j) {return t.split(s).join(j);}
