@@ -1,13 +1,12 @@
 ﻿
-//* Global wrapper *-----------------------------------------------------------
+//* Global wrapper; set namespace at the end *---------------------------------
 
-var dfc = new function () {
-var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs align to 8 spaces
+(function(NS) { if (!window[NS]) window[NS] = null, window[NS] = new function() {
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v0.9.76'
-,	INFO_DATE = '2013-04-01 — 2021-01-10'
+var	INFO_VERSION = 'v0.9.77'
+,	INFO_DATE = '2013-04-01 — 2021-01-11'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	CR = 'CanvasRecovery'
@@ -27,6 +26,7 @@ var	NS = 'dfc'	//* <- namespace prefix, change here and above; by the way, tabs 
 	,	strokeStyle : 'rgba(123, 123, 123, 0.5)'
 	}
 
+,	DEFAULT_TOOL_WIDTH = 2
 ,	TOOLS_REF = [
 		{blur : 0, opacity : 1.00, width :  1, color : '0, 0, 0'}	//* <- draw
 	,	{blur : 0, opacity : 1.00, width : 20, color : '255, 255, 255'}	//* <- back
@@ -832,12 +832,14 @@ var	redraw = true
 			c2d.lineTo(draw.cur.x, draw.cur.y);
 		}
 
-		draw.line.preview =	!(draw.line.started = true);
+		draw.line.preview = false;
+		draw.line.started = true;
 	} else
 	if (draw.line.back) {
 		c2d.lineTo(draw.prev.x, draw.prev.y);
 
-		draw.line.back =	!(draw.line.started = true);
+		draw.line.back = false;
+		draw.line.started = true;
 	}
 
 	if (mode.limitFPS) {
@@ -1279,7 +1281,11 @@ var	s = draw.step
 				c2s.beginPath();
 		//* curve
 				ctx.moveTo(s.prev.x, s.prev.y);
-				ctx.bezierCurveTo(s.cur.x, s.cur.y, d.x, d.y, r.x, r.y);
+				ctx.bezierCurveTo(
+					s.cur.x, s.cur.y
+				,	r.x, r.y
+				,	d.x, d.y
+				);
 			} else {
 		//* straight
 				ctx.moveTo(v.x, v.y);
@@ -2478,7 +2484,7 @@ var	t,i = orz(back);
 		if (mode.step) toggleMode(2);
 
 		updateShape(0);
-		tool.width = Math.abs(back);
+		tool.width = DEFAULT_TOOL_WIDTH;
 	} else
 	if (i) {
 		back = TOOLS_REF[i-1];
@@ -4325,4 +4331,4 @@ document.write(
 
 document.addEventListener('DOMContentLoaded', init, false);
 
-}; //* <- END global wrapper
+}; })('dfc');	//* <- END global wrapper; set namespace here

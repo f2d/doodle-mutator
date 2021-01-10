@@ -1,13 +1,12 @@
 ﻿
-//* Global wrapper *-----------------------------------------------------------
+//* Global wrapper; set namespace at the end *---------------------------------
 
-var milf = new function () {
-var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align to 8 spaces
+(function(NS) { if (!window[NS]) window[NS] = null, window[NS] = new function() {
 
 //* Configuration *------------------------------------------------------------
 
-,	INFO_VERSION = 'v1.16.7'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2021-01-10'
+var	INFO_VERSION = 'v1.16.8'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2021-01-11'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -32,6 +31,7 @@ var	NS = 'milf'	//* <- namespace prefix, change here and above; BTW, tabs align 
 	,	W: {min: 1   , max: 100, step: 1}
 	}, BOW = ['grid', 'blur', 'opacity', 'width'], BOWL = 'GBOW'
 
+,	DEFAULT_TOOL_WIDTH = 2
 ,	TOOLS_REF = [
 		{grid: 1, blur: 0, opacity: 1.00, width:  1, clip: SO, color: '0,0,0'}		//* <- draw
 	,	{grid: 0, blur: 0, opacity: 1.00, width: 20, clip: DO, color: '255,255,255'}	//* <- back
@@ -870,7 +870,11 @@ var	cd = ctx.draw, v = draw.prev, r = draw.cur
 				propSwap(ct, old, 0);
 		//* curve
 				c.moveTo(s.prev.x, s.prev.y);
-				c.bezierCurveTo(s.cur.x, s.cur.y, d.x, d.y, r.x, r.y);
+				ctx.bezierCurveTo(
+					s.cur.x, s.cur.y
+				,	r.x, r.y
+				,	d.x, d.y
+				);
 			} else {
 		//* straight
 				c.moveTo(v.x, v.y);
@@ -1713,7 +1717,7 @@ var	i, j, a = select.affect;
 		for (i in TOOLS_REF[j]) tools[j][i] = TOOLS_REF[j][i];
 		for (i in select.lineCaps) select[i].value = 0;
 		toolSwap(-1, k);
-		tool.width = t;
+		tool.width = DEFAULT_TOOL_WIDTH;
 	} else
 
 //* restore front set to one of defaults + line shape
@@ -3224,4 +3228,4 @@ function eventStop(e) {
 
 document.addEventListener('DOMContentLoaded', init, false);
 
-}; //* <- END global wrapper
+}; })('milf');	//* <- END global wrapper; set namespace here
