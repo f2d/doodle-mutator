@@ -112,6 +112,7 @@ var	INFO_VERSION = 'v1.16.9'	//* needs complete rewrite, long ago
 //* Set up (don't change) *----------------------------------------------------
 
 ,	CUSTOM_CURSOR_DOT = false
+,	TITLE_LINE_BREAK = ' \r\n'
 ,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)	//* <- broken forever, sadly
 ,	noBorderRadius = /^Opera.* Version\D*1\d\.\d+$/i.test(navigator.userAgent)
 ,	abc = 'abc'.split('')
@@ -1952,7 +1953,7 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 	function getTimeToShow(s) {
 		if (!s) return '-';
 	var	a = s.split('-', 2).map(orz), i,t,r = '';
-		for (i = 0; i < 2; i++) r += ' \r\n'+((t = a[i]) ? unixDateToHMS(t,0,1) : '-');
+		for (i = 0; i < 2; i++) r += TITLE_LINE_BREAK+((t = a[i]) ? unixDateToHMS(t,0,1) : '-');
 		return r;
 	}
 
@@ -2055,7 +2056,7 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 					&&	readSavedLayers(JSON.parse(b))
 					) {
 						a = a.name;
-					} else if (confirm(lang.bad_data+' \r\n'+lang.confirm.reprint)) {
+					} else if (confirm(lang.bad_data+TITLE_LINE_BREAK+lang.confirm.reprint)) {
 						b = JSON.stringify(b, null, '\t');
 						saveDL(b);
 					}
@@ -2941,8 +2942,10 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 		send:	'Отправить рисунок в сеть?'
 	,	close:	'Покинуть эту страницу и выбросить открытый рисунок?'
 	,	size:	'Превышен размер полотна. Отправить всё равно?'
-	,	save:	'Сохранить слои в память браузера? \r\nПерезаписать копию, изменённую: '
-	,	load:	'Вернуть слои из памяти браузера? \r\nВосстановить копию, изменённую: '
+	,	save:	'Сохранить слои в память браузера?'
++TITLE_LINE_BREAK+	'Перезаписать копию, изменённую: '
+	,	load:	'Вернуть слои из памяти браузера?'
++TITLE_LINE_BREAK+	'Восстановить копию, изменённую: '
 	,	reprint:'Пересохранить с переносами строк и отступами?'
 },	copy_to_save:	'Откройте новый текстовый файл, скопируйте в него всё ниже этой линии'
 ,	found_swap:	'Рисунок был в запасе, поменялись местами.'
@@ -3031,9 +3034,13 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 	},	swap:	{sub:'смена',	t:'Поменять инструменты местами.'
 	},	reset:	{sub:'сброс',	t:'Сбросить инструменты к начальным.'
 	},	line:	{sub:'прямая',	t:'Прямая линия 1 зажатием.'
-	},	curve:	{sub:'кривая',	t:'Сглаживать углы пути / кривая линия 2 зажатиями.'
-	},	area:	{sub:'закрас.',	t:'Закрашивать площадь геометрических фигур. \r\nНе обводить + не закрашивать = удалить площадь.'
-	},	outline:{sub:'контур',	t:'Рисовать контур геометрических фигур. \r\nНе обводить + не закрашивать = удалить площадь.'
+	},	curve:	{sub:'кривая',	t:'Сглаживать углы линии.'
++TITLE_LINE_BREAK+	'Вместе с включением "прямой" — одна ровная кривая линия (2 клик-зажатия подряд).'
++TITLE_LINE_BREAK+	'Зажатие кнопки Alt меняет местами концевую и контрольную точку линии.'
+	},	area:	{sub:'закрас.',	t:'Закрашивать площадь геометрических фигур.'
++TITLE_LINE_BREAK+	'Не обводить + не закрашивать = удалить площадь.'
+	},	outline:{sub:'контур',	t:'Рисовать контур геометрических фигур.'
++TITLE_LINE_BREAK+	'Не обводить + не закрашивать = удалить площадь.'
 	},	copy:	{sub:'копия',	t:'Оставить старую копию.'
 	},	rect:	{sub:'прямоуг.',t:'Сдвиг прямоугольником.'
 	},	cursor:	{sub:'указат.',	t:'Показывать кисть на указателе.'
@@ -3043,13 +3050,13 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 	},	jpeg:	{sub:'сохр.jpg',t:'Сохранить рисунок в JPEG файл.'
 	},	json:	{sub:'сох.json',t:'Сохранить слои в JSON файл.'
 	},	save:	{sub:'сохран.',	t:'Сохранить слои в память браузера, 2 позиции по очереди.'
-	},	load:	{sub:'загруз.',	t:'Вернуть слои из памяти браузера, 2 позиции по очереди. \r\n\
-Может не сработать в некоторых браузерах, если не настроить автоматическую загрузку и показ изображений.'
-	},	loadd:	{sub:'загр.доб',t:'Добавить рисунок из памяти браузера на новый слой, 2 позиции по очереди. \r\n\
-Может не сработать в некоторых браузерах, если не настроить автоматическую загрузку и показ изображений.'
-	},	read:	{sub:'заг.файл',t:'Прочитать локальный файл на новый слой. \r\n\
-Может не сработать вообще, особенно при запуске самой рисовалки не с диска. \r\n\
-Вместо этого рекомендуется перетаскивать файлы из других программ.'
+	},	load:	{sub:'загруз.',	t:'Вернуть слои из памяти браузера, 2 позиции по очереди.'
++TITLE_LINE_BREAK+	'Может не сработать в некоторых браузерах, если не настроить автоматическую загрузку и показ изображений.'
+	},	loadd:	{sub:'загр.доб',t:'Добавить рисунок из памяти браузера на новый слой, 2 позиции по очереди.'
++TITLE_LINE_BREAK+	'Может не сработать в некоторых браузерах, если не настроить автоматическую загрузку и показ изображений.'
+	},	read:	{sub:'заг.файл',t:'Прочитать локальный файл на новый слой.'
++TITLE_LINE_BREAK+	'Может не сработать вообще, особенно при запуске самой рисовалки не с диска.'
++TITLE_LINE_BREAK+	'Вместо этого рекомендуется перетаскивать файлы из других программ.'
 	},	done:	{sub:'готово',	t:'Завершить и отправить рисунок в сеть.'
 
 	},	'new':	{sub:'новый',	t:'Создать новый слой.'
@@ -3077,8 +3084,10 @@ else o.lang = 'en'
 		send:	'Send image to server?'
 	,	close:	'Leave this page and discard the drawing?'
 	,	size:	'Canvas size exceeds limit. Send anyway?'
-	,	save:	'Save layers to your browser memory? \r\nOverwrite the copy edited at:'
-	,	load:	'Restore layers from your browser memory? \r\nOverwrite the copy edited at:'
+	,	save:	'Save layers to your browser memory?'
++TITLE_LINE_BREAK+	'Overwrite the copy edited at:'
+	,	load:	'Restore layers from your browser memory?'
++TITLE_LINE_BREAK+	'Overwrite the copy edited at:'
 	,	reprint:'Resave with line breaks and indents?'
 },	copy_to_save:	'Open new text file, copy and paste to it after this line'
 ,	found_swap:	'Found image at slot 2, swapped slots.'
@@ -3167,9 +3176,13 @@ else o.lang = 'en'
 	,	swap:	'Swap your tools.'
 	,	reset:	'Reset both tools.'
 	,	line:	'Draw straight line with 1 drag.'
-	,	curve:	'Smooth path corners / draw single curve with 2 drags.'
-	,	area:	'Fill geometric shapes. \r\nNo outline + no fill = erase area.'
-	,	outline:'Draw outline of geometric shapes. \r\nNo outline + no fill = erase area.'
+	,	curve	: 'Draw lines with smooth corners.'
++TITLE_LINE_BREAK+	'With "straight" enabled — draw single curve (2 click-drags).'
++TITLE_LINE_BREAK+	'Holding Alt key swaps line end and control point.'
+	,	area:	'Fill geometric shapes.'
++TITLE_LINE_BREAK+	'No outline + no fill = erase area.'
+	,	outline:'Draw outline of geometric shapes.'
++TITLE_LINE_BREAK+	'No outline + no fill = erase area.'
 	,	copy:	'Keep old copy.'
 	,	rect:	'Move rectangle.'
 	,	cursor:	'Brush preview on cursor.'
@@ -3179,13 +3192,13 @@ else o.lang = 'en'
 	,	jpeg:	'Save image as JPEG file.'
 	,	json:	'Save layers as JSON file.'
 	,	save:	'Save layers copy to your browser memory, 2 slots in a queue.'
-	,	load:	'Load layers copy from your browser memory, 2 slots in a queue. \r\n\
-May not work in some browsers until set to load and show new images automatically.'
-	,	loadd:	'Load image copy from your browser memory to a new layer, 2 slots in a queue. \r\n\
-May not work in some browsers until set to load and show new images automatically.'
-	,	read:	'Load image from your local file to a new layer. \r\n\
-May not work at all, especially if sketcher itself is not started from disk. \r\n\
-Instead, it is recommended to drag and drop files from another program.'
+	,	load:	'Load layers copy from your browser memory, 2 slots in a queue.'
++TITLE_LINE_BREAK+	'May not work in some browsers until set to load and show new images automatically.'
+	,	loadd:	'Load image copy from your browser memory to a new layer, 2 slots in a queue.'
++TITLE_LINE_BREAK+	'May not work in some browsers until set to load and show new images automatically.'
+	,	read:	'Load image from your local file to a new layer.'
++TITLE_LINE_BREAK+	'May not work at all, especially if sketcher itself is not started from disk.'
++TITLE_LINE_BREAK+	'Instead, it is recommended to drag and drop files from another program.'
 	,	done:	'Finish and send image to server.'
 
 	,	'new':	'Add a new layer.'

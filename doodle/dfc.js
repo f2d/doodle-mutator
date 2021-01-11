@@ -237,6 +237,7 @@ var	INFO_VERSION = 'v0.9.78'
 ,	regTextSize	= /^(\d+)([a-z]+)?$/i
 ,	regTrim		= /^\s+|\s+$/g
 
+,	TITLE_LINE_BREAK = ' \r\n'
 ,	A0 = 'transparent'
 ,	IJ = 'image/jpeg'
 ,	FILL_RULE = 'evenodd'
@@ -3078,13 +3079,12 @@ function confirmShowTime(la, s) {
 	if (s) {
 	var	a = s.split('-', 2).map(orz)
 	,	k = a.length
-	,	n = ' \r\n'
-	,	r = la.join(n)
+	,	r = la.join(TITLE_LINE_BREAK)
 	,	t,i
 		;
 
 		for (i = 0; i < k; i++) {
-			r += n+(
+			r += TITLE_LINE_BREAK+(
 				(t = a[i])
 				? unixDateToHMS(t,0,1)
 				: '-'
@@ -4095,7 +4095,6 @@ var	o = outside
 	o.undo = draw.history.max = getNumClamped(o.undo, 99);
 	o.idle = draw.time.idle = getNumClamped(o.idle, 60)*1000;
 
-	i = ' \r\n';
 	j = shapeHotKey.split('').join(k = ', ');
 
 	if (!o.lang) {
@@ -4146,10 +4145,13 @@ var	o = outside
 		,	hex :		'Цвет'
 		,	hex_hint :	'Формат ввода — #a, #f90, #ff9900, или 0,123,255'
 		,	hide_hint :	'Кликните, чтобы спрятать или показать.'
-		,	text_hint :	'Рисовать в фигурах текст, заданный здесь. Поле можно растягивать за уголок, если ваш браузер позволяет.'
+		,	text_hint :	'Рисовать в фигурах текст, заданный здесь.'
+		+TITLE_LINE_BREAK+	'Поле можно растягивать за уголок, если ваш браузер позволяет.'
 		,	text_align_hint :	'Выравнивать текст по краю или середине.'
-		,	text_font_hint :	'Шрифт, стиль и высота строки печатаемого текста. Если размер не указан, он подбирается автоматически.'
-		,	text_font_set_hint :	'Некоторые заданные варианты стилей. Какие-то могут не сработать, если в вашей системе не найдётся такого шрифта.'
+		,	text_font_hint :	'Шрифт, стиль и высота строки печатаемого текста.'
+		+TITLE_LINE_BREAK+		'Если размер не указан, он подбирается автоматически.'
+		,	text_font_set_hint :	'Некоторые заданные варианты стилей.'
+		+TITLE_LINE_BREAK+		'Какие-то могут не сработать, если в вашей системе не найдётся такого шрифта.'
 		,	text_placeholder :	'Ваш текст тут.'
 		,	info_top :	'Управление (указатель над полотном):'
 		,	info : [
@@ -4173,7 +4175,7 @@ var	o = outside
 		,	size_hint :	'Число от '
 		,	range_hint :	' до '
 		,	resize_hint :	'Как умещать или растягивать содержимое полотна при изменении размера или загрузке файлов.'
-				+i+	'Без растягивания файл просто перезаписывает всё полотно и его размер.'
+		+TITLE_LINE_BREAK+	'Без растягивания файл просто перезаписывает всё полотно и его размер.'
 		,	b : {
 				undo	: {sub : 'назад',	t : 'Отменить последнее действие.'}
 			,	redo	: {sub : 'вперёд',	t : 'Отменить последнюю отмену.'}
@@ -4187,8 +4189,9 @@ var	o = outside
 			,	swap	: {sub : 'смена',	t : 'Поменять инструменты местами.'}
 			,	reset	: {sub : 'сброс',	t : 'Сбросить инструменты к начальным.'}
 			,	line	: {sub : 'прямая',	t : 'Прямая линия (1 клик-зажатие).'}
-			,	curve	: {sub : 'сгиб',	t : 'Сглаживать углы пути.'
-				+i+	'Вместе с "прямой" — кривая линия (2 клик-зажатия подряд).'
+			,	curve	: {sub : 'сгиб',	t : 'Сглаживать углы линии.'
+				+TITLE_LINE_BREAK+	'Вместе с включением "прямой" — одна ровная кривая линия (2 клик-зажатия подряд).'
+				+TITLE_LINE_BREAK+	'Зажатие кнопки Alt меняет местами концевую и контрольную точку линии.'
 				}
 			,	area	: {sub : 'закрас.',	t : 'Закрашивать площадь геометрических фигур.'}
 			,	outline	: {sub : 'контур',	t : 'Рисовать контур геометрических фигур.'}
@@ -4203,12 +4206,12 @@ var	o = outside
 				}
 			,	save	: {sub : 'сохран.',	t : 'Сохранить рисунок в память'+r}
 			,	load	: {sub : 'загруз.',	t : 'Вернуть рисунок из памяти'+r
-				+i+	'Может не сработать в некоторых браузерах,'
-				+	'если не настроить автоматическую загрузку и показ изображений.'
+				+TITLE_LINE_BREAK+	'Может не сработать в некоторых браузерах,'
+				+			'если не настроить автоматическую загрузку и показ изображений.'
 				}
 			,	read	: {sub : 'зг.файл',	t : 'Прочитать локальный файл.'
-				+i+	'Может не сработать вообще, особенно при запуске самой рисовалки не с диска.'
-				+i+	'Вместо этого рекомендуется перетаскивать файлы из других программ.'
+				+TITLE_LINE_BREAK+	'Может не сработать вообще, особенно при запуске самой рисовалки не с диска.'
+				+TITLE_LINE_BREAK+	'Вместо этого рекомендуется перетаскивать файлы из других программ.'
 				}
 			,	done	: {sub : 'готово',	t : 'Завершить и отправить рисунок в сеть.'}
 			,	info	: {sub : 'помощь',	t : 'Показать или скрыть информацию.'}
@@ -4286,7 +4289,8 @@ var	o = outside
 		,	hex :		'Color'
 		,	hex_hint :	'Valid formats — #a, #f90, #ff9900, or 0,123,255'
 		,	hide_hint :	'Click to show/hide.'
-		,	text_hint :		'Enter text here to print inside figures. Field is resizable by dragging its corner, if your browser supports.'
+		,	text_hint :		'Enter text here to print inside figures.'
+		+TITLE_LINE_BREAK+		'Field is resizable by dragging its corner, if your browser supports.'
 		,	text_align_hint :	'Align printed text to either side or centered.'
 		,	text_font_hint :	'Printed text font style.'
 		,	text_font_set_hint :	'Various style presets, some of which may not work if your system has no matching fonts installed.'
@@ -4312,7 +4316,8 @@ var	o = outside
 		,	size : 		'Size'
 		,	size_hint :	'Number from '
 		,	range_hint :	' to '
-		,	resize_hint :	'How to fit/resize canvas content when changing size or loading files. Without rescaling loaded file just overwrites the whole canvas and its size.'
+		,	resize_hint :	'How to fit/resize canvas content when changing size or loading files.'
+		+TITLE_LINE_BREAK+	'Without rescaling loaded file just overwrites the whole canvas and its size.'
 		,	b : {
 				undo	: 'Revert last change.'
 			,	redo	: 'Redo next reverted change.'
@@ -4326,7 +4331,9 @@ var	o = outside
 			,	swap	: 'Swap your tools.'
 			,	reset	: 'Reset both tools.'
 			,	line	: 'Draw straight line (1 click-drag).'
-			,	curve	: 'Draw lines with smooth corners. With "straight" — draw single curve (2 click-drags).'
+			,	curve	: 'Draw lines with smooth corners.'
+			+TITLE_LINE_BREAK+	'With "straight" enabled — draw single curve (2 click-drags).'
+			+TITLE_LINE_BREAK+	'Holding Alt key swaps line end and control point.'
 			,	area	: 'Fill geometric shapes.'
 			,	outline	: 'Draw outline of geometric shapes.'
 			,	copy	: 'Keep old copy.'
@@ -4338,10 +4345,10 @@ var	o = outside
 			,	jpeg	: 'Save image as JPEG file — flat picture, maybe less filesize, but poor quality.'
 			,	save	: 'Save image copy to'+r
 			,	load	: 'Load image copy from'+r
-					+i+	'May not work in some browsers until set to load and show new images automatically.'
+			+TITLE_LINE_BREAK+	'May not work in some browsers until set to load and show new images automatically.'
 			,	read	: 'Load image from your local file.'
-					+i+	'May not work at all, especially if sketcher itself is not started from disk.'
-					+i+	'Instead, it is recommended to drag and drop files from another program.'
+			+TITLE_LINE_BREAK+	'May not work at all, especially if sketcher itself is not started from disk.'
+			+TITLE_LINE_BREAK+	'Instead, it is recommended to drag and drop files from another program.'
 			,	done	: 'Finish and send image to server.'
 			,	info	: 'Show/hide information.'
 			}
