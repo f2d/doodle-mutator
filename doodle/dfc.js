@@ -5,7 +5,7 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.77'
+var	INFO_VERSION = 'v0.9.78'
 ,	INFO_DATE = '2013-04-01 — 2021-01-11'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
@@ -619,7 +619,7 @@ var	k,v,j = ' '
 //* Strokes and shapes *-------------------------------------------------------
 
 function drawCursor() {
-var	sf = select.shapeFlags[select.shape.value];
+var	sf = draw.shapeFlags;
 
 	if (sf & 16) {
 		for (i in DRAW_HELPER) c2d[i] = DRAW_HELPER[i];
@@ -652,7 +652,7 @@ var	sf = select.shapeFlags[select.shape.value];
 }
 
 function drawStart(evt) {
-	evt = evt || window.event;
+	draw.evt = evt = evt || window.event;
 
 	try {
 		showProps(evt,1,1);	//* <- check if permission denied to read some property
@@ -660,14 +660,17 @@ function drawStart(evt) {
 		return;			//* <- against FireFox catching clicks on page scrollbar
 	}
 
-	if (!draw.step || (draw.target && draw.target !== evt.target)) drawEnd(evt);
-	if (!isMouseIn()) {
-		return false;
+	if (!draw.step || (draw.target && draw.target !== evt.target)) {
+		drawEnd(evt);
 	}
 
+	if (!isMouseIn()) {
+		return;
+	}
+
+	eventStop(evt).preventDefault();
 	draw.target = evt.target;
 //	canvas.focus();
-	eventStop(evt).preventDefault();
 
 	if (draw.btn && (draw.btn != evt.which)) {
 		return drawEnd();
@@ -679,22 +682,41 @@ function drawStart(evt) {
 		return drawEnd(evt);
 	}
 
+var	s = draw.shape = select.shape.value
+,	sf = draw.shapeFlags = select.shapeFlags[s]
+	;
+
+	if (evt.altKey && (draw.step && mode.step && mode.shape && (sf & 1))); else	//* <- line+curve
 	if (evt.altKey)   draw.turn = {prev : draw.zoom,  zoom  : 1}; else
 	if (evt.ctrlKey)  draw.turn = {prev : draw.angle, angle : 1}; else
-	if (evt.shiftKey) draw.turn = {prev : (draw.pan ? {x : draw.pan.x, y : draw.pan.y} : {x : 0, y : 0}), pan : 1};
+	if (evt.shiftKey) draw.turn = {
+		prev : (
+			draw.pan
+			? {x : draw.pan.x, y : draw.pan.y}
+			: {x : 0, y : 0}
+		)
+	,	pan : 1
+	};
 
 	updatePosition(evt);
+
 	if (draw.turn) {
 		return draw.turn.origin = getCursorRad();
 	}
 
-var	sf = select.shapeFlags[select.shape.value];
-
 	if (draw.step) {
-		if ((mode.step && ((mode.shape && (sf & 1)) || (sf & 4))) || (sf & 64)) {
+		if (
+			(mode.step && (
+				(mode.shape && (sf & 1))	//* <- line+curve
+				|| (sf & 4)			//* <- move+area
+			)) || (sf & 64)				//* <- any mode
+		) {
 			for (i in draw.o) draw.prev[i] = draw.cur[i];
 
-			return draw.step.done = 1;
+			draw.step.swap = evt.altKey;
+			draw.step.done = 1;
+
+			return;
 		} else {
 			draw.step = 0;
 		}
@@ -730,6 +752,7 @@ var	i = (evt.which == 1 ? 1 : 0)
 	,	shadowColor : (t.blur ? 'rgb('+t.color+')' : A0)
 	,	shadowBlur : t.blur
 	});
+
 	for (i in t) c2s[i] = c2d[i] = t[i];
 
 	updatePosition(evt);
@@ -752,8 +775,7 @@ var	i = (evt.which == 1 ? 1 : 0)
 		if (k = checkTextStyle(i, 1)) {
 			f = i.value;
 		} else {
-		var	j = i.value.replace(regCommaSpace
-		,	'$1 ').split(' ')
+		var	j = i.value.replace(regCommaSpace, '$1 ').split(' ')
 		,	k = []
 		,	l = ''
 		,	m
@@ -766,13 +788,16 @@ var	i = (evt.which == 1 ? 1 : 0)
 					k.push(j[i]);
 				}
 			}
+
 			f = l+k.join(' ');
 			k = (l && checkTextStyle(f, 1));
 		}
+
 		if (isTransparent(s)) {
 			i = (draw.btn == 1 ? 1 : 0);
 			s = 'rgba('+tools[i].color+', '+tools[1-i].opacity+')';
 		}
+
 		draw.text = {
 			font : f
 		,	style : s
@@ -780,7 +805,9 @@ var	i = (evt.which == 1 ? 1 : 0)
 		,	lines : t
 		,	offset : (k ? getTextOffsetXY(f,c2d,a,t) : {x : 0, y : 0})
 		};
-	} else draw.text = 0;
+	} else {
+		draw.text = 0;
+	}
 
 	if ((sf & 32) && !(sf & 2)) {
 		return drawEnd(evt);
@@ -791,7 +818,7 @@ var	i = (evt.which == 1 ? 1 : 0)
 }
 
 function drawMove(evt) {
-	evt = evt || window.event;
+	draw.evt = evt = evt || window.event;
 
 	if (mode.click == 1 && !evt.shiftKey) {
 		mode.click = 0;
@@ -799,12 +826,17 @@ function drawMove(evt) {
 		return drawEnd(evt);
 	}
 
-	updatePosition(evt);
-	if (draw.turn) return updateViewport(draw.turn.pan ? 1 : draw.turn.delta = getCursorRad() - draw.turn.origin);
+	if (evt.type.indexOf('mouse') === 0) {
+		updatePosition(evt);
+	}
+
+	if (draw.turn) {
+		return updateViewport(draw.turn.pan ? 1 : draw.turn.delta = getCursorRad() - draw.turn.origin);
+	}
 
 var	redraw = true
-,	s = select.shape.value
-,	sf = select.shapeFlags[s]
+,	s = draw.shape
+,	sf = draw.shapeFlags
 ,	newLine = (draw.active && !((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8)))
 	;
 
@@ -844,7 +876,7 @@ var	redraw = true
 
 	if (mode.limitFPS) {
 	var	t = +new Date;
-		if (t-draw.refresh > 30) draw.refresh = t; else redraw = false;		//* <- put "> 1000/N" to redraw maximum N FPS
+		if (t-draw.refresh > 30) draw.refresh = t; else redraw = false;		//* <- use 1000/N to redraw maximum N FPS
 	}
 
 	if (redraw) {
@@ -886,7 +918,7 @@ function drawEnd(evt) {
 		return draw.screen();
 	}
 
-	evt = evt || window.event;
+	draw.evt = evt = evt || window.event;
 
 	if (mode.click == 1 && evt.shiftKey) {
 		return drawMove(evt);
@@ -894,12 +926,19 @@ function drawEnd(evt) {
 
 	if (draw.active) {
 	var	c = c2d
-	,	s = select.shape.value
-	,	sf = select.shapeFlags[s]
+	,	s = draw.shape
+	,	sf = draw.shapeFlags
 	,	m = ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8))
 		;
 
-		if (!draw.step && ((mode.step && ((mode.shape && (sf & 1)) || (sf & 4))) || (sf & 64))) {
+	//* normal straight 2pt line, base for 4pt curve:
+
+		if (!draw.step && (
+			(mode.step && (
+				(mode.shape && (sf & 1))	//* <- line+curve
+				|| (sf & 4)			//* <- move+area
+			)) || (sf & 64)				//* <- any mode
+		)) {
 			draw.step = {
 				prev : {
 					x : draw.prev.x
@@ -909,7 +948,7 @@ function drawEnd(evt) {
 					x : draw.cur.x
 				,	y : draw.cur.y
 				}
-			};	//* <- normal straight line as base
+			};
 
 			return;
 		}
@@ -969,7 +1008,9 @@ function drawEnd(evt) {
 		}
 
 		if (mode.click && evt.shiftKey) {
-			return mode.click = 0, drawStart(evt);
+			mode.click = 0;
+
+			return drawStart(evt);
 		}
 	}
 
@@ -977,7 +1018,8 @@ function drawEnd(evt) {
 }
 
 function drawShape(ctx, i) {
-var	s = draw.step
+var	evt = draw.evt
+,	s = draw.step
 ,	v = draw.prev
 ,	r = draw.cur
 ,	AREA = 0
@@ -1254,9 +1296,13 @@ var	s = draw.step
 		default:
 			if (s) {
 			var	d = r
+			,	w = s.prev
+			,	u = s.cur
 			,	old = {}
 			,	t = DRAW_HELPER
 				;
+
+		//* curve helpers
 
 				for (i in t) {
 					old[i] = c2s[i];
@@ -1265,13 +1311,18 @@ var	s = draw.step
 
 				c2s.beginPath();
 
-				if (s.prev.x != v.x || s.prev.y != v.y) {
+		//* control point 1 phantom
+
+				c2s.moveTo(u.x, u.y);
+				c2s.lineTo(w.x, w.y);
+
+		//* control point 2 phantom
+
+				if (w.x != v.x || w.y != v.y) {
 					c2s.moveTo(d.x, d.y), d = v;
 					c2s.lineTo(d.x, d.y);
 				}
 
-				c2s.moveTo(s.cur.x, s.cur.y);
-				c2s.lineTo(s.prev.x, s.prev.y);
 				c2s.stroke();
 
 				for (i in t) {
@@ -1280,11 +1331,20 @@ var	s = draw.step
 
 				c2s.beginPath();
 		//* curve
-				ctx.moveTo(s.prev.x, s.prev.y);
+			var	swapKey = (evt && evt.altKey)
+			,	swapPoint1 = (s.done ? s.swap : swapKey)
+			,	swapPoint2 = (s.done ? !swapKey : swapKey)
+			,	linePoint1 = (swapPoint1 ? u : w)
+			,	ctrlPoint1 = (swapPoint1 ? w : u)
+			,	ctrlPoint2 = (swapPoint2 ? r : d)
+			,	linePoint2 = (swapPoint2 ? d : r)
+				;
+
+				ctx.moveTo(linePoint1.x, linePoint1.y);
 				ctx.bezierCurveTo(
-					s.cur.x, s.cur.y
-				,	r.x, r.y
-				,	d.x, d.y
+					ctrlPoint1.x, ctrlPoint1.y
+				,	ctrlPoint2.x, ctrlPoint2.y
+				,	linePoint2.x, linePoint2.y
 				);
 			} else {
 		//* straight
@@ -2213,15 +2273,24 @@ function updateShape(s) {
 	}
 
 var	c = select.shapeClass[s = orz((s||select.shape).value)]
+,	sf = select.shapeFlags[s]
 ,	i,j = []
 	;
+
+	if (
+		!draw.active
+	&&	!draw.step
+	) {
+		draw.shape = s;
+		draw.shapeFlags = sf;
+	}
 
 	for (i in MODE_LABELS) if (c != i) {
 		j.push(MODE_LABELS[i]);
 	}
 
 	setClass(getElemById('bottom'), j.join(' '));
-	setClass(getElemById('texts'), ((select.shapeFlags[s] & 32) ? 'texts' : 'sliders'));
+	setClass(getElemById('texts'), ((sf & 32) ? 'texts' : 'sliders'));
 
 	for (i in {L : 0, U : 1}) if (j = getElemById('check'+i)) {
 		s = j.firstElementChild;
@@ -2703,10 +2772,10 @@ function updateDebugScreen(lsid, refresh) {
 
 function updatePosition(evt) {
 var	r = getOffsetXY(draw.container)
-,	i = select.shapeFlags[select.shape.value]
-,	isFillOnlyFigure = ((i & 2) && mode.shape && !mode.step)
-,	isMoveToolOrEvenWidthLine = ((i & 4) || ((draw.active ? c2d.lineWidth : tool.width) % 2))
-,	o = (
+,	sf = draw.shapeFlags
+,	isFillOnlyFigure = ((sf & 2) && mode.shape && !mode.step)
+,	isMoveToolOrEvenWidthLine = ((sf & 4) || ((draw.active ? c2d.lineWidth : tool.width) % 2))
+,	i,o = (
 		isMoveToolOrEvenWidthLine && !isFillOnlyFigure
 		? DRAW_PIXEL_OFFSET
 		: 0
@@ -3371,8 +3440,8 @@ function browserHotKeyPrevent(evt) {
 	evt = evt || window.event;
 
 	if (
-		(!draw.active && isMouseIn())
-	||	(evt.keyCode == 27)
+		isMouseIn()
+	||	evt.keyCode == 27
 	) {
 		evt = eventStop(evt);
 		evt.returnValue = false;
@@ -3384,67 +3453,99 @@ function browserHotKeyPrevent(evt) {
 
 function hotKeys(evt) {
 
-	function c(s) { return s.charCodeAt(0); }
+	function c(s) { return s.charCodeAt(0); }	//* <- alphanumeric hotkey code
 
 	if (evt = browserHotKeyPrevent(evt)) {
-	var	s = String.fromCharCode(evt.keyCode)
-	,	i = shapeHotKey.indexOf(s)
-		;
+		if (
+			!draw.active
+		&&	evt.type === 'keydown'
+		) {
+		var	s = String.fromCharCode(evt.keyCode)
+		,	i = shapeHotKey.indexOf(s)
+			;
 
-		if (i >= 0) {
-			return updateShape(i);
-		}
-
-		if (BOWL.indexOf(s) >= 0) {
-			return toolTweak(s, evt.altKey ? -1 : 0);
-		}
-
-		n = evt.keyCode - c('0');
-
-		if ((n || (n = 10)) > 0 && n < 11) {
-			k = [evt.altKey, evt.ctrlKey, 1];
-
-			for (i in k) if (k[i]) {
-				return toolTweak(BOWL[i], RANGE[i].step < 1 ? n/10 : (n>5 ? (n-5)*10 : n));
+			if (i >= 0) {
+				return updateShape(i);
 			}
-		} else
-		switch (evt.keyCode) {
-			case 27:	drawEnd();	break;	//* Esc
-			case 36: updateViewport();	break;	//* Home
 
-			case c('Z'):	historyAct(-1);	break;
-			case c('X'):	historyAct(1);	break;
-			case c('C'):	pickColor();	break;
-			case c('F'):	fillScreen(0);	break;
-			case c('D'):	fillScreen(1);	break;
-			case c('I'):	fillScreen(-1);	break;
-			case c('H'):	fillScreen(-2);	break;
-			case c('V'):	fillScreen(-3);	break;
-			case c('S'):	toolSwap();	break;
-			case c('A'):	toolSwap(1);	break;
-			case c('E'):	toolSwap(2);	break;
-			case c('G'):	toolSwap(3);	break;
+			if (BOWL.indexOf(s) >= 0) {
+				return toolTweak(s, evt.altKey ? -1 : 0);
+			}
 
-			case 8:		toggleMode('D');break;	//* 8=bksp, 45=Ins, 42=106=[Num *]
-			case c('L'):	toggleMode('L');break;
-			case c('U'):	toggleMode('U');break;
-			case 114:	toggleMode('V');break;
+		var	n = evt.keyCode - c('0');
 
-			case 112:	showInfo();	break;
-			case 120:	savePic(0);	break;
-			case 118:	savePic(1);	break;
-			case 113:	savePic(2);	break;
-			case 115:	savePic(3);	break;
-			case 117:	savePic(4);	break;
-			case 119:	savePic();	break;
+			if ((n || (n = 10)) > 0 && n < 11) {
+			var	k = [evt.altKey, evt.ctrlKey, 1];
 
-			case 42:
-			case 106:updateDebugScreen(-1);	break;
+				for (i in k) if (k[i]) {
+					return toolTweak(BOWL[i], RANGE[i].step < 1 ? n/10 : (n>5 ? (n-5)*10 : n));
+				}
 
-			default: if (mode.debug) {
-				text.debug.innerHTML += '\n'+s+'='+evt.keyCode;
+				return;
+			}
+
+			switch (evt.keyCode) {
+				case 27:	drawEnd();	return;	//* 27=Esc
+				case 36: updateViewport();	return;	//* 36=Home
+
+				case c('Z'):	historyAct(-1);	return;
+				case c('X'):	historyAct(1);	return;
+				case c('C'):	pickColor();	return;
+				case c('F'):	fillScreen(0);	return;
+				case c('D'):	fillScreen(1);	return;
+				case c('I'):	fillScreen(-1);	return;
+				case c('H'):	fillScreen(-2);	return;
+				case c('V'):	fillScreen(-3);	return;
+				case c('S'):	toolSwap();	return;
+				case c('A'):	toolSwap(1);	return;
+				case c('E'):	toolSwap(2);	return;
+				case c('G'):	toolSwap(3);	return;
+
+				case 8:		toggleMode('D');return;	//* 8=bksp, 45=Ins
+				case c('L'):	toggleMode('L');return;
+				case c('U'):	toggleMode('U');return;
+				case 114:	toggleMode('V');return;
+
+				case 112:	showInfo();	return;
+				case 120:	savePic(0);	return;
+				case 118:	savePic(1);	return;
+				case 113:	savePic(2);	return;
+				case 115:	savePic(3);	return;
+				case 117:	savePic(4);	return;
+				case 119:	savePic();	return;
+
+				case 42:
+				case 106:updateDebugScreen(-1);	return;	//* 42=106=[Num *]
 			}
 		}
+
+		if (
+			draw.active
+		&&	(
+				evt.type === 'keydown'
+			||	evt.type === 'keyup'
+			)
+		&&	evt.keyCode == 18	//* 16=Shift, 17=Ctrl, 18=Alt
+		&&	draw.step
+		&&	mode.step
+		&&	mode.shape
+		&&	(draw.shapeFlags & 1)	//* <- line+curve in progress
+		) {
+			drawMove(evt);
+
+			return;
+		}
+
+		if (mode.debug) text.debug.innerHTML += '<br>' + [
+			'type = ' + evt.type
+		,	'key = ' + evt.key
+		,	'code = ' + evt.code
+		,	'keyCode = ' + evt.keyCode
+		,	'which = ' + evt.which
+		,	'altKey = ' + evt.altKey
+		,	'ctrlKey = ' + evt.ctrlKey
+		,	'shiftKey = ' + evt.shiftKey
+		].join(',\n');
 	}
 
 	return false;
@@ -3617,8 +3718,9 @@ var	a,b,c = 'canvas'
 		,	mousedown :	drawStart
 		,	mousemove :	drawMove
 		,	mouseup :	drawEnd
-		,	keypress :	browserHotKeyPrevent
-		,	keydown :	hotKeys
+		,	keypress :	k = hotKeys
+		,	keydown :	k
+		,	keyup :		k
 		,	mousewheel :	f = hotWheel
 		,	wheel :		f
 		,	scroll :	f
