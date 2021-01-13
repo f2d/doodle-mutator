@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.78'
-,	INFO_DATE = '2013-04-01 — 2021-01-11'
+var	INFO_VERSION = 'v0.9.79'
+,	INFO_DATE = '2013-04-01 — 2021-01-13'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	CR = 'CanvasRecovery'
@@ -27,6 +27,8 @@ var	INFO_VERSION = 'v0.9.78'
 	}
 
 ,	DEFAULT_TOOL_WIDTH = 2
+,	ROUGH_LINE_MULTIPLIER = 0.789
+,	ROUGH_LINE_SHIFT = 1
 ,	TOOLS_REF = [
 		{blur : 0, opacity : 1.00, width :  1, color : '0, 0, 0'}	//* <- draw
 	,	{blur : 0, opacity : 1.00, width : 20, color : '255, 255, 255'}	//* <- back
@@ -49,12 +51,13 @@ var	INFO_VERSION = 'v0.9.78'
 	,	step  : false	//* <- curve line	/ erase area	/ rect pan
 	,	scale : false
 	,	lowQ  : false
+	,	roughLine : false
 	,	brushView : false
 	,	limitFPS  : false
 	,	autoSave  : true
 	}
 ,	modes = []
-,	modeL = 'DLUSQVFA'
+,	modeL = 'DLUSQRVFA'
 ,	shapeHotKey = 'NPRTYQ.M'
 ,	select = {
 		imgSizes : {
@@ -2772,39 +2775,56 @@ function updateDebugScreen(lsid, refresh) {
 }
 
 function updatePosition(evt) {
-var	r = getOffsetXY(draw.container)
-,	sf = draw.shapeFlags
+var	sf = draw.shapeFlags
 ,	isFillOnlyFigure = ((sf & 2) && mode.shape && !mode.step)
 ,	isMoveToolOrEvenWidthLine = ((sf & 4) || ((draw.active ? c2d.lineWidth : tool.width) % 2))
-,	i,o = (
+,	toolOffset = (
 		isMoveToolOrEvenWidthLine && !isFillOnlyFigure
 		? DRAW_PIXEL_OFFSET
 		: 0
-	);
+	)
+,	containerOffset = getOffsetXY(draw.container)
+,	i;
 
 	evt = evt || window.event;
-	draw.o.x = evt.pageX - CANVAS_BORDER - r.x;
-	draw.o.y = evt.pageY - CANVAS_BORDER - r.y;
+	draw.o.x = evt.pageX - CANVAS_BORDER - containerOffset.x;
+	draw.o.y = evt.pageY - CANVAS_BORDER - containerOffset.y;
 
 	if (draw.pan && !(draw.turn && draw.turn.pan)) for (i in draw.o) {
 		draw.o[i] -= draw.pan[i];
 	}
 
 	if (!draw.turn && (draw.angle || draw.zoom != 1)) {
-		r = getCursorRad(2, draw.o.x, draw.o.y);
+	var	cursorOffset = getCursorRad(2, draw.o.x, draw.o.y);
 
-		if (draw.angle) r.a -= draw.aRad;
-		if (draw.zoom != 1) r.d /= draw.zoom;
+		if (draw.angle    ) cursorOffset.a -= draw.aRad;
+		if (draw.zoom != 1) cursorOffset.d /= draw.zoom;
 
-		draw.o.x = Math.cos(r.a)*r.d + canvas.width/2;
-		draw.o.y = Math.sin(r.a)*r.d + canvas.height/2;
+		draw.o.x = Math.cos(cursorOffset.a) * cursorOffset.d + canvas.width/2;
+		draw.o.y = Math.sin(cursorOffset.a) * cursorOffset.d + canvas.height/2;
 
-		o = 0;
+		toolOffset = 0;
 	}
 
 	for (i in draw.o) {
-		draw.cur[i] = o + draw.o[i];
+	var	drawingCoordinate = toolOffset + draw.o[i];
+
+		draw.cur[i] = (
+			(mode.roughLine && !mode.shape && (sf & 1))
+			? getRoughCoordinate(drawingCoordinate)
+			: drawingCoordinate
+		);
 	}
+}
+
+function getRoughCoordinate(v) {
+	return (
+		Math.round(
+			(v + ROUGH_LINE_SHIFT)
+			* ROUGH_LINE_MULTIPLIER
+		) / ROUGH_LINE_MULTIPLIER
+		- ROUGH_LINE_SHIFT
+	);
 }
 
 function getCursorRad(r, x, y) {
@@ -3453,7 +3473,7 @@ function browserHotKeyPrevent(evt) {
 
 function hotKeys(evt) {
 
-	function c(s) { return s.charCodeAt(0); }	//* <- alphanumeric hotkey code
+	function getKeyCode(s) { return s.charCodeAt(0); }	//* <- alphanumeric hotkey code from first letter
 
 	if (evt = browserHotKeyPrevent(evt)) {
 		if (
@@ -3472,7 +3492,7 @@ function hotKeys(evt) {
 				return toolTweak(s, evt.altKey ? -1 : 0);
 			}
 
-		var	n = evt.keyCode - c('0');
+		var	n = evt.keyCode - getKeyCode('0');
 
 			if ((n || (n = 10)) > 0 && n < 11) {
 			var	k = [evt.altKey, evt.ctrlKey, 1];
@@ -3484,38 +3504,46 @@ function hotKeys(evt) {
 				return;
 			}
 
+			if (evt.altKey)
 			switch (evt.keyCode) {
-				case 27:	drawEnd();	return;	//* 27=Esc
-				case 36: updateViewport();	return;	//* 36=Home
+				case getKeyCode('All-default') :	toolSwap(3);	return;
+			} else
+			switch (evt.keyCode) {
+				case 27 :	drawEnd();		return;	//* 27=Esc
+				case 36 :	updateViewport();	return;	//* 36=Home
 
-				case c('Z'):	historyAct(-1);	return;
-				case c('X'):	historyAct(1);	return;
-				case c('C'):	pickColor();	return;
-				case c('F'):	fillScreen(0);	return;
-				case c('D'):	fillScreen(1);	return;
-				case c('I'):	fillScreen(-1);	return;
-				case c('H'):	fillScreen(-2);	return;
-				case c('V'):	fillScreen(-3);	return;
-				case c('S'):	toolSwap();	return;
-				case c('A'):	toolSwap(1);	return;
-				case c('E'):	toolSwap(2);	return;
-				case c('G'):	toolSwap(3);	return;
+				case 112 :	showInfo();	return;	//* 112=F1
+				case 120 :	savePic(0);	return;	//* 120=F9
+				case 118 :	savePic(1);	return;	//* 118=F7
+				case 113 :	savePic(2);	return;	//* 113=F2
+				case 115 :	savePic(3);	return;	//* 115=F5
+				case 117 :	savePic(4);	return;	//* 117=F6
+				case 119 :	savePic();	return;	//* 119=F8
 
-				case 8:		toggleMode('D');return;	//* 8=bksp, 45=Ins
-				case c('L'):	toggleMode('L');return;
-				case c('U'):	toggleMode('U');return;
-				case 114:	toggleMode('V');return;
+				case 8 :				toggleMode('D');	return;	//* 8=bksp, 45=Ins
+				case 114 :				toggleMode('V');	return;
+				case getKeyCode('Line-straight') :	toggleMode('L');	return;
+				case getKeyCode('U-line-curve') :	toggleMode('U');	return;
+				case getKeyCode('G-rough-line') :	toggleMode('R');	return;
 
-				case 112:	showInfo();	return;
-				case 120:	savePic(0);	return;
-				case 118:	savePic(1);	return;
-				case 113:	savePic(2);	return;
-				case 115:	savePic(3);	return;
-				case 117:	savePic(4);	return;
-				case 119:	savePic();	return;
+				case getKeyCode('Z-Undo') :	historyAct(-1);	return;
+				case getKeyCode('X-Redo') :	historyAct(1);	return;
 
-				case 42:
-				case 106:updateDebugScreen(-1);	return;	//* 42=106=[Num *]
+				case getKeyCode('Color-Pick') :	pickColor();	return;
+
+				case getKeyCode('Swap-tools') :	toolSwap();	return;
+				case getKeyCode('A-pencil') :	toolSwap(1);	return;
+				case getKeyCode('Eraser') :	toolSwap(2);	return;
+				// case getKeyCode('Get-all-default'):	toolSwap(3);	return;
+
+				case getKeyCode('Fill-All') :	fillScreen(0);	return;
+				case getKeyCode('Del-All') :	fillScreen(1);	return;
+				case getKeyCode('Invert-All') :	fillScreen(-1);	return;
+				case getKeyCode('Hor-flip') :	fillScreen(-2);	return;
+				case getKeyCode('Ver-flip') :	fillScreen(-3);	return;
+
+				case 42 :
+				case 106 :	updateDebugScreen(-1);	return;	//* 42=106=[Num *]
 			}
 		}
 
@@ -3866,13 +3894,14 @@ var	a,b,c = 'canvas'
 	,	['flip_h','H'	,'&#x2194;'	,f+'-2)']
 	,	['flip_v','V'	,'&#x2195;'	,f+'-3)']
 	, 0
-	,	['pencil','A'	,'i'		,i+'1)']
-	,	['eraser','E'	,'&#x25CB;'	,i+'2)']
-	,	['reset' ,'G'	,'&#x25CE;'	,i+'3)']
+	,	['pencil','A'		,'i'		,i+'1)']
+	,	['eraser','E'		,'&#x25CB;'	,i+'2)']
+	,	['reset' ,'Alt+A'	,'&#x25CE;'	,i+'3)']
 	, 0
 	,	['line|area|copy'	,'L'	,'&ndash;|&#x25A0;|&#x25EB;'	,d+'"L")'	,k+'L']
 	,	['curve|outline|rect'	,'U'	,'~|&#x25A1;|&#x25AF;'		,d+'"U")'	,k+'U']
-	,	['cursor'		,'F3'	,'&#x25CF;'			,d+'"V")'	,k+'V']
+	,	['rough'		,'G'	,'&#x25CD;'	,d+'"R")'	,k+'R']
+	,	['cursor'		,'F3'	,'&#x25CF;'	,d+'"V")'	,k+'V']
 	, 0
 	,	['png'	,'F9'	,'&#x25EA;'	,e+'0)'	,b+'P']
 	,	['jpeg'	,'F7'	,'&#x25A9;'	,e+'1)'	,b+'J']
@@ -3890,7 +3919,7 @@ var	a,b,c = 'canvas'
 	setClass(f = getElemById('bottom'), MODE_LABELS.join(' '));
 
 	function btnContent(e, a) {
-	var	t = lang.b[a[0]];
+	var	t = lang.b[a[0]] || a[0];
 
 		setContent(e, d+'key">'+a[1]+c+a[2]+d+'subtitle"><br>'+(t.t ? t.sub : a[0])+c);
 		e.title = t.t || t;
@@ -4198,7 +4227,8 @@ var	o = outside
 			,	copy	: {sub : 'копия',	t : 'Оставить старую копию при сдвиге.'}
 			,	rect	: {sub : 'прямоуг.',	t : 'Сдвиг прямоугольником.'}
 			,	cursor	: {sub : 'указат.',	t : 'Показывать кисть на указателе.'}
-			,	rough	: {sub : 'п.штрих',	t : 'Уменьшить нагрузку, пропуская перерисовку штриха.'}
+			,	rough	: {sub : 'черновик',	t : 'Рисовать немного сбитые грубоватые штрихи.'}
+			// ,	rough	: {sub : 'п.штрих',	t : 'Уменьшить нагрузку, пропуская перерисовку штриха.'}
 			,	fps	: {sub : 'п.кадры',	t : 'Уменьшить нагрузку, пропуская кадры.'}
 			,	png	: {sub : 'сохр.png',	t : 'Сохранить рисунок в PNG файл — плоская картинка, полная чёткость.'}
 			,	jpeg	: {sub : 'сохр.jpg',	t : 'Сохранить рисунок в JPEG файл — плоская картинка,'
@@ -4339,7 +4369,8 @@ var	o = outside
 			,	copy	: 'Keep old copy.'
 			,	rect	: 'Move rectangle.'
 			,	cursor	: 'Brush preview on cursor.'
-			,	rough	: 'Skip draw cleanup while drawing to use less CPU.'
+			,	rough	: 'Make slightly rough hand-drawn lines.'
+			// ,	rough	: 'Skip draw cleanup while drawing to use less CPU.'
 			,	fps	: 'Limit FPS when drawing to use less CPU.'
 			,	png	: 'Save image as PNG file — flat picture, top quality.'
 			,	jpeg	: 'Save image as JPEG file — flat picture, maybe less filesize, but poor quality.'
