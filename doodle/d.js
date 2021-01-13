@@ -723,10 +723,9 @@ function checkMyTask(event, e) {
 					if (e) {
 					var	i = e.getAttribute('src')
 					,	k = task.indexOf(';')+1
-						;
-						j =	(flag.pixr || (flag.pixr = i.split('/').slice(0, flag.p?-3:-1).join('/')+'/'))
-						+	getPicPath(task)
-						+	(k ? task.replace(/(\.[^.\/;]+);.+$/, '_res$1') : task);
+					,	m = (flag.pixr || (flag.pixr = i.split('/').slice(0, flag.p?-3:-1).join('/')+'/'))
+					,	t = (k ? task.replace(/(\.[^.\/;]+);.+$/, '_res$1') : task)
+					,	j = m + getPicPath(t);
 						if (i != j) {
 							alert(
 								[
@@ -2062,8 +2061,7 @@ function showContent(sortOrder) {
 
 								if (j) t = (
 									'<a target="_blank" href="'
-								+		getPicPath(t, param)
-								+		j[0]
+								+		getPicPath(j[0], param)
 								+	'" class="res'+(u == 'u'?' u':'')+'">'
 								+		t
 								+	'</a>'
