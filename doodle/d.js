@@ -725,7 +725,7 @@ function checkMyTask(event, e) {
 					,	k = task.indexOf(';')+1
 						;
 						j =	(flag.pixr || (flag.pixr = i.split('/').slice(0, flag.p?-3:-1).join('/')+'/'))
-						+	(flag.p ? getPicSubDir(task) : '')
+						+	getPicPath(task)
 						+	(k ? task.replace(/(\.[^.\/;]+);.+$/, '_res$1') : task);
 						if (i != j) {
 							alert(
@@ -958,6 +958,14 @@ function formCleanUp(e) {
 }
 
 function getPicSubDir(p) {var s = p.split('.'); return s[1][0]+'/'+s[0][0]+'/';}
+function getPicPath(filename, param) {
+	return (
+		(param ? (param.images || '') : '')
+	+	(flag.p ? getPicSubDir(filename) : '')
+	+	filename
+	);
+}
+
 function setPicResize(e,i) {
 var	a = e.parentNode, nested = /^a$/i.test(a.tagName);
 	if (i) {
@@ -1929,15 +1937,22 @@ function showContent(sortOrder) {
 			//* center:
 				if (tab.length > 2 && isNotEmpty(t = tab[2])) {
 					if (dtp.reports) {
-						t = '<div class="log al">'
-						+	t
-							.replace(/(task:\s*)(\S+)(\s*<br>\s*pic:\s*1)/gi
-							,	'$1<img src="'
-							+	(param.images || '')
-							+	'$2">$3'
-							)
-							.replace(/(<br>)(\s+)/gi, '$1<i></i>')
-						+ '</div>';
+						t = (
+							'<div class="log al">'
+						+	t.replace(
+								/(task:\s*)(\S+)(\s*<br>\s*pic:\s*1)|(Denied\s+file\w*:\s*)(\S+)(\s*<br>)/gi
+							,	function(m) {
+									return m = arguments, (
+										(m[1] || m[4])
+									+	'<br><img src="'
+									+		getPicPath(m[2] || m[5], param)
+									+	'">'
+									+	(m[3] || m[6])
+									);
+								}
+							).replace(/(<br>)(\s+)/gi, '$1<i></i>')
+						+	'</div>'
+						);
 					} else
 					if (dtp.users) {
 						t = userID+'. '+(u == 'u'?t:'<span class="a">'+t+'</span>');
@@ -2036,20 +2051,23 @@ function showContent(sortOrder) {
 									+		': '+k
 									+	'</span>';
 								} else j = '';
-								t = '<img src="'
-								+	(param.images || '')
-								+	(flag.p?getPicSubDir(t):'')
-								+	t
+
+								t = (
+									'<img src="'
+								+		getPicPath(t, param)
 								+	'" alt="'+t+', '+q
 								+	'" title="'+(j?a+', '+k+'. '+la.resized_hint:a)
-								+	'">';
-								if (j) t =
-									'<a target="_blank" href="'+(param.images || '')
-								+	(flag.p?getPicSubDir(t):'')
-								+	j[0]
+								+	'">'
+								);
+
+								if (j) t = (
+									'<a target="_blank" href="'
+								+		getPicPath(t, param)
+								+		j[0]
 								+	'" class="res'+(u == 'u'?' u':'')+'">'
 								+		t
-								+	'</a>';
+								+	'</a>'
+								);
 							}
 						}
 						if (!dtp.found && imgPost) alter = 1;
