@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.80'
-,	INFO_DATE = '2013-04-01 — 2021-01-14'
+var	INFO_VERSION = 'v0.9.81'
+,	INFO_DATE = '2013-04-01 — 2021-01-15'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	CR = 'CanvasRecovery'
@@ -35,6 +35,7 @@ var	INFO_VERSION = 'v0.9.80'
 	]
 ,	tools = [{}, {}]
 ,	tool = tools[0]
+,	selectedSlider = 'W'
 ,	BOW = ['blur', 'opacity', 'width']
 ,	BOWL = 'BOW'
 ,	RANGE = [
@@ -658,6 +659,10 @@ var	sf = draw.shapeFlags;
 function drawStart(evt) {
 	draw.evt = evt = evt || window.event;
 
+	if (!evt) {
+		return;
+	}
+
 	try {
 		showProps(evt,1,1);	//* <- check if permission denied to read some property
 	} catch (error) {
@@ -824,14 +829,16 @@ var	i = (evt.which == 1 ? 1 : 0)
 function drawMove(evt) {
 	draw.evt = evt = evt || window.event;
 
-	if (mode.click == 1 && !evt.shiftKey) {
-		mode.click = 0;
+	if (evt) {
+		if (mode.click == 1 && !evt.shiftKey) {
+			mode.click = 0;
 
-		return drawEnd(evt);
-	}
+			return drawEnd(evt);
+		}
 
-	if (evt.type.indexOf('mouse') === 0) {
-		updatePosition(evt);
+		if (evt.type.indexOf('mouse') === 0) {
+			updatePosition(evt);
+		}
 	}
 
 	if (draw.turn) {
@@ -2165,19 +2172,24 @@ function getSliderHTML(b,z) {
 var	i = BOWL.indexOf(b)
 ,	j
 ,	r = RANGE[i > 0 ? i : 0]
-,	s = '<span id="slider'+b+'"><input type="range" id="range'+b+'" onChange="updateSliders(this)'
-	;
+,	s = (
+		'<div class="slider">'
+	+		'<span id="slider'+b+'">'
+	+			'<input type="range" id="range'+b+'" onChange="updateSliders(this)'
+	);
 
 	for (j in r) {
 		s += '" '+j+'="'+r[j];
 	}
 
 	return (
-		s
-	+	'" value="'
-	+	(z > 0 ? r.min : r.max)+'"></span>	'
-	+	(i < 0 ? lang.sat : lang.tool[b])
-	+	(z ? '<br>' : '')
+				s+'" value="'
+	+			(z > 0 ? r.min : r.max)+'">'
+	+		'</span>'
+	+		'<span>'
+	+			(i < 0 ? lang.sat : lang.tool[b] + ' ['+BOWL[i]+']')
+	+		'</span>'
+	+	'</div>'
 	);
 }
 
@@ -2530,11 +2542,14 @@ var	i = BOWL.indexOf(prop);
 
 var	b = BOW[i];
 
-	if (value > 0) {
-		tool[b] = value;
-	} else {
+	if (
+		value === Infinity
+	||	value === -Infinity
+	) {
 	var	v = new Number(tool[b]), s = RANGE[i].step;
-		tool[b] = (value ? v-s : v+s);
+		tool[b] = (value < 0 ? v-s : v+s);
+	} else {
+		tool[b] = value;
 	}
 
 	return updateSliders(i);
@@ -2776,6 +2791,7 @@ function updateDebugScreen(lsid, refresh) {
 
 function updatePosition(evt) {
 var	sf = draw.shapeFlags
+,	isHandDrawnLine = ((sf & 1) && !mode.shape)
 ,	isFillOnlyFigure = ((sf & 2) && mode.shape && !mode.step)
 ,	isMoveToolOrEvenWidthLine = ((sf & 4) || ((draw.active ? c2d.lineWidth : tool.width) % 2))
 ,	toolOffset = (
@@ -2810,7 +2826,7 @@ var	sf = draw.shapeFlags
 	var	drawingCoordinate = toolOffset + draw.o[i];
 
 		draw.cur[i] = (
-			(mode.roughLine && !mode.shape && (sf & 1))
+			isHandDrawnLine && mode.roughLine
 			? getRoughCoordinate(drawingCoordinate)
 			: drawingCoordinate
 		);
@@ -3480,33 +3496,88 @@ function hotKeys(evt) {
 			!draw.active
 		&&	evt.type === 'keydown'
 		) {
-		var	s = String.fromCharCode(evt.keyCode)
-		,	i = shapeHotKey.indexOf(s)
-			;
+		var	i,k,n,s = String.fromCharCode(evt.keyCode);
 
-			if (i >= 0) {
-				return updateShape(i);
-			}
+			if (
+				!evt.altKey
+			&&	!evt.ctrlKey
+			&&	!evt.shiftKey
+			) {
 
-			if (BOWL.indexOf(s) >= 0) {
-				return toolTweak(s, evt.altKey ? -1 : 0);
-			}
+//* Select tool shape:
 
-		var	n = evt.keyCode - getKeyCode('0');
+				if ((k = shapeHotKey.indexOf(s)) >= 0) {
+					updateShape(k);
 
-			if ((n || (n = 10)) > 0 && n < 11) {
-			var	k = [evt.altKey, evt.ctrlKey, 1];
-
-				for (i in k) if (k[i]) {
-					return toolTweak(BOWL[i], RANGE[i].step < 1 ? n/10 : (n>5 ? (n-5)*10 : n));
+					return drawMove(evt);
 				}
 
-				return;
+//* Select tool slider, to update using number keys:
+
+				if ((k = BOWL.indexOf(s)) >= 0) {
+					selectedSlider = s;
+
+					for (i in BOWL) {
+						setClass(getElemById('slider' + BOWL[i]).nextElementSibling, (i == k ? 'active' : ''));
+					}
+
+					return drawMove(evt);
+				}
+
+//* Update selected tool slider:
+
+			var	keyMinus = (
+					evt.keyCode == 173	//* 173=[-]
+				||	evt.keyCode == 109	//* 109=[Num -]
+				);
+
+			var	keyPlus = (
+					evt.keyCode == 61	//* 173=[=]
+				||	evt.keyCode == 107	//* 109=[Num +]
+				);
+
+				if (keyMinus || keyPlus)  {
+					toolTweak(selectedSlider, keyPlus ? Infinity : -Infinity);
+
+					return drawMove(evt);
+				}
+
+			var	keyNumber = evt.keyCode - getKeyCode('0');
+
+				if (
+					keyNumber >= 0
+				&&	keyNumber <= 10
+				) {
+					k = BOWL.indexOf(selectedSlider);
+
+					n = (
+						!keyNumber && RANGE[k].min > 0
+						? 10
+						: keyNumber
+					);
+
+					n = (
+						RANGE[k].step < 1
+						? n / 10
+						: n > 5
+						? (n - 5) * 10
+						: n
+					);
+
+					toolTweak(selectedSlider, n);
+
+					return drawMove(evt);
+				}
 			}
 
 			if (evt.altKey)
 			switch (evt.keyCode) {
 				case getKeyCode('All-default') :	toolSwap(3);	return;
+				case getKeyCode('Show-brush-cursor') :
+
+					toggleMode('V');
+
+					return drawMove(evt);
 			} else
 			switch (evt.keyCode) {
 				case 27 :	drawEnd();		return;	//* 27=Esc
@@ -3520,8 +3591,7 @@ function hotKeys(evt) {
 				case 117 :	savePic(4);	return;	//* 117=F6
 				case 119 :	savePic();	return;	//* 119=F8
 
-				case 8 :				toggleMode('D');	return;	//* 8=bksp, 45=Ins
-				case 114 :				toggleMode('V');	return;
+				case 8 :				toggleMode('D');	return;	//* 8=Bksp, 45=Ins
 				case getKeyCode('Line-straight') :	toggleMode('L');	return;
 				case getKeyCode('U-line-curve') :	toggleMode('U');	return;
 				case getKeyCode('G-rough-line') :	toggleMode('R');	return;
@@ -3529,23 +3599,25 @@ function hotKeys(evt) {
 				case getKeyCode('Z-Undo') :	historyAct(-1);	return;
 				case getKeyCode('X-Redo') :	historyAct(1);	return;
 
-				case getKeyCode('Color-Pick') :	pickColor();	return;
+				case getKeyCode('Color-pick') :	pickColor();	return;
 
 				case getKeyCode('Swap-tools') :	toolSwap();	return;
 				case getKeyCode('A-pencil') :	toolSwap(1);	return;
 				case getKeyCode('Eraser') :	toolSwap(2);	return;
 				// case getKeyCode('Get-all-default'):	toolSwap(3);	return;
 
-				case getKeyCode('Fill-All') :	fillScreen(0);	return;
-				case getKeyCode('Del-All') :	fillScreen(1);	return;
-				case getKeyCode('Invert-All') :	fillScreen(-1);	return;
-				case getKeyCode('Hor-flip') :	fillScreen(-2);	return;
-				case getKeyCode('Ver-flip') :	fillScreen(-3);	return;
+				case getKeyCode('Fill-canvas') :	fillScreen(0);	return;
+				case getKeyCode('D-clear-canvas') :	fillScreen(1);	return;
+				case getKeyCode('Invert-canvas') :	fillScreen(-1);	return;
+				case getKeyCode('Hor-flip-canvas') :	fillScreen(-2);	return;
+				case getKeyCode('Ver-flip-canvas') :	fillScreen(-3);	return;
 
 				case 42 :
 				case 106 :	updateDebugScreen(-1);	return;	//* 42=106=[Num *]
 			}
 		}
+
+//* Swap control/end points of curved line:
 
 		if (
 			draw.active
@@ -3559,10 +3631,10 @@ function hotKeys(evt) {
 		&&	mode.shape
 		&&	(draw.shapeFlags & 1)	//* <- line+curve in progress
 		) {
-			drawMove(evt);
-
-			return;
+			return drawMove(evt);
 		}
+
+//* Show debug info for unused keys:
 
 		if (mode.debug) text.debug.innerHTML += '<br>' + [
 			'type = ' + evt.type
@@ -3585,14 +3657,14 @@ function hotWheel(evt) {
 	,	b = evt.altKey ? 'B' : (evt.ctrlKey ? 'O' : 'W')
 		;
 
-		toolTweak(b, d < 0 ? 0 : -1);
+		toolTweak(b, d < 0 ? Infinity : -Infinity);
 
 		if (mode.debug) {
 			text.debug.innerHTML += ' '+evt.type+': d='+d;
 		}
 	}
 
-	return false;
+	return drawMove(evt);
 }
 
 function stopScroll(evt) {
@@ -3784,8 +3856,11 @@ var	a,b,c = 'canvas'
 	);
 
 	i = BOW.length;
+	j = '<td class="l">';
+	k = '<span>';
 	r = '</td><td class="r">';
 	a = ': '+r+'	';
+	c = ':</span>	';
 
 	while (i--) {
 		b += getSliderHTML(BOWL[i], i);
@@ -3794,7 +3869,7 @@ var	a,b,c = 'canvas'
 	b += (
 			'</div>'
 	+	'</div><br>'
-	+	'<table width="100%"><tr><td>'
+	+	'<table id="selects"><tr><td>'
 	+	lang.shape	+a+'<select id="shape" onChange="updateShape(this)"></select>'
 	);
 
@@ -3833,13 +3908,16 @@ var	a,b,c = 'canvas'
 	setContent(
 		getElemById('info')
 
-//* top of 2 angle brackets:
+//* top of 2 info brackets:
 
 	,	'<p class="L-open">'
 	+		lang.info_top
 	+	'</p>'
 	+	'<p>'
-	+		lang.info.join('<br>').replace(/\{([^};]+);([^}]+)}/g, a+'$1()">$2</a>')
+	+		lang.info
+				.join('<br>')
+				.replace(/<br><br>/gi, '</p><p>')
+				.replace(/\{([^};]+);([^}]+)}/g, a+'$1()">$2</a>')
 	+		': '+f+b+(new Date())+'" id="saveTime">'
 	+		lang.info_no_save+'</abbr>.</span>'
 	+		'<br>'+a+'toggleView(\'timer\')'+t
@@ -3849,7 +3927,7 @@ var	a,b,c = 'canvas'
 	+		lang.info_drop
 	+	'</p>'
 
-//* bottom of 2 angle brackets:
+//* bottom of 2 info brackets:
 
 	+	'<p class="L-close">'
 	+		b
@@ -3900,8 +3978,8 @@ var	a,b,c = 'canvas'
 	, 0
 	,	['line|area|copy'	,'L'	,'&ndash;|&#x25A0;|&#x25EB;'	,d+'"L")'	,k+'L']
 	,	['curve|outline|rect'	,'U'	,'~|&#x25A1;|&#x25AF;'		,d+'"U")'	,k+'U']
-	,	['rough'		,'G'	,'&#x25CD;'	,d+'"R")'	,k+'R']
-	,	['cursor'		,'F3'	,'&#x25CF;'	,d+'"V")'	,k+'V']
+	,	['rough'		,'G'	,'&#x25CD;'			,d+'"R")'	,k+'R']
+	,	['cursor'		,'Alt+S','&#x25CF;'			,d+'"V")'	,k+'V']
 	, 0
 	,	['png'	,'F9'	,'&#x25EA;'	,e+'0)'	,b+'P']
 	,	['jpeg'	,'F7'	,'&#x25A9;'	,e+'1)'	,b+'J']
@@ -4013,6 +4091,7 @@ var	a,b,c = 'canvas'
 		: !i
 	);
 
+	setClass(getElemById('slider' + selectedSlider).nextElementSibling, 'active');
 	getElemById('text-align-center').click();
 	toolSwap(3);
 	generatePalette(1, 85, 0);
@@ -4182,16 +4261,16 @@ var	o = outside
 		,	text_font_set_hint :	'Некоторые заданные варианты стилей.'
 		+TITLE_LINE_BREAK+		'Какие-то могут не сработать, если в вашей системе не найдётся такого шрифта.'
 		,	text_placeholder :	'Ваш текст тут.'
-		,	info_top :	'Управление (указатель над полотном):'
+		,	info_top :	'Управление (когда указатель над полотном):'
 		,	info : [
-				'C'+k+'средний клик = подобрать цвет с рисунка.'
-			,	j+' = выбор формы.'
-		//	,	'Shift + клик = цепочка форм, Esc = {drawEnd;отмена}.'
-			,	'Ctrl + тяга = поворот полотна, Home = {updateViewport;сброс}.'
-			,	'Alt + тяга = масштаб, Shift + т. = сдвиг рамки.'
-			,	'1-10'		+k+'колесо мыши'+k+'(Alt +) W = толщина кисти.'
-			,	'Ctrl + (1-10'	+k+'колесо)'	+k+'(Alt +) O = прозрачность.'
-			,	'Alt + (1-10'	+k+'колесо)'	+k+'(Alt +) B = размытие тени.'
+				'[C], средний клик мыши = взять цвет с рисунка.'
+			,	'[1-10], [+/&minus;], колесо мыши = параметры кисти.'
+			,	'[Esc] = {drawEnd;отмена незаконченной фигуры.}'
+			,	''
+			,	'Тянуть левой кнопкой мыши, зажимая кнопку:'
+			,	'[Alt] = масштаб, [Ctrl] = поворот, [Shift] = сдвиг.'
+			,	'[Home] = {updateViewport;сброс положения полотна.}'
+			,	''
 			,	'Автосохранение раз в минуту'
 			]
 		,	info_no_save :	'ещё не было'
@@ -4325,16 +4404,16 @@ var	o = outside
 		,	text_font_hint :	'Printed text font style.'
 		,	text_font_set_hint :	'Various style presets, some of which may not work if your system has no matching fonts installed.'
 		,	text_placeholder :	'Your text here.'
-		,	info_top :	'Hot keys (mouse over image only):'
+		,	info_top :	'Hot keys (when cursor is on canvas):'
 		,	info : [
-				'C'+k+'Mouse Mid = pick color from image.'
-			,	j+' = select shape.'
-		//	,	'Shift + click = chain shapes, Esc = {drawEnd;cancel}.'
-			,	'Ctrl + drag = rotate canvas, Home = {updateViewport;reset}.'
-			,	'Alt + d. = zoom, Shift + d. = move canvas frame.'
-			,	'1-10'		+k+'Mouse Wheel'+k+'(Alt +) W = brush width.'
-			,	'Ctrl + (1-10'	+k+'Wheel)'	+k+'(Alt +) O = brush opacity.'
-			,	'Alt + (1-10'	+k+'Wheel)'	+k+'(Alt +) B = brush shadow blur.'
+				'[C], middle mouse click = pick color from canvas.'
+			,	'[1-10], [+/&minus;], mouse wheel = brush settings.'
+			,	'[Esc] = {drawEnd;cancel unfinished figure.}'
+			,	''
+			,	'Drag with left mouse click, while holding key:'
+			,	'[Alt] = zoom, [Ctrl] = rotate, [Shift] = move.'
+			,	'[Home] = {updateViewport;reset canvas view.}'
+			,	''
 			,	'Autosave every minute, last saved'
 			]
 		,	info_no_save :	'not yet'
@@ -4402,8 +4481,8 @@ document.write(
 		'<div id="|">'
 	+		'<div>Loading |...</div>'
 	+		'<style>'
-	+		'#| .|-L-close {padding-bottom: 22px; border-bottom: 1px solid #000; border-right: 1px solid #000;}'
-	+		'#| .|-L-open {padding-top: 22px; border-top: 1px solid #000; border-left: 1px solid #000;}'
+	+		'#| .|-L-close {padding-bottom: 22px; margin-bottom: 0.25em; border-top: none;}'
+	+		'#| .|-L-open {padding-top: 22px; margin-top: 0; border-bottom: none;}'
 	+		'#| .|-button {background-color: #ddd;}'
 	+		'#| .|-button-active {background-color: #ace;}'
 	+		'#| .|-button-active:hover {background-color: #bef;}'
@@ -4417,15 +4496,18 @@ document.write(
 	+		'#| .|-palettine:hover {border-color: #000;}'
 	+		'#| .|-r {text-align: right;}'
 	+		'#| .|-red {background-color: #f77;}'
+	+		'#| .|-slider .|-active {background-color: #ace; color: #fff;}'
+	+		'#| .|-slider span:last-child {padding: 2px;}'
 	+		'#| .|-sliders #|-text, #| .|-texts input[type="range"], '+MODE_LABELS.map(function(i) {return '.|-'+i+' .|-'+i;}).join(', ')+'{display: none;}'
 	+		'#| a {color: #888;}'
 	+		'#| a:hover {color: #000;}'
-	+		'#| abbr {border-bottom: 1px dotted #111;}'
+	// +		'#| a[href="javascript:;"], #| a[href^="javascript:void"] {text-decoration: none;}'
+	+		'#| abbr {text-decoration-line: underline; text-decoration-style: dotted;}'
 	+		'#| canvas {border: '+CANVAS_BORDER+'px solid #ddd; margin: 0; cursor: '+CURSOR_DOT+';}'
 	+		'#| canvas:hover, #| canvas:hover + #|-color-wheel-inner, #|-color-wheel-inner div:hover {border-color: #aaa;}'
 	+		'#| hr {border: none; border-top: 1px solid #aaa; margin: 8px 0;}'
-	+		'#| input[type="range"] {width: 156px; height: 16px; margin: 0; padding: 0;}'
-	+		'#| input[type="text"] {width: 48px; height: 22px;}'
+	+		'#| input[type="range"] {width: 154px; height: 16px; margin: 0; padding: 0;}'
+	+		'#| input[type="text"] {width: 40px; height: 22px;}'
 	+		'#| select, #| #|-color-text {width: 78px;}'
 	+		'#| textarea {min-width: 80px; min-height: 16px; height: 16px; vertical-align: top;}'
 	+		'#| {white-space: nowrap; text-align: center; padding: 12px; background-color: #f8f8f8;}'
@@ -4444,23 +4526,26 @@ document.write(
 	+		'#|-draw canvas {vertical-align: bottom;}'
 	+		'#|-draw canvas, #|-bottom > button {box-shadow: 3px 3px rgba(0,0,0, 0.1);}'
 	+		'#|-draw canvas, #|-draw {position: relative; display: inline-block; z-index: 99;}'
-	+		'#|-info p {padding-left: 22px; line-height: 22px; margin: 0;}'
+	+		'#|-info p {border: 1px solid #777; padding-left: 22px; line-height: 20px;}'
 	+		'#|-info p, #|-palette-table table {color: #000; font-size: small;}'
+	+		'#|-info p:not(.|-L-open):not(.|-L-close) {border-color: transparent;}'
 	+		'#|-load img {position: absolute; top: '+CANVAS_BORDER+'px; left: '+CANVAS_BORDER+'px; margin: 0;}'
 	+		'#|-palette-table .|-t {padding: 0 4px;}'
 	+		'#|-palette-table table {margin: 0;}'
 	+		'#|-palette-table tr td {margin: 0; padding: 0; height: 16px;}'
-	+		'#|-palette-table {overflow-y: auto; max-height: 178px; margin: 0 0 12px 0;}'
+	+		'#|-palette-table {overflow-y: auto; max-height: 190px; margin: 4px 0;}'
 	+		'#|-right span > input[type="text"] {margin: 2px;}'
 	+		'#|-right table {border-collapse: collapse;}'
-	+		'#|-right table, #|-info > div {margin-top: 7px;}'
+	// +		'#|-right table, #|-info > div {margin-top: 7px;}'
 	+		'#|-right td {padding: 0 2px; height: 32px;}'
 	+		'#|-right {color: #888; width: 321px; margin: 0; margin-left: 12px; text-align: left; display: inline-block; vertical-align: top; overflow: hidden;}'
+	+		'#|-selects {width: 100%;}'
+	+		'#|-selects td {min-width: 64px;}'
 	+		'#|-text #|-text-font {max-height: 22px; min-height: 22px; height: 22px;}'
-	+		'#|-text select {margin: 2px; height: 28px; width: 55px;}'
-	+		'#|-text textarea {margin: 2px; width: 150px; min-width: 150px; max-width: 311px; max-height: 356px; min-height: 22px; height: 22px;}'
+	+		'#|-text select {margin: 2px; height: 28px; width: 51px;}'
+	+		'#|-text textarea {margin: 2px; width: 146px; min-width: 146px; max-width: 311px; max-height: 356px; min-height: 22px; height: 22px;}'
 	+		'#|-texts > * {float: left;}'
-	+		'#|-texts {margin-top: -2px;}'
+	// +		'#|-texts {margin-top: -2px;}'
 	+		'#|>a, #| form {display: none;}'
 	+		'</style>'
 	+	'</div>'
