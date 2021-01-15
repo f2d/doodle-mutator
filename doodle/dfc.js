@@ -2172,23 +2172,30 @@ function getSliderHTML(b,z) {
 var	i = BOWL.indexOf(b)
 ,	j
 ,	r = RANGE[i > 0 ? i : 0]
-,	s = (
-		'<div class="slider">'
-	+		'<span id="slider'+b+'">'
-	+			'<input type="range" id="range'+b+'" onChange="updateSliders(this)'
-	);
+,	k = (i < 0 ? '' : ' ['+BOWL[i]+']')
+,	s = '';
 
 	for (j in r) {
 		s += '" '+j+'="'+r[j];
 	}
 
 	return (
-				s+'" value="'
-	+			(z > 0 ? r.min : r.max)+'">'
-	+		'</span>'
-	+		'<span>'
-	+			(i < 0 ? lang.sat : lang.tool[b] + ' ['+BOWL[i]+']')
-	+		'</span>'
+		'<div class="slider">'
+	+		'<div id="slider'+b+'">'
+	+			'<div class="slider-range">'
+	+				'<input type="range" id="range'+b
+	+				'" onChange="updateSliders(this)'+s
+	+				'" value="'
+	+				(z > 0 ? r.min : r.max)
+	+				'">'
+	+			'</div>'
+	+		'</div>'
+	+		'<label>'
+	+			'<div class="slider-title">'
+	+				(i < 0 ? lang.sat : lang.tool[b])
+	+			'</div>'
+	+			k
+	+		'</label>'
 	+	'</div>'
 	);
 }
@@ -2771,14 +2778,14 @@ function updateDebugScreen(lsid, refresh) {
 
 		text.debug.innerHTML = (
 			'<table><tr><td>'
-		+	draw.refresh+d+'1st='+t.all.join(d+'last=')		+d+'fps='+fps
-		+	r+'Not idle'+d+'last start='+t.activeStart+d+'sum='+t.sum()+d
-		+	r+'Relative'+d+'x='+draw.o.x	+d+'y='+draw.o.y	+d+i+(i ? ',rgb='+pickColor(1) : '')
-		+	r+'DrawOfst'+d+'x='+draw.cur.x	+d+'y='+draw.cur.y	+d+'btn='+draw.btn+',active='+draw.active
-		+	r+'Previous'+d+'x='+draw.prev.x	+d+'y='+draw.prev.y	+d+'chain='+mode.click
+		+	draw.refresh+d+'1st = '+t.all.join(d+'last = ')+d+'fps = '+fps
+		+	r+'Not idle'+d+'last start = '+t.activeStart+d+'sum = '+t.sum()+d
+		+	r+'Relative'+d+'x = '+draw.o.x   +d+'y = '+draw.o.y   +d+i+(i ? ',rgb = '+pickColor(1) : '')
+		+	r+'DrawOfst'+d+'x = '+draw.cur.x +d+'y = '+draw.cur.y +d+'btn = '+draw.btn+', active = '+draw.active
+		+	r+'Previous'+d+'x = '+draw.prev.x+d+'y = '+draw.prev.y+d+'chain = '+mode.click
 		+ (!s ? '' :
-			r+'StpStart'+d+'x='+s.prev.x	+d+'y='+s.prev.y
-		+	r+'Step_End'+d+'x='+s.cur.x	+d+'y='+s.cur.y
+			r+'StpStart'+d+'x = '+s.prev.x+d+'y = '+s.prev.y
+		+	r+'Step_End'+d+'x = '+s.cur.x +d+'y = '+s.cur.y
 		)
 		+	'</td></tr></table>'
 		+	showProps(tool,1)
@@ -3653,18 +3660,21 @@ function hotKeys(evt) {
 
 function hotWheel(evt) {
 	if (evt = browserHotKeyPrevent(evt)) {
-	var	d = evt.deltaY || evt.detail || evt.wheelDelta
-	,	b = evt.altKey ? 'B' : (evt.ctrlKey ? 'O' : 'W')
-		;
+	var	delta = evt.deltaY || evt.detail || evt.wheelDelta;
 
-		toolTweak(b, d < 0 ? Infinity : -Infinity);
+		toolTweak(selectedSlider, delta < 0 ? Infinity : -Infinity);
+		drawMove(evt);
 
 		if (mode.debug) {
-			text.debug.innerHTML += ' '+evt.type+': d='+d;
+			text.debug.innerHTML += '<br>' + [
+				'slider = ' + selectedSlider
+			,	'type = ' + evt.type
+			,	'delta = ' + delta
+			].join(',\n');
 		}
 	}
 
-	return drawMove(evt);
+	return false;
 }
 
 function stopScroll(evt) {
@@ -3798,36 +3808,6 @@ var	a,b,c = 'canvas'
 	c2s = clearFill(cnvHid);
 	c2d = clearFill(canvas);
 
-	addEventListeners(
-		canvas
-	,	{
-			scroll :	f = stopScroll	//* <- against FireFox always scrolling on mousewheel
-		,	contextmenu :	f
-		}
-	);
-
-//* listen on all page to prevent dead zones:
-//* still fails to catch events outside of document block height less than of browser window.
-
-	addEventListeners(
-		// document.body
-		window
-	,	{
-			dragover :	dragOver
-		,	drop :		drop
-		,	mousedown :	drawStart
-		,	mousemove :	drawMove
-		,	mouseup :	drawEnd
-		,	keypress :	k = hotKeys
-		,	keydown :	k
-		,	keyup :		k
-		,	mousewheel :	f = hotWheel
-		,	wheel :		f
-		,	scroll :	f
-		,	beforeunload :	beforeUnload
-		}
-	);
-
 	a = {
 		left : '←</label>'
 	,	center : '<label>→'
@@ -3846,10 +3826,10 @@ var	a,b,c = 'canvas'
 	+	d+'texts">'
 	+		d+'text">'
 	+			'<textarea id="text-font'+t+lang.text_font_hint+'" onChange="checkTextStyle(this)">'+DEFAULT_FONT+'</textarea>'
-	+			'<br>'
-	+			'<span'+t+lang.text_align_hint+'">'+b+'</span>'
-	+			'<select id="textStyle'+t+lang.text_font_set_hint+'" onChange="updateTextStyle(this)"></select>'
-	+			'<br>'
+	+			'<div id="'+k+'-wrap">'
+	+				'<span id="'+k+'-group'+t+lang.text_align_hint+'">'+b+'</span>'
+	+				'<select id="textStyle'+t+lang.text_font_set_hint+'" onChange="updateTextStyle(this)"></select>'
+	+			'</div>'
 	+			'<textarea id="text-content'+t+lang.text_hint+'" placeholder="'+lang.text_placeholder+'"></textarea>'
 	+		'</div>'
 	+		d+'sliders">'
@@ -4099,6 +4079,36 @@ var	a,b,c = 'canvas'
 	updateSliders();
 	updateViewport();
 	historyAct(0);
+
+//* listen on all page to prevent dead zones:
+//* still fails to catch events outside of document block height less than of browser window.
+
+	addEventListeners(
+		// document.body
+		window
+	,	{
+			dragover :	dragOver
+		,	drop :		drop
+		,	mousedown :	drawStart
+		,	mousemove :	drawMove
+		,	mouseup :	drawEnd
+		,	keypress :	k = hotKeys
+		,	keydown :	k
+		,	keyup :		k
+		,	mousewheel :	f = hotWheel
+		,	wheel :		f
+		,	scroll :	f
+		,	beforeunload :	beforeUnload
+		}
+	);
+
+	addEventListeners(
+		canvas
+	,	{
+			scroll :	f = stopScroll	//* <- against FireFox always scrolling on mousewheel
+		,	contextmenu :	f
+		}
+	);
 }; //* <- END init()
 
 //* External config *----------------------------------------------------------
@@ -4470,89 +4480,120 @@ var	o = outside
 
 //* Embed CSS and container *--------------------------------------------------
 
-var CURSOR_DOT = (
-	CUSTOM_CURSOR_DOT
-	? 'url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC\'), auto'
-	: 'default'
-);
+function initUIcontainer() {
+var	CURSOR_DOT = (
+		CUSTOM_CURSOR_DOT
+		? (
+			'url("data:image/png;base64,'
+		+	'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGElEQVR42mNgYGCYUFdXN4EBRPz//38CADX3CDIkWWD7AAAAAElFTkSuQmCC'
+		+	'"), auto'
+		)
+		: 'default'
+	);
 
-document.write(
-	replaceAll(
-		'<div id="|">'
-	+		'<div>Loading |...</div>'
-	+		'<style>'
-	+		'#| .|-L-close {padding-bottom: 22px; margin-bottom: 0.25em; border-top: none;}'
-	+		'#| .|-L-open {padding-top: 22px; margin-top: 0; border-bottom: none;}'
-	+		'#| .|-button {background-color: #ddd;}'
-	+		'#| .|-button-active {background-color: #ace;}'
-	+		'#| .|-button-active:hover {background-color: #bef;}'
-	+		'#| .|-button-disabled {color: #888; cursor: default;}'
-	+		'#| .|-button-key, #| .|-button-subtitle {vertical-align: top; height: 10px; font-size: 9px; margin: 0; padding: 0;}'
-	+		'#| .|-button-key, #|-debug {text-align: left;}'
-	+		'#| .|-button-subtitle {line-height: 6px; margin: 0 -3px;}'
-	+		'#| .|-button:hover {background-color: #eee;}'
-	+		'#| .|-paletdark, #| .|-palettine {border: 2px solid transparent; height: 15px; width: 15px; cursor: pointer;}'
-	+		'#| .|-paletdark:hover {border-color: #fff;}'
-	+		'#| .|-palettine:hover {border-color: #000;}'
-	+		'#| .|-r {text-align: right;}'
-	+		'#| .|-red {background-color: #f77;}'
-	+		'#| .|-slider .|-active {background-color: #ace; color: #fff;}'
-	+		'#| .|-slider span:last-child {padding: 2px;}'
-	+		'#| .|-sliders #|-text, #| .|-texts input[type="range"], '+MODE_LABELS.map(function(i) {return '.|-'+i+' .|-'+i;}).join(', ')+'{display: none;}'
-	+		'#| a {color: #888;}'
-	+		'#| a:hover {color: #000;}'
-	// +		'#| a[href="javascript:;"], #| a[href^="javascript:void"] {text-decoration: none;}'
-	+		'#| abbr {text-decoration-line: underline; text-decoration-style: dotted;}'
-	+		'#| canvas {border: '+CANVAS_BORDER+'px solid #ddd; margin: 0; cursor: '+CURSOR_DOT+';}'
-	+		'#| canvas:hover, #| canvas:hover + #|-color-wheel-inner, #|-color-wheel-inner div:hover {border-color: #aaa;}'
-	+		'#| hr {border: none; border-top: 1px solid #aaa; margin: 8px 0;}'
-	+		'#| input[type="range"] {width: 154px; height: 16px; margin: 0; padding: 0;}'
-	+		'#| input[type="text"] {width: 40px; height: 22px;}'
-	+		'#| select, #| #|-color-text {width: 78px;}'
-	+		'#| textarea {min-width: 80px; min-height: 16px; height: 16px; vertical-align: top;}'
-	+		'#| {white-space: nowrap; text-align: center; padding: 12px; background-color: #f8f8f8;}'
-	+		'#|, #| input, #| select {font-family: "Arial"; font-size: 19px; line-height: normal;}'
-	+		'#|-bottom > button {border: 1px solid #000; width: 38px; height: 38px; margin: 2px; padding: 2px; font-size: 15px; line-height: 7px; text-align: center; vertical-align: top; overflow: hidden; cursor: pointer;}'
-	+		'#|-bottom {margin: 10px 0 -2px;}'
-	+		'#|-bottom, #|-debug {white-space: normal;}'
-	+		'#|-color-wheel * {position: absolute;}'
-	+		'#|-color-wheel {position: relative; margin: 0 auto; padding: 0;}'
-	+		'#|-color-wheel, #|-color-wheel-inner, #|-color-wheel-inner div {border: '+CANVAS_BORDER+'px solid #ddd; overflow: hidden; background-color: white;}'
-	+		(noBorderRadius	? '' :
-			'#|-color-wheel-inner div {cursor: pointer; border-radius: 25%;}'
-	+		'#|-color-wheel-inner, #|-color-wheel-mark, #|-color-wheel-round {border-radius: 50%;}'
-			)
-	+		'#|-debug td {width: 234px;}'
-	+		'#|-draw canvas {vertical-align: bottom;}'
-	+		'#|-draw canvas, #|-bottom > button {box-shadow: 3px 3px rgba(0,0,0, 0.1);}'
-	+		'#|-draw canvas, #|-draw {position: relative; display: inline-block; z-index: 99;}'
-	+		'#|-info p {border: 1px solid #777; padding-left: 22px; line-height: 20px;}'
-	+		'#|-info p, #|-palette-table table {color: #000; font-size: small;}'
-	+		'#|-info p:not(.|-L-open):not(.|-L-close) {border-color: transparent;}'
-	+		'#|-load img {position: absolute; top: '+CANVAS_BORDER+'px; left: '+CANVAS_BORDER+'px; margin: 0;}'
-	+		'#|-palette-table .|-t {padding: 0 4px;}'
-	+		'#|-palette-table table {margin: 0;}'
-	+		'#|-palette-table tr td {margin: 0; padding: 0; height: 16px;}'
-	+		'#|-palette-table {overflow-y: auto; max-height: 190px; margin: 4px 0;}'
-	+		'#|-right span > input[type="text"] {margin: 2px;}'
-	+		'#|-right table {border-collapse: collapse;}'
-	// +		'#|-right table, #|-info > div {margin-top: 7px;}'
-	+		'#|-right td {padding: 0 2px; height: 32px;}'
-	+		'#|-right {color: #888; width: 321px; margin: 0; margin-left: 12px; text-align: left; display: inline-block; vertical-align: top; overflow: hidden;}'
-	+		'#|-selects {width: 100%;}'
-	+		'#|-selects td {min-width: 64px;}'
-	+		'#|-text #|-text-font {max-height: 22px; min-height: 22px; height: 22px;}'
-	+		'#|-text select {margin: 2px; height: 28px; width: 51px;}'
-	+		'#|-text textarea {margin: 2px; width: 146px; min-width: 146px; max-width: 311px; max-height: 356px; min-height: 22px; height: 22px;}'
-	+		'#|-texts > * {float: left;}'
-	// +		'#|-texts {margin-top: -2px;}'
-	+		'#|>a, #| form {display: none;}'
-	+		'</style>'
-	+	'</div>'
-	, '|', NS)
-);
+var	content = replaceAll(
+		'<div>Loading |...</div>'
+	+ [
+		'<style>'
+	,	'#| .|-L-close {padding-bottom: 22px; margin-bottom: 0.25em; border-top: none;}'
+	,	'#| .|-L-open {padding-top: 22px; margin-top: 0; border-bottom: none;}'
+	,	'#| .|-active {background-color: #ace; color: #fff;}'
+	,	'#| .|-button {background-color: #ddd;}'
+	,	'#| .|-button-active {background-color: #ace;}'
+	,	'#| .|-button-active:hover {background-color: #bef;}'
+	,	'#| .|-button-disabled {color: #888; cursor: default;}'
+	,	'#| .|-button-key, #| .|-button-subtitle {vertical-align: top; height: 10px; font-size: 9px; margin: 0; padding: 0;}'
+	,	'#| .|-button-key, #|-debug {text-align: left;}'
+	,	'#| .|-button-subtitle {line-height: 6px; margin: 0 -3px;}'
+	,	'#| .|-button:hover {background-color: #eee;}'
+	,	'#| .|-inline {display: inline-block;}'
+	,	'#| .|-paletdark, #| .|-palettine {border: 2px solid transparent; width: 15px; height: 15px; cursor: pointer;}'
+	,	'#| .|-paletdark:hover {border-color: #fff;}'
+	,	'#| .|-palettine:hover {border-color: #000;}'
+	,	'#| .|-r {text-align: right;}'
+	,	'#| .|-red {background-color: #f77;}'
+	,	'#| .|-slider *:not(input), #|-text-align-group {display: inline-block;}'
+	,	'#| .|-slider input[type="text"] {margin: 2px 0;}'
+	,	'#| .|-slider label {padding: 1px 4px;}'
+	,	'#| .|-slider, #| .|-slider *:not(.|-slider-range) {vertical-align: middle;}'
+	,	'#| .|-slider-range {width: 154px; height: 22px; margin-right: 4px;}'
+	,	'#| .|-slider-title {max-width: 90px; overflow: hidden; text-overflow: ellipsis;}'
+	,	'#| .|-sliders #|-text, #| .|-texts .|-slider-range, #| .|-texts input[type="range"] {display: none;}'
+	,	'#| .|-texts #|-sliders {max-width: 100px;}'
+	,	'#| .|-texts input[type="text"] {margin-left: 2px;}'
+	,	'#| a {color: #888;}'
+	,	'#| a:hover {color: #000;}'
+	// ,	'#| a[href="javascript:;"], #| a[href^="javascript:void"] {text-decoration: none;}'
+	,	'#| abbr {text-decoration-line: underline; text-decoration-style: dotted;}'
+	,	'#| canvas {border: '+CANVAS_BORDER+'px solid #ddd; margin: 0; cursor: '+CURSOR_DOT+';}'
+	,	'#| canvas:hover, #| canvas:hover + #|-color-wheel-inner, #|-color-wheel-inner div:hover {border-color: #aaa;}'
+	,	'#| hr {border: none; border-top: 1px solid #aaa; margin: 8px 0;}'
+	,	'#| input[type="range"] {width: 100%; height: 100%; margin: 1px; padding: 0; vertical-align: top;}'
+	,	'#| input[type="text"] {width: 40px; height: 22px;}'
+	,	'#| select optgroup option {margin: 0;}'
+	,	'#| select optgroup {margin-top: 1em 0;}'
+	,	'#| select {width: 78px; height: 28px;}'
+	,	'#| textarea {min-width: 80px; min-height: 16px; height: 16px; vertical-align: top;}'
+	,	'#| {white-space: nowrap; text-align: center; padding: 12px; background-color: #f8f8f8;}'
+	,	'#|, #| input, #| select {font-family: "Arial"; font-size: 19px; line-height: normal;}'
+	,	'#|-bottom > button {border: 1px solid #000; width: 38px; height: 38px; margin: 2px; padding: 2px; font-size: 15px; line-height: 7px; text-align: center; vertical-align: top; overflow: hidden; cursor: pointer;}'
+	,	'#|-bottom {margin: 10px 0 -2px 0;}'
+	,	'#|-bottom, #|-debug {white-space: normal;}'
+	,	'#|-color-wheel * {position: absolute;}'
+	,	'#|-color-wheel {position: relative; margin: 0 auto; padding: 0;}'
+	,	'#|-color-wheel, #|-color-wheel-inner, #|-color-wheel-inner div {border: '+CANVAS_BORDER+'px solid #ddd; overflow: hidden; background-color: white;}'
+	,	(noBorderRadius	? '' :
+		'#|-color-wheel-inner div {cursor: pointer; border-radius: 25%;}'
+	,	'#|-color-wheel-inner, #|-color-wheel-mark, #|-color-wheel-round {border-radius: 50%;}'
+		)
+	,	'#|-debug td {min-width: 234px;}'
+	,	'#|-draw canvas {vertical-align: bottom;}'
+	,	'#|-draw canvas, #|-bottom > button {box-shadow: 3px 3px rgba(0,0,0, 0.1);}'
+	,	'#|-draw canvas, #|-draw {position: relative; display: inline-block; z-index: 99;}'
+	,	'#|-info p {border: 1px solid #777; padding-left: 22px; line-height: 20px;}'
+	,	'#|-info p, #|-palette-table table {color: #000; font-size: small;}'
+	,	'#|-info p:not(.|-L-open):not(.|-L-close) {border-color: transparent;}'
+	,	'#|-load img {position: absolute; top: '+CANVAS_BORDER+'px; left: '+CANVAS_BORDER+'px; margin: 0;}'
+	,	'#|-palette-table .|-t {padding: 0 4px;}'
+	,	'#|-palette-table table {margin: 0;}'
+	,	'#|-palette-table tr td {margin: 0; padding: 0; height: 16px;}'
+	,	'#|-palette-table {overflow-y: auto; max-height: 190px; margin: 4px 0;}'
+	// ,	'#|-right span > input[type="text"] {margin: 2px;}'
+	,	'#|-right table {border-collapse: collapse;}'
+	// ,	'#|-right table, #|-info > div {margin-top: 7px;}'
+	,	'#|-right td {padding: 0 2px; height: 32px;}'
+	,	'#|-right {color: #888; width: 321px; margin: 0; margin-left: 12px; text-align: left; display: inline-block; vertical-align: top; overflow: hidden;}'
+	,	'#|-selects #|-color-text {width: 78px;}'
+	,	'#|-selects td {min-width: 64px;}'
+	,	'#|-selects {width: 100%;}'
+	,	'#|-text #|-text-font {max-height: 22px; min-height: 22px; height: 22px;}'
+	,	'#|-text select {margin: 2px; width: 51px; height: 28px;}'
+	,	'#|-text textarea {margin: 2px; width: 146px; min-width: 146px; max-width: 311px; max-height: 356px; min-height: 22px; height: 22px;}'
+	,	'#|-texts > * {float: left;}'
+	,	'#|>a, #| form {display: none;}'
+	,	MODE_LABELS.map(function(i) {return '.|-'+i+' .|-'+i;}).join(', ')+' {display: none;}'
+	,	'</style>'
+	].join('\n')
+	, '|'
+	, NS
+	);
+
+var	container = getElemById();
+
+	if (container) {
+		container.innerHTML = content;
+	} else {
+		document.write(
+				'<div id="'+NS+'">'
+			+		content
+			+	'</div>'
+		);
+	}
+} //* <- END initUIcontainer()
 
 //* To get started *-----------------------------------------------------------
+
+initUIcontainer();
 
 document.addEventListener('DOMContentLoaded', init, false);
 
