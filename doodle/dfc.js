@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.79'
-,	INFO_DATE = '2013-04-01 — 2021-01-13'
+var	INFO_VERSION = 'v0.9.80'
+,	INFO_DATE = '2013-04-01 — 2021-01-14'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	CR = 'CanvasRecovery'
@@ -27,7 +27,7 @@ var	INFO_VERSION = 'v0.9.79'
 	}
 
 ,	DEFAULT_TOOL_WIDTH = 2
-,	ROUGH_LINE_MULTIPLIER = 0.789
+,	ROUGH_LINE_MULTIPLIER = 0.8	//* <- 640/800
 ,	ROUGH_LINE_SHIFT = 1
 ,	TOOLS_REF = [
 		{blur : 0, opacity : 1.00, width :  1, color : '0, 0, 0'}	//* <- draw
