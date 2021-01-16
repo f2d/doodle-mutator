@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.81'
-,	INFO_DATE = '2013-04-01 — 2021-01-15'
+var	INFO_VERSION = 'v0.9.82'
+,	INFO_DATE = '2013-04-01 — 2021-01-17'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	CR = 'CanvasRecovery'
@@ -27,7 +27,7 @@ var	INFO_VERSION = 'v0.9.81'
 	}
 
 ,	DEFAULT_TOOL_WIDTH = 2
-,	ROUGH_LINE_MULTIPLIER = 0.8	//* <- 640/800
+,	ROUGH_LINE_DIV = 0.8	//* <- 640/800
 ,	ROUGH_LINE_SHIFT = 1
 ,	TOOLS_REF = [
 		{blur : 0, opacity : 1.00, width :  1, color : '0, 0, 0'}	//* <- draw
@@ -36,8 +36,8 @@ var	INFO_VERSION = 'v0.9.81'
 ,	tools = [{}, {}]
 ,	tool = tools[0]
 ,	selectedSlider = 'W'
-,	BOW = ['blur', 'opacity', 'width']
-,	BOWL = 'BOW'
+,	SLIDER_LETTERS = 'BOW'
+,	SLIDER_NAMES = ['blur', 'opacity', 'width']
 ,	RANGE = [
 		{min : 0   , max : RANGE_MAX, step : 1}
 	,	{min : 0.01, max : 1        , step : 0.01}
@@ -57,9 +57,9 @@ var	INFO_VERSION = 'v0.9.81'
 	,	limitFPS  : false
 	,	autoSave  : true
 	}
-,	modes = []
-,	modeL = 'DLUSQRVFA'
-,	shapeHotKey = 'NPRTYQ.M'
+,	MODE_NAMES = []
+,	MODE_LETTERS = 'DLUSQRVFA'
+,	SHAPE_HOTKEYS = 'NJR....M'
 ,	select = {
 		imgSizes : {
 			width  : 640
@@ -240,6 +240,7 @@ var	INFO_VERSION = 'v0.9.81'
 ,	regTailBrackets	= /[ ]*\([^)]+\)$/
 ,	regTextSize	= /^(\d+)([a-z]+)?$/i
 ,	regTrim		= /^\s+|\s+$/g
+,	regHotKey	= /^[A-Z\d]$/
 
 ,	TITLE_LINE_BREAK = ' \r\n'
 ,	A0 = 'transparent'
@@ -2169,10 +2170,10 @@ var	len = p.length;
 }
 
 function getSliderHTML(b,z) {
-var	i = BOWL.indexOf(b)
+var	i = SLIDER_LETTERS.indexOf(b)
 ,	j
 ,	r = RANGE[i > 0 ? i : 0]
-,	k = (i < 0 ? '' : ' ['+BOWL[i]+']')
+,	k = (i < 0 ? '' : ' ['+SLIDER_LETTERS[i]+']')
 ,	s = '';
 
 	for (j in r) {
@@ -2215,17 +2216,17 @@ var	r = 'range'
 		setEvent(e, 'onchange', 'updateSliders(this)');
 	}
 
-	r = RANGE[Math.max(BOWL.indexOf(b), 0)];
+	r = RANGE[Math.max(SLIDER_LETTERS.indexOf(b), 0)];
 	e.title = r.min+' - '+r.max;
 }
 
 function updateSlider(i,e) {
-var	k = (e ? i : BOWL[i])
+var	k = (e ? i : SLIDER_LETTERS[i])
 ,	s = getElemById('range'+k)
 ,	t = getElemById('text'+k) || s
 ,	r = RANGE[e ? 0 : i]
 ,	f = (r.step < 1)
-,	v = (e ? parseFloat(e.value) : tool[i = BOW[i]])
+,	v = (e ? parseFloat(e.value) : tool[i = SLIDER_NAMES[i]])
 	;
 
 	if (isNaN(v)) {
@@ -2261,14 +2262,14 @@ var	k = (e ? i : BOWL[i])
 function updateSliders(s) {
 	if (s && s.id) {
 	var	prop = s.id[s.id.length-1]
-	,	i = BOWL.indexOf(prop)
+	,	i = SLIDER_LETTERS.indexOf(prop)
 		;
 
 		if (i < 0) {
 			return updateSlider(prop, s);
 		}
 
-		tool[BOW[i]] = parseFloat(s.value);
+		tool[SLIDER_NAMES[i]] = parseFloat(s.value);
 
 		return updateSlider(i);
 	}
@@ -2276,7 +2277,7 @@ function updateSliders(s) {
 	if (s) {
 		updateSlider(s);
 	} else {
-		for (i in BOW) updateSlider(i);
+		for (i in SLIDER_NAMES) updateSlider(i);
 	}
 
 	if (draw.o.length) {
@@ -2541,13 +2542,13 @@ var	c = canvas;
 }
 
 function toolTweak(prop, value) {
-var	i = BOWL.indexOf(prop);
+var	i = SLIDER_LETTERS.indexOf(prop);
 
 	if (i < 0) {
-		return alert(lang.bad_id+'\nNo '+prop+' in '+BOWL), false;
+		return alert(lang.bad_id+'\nNo '+prop+' in '+SLIDER_LETTERS), false;
 	}
 
-var	b = BOW[i];
+var	b = SLIDER_NAMES[i];
 
 	if (
 		value === Infinity
@@ -2599,17 +2600,17 @@ var	t,i = orz(back);
 
 function toggleMode(i, keep) {
 	if (isNaN(i)) {
-		i = modeL.indexOf(i);
+		i = MODE_LETTERS.indexOf(i);
 	}
 
-	if (i < 0 || i >= modes.length) {
+	if (i < 0 || i >= MODE_NAMES.length) {
 		alert(
 			lang.bad_id
 		+	'\nNo '+i
-		+	' in '+modes.length
+		+	' in '+MODE_NAMES.length
 		);
 	} else {
-	var	n = modes[i], v = mode[n];
+	var	n = MODE_NAMES[i], v = mode[n];
 
 		if (n == 'debug' && text.debug.textContent.length) {
 			text.debug.textContent = '';
@@ -2623,7 +2624,7 @@ function toggleMode(i, keep) {
 			v = mode[n] = !v;
 		}
 
-		setClass(getElemById('check'+modeL[i]), v ? 'button-active' : 'button');
+		setClass(getElemById('check'+MODE_LETTERS[i]), v ? 'button-active' : 'button');
 	}
 
 	return false;
@@ -2844,8 +2845,8 @@ function getRoughCoordinate(v) {
 	return (
 		Math.round(
 			(v + ROUGH_LINE_SHIFT)
-			* ROUGH_LINE_MULTIPLIER
-		) / ROUGH_LINE_MULTIPLIER
+			/ ROUGH_LINE_DIV
+		) * ROUGH_LINE_DIV
 		- ROUGH_LINE_SHIFT
 	);
 }
@@ -3097,7 +3098,7 @@ function saveDL(dataURI, suffix) {
 		if (u && u.createObjectURL) {
 		var	type = dataURI.split(';', 1)[0].split(':', 2)[1]
 		,	data = dataURI.slice(dataURI.indexOf(',')+1)
-		,	data = Uint8Array.from(modes.map.call(atob(data), function(v) { return v.charCodeAt(0); }))
+		,	data = Uint8Array.from(MODE_NAMES.map.call(atob(data), function(v) { return v.charCodeAt(0); }))
 		,	blob = window.URL.createObjectURL(new Blob([data], {'type' : type}))
 			;
 
@@ -3494,6 +3495,31 @@ function browserHotKeyPrevent(evt) {
 	}
 }
 
+function stopScroll(evt) {
+	browserHotKeyPrevent(evt);
+
+	return false;
+}
+
+function hotWheel(evt) {
+	if (evt = browserHotKeyPrevent(evt)) {
+	var	delta = evt.deltaY || evt.detail || evt.wheelDelta;
+
+		toolTweak(selectedSlider, delta < 0 ? Infinity : -Infinity);
+		drawMove(evt);
+
+		if (mode.debug) {
+			text.debug.innerHTML += '<br>' + [
+				'slider = ' + selectedSlider
+			,	'type = ' + evt.type
+			,	'delta = ' + delta
+			].join(',\n');
+		}
+	}
+
+	return false;
+}
+
 function hotKeys(evt) {
 
 	function getKeyCode(s) { return s.charCodeAt(0); }	//* <- alphanumeric hotkey code from first letter
@@ -3513,7 +3539,7 @@ function hotKeys(evt) {
 
 //* Select tool shape:
 
-				if ((k = shapeHotKey.indexOf(s)) >= 0) {
+				if ((k = SHAPE_HOTKEYS.indexOf(s)) >= 0) {
 					updateShape(k);
 
 					return drawMove(evt);
@@ -3521,11 +3547,11 @@ function hotKeys(evt) {
 
 //* Select tool slider, to update using number keys:
 
-				if ((k = BOWL.indexOf(s)) >= 0) {
+				if ((k = SLIDER_LETTERS.indexOf(s)) >= 0) {
 					selectedSlider = s;
 
-					for (i in BOWL) {
-						setClass(getElemById('slider' + BOWL[i]).nextElementSibling, (i == k ? 'active' : ''));
+					for (i in SLIDER_LETTERS) {
+						setClass(getElemById('slider' + SLIDER_LETTERS[i]).nextElementSibling, (i == k ? 'active' : ''));
 					}
 
 					return drawMove(evt);
@@ -3555,7 +3581,7 @@ function hotKeys(evt) {
 					keyNumber >= 0
 				&&	keyNumber <= 10
 				) {
-					k = BOWL.indexOf(selectedSlider);
+					k = SLIDER_LETTERS.indexOf(selectedSlider);
 
 					n = (
 						!keyNumber && RANGE[k].min > 0
@@ -3579,12 +3605,8 @@ function hotKeys(evt) {
 
 			if (evt.altKey)
 			switch (evt.keyCode) {
-				case getKeyCode('All-default') :	toolSwap(3);	return;
-				case getKeyCode('Show-brush-cursor') :
-
-					toggleMode('V');
-
-					return drawMove(evt);
+				case getKeyCode('All-default') :	toolSwap(3);		return;
+				case getKeyCode('Show-brush-cursor') :	toggleMode('V');	return drawMove(evt);
 			} else
 			switch (evt.keyCode) {
 				case 27 :	drawEnd();		return;	//* 27=Esc
@@ -3654,31 +3676,6 @@ function hotKeys(evt) {
 		,	'shiftKey = ' + evt.shiftKey
 		].join(',\n');
 	}
-
-	return false;
-}
-
-function hotWheel(evt) {
-	if (evt = browserHotKeyPrevent(evt)) {
-	var	delta = evt.deltaY || evt.detail || evt.wheelDelta;
-
-		toolTweak(selectedSlider, delta < 0 ? Infinity : -Infinity);
-		drawMove(evt);
-
-		if (mode.debug) {
-			text.debug.innerHTML += '<br>' + [
-				'slider = ' + selectedSlider
-			,	'type = ' + evt.type
-			,	'delta = ' + delta
-			].join(',\n');
-		}
-	}
-
-	return false;
-}
-
-function stopScroll(evt) {
-	browserHotKeyPrevent(evt);
 
 	return false;
 }
@@ -3835,7 +3832,7 @@ var	a,b,c = 'canvas'
 	+		d+'sliders">'
 	);
 
-	i = BOW.length;
+	i = SLIDER_NAMES.length;
 	j = '<td class="l">';
 	k = '<span>';
 	r = '</td><td class="r">';
@@ -3843,7 +3840,7 @@ var	a,b,c = 'canvas'
 	c = ':</span>	';
 
 	while (i--) {
-		b += getSliderHTML(BOWL[i], i);
+		b += getSliderHTML(SLIDER_LETTERS[i], i);
 	}
 
 	b += (
@@ -3924,7 +3921,7 @@ var	a,b,c = 'canvas'
 	+	'</div>'
 	);
 
-	for (i in BOW) setSliderProps(BOWL[i]);
+	for (i in SLIDER_NAMES) setSliderProps(SLIDER_LETTERS[i]);
 	for (i in text) text[i] = getElemById(i);
 
 	draw.container = getElemById('load');
@@ -4022,7 +4019,7 @@ var	a,b,c = 'canvas'
 		setClass(getElemById(b+'H'), b+'-active');
 	}
 
-	for (i in mode) if (mode[modes[j = modes.length] = i]) {
+	for (i in mode) if (mode[MODE_NAMES[j = MODE_NAMES.length] = i]) {
 		toggleMode(j,1);
 	}
 
@@ -4061,9 +4058,11 @@ var	a,b,c = 'canvas'
 	for (b in a) if (e = select[b] = getElemById(b))
 	for (i in a[b]) (
 		e.options[e.options.length] = new Option(c[b][i]+(
-			b == 'shape'
-			? ' ['+shapeHotKey[i]+']'
-			: (b in d ? ' '+d[b][i] : '')
+			b == 'shape' && regHotKey.test(k = SHAPE_HOTKEYS[i])
+			? ' ['+k+']'
+			: (b in d)
+			? ' '+d[b][i]
+			: ''
 		), i)
 	).selected = (
 		b == 'palette'
@@ -4071,10 +4070,10 @@ var	a,b,c = 'canvas'
 		: !i
 	);
 
-	setClass(getElemById('slider' + selectedSlider).nextElementSibling, 'active');
-	getElemById('text-align-center').click();
-	toolSwap(3);
 	generatePalette(1, 85, 0);
+	getElemById('text-align-center').click();
+	setClass(getElemById('slider' + selectedSlider).nextElementSibling, 'active');
+	toolSwap(3);
 	updatePalette();
 	updateSliders();
 	updateViewport();
@@ -4213,7 +4212,7 @@ var	o = outside
 	o.undo = draw.history.max = getNumClamped(o.undo, 99);
 	o.idle = draw.time.idle = getNumClamped(o.idle, 60)*1000;
 
-	j = shapeHotKey.split('').join(k = ', ');
+	j = SHAPE_HOTKEYS.split('').join(k = ', ');
 
 	if (!o.lang) {
 		o.lang = document.documentElement.lang || 'en';
