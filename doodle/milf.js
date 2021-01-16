@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v1.16.9'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2021-01-11'
+var	INFO_VERSION = 'v1.16.10'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2021-01-17'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -23,19 +23,31 @@ var	INFO_VERSION = 'v1.16.9'	//* needs complete rewrite, long ago
 	,	limitFPS:	false
 	,	autoSave:	true
 	,	globalHistory:	false
-	}, modes = [], modeL = 'DLUQEVFAG'
+	}
+,	MODE_NAMES = []
+,	MODE_LETTERS = 'DLUQEVFAG'
+,	SHAPE_HOTKEYS = 'NJPR..YM'
 
+,	selectedSlider = 'W'
+,	SLIDER_LETTERS = 'PGBOW'
+,	SLIDER_NAMES = ['subpixel', 'grid', 'blur', 'opacity', 'width']
 ,	RANGE = {
-		B: {min: 0   , max: 100, step: 1}
+		P: {min: 0.01, max: 1  , step: 0.01}
+	,	G: {min: 1   , max: 100, step: 1}
+	,	B: {min: 0   , max: 100, step: 1}
 	,	O: {min: 0.01, max: 1  , step: 0.01}
 	,	W: {min: 1   , max: 100, step: 1}
-	}, BOW = ['grid', 'blur', 'opacity', 'width'], BOWL = 'GBOW'
+	}
 
 ,	DEFAULT_TOOL_WIDTH = 2
+,	TOOLS_ALIGN_LETTERS = 'GP'
+,	TOOLS_ALIGN = ['grid', 'subpixel']
 ,	TOOLS_REF = [
-		{grid: 1, blur: 0, opacity: 1.00, width:  1, clip: SO, color: '0,0,0'}		//* <- draw
-	,	{grid: 0, blur: 0, opacity: 1.00, width: 20, clip: DO, color: '255,255,255'}	//* <- back
-	], tools = [{}, {}], tool = tools[0]
+		{align: 'grid', subpixel: 0.8, grid: 1, blur: 0, opacity: 1.00, width:  1, clip: SO, color: '0, 0, 0'}		//* <- draw
+	,	{align: 'grid', subpixel: 1,   grid: 1, blur: 0, opacity: 1.00, width: 20, clip: DO, color: '255, 255, 255'}	//* <- back
+	]
+,	tools = [{}, {}]
+,	tool = tools[0]
 
 ,	select = {
 		imgRes: {width:640, height:360}
@@ -50,7 +62,7 @@ var	INFO_VERSION = 'v1.16.9'	//* needs complete rewrite, long ago
 8 = path, closed polygon
 16 = hide lineStyle
 32 = show textStyle; click once to draw
-64 = step 2 for all modes; click same point twice -> not 1 pixel drawn
+64 = step 2 for all MODE_NAMES; click same point twice -> not 1 pixel drawn
 */
 	,	clipBorder: ['', '#123', '#5ea']//, '#5ae', '#ff0', '#f40']
 	,	options: {
@@ -124,6 +136,7 @@ var	INFO_VERSION = 'v1.16.9'	//* needs complete rewrite, long ago
 ,	regTipBrackets = /[ ]*\([^)]+\)$/
 ,	regFunc = /\{[^.]+\.([^(]+)\(/
 ,	regLimit = /^(\d+)\D+(\d+)$/
+,	regHotKey = /^[A-Z\d]$/
 
 ,	t0 = +new Date
 ,	self = this, outside = this.o = {}, lang, container
@@ -136,6 +149,7 @@ var	INFO_VERSION = 'v1.16.9'	//* needs complete rewrite, long ago
 
 ,	draw = {m:{}, o:{}, cur:{}, prev:{}
 	,	refresh: 0
+	,	gridOffset: o0('x,y')
 	,	line: o0('started,back,preview')
 	,	time: {
 			activeSum: 0
@@ -277,7 +291,7 @@ var	y = draw.history, c = y.layer, y = c?[0,y.layers[c]]:y.layers, a = 'UR', b =
 	for (i in a) {
 		k = d;
 		for (j in y) if (j > 0 && y[j].pos != (i > 0?y[j].last:0)) {k = b; break;}
-		setClass(id(b+a[i]), k);
+		setClass(getElemById(b+a[i]), k);
 	}
 	cue.upd = {J:1,P:1};
 }
@@ -355,14 +369,14 @@ var	u = (y.layer != x || ui_rewrite);
 	if (x) {
 	var	a = {A:'alpha',R:'blur'}, x = y.layers[x];
 		for (i in a) {
-			z = id('slider'+i).lastElementChild, z.value = x[a[i]] || 0;
+			z = getElemById('slider'+i).lastElementChild, z.value = x[a[i]] || 0;
 			if (u) updateSliders(z);
 		}
 		a = ['compose','filter'];
-		for (i in a) if (z = id(a[i])) z.value = x[i] || 0;
+		for (i in a) if (z = getElemById(a[i])) z.value = x[i] || 0;
 	}
 //* show/hide:
-	z = id('layers');
+	z = getElemById('layers');
 	while (z = z.nextSibling) z.style.display = (x?'':'none');
 }
 
@@ -379,7 +393,7 @@ var	y = draw.history, d = y.layers;
 
 var	v = d[i][['name','blur','alpha'][--t]] = (typeof e === 'object' ? e.value : e);
 	if (t && i
-	&& (e = id('layer'+i))
+	&& (e = getElemById('layer'+i))
 	&& (e = e.lastElementChild.lastElementChild.previousSibling)
 	&& (t === 2 || (e = e.previousSibling))
 	&& (e.textContent != v)) {
@@ -388,13 +402,13 @@ var	v = d[i][['name','blur','alpha'][--t]] = (typeof e === 'object' ? e.value : 
 }
 
 function updateLayers(ui_tweak, scroll) {
-var	a, b = 'button', j, k, l = 'layer', d, e = id('layers')
+var	a, b = 'button', j, k, l = 'layer', d, e = getElemById('layers')
 ,	y = draw.history, c = y.layer, z = y.layers, i = z.length
 ,	h = z[0].color = hex2fix(z[0].color), hi = isRgbDark(hex2rgb(h))?'#fff':'#000';
 
 	function getHistPos(a) {return /*((d = a.data[a.pos])?d.date:null)+'-'+*/a.pos+'/'+a.last;}
 
-	if (ui_tweak && id(l+0) && z[1]) {
+	if (ui_tweak && getElemById(l+0) && z[1]) {
 //* DOM fix:
 		j = e.getElementsByTagName('p'), k = j.length;
 		while (k--) if (a = z[parseInt(j[k].id.match(regLastNum)[1])]) {
@@ -417,7 +431,7 @@ var	a, b = 'button', j, k, l = 'layer', d, e = id('layers')
 				d.color = hi;
 			}
 		}
-		if (i = id(l+c)) i.className = i.className.replace(b, b+'-active');
+		if (i = getElemById(l+c)) i.className = i.className.replace(b, b+'-active');
 	} else {
 //* HTML reset, slower, resets scroll:
 		j = (i > 1?'<hr><div class="slide">':''), k = '<i title="';
@@ -446,10 +460,10 @@ var	a, b = 'button', j, k, l = 'layer', d, e = id('layers')
 		i = c+5, a = true;
 		if (i > j) i = j; else
 		if (i < 10) i = 1, a = false;
-		if (i = id(l+i)) i.scrollIntoView(a);	//* <- param: none/true=alignWithTop, false=Bottom
+		if (i = getElemById(l+i)) i.scrollIntoView(a);	//* <- param: none/true=alignWithTop, false=Bottom
 	}
 	i = j, j = {U:i,T:i, D:1,B:1,M:1, C:0,E:0}, d = b+'-disabled';
-	for (i in j) setClass(id(l+i), (!c || c == j[i]) ?d:b);
+	for (i in j) setClass(getElemById(l+i), (!c || c == j[i]) ?d:b);
 	updateHistoryButtons(), draw.view(2);
 }
 
@@ -598,7 +612,8 @@ var	c = ii.context, d = ii.imageData, p = ii.pixels;
 //* Strokes and shapes *-------------------------------------------------------
 
 function drawCursor() {
-var	c = ctx[mode.brushView?'draw':'view'], g = tool.grid;
+var	c = ctx[mode.brushView?'draw':'view']
+,	g = (tool.align === 'grid' ? tool.grid : 1);
 	if (g > 1) {
 	var	m, n = Math.floor(tool.width/g), o = draw.o, v = (n < 1?(n = 1):n)*g, p = DRAW_PIXEL_OFFSET, w = v+p, v = v-p;
 		for (i in DRAW_HELPER) c[i] = DRAW_HELPER[i];
@@ -1171,7 +1186,7 @@ function fillScreen(i,t) {
 	} else
 	if (!i) {
 		used.fill = 'Fill';
-		ctx.draw.globalCompositeOperation = (id('lineStyle').style.display == 'none' ? SO : tool.clip);
+		ctx.draw.globalCompositeOperation = (getElemById('lineStyle').style.display == 'none' ? SO : tool.clip);
 		ctx.draw.fillStyle = 'rgb(' + tools[i].color + ')';
 		ctx.draw.fillRect(0, 0, cnv.view.width, cnv.view.height);
 		ctx.draw.globalCompositeOperation = SO;
@@ -1321,7 +1336,7 @@ var	a = tool.color.split(reg255split).map(orz)
 		i = a.length;
 		while (i--) if (!hue || a[i] != hue[i]) {
 			hue = a;
-			if (redraw && (i = id('color-wheel-box'))) i.redrawBoxGradient(hue);
+			if (redraw && (i = getElemById('color-wheel-box'))) i.redrawBoxGradient(hue);
 			return;
 		}
 		return;
@@ -1332,7 +1347,7 @@ var	a = tool.color.split(reg255split).map(orz)
 
 function updateColor(value, i) {
 var	t = tools[(!i || (isNaN(i) && i.which != 3))?0:1]
-,	c = id('color-text')
+,	c = getElemById('color-text')
 ,	v = value || c.value;
 
 //* check format:
@@ -1357,7 +1372,7 @@ var	p = palette[0], found = p.length;
 	}
 
 //* update buttons:
-	i = id(t == tool?'colorF':'colorB');
+	i = getElemById(t == tool?'colorF':'colorB');
 	i.style.color = isRgbDark(t.color)?'#fff':'#000';		//* <- inverted font color
 	i.style.background = 'rgb(' + t.color + ')';
 	return v;
@@ -1433,9 +1448,9 @@ function updatePalette() {
 
 		if (evt.type === 'mousemove' && (!draw.target || draw.target != evt.target)) return;
 		eventStop(evt).preventDefault();
-		if (!draw.target) draw.target = id('color-wheel-round');
-	var	hue = pickColor(evt, draw.target, id('color-wheel-hue'));
-		drawGradient(id('color-wheel-box'), getBoxGradientPixel, hue);
+		if (!draw.target) draw.target = getElemById('color-wheel-round');
+	var	hue = pickColor(evt, draw.target, getElemById('color-wheel-hue'));
+		drawGradient(getElemById('color-wheel-box'), getBoxGradientPixel, hue);
 	}
 
 	function pickCorner(evt) {
@@ -1445,13 +1460,13 @@ function updatePalette() {
 	}
 
 	function redrawBoxGradient(hue) {
-	var	e = id('color-wheel-hue');
+	var	e = getElemById('color-wheel-hue');
 		e.style.backgroundColor = rgb2hex(hue);
 		e.rgbArray = hue;
-		drawGradient(id('color-wheel-box'), getBoxGradientPixel, hue);
+		drawGradient(getElemById('color-wheel-box'), getBoxGradientPixel, hue);
 	}
 
-var	pt = id('colors')
+var	pt = getElemById('colors')
 ,	c = select.palette.value
 ,	p = palette[c]
 	;
@@ -1611,17 +1626,35 @@ var	letters = [0, 0, 0], l = p.length;
 }
 
 function getSlider(b,z) {
-var	i, g = RANGE[b], c = '<i id="slider'+b+'"><input type="range" id="range'+b+'" onChange="updateSliders(this)';
-	for (i in g) c += '" '+i+'="'+g[i];
-	return c+'" value="'+(z?g.min:g.max)+'"><span> '+lang.tool[b]+'</span></i>';
+var	g = RANGE[b]
+,	c = '<i id="slider'+b+'"><input type="range" id="range'+b+'" onChange="updateSliders(this)'
+	;
+
+	for (i in g) {
+		c += '" '+i+'="'+g[i];
+	}
+
+var	i = SLIDER_LETTERS.indexOf(b);
+
+	console.log('getSlider:',b,i,[RANGE,g,arguments]);
+
+	return (
+		c+'" value="'+(z?g.min:g.max)+'"><span> '
+		+lang.tool[b]
+		+(
+			i >= 0
+			? ' ['+(b === 'P' ? 'G' : SLIDER_LETTERS[i])+']'
+			: ''
+		)+'</span></i>'
+	);
 }
 
 function setSlider(b) {
-var	r = 'range', s = 'slider', t = 'text', c = id(r+b), d,e;
+var	r = 'range', s = 'slider', t = 'text', c = getElemById(r+b), d,e;
 	if (c.type != r) c.type = t;
 	else {
 		setClass(d = document.createElement('i'), s);
-		d.textContent = (e = (r = id(s+b)).lastElementChild).textContent;
+		d.textContent = (e = (r = getElemById(s+b)).lastElementChild).textContent;
 		r.removeChild(e);
 		r.insertBefore(d, r.firstElementChild);
 
@@ -1634,11 +1667,11 @@ var	r = 'range', s = 'slider', t = 'text', c = id(r+b), d,e;
 }
 
 function updateSlider(i,e) {
-var	k = e?i:BOWL[i]
-,	s = id('range'+k)
-,	t = id('text'+k) || s
+var	k = e?i:SLIDER_LETTERS[i]
+,	s = getElemById('range'+k)
+,	t = getElemById('text'+k) || s
 ,	r = e?s:RANGE[k]
-,	v = e?parseFloat(e.value):tool[i = BOW[i]];
+,	v = e?parseFloat(e.value):tool[i = SLIDER_NAMES[i]];
 	if (v < r.min) v = r.min; else
 	if (v > r.max) v = r.max;
 	if (r.step < 1) v = parseFloat(v).toFixed(2);
@@ -1646,7 +1679,7 @@ var	k = e?i:BOWL[i]
 		if (i == 'A') tweakLayer(v, draw.history.layer, 3); else
 		if (i == 'R') tweakLayer(v, draw.history.layer, 2); else
 		if (i == 'T') draw.shift = v, draw.view(2); else
-		if (i == 'S') (e = id('gradient')) ? e.updateSat(v) : alert('sat: '+v);
+		if (i == 'S') (e = getElemById('gradient')) ? e.updateSat(v) : alert('sat: '+v);
 	} else tool[i] = v;
 	s.value = t.value = v;
 }
@@ -1654,14 +1687,14 @@ var	k = e?i:BOWL[i]
 function updateSliders(s) {
 	if (s && s.id) {
 	var	prop = s.id[s.id.length-1];
-		for (i in BOW) if (prop == BOWL[i]) {
-			tool[BOW[i]] = parseFloat(s.value);
+		for (i in SLIDER_NAMES) if (prop == SLIDER_LETTERS[i]) {
+			tool[SLIDER_NAMES[i]] = parseFloat(s.value);
 			return updateSlider(i);
 		}
 		return updateSlider(prop, s);
 	}
 	if (s) updateSlider(s); else
-	for (i in BOW) updateSlider(i);
+	for (i in SLIDER_NAMES) updateSlider(i);
 }
 
 function updateShape(s) {
@@ -1684,8 +1717,8 @@ var	s = orz((s||select.shape).value)
 		draw.shapeFig = fig;
 	}
 
-var	a = id('warn'), b = a.firstElementChild, c = [], f = {lineStyle:16, textStyle:32}, i;
-	for (i in f) id(i).style.display = ((!(sf & f[i]) == !(f[i] < 32))?'none':'');
+var	a = getElemById('warn'), b = a.firstElementChild, c = [], f = {lineStyle:16, textStyle:32}, i;
+	for (i in f) getElemById(i).style.display = ((!(sf & f[i]) == !(f[i] < 32))?'none':'');
 	for (i in abc) if (!(sf & (1<<i))) c.push(abc[i]);
 	setClass(a, (mode.erase = !(mode.shape || mode.step || !(sf & 2)))?'red':'');
 	setClass(container, s = c.join(' '));
@@ -1705,7 +1738,7 @@ var	i = e.id.slice(-1);
 
 function updateDim(i) {
 	if (i) {
-	var	a = id('img-'+i), b, c = cnv.view[i], j, v = parseInt(a.value) || 0;
+	var	a = getElemById('img-'+i), b, c = cnv.view[i], j, v = parseInt(a.value) || 0;
 		a.value = v = (
 			v < (b = select.imgLimits[i][0]) ? b : (
 			v > (b = select.imgLimits[i][1]) ? b : v)
@@ -1720,27 +1753,73 @@ function updateDim(i) {
 		if (a = outside[i = 'resize_style']) {
 			v += 24;
 			if ((e = outside.resize_min_id) && (e = document.getElementById(e)) && (e = e.offsetWidth) && e > v) v = e;
-			c = id(i) || setId(cre('style', id()), i);
+			c = getElemById(i) || setId(cre('style'), i);
 			c.innerHTML = a+'{max-width:'+v+'px;}';
 		}
 	}
 }
 
 function updateEraser() {
-var	a = select.affect, i = a.value, a = (i == a.length-1), b = 'button', e = id(b+'E');
+var	a = select.affect, i = a.value, a = (i == a.length-1), b = 'button', e = getElemById(b+'E');
 	tool.clip = select.options.affect[i];
 	if (e) setClass(e, b+(a?'-active':''));
 	return a;
 }
 
-function toggleMode(i, v) {
-	if (isNaN(i)) i = modes.indexOf[n = i];
-	if (i < 0 || i >= modes.length) return alert(lang.bad_id+'\n\nid='+i+'\nk='+v+','+n+'\nlen='+modes.length+'\n'+modes.join('\n'));
-	else var e, n = modes[i];
+function updateSelectedSlider(s) {
+	selectedSlider = s;
 
+	for (var i in SLIDER_LETTERS) {
+	var	k = SLIDER_LETTERS[i];
+		setClass(getElemById('slider' + k), (s == k ? 'active' : ''));
+	}
+}
+
+function updateAlign() {
+var	e,i = TOOLS_ALIGN.indexOf(tool.align);
+
+	if (i >= 0) {
+		if (TOOLS_ALIGN_LETTERS.indexOf(selectedSlider) >= 0) {
+			updateSelectedSlider(TOOLS_ALIGN_LETTERS[i]);
+		}
+
+		if (e = getElemById('sliderG')) e.style.display = (i?'none':'');
+		if (e = getElemById('sliderP')) e.style.display = (i?'':'none');
+		if (e = getElemById('checkP')) setClass(e, 'button'+(i?'-active':''));
+	}
+}
+
+function toggleMode(i, v) {
+var	e,n = i;
+
+	if (
+		n === 'P'
+	||	TOOLS_ALIGN.indexOf(n) >= 0
+	) {
+		i = (
+			(
+				isNaN(v)
+				? (1 - TOOLS_ALIGN.indexOf(v || tool.align))
+				: v
+			) > 0 ? 1 : 0
+		);
+
+		tool.align = TOOLS_ALIGN[i];
+		updateAlign();
+
+		return;
+	}
+
+	if (isNaN(i)) i = MODE_LETTERS.indexOf(n);
+	if (i < 0)    i = MODE_NAMES.indexOf(n);
+	if (i < 0 || i >= MODE_NAMES.length) {
+		return alert(lang.bad_id+'\n\nid='+i+'\nk='+v+','+n+'\nlen='+MODE_NAMES.length+'\n'+MODE_NAMES.join('\n'));
+	}
+
+	n = MODE_NAMES[i];
 	v = mode[n] = (isNaN(v) ? !mode[n] : v > 0);
 
-	if (e = id('check'+modeL[i])) {
+	if (e = getElemById('check'+MODE_LETTERS[i])) {
 		setClass(e, 'button'+(v?'-active':''));
 		if (e.parentNode.id == NS+'-warn') updateShape();
 	}
@@ -1751,15 +1830,25 @@ function toggleMode(i, v) {
 }
 
 function toolTweak(prop, value) {
-	for (i in BOW) if (prop == BOWL[i]) {
-	var	b = BOW[i];
-		if (value > 0) tool[b] = value;
-		else {
-		var	v = new Number(tool[b]), s = RANGE[prop].step;
-			tool[b] = value ? v-s : v+s;
-		}
-		return updateSliders(i);
+var	i = SLIDER_LETTERS.indexOf(prop);
+
+	if (i < 0) {
+		return alert(lang.bad_id+'\nNo '+prop+' in '+SLIDER_LETTERS), false;
 	}
+
+var	b = SLIDER_NAMES[i];
+
+	if (
+		value === Infinity
+	||	value === -Infinity
+	) {
+	var	v = new Number(tool[b]), s = RANGE[prop].step;
+		tool[b] = (value < 0 ? v-s : v+s);
+	} else {
+		tool[b] = value;
+	}
+
+	return updateSliders(i);
 }
 
 function toolSwap(t, k) {
@@ -1789,7 +1878,7 @@ var	i, j, a = select.affect;
 
 //* drop switches, set shape
 	if (t) {
-		if (!k) for (i in {shape:0, step:0}) if (mode[i]) toggleMode(modes.indexOf[i]);
+		if (!k) for (i in {shape:0, step:0}) if (mode[i]) toggleMode(i);
 		return updateShape(-t-1);
 
 //* toggle eraser mode
@@ -1799,6 +1888,7 @@ var	i, j, a = select.affect;
 	i = select.options.affect.indexOf(tool.clip), a.value = (i < 0?0:i);
 	updateColor(tool.color);
 	updateColor(0,1);
+	updateAlign();
 	updateEraser();
 	updateSliders();
 }
@@ -1886,7 +1976,7 @@ var	d = draw.history
 	if (a[1].indexOf('=') >= 0) dt.activeSum = orz(a[1].split('=', 2)[1]);
 	if (!dt.activeSum) dt.activeSum = t[1]-t[0];
 	t = t[1];
-	a = id('saveTime');
+	a = getElemById('saveTime');
 	a.title = new Date(t);
 	a.textContent = unixDateToHMS(t,0,1).split(' ',2)[1];
 	a = b.layers, i = j = a[d.layer = 0].max = a.length, d.layers = [a[0]];
@@ -1918,7 +2008,7 @@ function saveDL(data, suffix) {
 					if (meta.slice(k+1) == 'base64') data = atob(data);
 				}
 			}
-			data = Uint8Array.from(modes.map.call(data, function(v) {return v.charCodeAt(0);}));
+			data = Uint8Array.from(MODE_NAMES.map.call(data, function(v) {return v.charCodeAt(0);}));
 			return u.createObjectURL(new Blob([data], {'type': type}));
 		}
 	}
@@ -2001,9 +2091,9 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 				} catch(i) {rem(1); e.message += '\n'+i.message;}
 				return alert(lang.no_space+'\nError code: '+e.code+', '+e.message), c;
 			}
-			id('saveTime').textContent = unixDateToHMS();
+			getElemById('saveTime').textContent = unixDateToHMS();
 			cue.autoSave = 0, a = 'AL', d = 'button';
-			for (i in a) if (e = id(d+a[i])) setClass(e, d);
+			for (i in a) if (e = getElemById(d+a[i])) setClass(e, d);
 		}
 		break;
 //* loading
@@ -2026,7 +2116,7 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 			if (dt.all[0] > t[0]) dt.all[0] = t[0];
 			if (dt.all[1] < t[1]) {
 				dt.all[1] = t[1];
-				a = id('saveTime');
+				a = getElemById('saveTime');
 				a.title = new Date(i);
 				a.textContent = c.split(' ',2)[1];
 			}
@@ -2043,7 +2133,7 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 		break;
 	case 5:
 	case 6:
-		if (a || ((outside.read || (outside.read = id('read'))) && (a = outside.read.value))) {
+		if (a || ((outside.read || (outside.read = getElemById('read'))) && (a = outside.read.value))) {
 	//		draw.time = [0, 0];
 			if (dest == 5) a = readPic(a);
 			else {
@@ -2098,7 +2188,7 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 				outside.send = f = e;
 			}
 		var	pngData = sendPic(2,-1), jpgData, a = {txt:0,pic:0};
-			for (i in a) if (!(a[i] = id(i))) {
+			for (i in a) if (!(a[i] = getElemById(i))) {
 				setId(e = a[i] = cre('input', f), e.name = i).type = 'hidden';
 			}
 			e = pngData.length, d = select.imgRes;
@@ -2140,7 +2230,7 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 function readPic(s) {
 	if (!s || s == 0 || (!s.data && !s.length)) return;
 	if (!s.data) s = {data: s, name: (0 === s.indexOf('data:') ? s.split(',', 1) : s)};
-var	e = new Image(), i = 'lcd', lcd = id(i);
+var	e = new Image(), i = 'lcd', lcd = getElemById(i);
 	if (!lcd) setId(lcd = document.createElement('div'), i), container.parentNode.insertBefore(lcd, container);
 	setRemove(e);
 
@@ -2153,7 +2243,7 @@ var	e = new Image(), i = 'lcd', lcd = id(i);
 		delete s.data;
 	var	d,t = 1;
 		for (i in select.imgRes) if (s.z || cnv.view[i] < e[i]) {
-			id('img-'+i).value = e[i];
+			getElemById('img-'+i).value = e[i];
 			for (d in cnv) cnv[d][i] = e[i];
 			if (outside[i[0]+'l']) updateDim(i), t = 0;
 		}
@@ -2201,9 +2291,8 @@ function browserHotKeyPrevent(evt) {
 	evt = evt || window.event;
 
 	if (
-		// (!draw.active && isMouseIn() > 0)
-		(isMouseIn() > 0)
-	||	(evt.keyCode == 27)
+		isMouseIn() > 0
+	||	evt.keyCode == 27
 	) {
 		evt = eventStop(evt);
 		evt.returnValue = false;
@@ -2221,12 +2310,18 @@ function stopScroll(evt) {
 
 function hotWheel(evt) {
 	if (evt = browserHotKeyPrevent(evt)) {
-	var	d = evt.deltaY || evt.detail || evt.wheelDelta;
-		toolTweak(
-			evt.shiftKey	?'G':(
-			evt.altKey	?'B':(
-			evt.ctrlKey	?'O':'W')), d < 0?0:-1);
-		if (mode.debug) text.debug.innerHTML += ' d='+d;
+	var	delta = evt.deltaY || evt.detail || evt.wheelDelta;
+
+		toolTweak(selectedSlider, delta < 0 ? Infinity : -Infinity);
+		drawMove(evt);
+
+		if (mode.debug) {
+			text.debug.innerHTML += '<br>' + [
+				'slider = ' + selectedSlider
+			,	'type = ' + evt.type
+			,	'delta = ' + delta
+			].join(',\n');
+		}
 	}
 
 	return false;
@@ -2234,7 +2329,7 @@ function hotWheel(evt) {
 
 function hotKeys(evt) {
 
-	function c(s) { return s.charCodeAt(0); }	//* <- alphanumeric hotkey code
+	function getKeyCode(s) { return s.charCodeAt(0); }	//* <- alphanumeric hotkey code from first letter
 
 	if (!loading)
 	if (evt = browserHotKeyPrevent(evt)) {
@@ -2242,11 +2337,76 @@ function hotKeys(evt) {
 			!draw.active
 		&&	evt.type === 'keydown'
 		) {
-		var	n = evt.keyCode - c('0');
-			if ((n?n:n=10) > 0 && n < 11) {
-			var	i, k = [evt.shiftKey, evt.altKey, evt.ctrlKey, 1];
-				for (i in k) if (k[i]) return toolTweak(k = BOWL[i], RANGE[k].step < 1 ? n/10 : (n>5 ? (n-5)*10 : n));
-				return;
+		var	i,k,n,s = String.fromCharCode(evt.keyCode);
+
+			if (
+				!evt.altKey
+			&&	!evt.ctrlKey
+			&&	!evt.shiftKey
+			) {
+
+//* Select tool shape:
+
+				if ((k = SHAPE_HOTKEYS.indexOf(s)) >= 0) {
+					updateShape(k);
+
+					return drawMove(evt);
+				}
+
+//* Select tool slider, to update using number keys:
+
+				if (s === 'G' && tool.align === 'subpixel') {
+					s = 'P';
+				}
+
+				if (SLIDER_LETTERS.indexOf(s) >= 0) {
+					updateSelectedSlider(s);
+
+					return drawMove(evt);
+				}
+
+//* Update selected tool slider:
+
+			var	keyMinus = (
+					evt.keyCode == 173	//* 173=[-]
+				||	evt.keyCode == 109	//* 109=[Num -]
+				);
+
+			var	keyPlus = (
+					evt.keyCode == 61	//* 173=[=]
+				||	evt.keyCode == 107	//* 109=[Num +]
+				);
+
+				if (keyMinus || keyPlus)  {
+					toolTweak(selectedSlider, keyPlus ? Infinity : -Infinity);
+
+					return drawMove(evt);
+				}
+
+			var	keyNumber = evt.keyCode - getKeyCode('0');
+
+				if (
+					keyNumber >= 0
+				&&	keyNumber <= 10
+				) {
+					n = (
+						!keyNumber && RANGE[selectedSlider].min > 0
+						? 10
+						: keyNumber
+					);
+
+					n = (
+						RANGE[selectedSlider].step < 1
+						? n / 10
+						: n > 5
+						? (n - 5) * 10
+						: n
+					);
+
+					toolTweak(selectedSlider, n);
+
+					return drawMove(evt);
+				}
 			}
 
 			if (evt.altKey)
@@ -2256,35 +2416,29 @@ function hotKeys(evt) {
 				case 37:	moveLayer();	return;
 				case 39:	moveLayer(1);	return;
 
-				case c('E'):	moveLayer('del');return;
-				case c('L-new'):newLayer();	return;
-				case c('Copy'):	newLayer(1);	return;
-				case c('Merge'):newLayer(-1);	return;
+				case getKeyCode('Delete-layer'):	moveLayer('del');	return;
+				case getKeyCode('L-new-layer'):		newLayer();		return;
+				case getKeyCode('Copy-layer'):		newLayer(1);		return;
+				case getKeyCode('Merge-layer'):		newLayer(-1);		return;
 
-				case c('A-def'):toolSwap(3);	return;
-				case c('SCurs'):toggleMode(5);	return;
-			//	case c('GlobalHistory'):toggleMode(8);	return;
-
-				case c('Grid'):
-				case c('Blur'):
-				case c('Opacity'):
-				case c('Width'):toolTweak(String.fromCharCode(evt.keyCode), -1);
+				case getKeyCode('All-default'):		toolSwap(3);		return;
+			//	case getKeyCode('GlobalHistory'):	toggleMode('G');	return;
+				case getKeyCode('G-rough-line'):	toggleMode('P');	return;
+				case getKeyCode('Show-brush-cursor'):	toggleMode('V');	return drawMove(evt);
 			} else
 			if (evt.shiftKey)
 			switch (evt.keyCode) {
-				case 38:	selectLayer(-2,0,1);return;
-				case 40:	selectLayer(-1,0,1);return;
-				case 37:	selectLayer('top',0,1);return;
-				case 39:	selectLayer(0,0,1);
+				case 38:	selectLayer(-2,0,1);	return;
+				case 40:	selectLayer(-1,0,1);	return;
+				case 37:	selectLayer('top',0,1);	return;
+				case 39:	selectLayer(0,0,1);	return;
 			} else
 			switch (evt.keyCode) {
-				case 27:	drawEnd();	return;	//* 27=Esc
-				case 36: updateViewport();	return;	//* 36=Home
-				case 8:
-					if (text.debug.innerHTML.length)
-						toggleMode(0);	return;	//* 8=bksp, 45=Ins
-				case c('L/shp'):toggleMode(1);	return;
-				case c('U/stp'):toggleMode(2);	return;
+				case 27:	drawEnd();		return;	//* 27=Esc
+				case 36:	updateViewport();	return;	//* 36=Home
+				case 8: if (text.debug.innerHTML.length)toggleMode('D');	return;	//* 8=bksp, 45=Ins
+				case getKeyCode('Line-straight'):	toggleMode('L');	return;
+				case getKeyCode('U-line-curve'):	toggleMode('U');	return;
 
 				case 112:	resetAside();	return;	//* F1
 				case 120:	sendPic(0);	return;	//* F9
@@ -2296,39 +2450,22 @@ function hotKeys(evt) {
 				case 118:	sendPic(7);	return;
 				case 119:	sendPic();	return;
 
-				case c('ZUndo'):historyAct(-1);	return;
-				case c('XRedo'):historyAct(1);	return;
-				case c('CPick'):pickColor();	return;
-				case c('Fill'):	fillScreen(0);	return;
-				case c('Del'):	fillScreen(1);	return;
-				case c('Invrt'):fillScreen(-1);	return;
-				case c('Hflip'):fillScreen(-2);	return;
-				case c('Vflip'):fillScreen(-3);	return;
-				case c('Swap'):	toolSwap();	return;
-				case c('Erase'):toolSwap(0);	return;
-				case c('A-pen'):toolSwap(1);	return;
-				case c('K-wht'):toolSwap(2);	return;
-
-				case c('QLine'):updateShape(0);	return;
-				case c('Poly'):	updateShape(1);	return;
-				case c('TestRPoly'):updateShape(2);	return;
-				case c('Rectg'):updateShape(3);	return;
-			//	case c('Circl'):updateShape(4);	return;
-			//	case c('Elips'):updateShape(5);	return;
-				case c('YRadi'):updateShape(6);	return;
-				case c('Move'):	updateShape(7);	return;
-			//	case c('Lasso'):updateShape(8);	return;
-			//	case c('Text'):	updateShape(9);	return;
-
-				case c('Grid'):
-				case c('Blur'):
-				case c('Opacity'):
-				case c('Width'):
-					toolTweak(String.fromCharCode(evt.keyCode), 0);
-					return;
+				case getKeyCode('Z-Undo'):		historyAct(-1);	return;
+				case getKeyCode('X-Redo'):		historyAct(1);	return;
+				case getKeyCode('Color-pick'):		pickColor();	return;
+				case getKeyCode('Fill-layer'):		fillScreen(0);	return;
+				case getKeyCode('D-clear-layer'):	fillScreen(1);	return;
+				case getKeyCode('Invert-canvas'):	fillScreen(-1);	return;
+				case getKeyCode('Hor-flip-canvas'):	fillScreen(-2);	return;
+				case getKeyCode('Ver-flip-canvas'):	fillScreen(-3);	return;
+				case getKeyCode('Swap-tools'):		toolSwap();	return;
+				case getKeyCode('Eraser-mode'):		toolSwap(0);	return;
+				case getKeyCode('A-pencil'):		toolSwap(1);	return;
+				// case getKeyCode('K-white'):		toolSwap(2);	return;
 
 				case 42:
 				case 106:	//* 42=106=Num *
+
 					for (i = 1, k = ''; i < 3; i++) k += '<br>Save'+i+'.time: '+LS[CR[i].T]
 +(LS[CR[i].R]?', pic size: '+LS[CR[i].R].length:'')
 +(LS[CR[i].L]?', layers sum: <a href="javascript:alert('+NS+'.LS[\''+CR[i].L+'\'])">'+LS[CR[i].L].length+'</a>':'');
@@ -2421,10 +2558,12 @@ var	t = '</td><td>', r = '</td></tr>	<tr><td>', a = draw.turn, b = 'turn: ', c =
 function updatePosition(evt) {
 	evt = evt || window.event;
 
-var	g = tool.grid
-,	sf = draw.shapeFlags
+var	sf = draw.shapeFlags
+,	gridOffset = draw.gridOffset
+,	isHandDrawnLine = ((sf & 1) && !mode.shape)
 ,	isFillOnlyFigure = ((sf & 2) && mode.shape && !mode.step)
 ,	isMoveToolOrEvenWidthLine = ((sf & 4) || ((draw.active ? ctx.draw.lineWidth : tool.width) % 2))
+,	g = (isHandDrawnLine || tool.align === 'grid' ? tool[tool.align] : 1)
 ,	i,o = (
 		isMoveToolOrEvenWidthLine && !isFillOnlyFigure
 		? DRAW_PIXEL_OFFSET
@@ -2443,7 +2582,9 @@ var	g = tool.grid
 		o = 0;
 	}
 	for (i in draw.o) {
-		if (g > 0) draw.o[i] = Math.round(draw.o[i]/g)*g;
+		if (g && g != 1) {
+			draw.o[i] = Math.round((draw.o[i] - gridOffset[i])/g)*g + gridOffset[i];
+		}
 		draw.cur[i] = o + draw.o[i];
 	}
 }
@@ -2619,7 +2760,7 @@ function beforeUnload(evt) {
 
 function init() {
 	if (isTest()) document.title += ': '+NS+' '+INFO_VERSION;
-var	a = {B:'GRST',W:'A'},b,c = 'canvas',d,e,f,g,h,i,j,k,l,m,n, o = outside, style = '', s = '&nbsp;';
+var	a = {B:'RST',W:'A'},b,c = 'canvas',d,e,f,g,h,i,j,k,l,m,n, o = outside, style = '', s = '&nbsp;';
 	for (i in a)
 	for (j in a[i]) RANGE[a[i][j]] = RANGE[i];
 	NEW_LAYER = {show:1, alpha: RANGE.A.max, pos: 0, last: 0};
@@ -2629,7 +2770,7 @@ var	a = {B:'GRST',W:'A'},b,c = 'canvas',d,e,f,g,h,i,j,k,l,m,n, o = outside, styl
 <div id="debug"></div>';
 	for (i in lang.windows) a += '\n<aside id="'+i+'"></aside>';
 
-	setContent(container = id(), a), e = id(c);
+	setContent(container = getElemById(), a), e = getElemById(c);
 	if (!e.getContext) return;
 
 	for (i in cnv) ctx[i] = (cnv[i] = (i == 'view'?e:document.createElement(c))).getContext('2d');
@@ -2687,8 +2828,8 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 			for (i in j) c += d+i+l+(j[i] || i)+b+'<br>';
 			c += d+'affect" onChange="updateEraser()'+l+lang.compose+b+'</div><div id="textStyle">'
 +d+'font'+l+lang.font+b+'<br><textarea placeholder="'+lang.text_hint+'"></textarea></div></div><div id="'+k+'-sliders">';
-			i = BOW.length;
-			while (i--) c += getSlider(BOWL[i]);
+			i = SLIDER_NAMES.length;
+			while (i--) c += getSlider(SLIDER_LETTERS[i]);
 			c += '</div></div>';
 		} else c += 'TODO: '+k;
 
@@ -2744,7 +2885,7 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 ]]);
 		} else
 		if (k == 'layer') {
-			m = id(k+'-sliders'), d = 'ART', n = '';
+			m = getElemById(k+'-sliders'), d = 'ART', n = '';
 			i = d.length; while (i--) n += getSlider(d[i], i == 2);
 			setClass(m, 'rf ri');
 			setContent(m, n);
@@ -2775,27 +2916,28 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 ],
 0,	['undo'	,'Z'	,'&#x2190;'	,h+'-1)',b+'U'
 ],	['redo'	,'X'	,'&#x2192;'	,h+'1)'	,b+'R'
-//],1,	['global',a+'G','&#x25A4;'	,g+'7)' ,h+'G'
-]], e.firstElementChild.nextSibling).appendChild(m = id('sliderT'));
+//],1,	['global',a+'G','&#x25A4;'	,g+'"G")' ,h+'G'
+]], e.firstElementChild.nextSibling).appendChild(m = getElemById('sliderT'));
 			setClass(m, 'rf ri');
 		} else
 		if (k == 'tool') {
 			btnArray([
 //* subtitle, hotkey, pictogram, function, id
 -9,	['pencil','A'	,'i'		,j+'1)'
-],	['chalk' ,'K'	,'&#x25CB;'	,j+'2)'
+// ],	['chalk' ,'K'	,'&#x25CB;'	,j+'2)'
 ],	['reset' ,a+'A'	,'&#x25CE;'	,j+'3)'
 ],
-1,	['eraser','E'	,'&#x25CC;'	,j+'0)'	,b+'E'
-],	['cursor',a+'S'	,'&#x25CF;'	,g+'5)'	,h+'V'
+1,	['eraser','E'	,'&#x25CC;'	,j+'0)'		,b+'E'
+],	['rough' ,a+'G'	,'&#x25CD;'	,g+'"P")'	,h+'P'
+],	['cursor',a+'S'	,'&#x25CF;'	,g+'"V")'	,h+'V'
 ],
-1,	['line|area|copy'	,'L'	,'&ndash;|&#x25A0;|&#x25EB;'	,g+'1)'	,h+'L'
-],	['curve|outline|rect'	,'U'	,'~|&#x25A1;|&#x25AF;'	,g+'2)'	,h+'U'
+1,	['line|area|copy'	,'L'	,'&ndash;|&#x25A0;|&#x25EB;'	,g+'"L")'	,h+'L'
+],	['curve|outline|rect'	,'U'	,'~|&#x25A1;|&#x25AF;'		,g+'"U")'	,h+'U'
 ]]);
-			i = id(h+'L');
+			i = getElemById(h+'L');
 			setId(i.parentNode.insertBefore(d = document.createElement('div'), i), 'warn');
-			for (i in (a = 'LU')) d.appendChild(id(h+a[i]));
-			for (i in BOW) setSlider(BOWL[i]);
+			for (i in (a = 'LU')) d.appendChild(getElemById(h+a[i]));
+			for (i in SLIDER_NAMES) setSlider(SLIDER_LETTERS[i]);
 		}
 
 		e.addEventListener('mousedown', mouseClickBarrier, false);
@@ -2806,12 +2948,12 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 //* Global events, etc *-------------------------------------------------------
 
 
-	draw.container = id('load'), b = 'button', i = (a = 'JP').length, h = /^header$/i;
-	while (i--) if (e = id(b+a[i])) setEvent(e, 'onmouseover', 'updateSaveFileSize(this)');
+	draw.container = getElemById('load'), b = 'button', i = (a = 'JP').length, h = /^header$/i;
+	while (i--) if (e = getElemById(b+a[i])) setEvent(e, 'onmouseover', 'updateSaveFileSize(this)');
 
-	for (i in mode) modes.push(i);
-	for (i in text) text[i] = id(i);
-	for (i in (a = {L:CL, A:CT})) if (!LS || !LS[a[i]]) setClass(id(b+i), b+'-disabled');
+	for (i in mode) MODE_NAMES.push(i);
+	for (i in text) text[i] = getElemById(i);
+	for (i in (a = {L:CL, A:CT})) if (!LS || !LS[a[i]]) setClass(getElemById(b+i), b+'-disabled');
 
 	for (i in (a = [b, 'input', 'select', 'p', 'a']))
 	for (c in (b = container.getElementsByTagName(a[i])))
@@ -2826,15 +2968,25 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 
 	if (LS && (i = LS.historyPalette)) palette[0] = JSON.parse(i);
 
-	d = 'download', DL = (d in b[0]?d:'');
+	d = 'download', DL = (d in b[0]?d:''), d = {
+		lineCap : ['<->', '|-|', '[-]']
+	,	lineJoin : ['-x-', '\\_/', 'V']
+	};
+
 	a = select.options, c = select.translated || a, f = (LS && (i = LS.lastPalette) && palette[i]?i:1);
 	a.affect = a.compose, c.affect = c.compose;
-	for (b in a) if (e = select[b] = id(b))
+	for (b in a) if (e = select[b] = getElemById(b))
 	for (i in a[b]) (
-		e.options[e.options.length] = new Option((c[b]?c:a)[b][i], i)
+		e.options[e.options.length] = new Option((c[b]?c:a)[b][i]+(
+			b == 'shape' && regHotKey.test(k = SHAPE_HOTKEYS[i])
+			? ' ['+k+']'
+			: (b in d)
+			? ' '+d[b][i]
+			: ''
+		), i)
 	).selected = (b == 'palette'?(i == f):!i);
 
-	for (i in modes) if (mode[modes[i]]) toggleMode(i, 1);		//* <- only after select lists are defined
+	for (i in MODE_NAMES) if (mode[MODE_NAMES[i]]) toggleMode(i, 1);		//* <- only after select lists are defined
 
 	addEventListeners(
 		// canvas
@@ -2869,12 +3021,12 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 
 //* Get ready to work *--------------------------------------------------------
 
-	toggleView('hotkeys');
-	id('style').innerHTML += style;
-
 	generatePalette(1, 85, 0);
-	toolSwap(3, 1);	//* <- arbitrary default, also not changing switches
+	getElemById('style').innerHTML += style;
+	toggleView('hotkeys');
+	toolSwap(3, 1);	//* <- not changing switches
 	updatePalette();
+	updateSelectedSlider(selectedSlider);
 	updateViewport();
 	resetAside();
 }
@@ -2888,9 +3040,9 @@ function isTest() {
 	if (CR[0] !== 'C') return !o.send;
 
 var	o = outside
-,	f = o.send = id('send')
-,	r = o.read = id('read')
-,	v = id('vars')
+,	f = o.send = getElemById('send')
+,	r = o.read = getElemById('read')
+,	v = getElemById('vars')
 ,	a = [v,f,r]
 ,	s = ';'
 ,	regVarSep = /\s*[;\r\n\f]+\s*/g
@@ -2972,6 +3124,7 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 		,	alpha:	'Непрозрачность слоя при наложении.'
 		,	undo:	'История отмен слоя.'
 }},	tool: {	G:	'Шаг сетки'
+	,	P:	'Муар черновика'
 	,	B:	'Тень'
 	,	O:	'Непрозрачность'
 	,	W:	'Толщина'
@@ -3044,7 +3197,8 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 	},	copy:	{sub:'копия',	t:'Оставить старую копию.'
 	},	rect:	{sub:'прямоуг.',t:'Сдвиг прямоугольником.'
 	},	cursor:	{sub:'указат.',	t:'Показывать кисть на указателе.'
-	},	rough:	{sub:'п.штрих',	t:'Уменьшить нагрузку, пропуская перерисовку штриха.'
+	},	rough:	{sub:'черновик',t:'Рисовать немного сбитые грубоватые штрихи.'
+	// },	rough:	{sub:'п.штрих',	t:'Уменьшить нагрузку, пропуская перерисовку штриха.'
 	},	fps:	{sub:'п.кадры',	t:'Уменьшить нагрузку, пропуская кадры.'
 	},	png:	{sub:'сохр.png',t:'Сохранить рисунок в PNG файл.'
 	},	jpeg:	{sub:'сохр.jpg',t:'Сохранить рисунок в JPEG файл.'
@@ -3114,6 +3268,7 @@ else o.lang = 'en'
 		,	alpha:	'Layer opacity ratio.'
 		,	undo:	'Layer undo history.'
 }},	tool: {	G:	'Grid step'
+	,	P:	'Rough line moire'
 	,	B:	'Shadow'
 	,	O:	'Opacity'
 	,	W:	'Width'
@@ -3186,7 +3341,8 @@ else o.lang = 'en'
 	,	copy:	'Keep old copy.'
 	,	rect:	'Move rectangle.'
 	,	cursor:	'Brush preview on cursor.'
-	,	rough:	'Skip draw cleanup while drawing to use less CPU.'
+	,	rough:	'Make slightly rough hand-drawn lines.'
+	// ,	rough:	'Skip draw cleanup while drawing to use less CPU.'
 	,	fps:	'Limit FPS when drawing to use less CPU.'
 	,	png:	'Save image as PNG file.'
 	,	jpeg:	'Save image as JPEG file.'
@@ -3225,6 +3381,7 @@ var CURSOR_DOT = (
 
 document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #| #|-color-text {width: 78px;}\
+#| .|-active i {color: #5ea6ed; font-weight: bold;}\
 #| .|-button {background-color: #ddd;}\
 #| .|-button-active {background-color: #ace;}\
 #| .|-button-active:hover {background-color: #bef;}\
@@ -3313,12 +3470,14 @@ function trim(str, chars) {return ltrim(rtrim(str, chars), chars);}
 
 function cre(e,p,b) {
 	e = document.createElement(e);
+	if (!p) p = (b ? b.parentNode : null);
+	if (!p) p = getElemById();
 	if (b) p.insertBefore(e, b); else
 	if (p) p.appendChild(e);
 	return e;
 }
 function orz(n) {return parseInt(n||0)||0;}
-function id(i) {return document.getElementById(NS+(i?'-'+i:''));}
+function getElemById(i) {return document.getElementById(NS+(i?'-'+i:''));}
 function reId(e) {return e.id.slice(NS.length+1);}
 function setId(e,id) {return e.id = NS+'-'+id, e;}
 function setClass(e,c) {return e.className = c?replaceAdd(' '+c,' ',NS+'-').trim():'', e;}
@@ -3330,7 +3489,7 @@ var	a = ['class','id','onChange','onClick','onContextMenu'];
 }
 function setRemove(e,o) {return e.setAttribute(o?o:'onclick', 'this.parentNode.removeChild(this); return false'), e;}
 function clearContent(e) {while (e.childNodes.length) e.removeChild(e.lastChild); return e;}	//* <- works without a blink, unlike e.innerHTML = '';
-function toggleView(e) {if (!e.tagName) e = id(e); return e.style.display = e.style.display?'':'none';}
+function toggleView(e) {if (!e.tagName) e = getElemById(e); return e.style.display = e.style.display?'':'none';}
 function dist(x,y) {return Math.sqrt(x*x + y*y)};
 function cut_period(x,y,z) {if (!y) y = -Math.PI; if (!z) z = Math.PI; return (x < y ? x-y+z : (x > z ? x+y-z : x));}
 function ang_btw(x,y) {return cut_period(y-x);}
