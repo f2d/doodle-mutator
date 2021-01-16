@@ -1636,8 +1636,6 @@ var	g = RANGE[b]
 
 var	i = SLIDER_LETTERS.indexOf(b);
 
-	console.log('getSlider:',b,i,[RANGE,g,arguments]);
-
 	return (
 		c+'" value="'+(z?g.min:g.max)+'"><span> '
 		+lang.tool[b]
@@ -3399,7 +3397,7 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #| .|-ri {display: inline-block; text-align: right;}\
 #| .|-selects .|-rf, #| aside select {width: 86px; margin: 0;}\
 #| .|-selects, #|-layers {min-width: 304px; white-space: nowrap;}\
-#| .|-slider {display: block; width: 156px; height: 1px; font-size: small; line-height: normal;}\
+#| .|-slider {display: block; width: 128px; height: 1px; padding: 0 14px; /* text-align: right; */ font-size: small; line-height: normal;}\
 #| a {color: #888;}\
 #| a:hover {color: #000;}\
 #| abbr {border-bottom: 1px dotted #111;}\
