@@ -213,7 +213,7 @@ var	la,a = {
 					'<div class="'+capsBtn+'-mark capture-mark">'
 				+		'<b>'+la[i]+'</b>'
 				+		'<button onclick="return capsSave()">'+la.hint+'</button>'
-				+		'<button onclick="return capsTextButtons()">x</button>'
+				+		'<button onclick="return capsTextButtons()">X</button>'
 				+	'</div>'
 				);
 			}
