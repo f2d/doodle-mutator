@@ -209,12 +209,13 @@ var	la,a = {
 				e = cre('div');
 				e.className = capsBtn;
 				e.id = f;
-				e.innerHTML =
+				e.innerHTML = (
 					'<div class="'+capsBtn+'-mark capture-mark">'
 				+		'<b>'+la[i]+'</b>'
-				+		'<button>'+la.hint+'</button>'
-				+	'</div>';
-				gn('button',e)[0].onclick = capsSave;
+				+		'<button onclick="return capsSave()">'+la.hint+'</button>'
+				+		'<button onclick="return capsTextButtons()">x</button>'
+				+	'</div>'
+				);
 			}
 			if (i === 'top') {
 				f = a[i].firstChild;
@@ -225,6 +226,8 @@ var	la,a = {
 			}
 		} else if (e) del(e);
 	}
+
+	return false;
 }
 
 function getCapsParentPost(e) {
