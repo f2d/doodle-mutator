@@ -5,7 +5,7 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.82'
+var	INFO_VERSION = 'v0.9.83'
 ,	INFO_DATE = '2013-04-01 — 2021-01-17'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
@@ -29,6 +29,7 @@ var	INFO_VERSION = 'v0.9.82'
 ,	DEFAULT_TOOL_WIDTH = 2
 ,	ROUGH_LINE_DIV = 0.8	//* <- 640/800
 ,	ROUGH_LINE_SHIFT = 1
+,	ROUGH_LINE_WIDTH_FRAC = 0.05
 ,	TOOLS_REF = [
 		{blur : 0, opacity : 1.00, width :  1, color : '0, 0, 0'}	//* <- draw
 	,	{blur : 0, opacity : 1.00, width : 20, color : '255, 255, 255'}	//* <- back
@@ -756,7 +757,7 @@ var	i = (evt.which == 1 ? 1 : 0)
 	;
 
 	t = (sf & 4 ? DRAW_HELPER : {
-		lineWidth : (pf && !mode.step ? 1 : t.width)
+		lineWidth : (pf && !mode.step ? 1 : t.width + (mode.roughLine ? ROUGH_LINE_WIDTH_FRAC : 0))
 	,	fillStyle : (fig ? 'rgba('+(mode.step ? tools[i] : t).color+', '+t.opacity+')' : A0)
 	,	strokeStyle : (fig && !(mode.step || pf) ? A0 : 'rgba('+t.color+', '+t.opacity+')')
 	,	shadowColor : (t.blur ? 'rgb('+t.color+')' : A0)
@@ -4528,7 +4529,6 @@ var	content = replaceAll(
 	,	'#| .|-slider-range {width: 154px; height: 22px; margin-right: 4px;}'
 	,	'#| .|-slider-title {max-width: 90px; overflow: hidden; text-overflow: ellipsis;}'
 	,	'#| .|-sliders #|-text, #| .|-texts .|-slider-range, #| .|-texts input[type="range"] {display: none;}'
-	,	'#| .|-texts #|-sliders {max-width: 100px;}'
 	,	'#| .|-texts input[type="text"] {margin-left: 2px;}'
 	,	'#| a {color: #888;}'
 	,	'#| a:hover {color: #000;}'
@@ -4575,6 +4575,7 @@ var	content = replaceAll(
 	,	'#|-selects #|-color-text {width: 78px;}'
 	,	'#|-selects td {min-width: 64px;}'
 	,	'#|-selects {width: 100%;}'
+	,	'#|-sliders {max-width: 100px;}'
 	,	'#|-text #|-text-font {max-height: 22px; min-height: 22px; height: 22px;}'
 	,	'#|-text select {margin: 2px; width: 51px; height: 28px;}'
 	,	'#|-text textarea {margin: 2px; width: 146px; min-width: 146px; max-width: 311px; max-height: 356px; min-height: 22px; height: 22px;}'

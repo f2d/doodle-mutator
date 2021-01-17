@@ -5,7 +5,7 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v1.16.10'	//* needs complete rewrite, long ago
+var	INFO_VERSION = 'v1.16.11'	//* needs complete rewrite, long ago
 ,	INFO_DATE = '2014-07-16 — 2021-01-17'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
@@ -40,6 +40,8 @@ var	INFO_VERSION = 'v1.16.10'	//* needs complete rewrite, long ago
 	}
 
 ,	DEFAULT_TOOL_WIDTH = 2
+,	ROUGH_LINE_SHIFT = 1
+,	ROUGH_LINE_WIDTH_FRAC = 0.05
 ,	TOOLS_ALIGN_LETTERS = 'GP'
 ,	TOOLS_ALIGN = ['grid', 'subpixel']
 ,	TOOLS_REF = [
@@ -727,7 +729,7 @@ var	i = (evt.which == 1)?1:0, j, t = tools[1-i]
 ,	sh = ((sf & 2) && (mode.shape || pf));
 	draw.clip = t.clip;
 	for (i in (t = mode.erase ? DRAW_HELPER : {
-		lineWidth: ((!fig || (pf && !mode.step))?1:t.width)
+		lineWidth: ((!fig || (pf && !mode.step))?1:t.width+(t.align === 'subpixel' ? ROUGH_LINE_WIDTH_FRAC : 0))
 	,	fillStyle: (sh ? 'rgba('+(mode.step?tools[i]:t).color+', '+t.opacity+')' : A0)
 	,	strokeStyle: (sh && !(mode.step || pf) ? A0 : 'rgba('+t.color+', '+(fig?t.opacity:(draw.step?0.33:0.66))+')')
 	,	shadowColor: (b ? 'rgb('+t.color+')' : A0)
@@ -2569,11 +2571,11 @@ function updatePosition(evt) {
 	evt = evt || window.event;
 
 var	sf = draw.shapeFlags
-,	gridOffset = draw.gridOffset
+,	isAlignedToGrid = (tool.align === 'grid')
 ,	isHandDrawnLine = ((sf & 1) && !mode.shape)
 ,	isFillOnlyFigure = ((sf & 2) && mode.shape && !mode.step)
 ,	isMoveToolOrEvenWidthLine = ((sf & 4) || ((draw.active ? ctx.draw.lineWidth : tool.width) % 2))
-,	g = (isHandDrawnLine || tool.align === 'grid' ? tool[tool.align] : 1)
+,	g = (isHandDrawnLine || isAlignedToGrid ? tool[tool.align] : 1)
 ,	i,o = (
 		isMoveToolOrEvenWidthLine && !isFillOnlyFigure
 		? DRAW_PIXEL_OFFSET
@@ -2593,7 +2595,8 @@ var	sf = draw.shapeFlags
 	}
 	for (i in draw.o) {
 		if (g && g != 1) {
-			draw.o[i] = Math.round((draw.o[i] - gridOffset[i])/g)*g + gridOffset[i];
+			gridOffset = (isAlignedToGrid ? draw.gridOffset[i] : ROUGH_LINE_SHIFT);
+			draw.o[i] = Math.round((draw.o[i] - gridOffset)/g)*g + gridOffset;
 		}
 		draw.cur[i] = o + draw.o[i];
 	}
