@@ -3646,21 +3646,31 @@ function hotKeys(evt) {
 			}
 		}
 
-//* Swap control/end points of curved line:
-
 		if (
 			draw.active
 		&&	(
 				evt.type === 'keydown'
 			||	evt.type === 'keyup'
 			)
-		&&	evt.keyCode == 18	//* 16=Shift, 17=Ctrl, 18=Alt
-		&&	draw.step
-		&&	mode.step
-		&&	mode.shape
-		&&	(draw.shapeFlags & 1)	//* <- line+curve in progress
 		) {
-			return drawMove(evt);
+
+//* Cancel drawing:
+
+			if (evt.keyCode == 27) {	//* 27=Esc
+				return drawEnd();
+			}
+
+//* Swap control/end points of curved line:
+
+			if (
+				evt.keyCode == 18	//* 16=Shift, 17=Ctrl, 18=Alt
+			&&	draw.step
+			&&	mode.step
+			&&	mode.shape
+			&&	(draw.shapeFlags & 1)	//* <- line+curve in progress
+			) {
+				return drawMove(evt);
+			}
 		}
 
 //* Show debug info for unused keys:
@@ -4274,7 +4284,7 @@ var	o = outside
 		,	info : [
 				'[C], средний клик мыши = взять цвет с рисунка.'
 			,	'[1-10], [+/&minus;], колесо мыши = параметры кисти.'
-			,	'[Esc] = {drawEnd;отмена незаконченной фигуры.}'
+			,	'[Esc] = {drawEnd;сбросить незавершённое действие.}'
 			,	''
 			,	'Тянуть левой кнопкой мыши, зажимая кнопку:'
 			,	'[Alt] = масштаб, [Ctrl] = поворот, [Shift] = сдвиг.'
@@ -4417,7 +4427,7 @@ var	o = outside
 		,	info : [
 				'[C], middle mouse click = pick color from canvas.'
 			,	'[1-10], [+/&minus;], mouse wheel = brush settings.'
-			,	'[Esc] = {drawEnd;cancel unfinished figure.}'
+			,	'[Esc] = {drawEnd;cancel unfinished action.}'
 			,	''
 			,	'Drag with left mouse click, while holding key:'
 			,	'[Alt] = zoom, [Ctrl] = rotate, [Shift] = move.'

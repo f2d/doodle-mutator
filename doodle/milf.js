@@ -2485,16 +2485,28 @@ function hotKeys(evt) {
 				evt.type === 'keydown'
 			||	evt.type === 'keyup'
 			)
-		&&	evt.keyCode == 18	//* 16=Shift, 17=Ctrl, 18=Alt
-		&&	draw.step
-		&&	mode.step
-		&&	mode.shape
-		&&	(draw.shapeFlags & 1)	//* <- line+curve in progress
 		) {
-			drawMove(evt);
 
-			return;
+//* Cancel drawing:
+
+			if (evt.keyCode == 27) {	//* 27=Esc
+				return drawEnd();
+			}
+
+//* Swap control/end points of curved line:
+
+			if (
+				evt.keyCode == 18	//* 16=Shift, 17=Ctrl, 18=Alt
+			&&	draw.step
+			&&	mode.step
+			&&	mode.shape
+			&&	(draw.shapeFlags & 1)	//* <- line+curve in progress
+			) {
+				return drawMove(evt);
+			}
 		}
+
+//* Show debug info for unused keys:
 
 		if (mode.debug) text.debug.innerHTML += '<br>' + [
 			'type = ' + evt.type
@@ -2808,7 +2820,7 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 +':	'+d+'<hr><p>'+lang.info.join('<br>')
 				.replace(/-<br>/gi, '</p><hr><p>')
 				.replace(/\{([^=};]+)(?:=([^=};]+))?;([^}]+)}/g, a+'$1($2)">$3</a>')
-				.replace(/\[([^\];]+);([^\]]+)]/g, '<span id="$1">$2</span>')
+				.replace(/\[([^\s\[\];]+);((?:[^\[\]]+|\[[^\[\]]+\])+)\]/g, '<span id="$1">$2</span>')
 +':	'+f+b+(new Date())+'" id="saveTime">'+lang.info_no_save+'</abbr>.</i>'
 +'<br>	'+a+'toggleView(\'timer\')'+l+lang.show_hint+'">'+lang.info_time+'</a>'
 +':	'+f+'<span id="timer">'+lang.info_no_time+'</span>.</i><br>'+lang.info_drop+g+'</p>';
@@ -3139,31 +3151,20 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 ,	hex_hint:	'Формат ввода — #a, #f90, #ff9900, или 0,123,255'
 ,	hide_hint:	'Кликните, чтобы спрятать.'
 ,	show_hint:	'Кликните, чтобы спрятать или показать.'
-,	info: [	'{toggleView=\'hotkeys\';Управление}: [hotkeys;(указатель над полотном)'
-	,
-	,	'Esc = сбросить незавершённое действие.'
-	,	'C / средний клик = подобрать цвет с рисунка.'
-	,
-	,	'Выбор формы инструмента:'
-	,	'Q = линия, прямая, кривая.'
-	,	'P = лассо, замкнутая линия.'
-	,	'R = прямоугольник.'
-//	,	'T = печатный текст.'
-	,	'Y = лучи солнца, шестерёнка.'
-	,	'M = сдвиг, копия.'
-	,
-	,	'1-10 / колесо мыши	/ (Alt +) W = толщина кисти.'
-	,	'Ctrl	+ 1-10 / колесо / (Alt +) O = прозрачность.'
-	,	'Alt	+ 1-10 / колесо / (Alt +) B = размытие тени.'
-	,	'Shift	+ 1-10 / колесо / (Alt +) G = шаг сетки.'
-	,
-	,	'Shift	+ стрелки = выбирать слой.'
-	,	'Alt	+ стрелки = двигать слой по списку.'
-	,
-	,	'Ctrl	+ тяга = поворот полотна, Home = {updateViewport;сброс}.'
-	,	'Alt	+ тяга = масштаб, Shift + т. = сдвиг рамки.'
-	,
-	,	']F1 = {resetAside;вернуть} панельки по местам.-'
+,	info: [	'{toggleView=\'hotkeys\';Управление} (когда указатель над полотном)[hotkeys;:'
+	,	''
+	,	'[C], средний клик мыши = взять цвет с рисунка.'
+	,	'[1-10], [+/&minus;], колесо мыши = параметры кисти.'
+	,	'[Esc] = {drawEnd;сбросить незавершённое действие.}'
+	,	''
+	,	'Тянуть левой кнопкой мыши, зажимая кнопку:'
+	,	'[Alt] = масштаб, [Ctrl] = поворот, [Shift] = сдвиг.'
+	,	'[Home] = {updateViewport;сброс положения полотна.}'
+	,	''
+	,	'[Shift] + стрелки = выбирать слой.'
+	,	'[Alt] + стрелки = двигать слой по списку.'
+	,	'[F1] = {resetAside;вернуть панельки по местам.}'
+	,	']-'
 	,	'Автосохранение раз в минуту'
 ],	info_no_save:	'ещё не было'
 ,	info_no_time:	'ещё нет'
@@ -3283,31 +3284,20 @@ else o.lang = 'en'
 ,	hex_hint:	'Valid formats — #a, #f90, #ff9900, or 0,123,255'
 ,	hide_hint:	'Click to hide.'
 ,	show_hint:	'Click to show/hide.'
-,	info: [	'{toggleView=\'hotkeys\';Hot keys}: [hotkeys;(mouse over image only)'
-	,
-	,	'Esc = cancel current unfinished change.'
-	,	'C / mouse mid = pick color from image.'
-	,
-	,	'Select tool shape:'
-	,	'Q = line, straight, curve.'
-	,	'P = lasso, freehand polygon.'
-	,	'R = rectangle.'
-//	,	'T = print text.'
-	,	'Y = sun rays, gear wheel.'
-	,	'M = move, copy.'
-	,
-	,	'1-10 / mouse wheel	/ (Alt +) W = brush width.'
-	,	'Ctrl	+ 1-10 / wheel	/ (Alt +) O = brush opacity.'
-	,	'Alt	+ 1-10 / wheel	/ (Alt +) B = brush shadow blur.'
-	,	'Shift	+ 1-10 / wheel	/ (Alt +) O = grid step.'
-	,
-	,	'Shift	+ arrows = select layer.'
-	,	'Alt	+ arrows = move layer on the list.'
-	,
-	,	'Ctrl	+ drag = rotate canvas, Home = {updateViewport;reset}.'
-	,	'Alt	+ drag = zoom, Shift + d. = move canvas.'
-	,
-	,	']F1 = {resetAside;reset} floating panels.-'
+,	info: [	'{toggleView=\'hotkeys\';Hot keys} (when cursor is on canvas)[hotkeys;:'
+	,	''
+	,	'[C], middle mouse click = pick color from canvas.'
+	,	'[1-10], [+/&minus;], mouse wheel = brush settings.'
+	,	'[Esc] = {drawEnd;cancel unfinished action.}'
+	,	''
+	,	'Drag with left mouse click, while holding key:'
+	,	'[Alt] = zoom, [Ctrl] = rotate, [Shift] = move.'
+	,	'[Home] = {updateViewport;reset canvas view.}'
+	,	''
+	,	'[Shift] + стрелки = select layer.'
+	,	'[Alt] + стрелки = move layer on the list.'
+	,	'[F1] = {resetAside;reset floating panels.}'
+	,	']-'
 	,	'Autosave every minute, last saved'
 ],	info_no_save:	'not yet'
 ,	info_no_time:	'no yet'
