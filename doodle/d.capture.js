@@ -194,13 +194,27 @@ var	la,a = {
 	,	bottom: e || f
 	};
 	if (lang == 'ru') la = {
-		top: 'Начало ряда'
-	,	bottom: 'Конец ряда'
-	,	hint: 'Сохранить снимок'
+		label: {
+			top: 'Начало ряда'
+		,	bottom: 'Конец ряда'
+		}
+	,	hint: {
+			top: 'Снимок будет начиная с этого поста'
+		,	bottom: 'Снимок будет по этот пост'
+		}
+	,	save: 'Сохранить снимок'
+	,	close: 'Скрыть эту панель'
 	}; else la = {
-		top: 'Selection start'
-	,	bottom: 'Selection end'
-	,	hint: 'Save screenshot'
+		label: {
+			top: 'Selection start'
+		,	bottom: 'Selection end'
+		}
+	,	hint: {
+			top: 'Capture will start at this post'
+		,	bottom: 'Capture will end at this post'
+		}
+	,	save: 'Save screenshot'
+	,	close: 'Hide this panel'
 	};
 	for (var i in a) {
 		e = id(f = capsBtn+'-'+i);
@@ -210,10 +224,10 @@ var	la,a = {
 				e.className = capsBtn;
 				e.id = f;
 				e.innerHTML = (
-					'<div class="'+capsBtn+'-mark capture-mark">'
-				+		'<b>'+la[i]+'</b>'
-				+		'<button onclick="return capsSave()">'+la.hint+'</button>'
-				+		'<button onclick="return capsTextButtons()">X</button>'
+					'<div class="'+capsBtn+'-mark capture-mark" title="'+la.hint[i]+'">'
+				+		'<b>'+la.label[i]+'</b>'
+				+		'<button onclick="return capsSave()">'+la.save+'</button>'
+				+		'<button onclick="return capsTextButtons()" title="'+la.close+'">X</button>'
 				+	'</div>'
 				);
 			}
