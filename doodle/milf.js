@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v1.16.11'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2021-01-17'
+var	INFO_VERSION = 'v1.17'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2021-04-26'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -1895,7 +1895,7 @@ var	i, j, a = select.affect;
 
 //* Save, load, send picture *-------------------------------------------------
 
-function autoSave() {if (mode.autoSave && cue.autoSave && !(cue.autoSave = (draw.active?-1:0))) sendPic(2,true);}
+function autoSave() {if (mode.autoSave && cue.autoSave && !(cue.autoSave = (draw.active?-1:0))) savePic(2,true);}
 function fpsCount() {fps = ticks; ticks = 0;}
 function timeElapsed() {text.timer.textContent = unixDateToHMS(timer += 1000, 1);}
 
@@ -2036,8 +2036,8 @@ var	u = window.URL || window.webkitURL
 	} else window.open(dataToURI(data), '_blank');
 }
 
-function sendPic(dest, auto) {
-var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
+function savePic(dest, auto) {
+var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view, canvas = v;
 	draw.view(1);
 
 	function getTimeToShow(s) {
@@ -2049,12 +2049,12 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 
 	switch (dest) {
 	case 0:
-	case 1:	saveDL(c = cnv.view.toDataURL(dest?IJ:''), dest?'.jpg':'.png');
+	case 1:	saveDL(c = canvas.toDataURL(dest?IJ:''), dest?'.jpg':'.png');
 		break;
 //* save project
 	case 2:
 		if (fillCheck()) return a?c:alert(lang.flood);
-		c = cnv.view.toDataURL();
+		c = canvas.toDataURL();
 		if (!LS) return a?c:alert(lang.no_LS);
 		d = LS[CR[1].R];
 		if (d == c) return a?c:alert(lang.no_change);
@@ -2103,7 +2103,7 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 		t = LS[CR[1].T];
 		if (!t) return;
 		d = LS[CR[1].R], i = CR[1].L;
-		if ((d == (c = cnv.view.toDataURL()))
+		if ((d == (c = canvas.toDataURL()))
 		|| ((a = draw.history.layer) && draw.history.layers[a].name == unixDateToHMS(+t.split('-')[1],0,1))
 		) {
 			if ((!(t = LS[CR[2].T]) || ((d = LS[CR[2].R]) == c))) return alert(lang.no_change);
@@ -2177,51 +2177,166 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view;
 		if (dest) alert(lang.bad_id+'\n\nid='+dest+'\na='+auto); else
 		if (!outside.send) alert(lang.no_form); else
 		if (fillCheck()) alert(lang.flood); else {
-			a = select.imgLimits, c = 'send';
-			for (i in a) if (v[i] < a[i][0] || v[i] > a[i][1]) c = 'size';
+		var	confirmationText = lang.confirm.send;
+			a = select.imgLimits;
+			for (i in a) if (v[i] < a[i][0] || v[i] > a[i][1]) confirmationText = lang.confirm.size;
 		}
-		if (c && confirm(lang.confirm[c])) {
-			if ((f = outside.send) && f.tagName) clearContent(f);
-			else {
-				setId(e = cre('form', container), 'send');
-				if (!f.length || f.toLowerCase() != 'get') e.setAttribute('method', 'post');
-				outside.send = f = e;
-			}
-		var	pngData = sendPic(2,-1), jpgData, a = {txt:0,pic:0};
-			for (i in a) if (!(a[i] = getElemById(i))) {
-				setId(e = a[i] = cre('input', f), e.name = i).type = 'hidden';
-			}
-			e = pngData.length, d = select.imgRes;
+
+		if (confirmationText) {
+		var	pngData = savePic(2,-1)
+		,	jpgData
+			;
+
+			e = pngData.length;
+			d = select.imgRes;
 			c = v.width * v.height;
 			d = d.width * d.height;
-			d = ((
+
+		var	isSendingAsJpg = (
 				(i = outside.jpg)
 			&&	e > i
 			&&	((c <= d) || (e > (i *= c/d)))
-			&&	e > (t = (jpgData = v.toDataURL(IJ)).length)
-			) ? jpgData : pngData);
-			if (mode.debug) alert('png limit = '+i+'\npng = '+e+'\njpg = '+t);
-			a.pic.value = d;
-			a.txt.value = getSendMeta(d.length);
-			f.encoding = f.enctype = 'multipart/form-data';
+			&&	e > (t = (jpgData = c.toDataURL(IJ)).length)
+			);
 
-			try {
-				postingInProgress = true;
+		var	dataInBase64 = (
+				isSendingAsJpg
+				? jpgData
+				: pngData
+			);
 
-				if (
-					(i = outside.check)
-				&&	(e = document.getElementById(i))
-				) {
-					e.setAttribute('data-id', f.id);
-					e.click();
-				} else {
-					f.submit();
-				}
-			} catch (error) {
-				console.log(error);
-
-				postingInProgress = false;
+			if (mode.debug) {
+				alert(['png limit = '+i, 'png = '+e, 'jpg = '+t].join('\n'));
 			}
+
+			function sendAfterConfirmation(data) {
+
+				if ((f = outside.send) && f.tagName) {
+					clearContent(f);
+				} else {
+					setId(e = cre('form', container), 'send');
+
+					if (!f.length || f.toLowerCase() != 'get') {
+						e.setAttribute('method', 'post');
+					}
+
+					outside.send = f = e;
+				}
+
+				a = {txt : 0, pic : 0};
+
+				for (i in a) if (!(a[i] = getElemById(i))) {
+					e = a[i] = cre('input', f);
+					e.name = i;
+					e.hidden = true;
+					e.type = 'hidden';
+					e.style.display = 'none';
+					setId(e, i);
+				}
+
+			var	dataSize, dataType, dataEnc, fileExt;
+
+				function setDataVars(data) {
+					if (data.type) {
+						dataSize = data.size;
+						dataType = data.type;
+						dataEnc = 'blob';
+					} else {
+					var	dataEncParts = data.split(',', 1)[0].split(';');
+						dataSize = data.length;
+						dataType = dataEncParts[0].split(':')[1];
+						dataEnc = dataEncParts[1];
+					}
+
+					fileExt = dataType.split('/')[1];
+
+					return data;
+				}
+
+				if (data.type) {
+					setDataVars(data);
+
+				var	fileName = +new Date + '.' + fileExt;
+				var	file = new File([data], fileName, {type : dataType});
+
+					a.pic.type = 'file';
+					a.pic.value = null;
+					a.pic.files = createFileList(file);
+				}
+
+//* Fallback to base64 for old Firefox 56:
+
+				if (!(
+					data.type
+				&&	a.pic.files
+				&&	a.pic.files.length > 0
+				)) {
+					a.pic.type = 'hidden';
+					a.pic.value = setDataVars(
+						data.type
+						? dataInBase64
+						: data
+					);
+				}
+
+				a.txt.type = 'hidden';
+				a.txt.value = getSendMeta(dataSize);
+
+				f.encoding = f.enctype = 'multipart/form-data';
+
+				confirmationText = (
+					canvas.width + 'x' + canvas.height
+				+	', '
+				+	dataSize + ' ' + lang.bytes
+				+	', '
+				+	dataEnc
+				+	', '
+				+	fileExt.toUpperCase()
+				+	'\n\n'
+				+	confirmationText
+				);
+
+				if (confirm(confirmationText)) {
+					try {
+						postingInProgress = true;
+
+						if (
+							(i = outside.check)
+						&&	(e = getElemById(i))
+						) {
+							e.setAttribute('data-id', f.id);
+							e.click();
+						} else {
+							f.submit();
+						}
+
+					} catch (error) {
+						console.error(error);
+
+						postingInProgress = false;
+					}
+				}
+			}
+
+//* Use less traffic in modern browsers with blob uploaded as file:
+
+			if (canvas.toBlob) {
+				try {
+					canvas.toBlob(
+						sendAfterConfirmation
+					,	isSendingAsJpg ? IJ : ''
+					);
+
+					return c;
+
+				} catch (error) {
+					console.error(error);
+				}
+			}
+
+//* Fallback to base64 for old Opera 11-12:
+
+			sendAfterConfirmation(dataInBase64);
 		}
 	}
 	return c;
@@ -2262,6 +2377,18 @@ var	e = new Image(), i = 'lcd', lcd = getElemById(i);
 	if (!(mode.debug || text.debug.innerHTML) && ++loading > 1) container.style.visibility = 'hidden', setLCD();
 	draw.container.appendChild(e);
 	return e.src = s.data, s.name;
+}
+
+//* The only way to change input[type=file] value is with a other FileList instance,
+//* and this is currently the only way to construct a new FileList.
+//* Source: https://stackoverflow.com/a/50169790
+
+function createFileList(a) {
+	a = Array.prototype.slice.call(Array.isArray(a) ? a : arguments);
+	for (var c, b = c = a.length, d = !0; b-- && d;) d = a[b] instanceof File;
+	if (!d) throw new TypeError('expected argument to FileList is File or array of File objects');
+	for (b = (new ClipboardEvent('')).clipboardData || new DataTransfer; c--;) b.items.add(a[c]);
+	return b.files;
 }
 
 //* Hot keys *-----------------------------------------------------------------
@@ -2441,14 +2568,14 @@ function hotKeys(evt) {
 				case getKeyCode('U-line-curve'):	toggleMode('U');	return;
 
 				case 112:	resetAside();	return;	//* F1
-				case 120:	sendPic(0);	return;	//* F9
-			//	case 118:	sendPic(1);	return;	//* jpeg
-				case 113:	sendPic(2);	return;
-				case 114:	sendPic(3);	return;
-				case 115:	sendPic(4);	return;
-				case 117:	sendPic(5);	return;
-				case 118:	sendPic(7);	return;
-				case 119:	sendPic();	return;
+				case 120:	savePic(0);	return;	//* F9
+			//	case 118:	savePic(1);	return;	//* jpeg
+				case 113:	savePic(2);	return;
+				case 114:	savePic(3);	return;
+				case 115:	savePic(4);	return;
+				case 117:	savePic(5);	return;
+				case 118:	savePic(7);	return;
+				case 119:	savePic();	return;
 
 				case getKeyCode('Z-Undo'):		historyAct(-1);	return;
 				case getKeyCode('X-Redo'):		historyAct(1);	return;
@@ -2715,7 +2842,7 @@ function drop(evt) {
 			if (!!((f = d[i]).type && m.test(f.type)) !== !!pic) return;
 			(r = new FileReader()).onload = (function(f) {
 				return function(e) {
-					sendPic(pic?5:6, {
+					savePic(pic?5:6, {
 						name: f.name
 					,	data: e.target.result
 					});
@@ -2880,7 +3007,7 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 			return bf ? e.insertBefore(c, bf) : e.appendChild(c);
 		}
 
-		a = 'Alt+', b = 'button', c = 'color', d = 'sendPic(', f = 'fillScreen(', g = 'toggleMode(', h = 'check', j = 'toolSwap(';
+		a = 'Alt+', b = 'button', c = 'color', d = 'savePic(', f = 'fillScreen(', g = 'toggleMode(', h = 'check', j = 'toolSwap(';
 		if (k == 'info') {
 			btnArray([
 //* subtitle, hotkey, pictogram, function, id
@@ -3103,6 +3230,7 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 ,	bad_data:	'Неправильный формат данных.'
 ,	bad_id:		'Ошибка выбора.'
 ,	flood:		'Полотно пусто.'
+,	bytes:		'bytes'
 ,	confirm: {
 		send:	'Отправить рисунок в сеть?'
 	,	close:	'Покинуть эту страницу и выбросить открытый рисунок?'
@@ -3236,6 +3364,7 @@ else o.lang = 'en'
 ,	bad_data:	'Invalid data format.'
 ,	bad_id:		'Invalid case.'
 ,	flood:		'Canvas is empty.'
+,	bytes:		'bytes'
 ,	confirm: {
 		send:	'Send image to server?'
 	,	close:	'Leave this page and discard the drawing?'

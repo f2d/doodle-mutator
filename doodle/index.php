@@ -2463,11 +2463,11 @@ if ($u_key) {
 
 	if (isset($_POST[$k = 'describe'])) {
 		$post_status = 'text_short';
-		$trim_len = mb_strlen($ptx = trim_post($_POST[$k], DESCRIBE_MAX_LENGTH));
+		$trim_len = mb_strlen($post_text = trim_post($_POST[$k], DESCRIBE_MAX_LENGTH));
 		if ($trim_len >= DESCRIBE_MIN_LENGTH) {
 			$full_len = mb_strlen($unlim = trim_post($_POST[$k]));
 			if ($full_len > $trim_len) data_log_action("full post length = $full_len > $trim_len, full text", $unlim);
-			$x = format_post_text($ptx, $unlim);
+			$x = format_post_text($post_text, $unlim);
 			$post_status = 'new_post';
 		}
 	} else
@@ -2477,10 +2477,12 @@ if ($u_key) {
 	if (isset($_POST[$k = 'pic']) || isset($_FILES[$k])) {
 		$post_status = 'file_pic';
 		$log = 0;
+
 		data_aim();
+
 		if ($upload = $_FILES[$k]) {
 			$t = min($_POST['t0'] ?: T0, $target['time'] ?: T0).'000-'.T0.'000';
-			$ptx = "time: $t
+			$post_text = "time: $t
 file: $upload[name]";
 			if ($upload['error']) {
 				$log = get_print_or_none($_FILES);
@@ -2489,73 +2491,19 @@ file: $upload[name]";
 				$file_type = mb_strtolower(mb_substr($x, mb_strpos_after($x, '/')));
 				if (in_array($file_type, $cfg_draw_file_types)) {
 					$file_size = $upload['size'];
-					$txt = "$t,file: $upload[name]";
+					$file_meta_text = "$t,file: $upload[name]";
 				} else {
 					$log = "File type $x not allowed.";
 				}
 			}
-		} else {
-			$post_data_size = strlen($post_data = $_POST[$k]);
-			$txt = $ptx = ($_POST['txt'] ?: '0-0,(?)');
+		} else
+		if ($post_data = $_POST[$k]) {
+			$post_data_size = strlen($post_data);
 			unset($_POST[$k]);
-
-	//* metadata, newline-separated key-value format:
-
-			if (false !== mb_strpos($txt, NL)) {
-				$a = explode(',', 'app,active_time,draw_time,open_time,t0,time,used');	//* <- to add to picture mouseover text
-				$b = explode(',', 'bytes,length');					//* <- to validate
-				$x = mb_split_filter($txt, NL);
-				$y = array();
-				$z = 0;
-				foreach ($x as $line) if (preg_match('~^(\w+)[\s:=]+(.+)$~u', $line, $m) && ($k = mb_strtolower($m[1]))) {
-					if (in_array($k, $a)) $y[$k] = $m[2]; else
-					if (in_array($k, $b)) $z = $m[2];
-				}
-				if ($z && $z != $post_data_size) {
-					$post_status = 'file_part';
-					$log = "$post_data_size != $z";
-				} else {
-					$t = min($y['t0'] ?: T0, $target['time'] ?: T0);
-					$t = array($t.'000', T0.'000');
-					$z = ($target['task'] ? "/$t[0]-$t[1]" : '');
-					if ($x = $y['time']) {
-						if (!preg_match('~^(\d+:)+\d+$~', $x)) {
-							if (preg_match('~^(\d+)\D+(\d+)$~', $x, $m)) {
-								if ($m[1] && $m[1] != $m[2]) $t[0] = $m[1];
-								if ($m[2]) $t[1] = $m[2];
-							}
-							$x = "$t[0]-$t[1]";
-						}
-					} else {
-						$a = explode('-', $y['open_time'] ?: '-');
-						$b = explode('-', $y['draw_time'] ?: '-');
-						if ($b[0] == $b[1]) $b[0] = 0;
-						foreach ($t as $k => $v) $t[$k] = $b[$k] ?: $a[$k] ?: $v;
-						$x = "$t[0]-$t[1]";
-					}
-					$t = $x.$z;
-					$a = $y['app'] ?: '[?]';
-					if ($x = $y['used']) $a .= " (used $x)";
-					if ($x = $y['active_time']) $t .= "=$x";
-					$txt = "$t,$a";
-				}
-			} else
-
-	//* metadata, legacy CSV:
-
-			if (preg_match('~^(?:(\d+),)?(?:([\d:]+)|(\d+)-(\d+)),(.*)$~is', $txt, $t)) {
-				if ($t[2]) $txt = $t[2].','.$t[5];
-				else {
-					if (!$t[4]) $t[4] = T0.'000';
-					if (!$t[3] || $t[3] == $t[4]) $t[3] = ($t[1] ?: $target['time']).'000';
-					if (!$t[3]) $t[3] = $t[4];
-					$txt = "$t[3]-$t[4],$t[5]";
-				}
-			}
-			if (!$log) {
 
 	//* check pic content: "data:image/png;base64,EncodedFileContent"
 
+			if (!$log) {
 				$i = strpos($post_data, ':');
 				$j = strpos($post_data, '/');
 				$k = strpos($post_data, ';');
@@ -2579,6 +2527,82 @@ file: $upload[name]";
 				}
 			}
 		}
+
+		if (isset($_POST['txt'])) {
+			$post_text = ($_POST['txt'] ?: '0-0,(?)');
+
+	//* metadata, newline-separated key-value format:
+
+			if (false !== mb_strpos($post_text, NL)) {
+				$a = explode(',', 'app,active_time,draw_time,open_time,t0,time,used');	//* <- to add to picture mouseover text
+				$b = explode(',', 'bytes,length');					//* <- to validate
+				$x = mb_split_filter($post_text, NL);
+				$y = array();
+				$z = 0;
+
+				foreach ($x as $line) if (
+					preg_match('~^(\w+)[\s:=]+(.+)$~u', $line, $m)
+				&&	($k = mb_strtolower($m[1]))
+				) {
+					if (in_array($k, $a)) $y[$k] = $m[2]; else
+					if (in_array($k, $b)) $z = $m[2];
+				}
+
+				if ($z) {
+					if ($post_data_size) {
+						if ($post_data_size != $z) {
+							$post_status = 'file_part';
+							$log = "post_data_size: $post_data_size != declared: $z";
+						}
+					} else
+					if ($file_size) {
+						if ($file_size != $z) {
+							$post_status = 'file_part';
+							$log = "file_size: $file_size != declared: $z";
+						}
+					}
+				}
+
+				if (!$log) {
+					$t = min($y['t0'] ?: T0, $target['time'] ?: T0);
+					$t = array($t.'000', T0.'000');
+					$z = ($target['task'] ? "/$t[0]-$t[1]" : '');
+					if ($x = $y['time']) {
+						if (!preg_match('~^(\d+:)+\d+$~', $x)) {
+							if (preg_match('~^(\d+)\D+(\d+)$~', $x, $m)) {
+								if ($m[1] && $m[1] != $m[2]) $t[0] = $m[1];
+								if ($m[2]) $t[1] = $m[2];
+							}
+							$x = "$t[0]-$t[1]";
+						}
+					} else {
+						$a = explode('-', $y['open_time'] ?: '-');
+						$b = explode('-', $y['draw_time'] ?: '-');
+						if ($b[0] == $b[1]) $b[0] = 0;
+						foreach ($t as $k => $v) $t[$k] = $b[$k] ?: $a[$k] ?: $v;
+						$x = "$t[0]-$t[1]";
+					}
+					$t = $x.$z;
+					$a = $y['app'] ?: '[?]';
+					if ($x = $y['used']) $a .= " (used $x)";
+					if ($x = $y['active_time']) $t .= "=$x";
+					$file_meta_text = "$t,$a";
+				}
+			} else
+
+	//* metadata, legacy CSV:
+
+			if (preg_match('~^(?:(\d+),)?(?:([\d:]+)|(\d+)-(\d+)),(.*)$~is', $post_text, $t)) {
+				if ($t[2]) $file_meta_text = $t[2].','.$t[5];
+				else {
+					if (!$t[4]) $t[4] = T0.'000';
+					if (!$t[3] || $t[3] == $t[4]) $t[3] = ($t[1] ?: $target['time']).'000';
+					if (!$t[3]) $t[3] = $t[4];
+					$file_meta_text = "$t[3]-$t[4],$t[5]";
+				}
+			}
+		}
+
 		if (preg_match('~^jp[eg]+$~i', $file_type)) {
 			$file_type = 'jpeg';	//* <- for PHP function name
 			$ext = 'jpg';		//* <- for image file name
@@ -2666,7 +2690,7 @@ file: $upload[name]";
 
 	//* gather post data fields to store:
 
-					$x = array($fn, trim_post($txt));
+					$x = array($fn, trim_post($file_meta_text));
 					if (LOG_UA) $x[] = trim_post($_SERVER['HTTP_USER_AGENT']);
 					$post_status = 'new_post';
 				}
@@ -2703,16 +2727,17 @@ file: $upload[name]";
 		if (is_file($f)) unlink($f);
 		unset($pic_final_path);
 	}
-	if ($ptx) {
+
+	if ($post_text) {
 		if ($log) {
 			$op = ' = {';
 			$ed = NL.'}';
 			$i = NL.'	';
 			$t = '';
 			if ($target || data_aim()) foreach ($target as $key => $val) $t .= "$i$key: $val";
-			$ptx = preg_replace('~\v+~u', $i, trim($ptx));
+			$post_text = preg_replace('~\v+~u', $i, trim($post_text));
 			data_log_action("Denied $post_status: $log
-Post$op$i$ptx$ed
+Post$op$i$post_text$ed
 Target$op$t$ed"
 			);
 		} else if (!(

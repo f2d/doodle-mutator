@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.83'
-,	INFO_DATE = '2013-04-01 — 2021-01-17'
+var	INFO_VERSION = 'v0.9.84'
+,	INFO_DATE = '2013-04-01 — 2021-04-26'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	CR = 'CanvasRecovery'
@@ -3313,15 +3313,15 @@ var	t = (lsid > 0)
 		if (dest)		alert(lang.bad_id+'\n\nid='+dest+'\nautosave='+a); else
 		if (!outside.send)	alert(lang.no.form); else
 		if (fillCheck())	alert(lang.no.drawn); else {
+		var	confirmationText = lang.confirm.send;
 			a = select.imgLimits;
-			c = lang.confirm.send;
 
 			for (i in a) if (
 				canvas[i] < a[i][0]
 			||	canvas[i] > a[i][1]
 			) {
 				j = a.width.length;
-				c = lang.confirm.size.map(
+				confirmationText = lang.confirm.size.map(
 					function(v,i) {
 						return v+(i < j ? a.width[i]+'x'+a.height[i] : '');
 					}
@@ -3330,66 +3330,163 @@ var	t = (lsid > 0)
 				break;
 			}
 		}
-		if (c && confirm(c)) {
-			if ((f = outside.send) && f.tagName) clearContent(f);
-			else {
-				setId(e = cre('form', container), 'send');
-				if (!f.length || f.toLowerCase() != 'get') e.setAttribute('method', 'post');
-				outside.send = f = e;
-			}
+
+		if (confirmationText) {
 		var	pngData = savePic(2,-1)
 		,	jpgData
-		,	a = {txt : 0, pic : 0}
 			;
-
-			for (i in a) if (!(a[i] = getElemById(i))) {
-				setId(
-					e = a[i] = cre('input', f)
-				,	e.name = i
-				).type = 'hidden';
-			}
 
 			e = pngData.length;
 			c = canvas;
 			d = select.imgSizes;
 			c = c.width * c.height;
 			d = d.width * d.height;
-			d = (
-				(
-					(i = outside.jpg)
-				&&	e > i
-				&&	((c <= d) || (e > (i *= c/d)))
-				&&	e > (t = (jpgData = c.toDataURL(IJ)).length)
-				)
+
+		var	isSendingAsJpg = (
+				(i = outside.jpg)
+			&&	e > i
+			&&	((c <= d) || (e > (i *= c/d)))
+			&&	e > (t = (jpgData = c.toDataURL(IJ)).length)
+			);
+
+		var	dataInBase64 = (
+				isSendingAsJpg
 				? jpgData
 				: pngData
 			);
 
 			if (mode.debug) {
-				alert('png limit = '+i+'\npng = '+e+'\njpg = '+t);
+				alert(['png limit = '+i, 'png = '+e, 'jpg = '+t].join('\n'));
 			}
 
-			a.pic.value = d;
-			a.txt.value = getSendMeta(d.length);
-			f.encoding = f.enctype = 'multipart/form-data';
+			function sendAfterConfirmation(data) {
 
-			try {
-				postingInProgress = true;
-
-				if (
-					(i = outside.check)
-				&&	(e = getElemById(i))
-				) {
-					e.setAttribute('data-id', f.id);
-					e.click();
+				if ((f = outside.send) && f.tagName) {
+					clearContent(f);
 				} else {
-					f.submit();
-				}
-			} catch (error) {
-				console.error(error);
+					setId(e = cre('form', container), 'send');
 
-				postingInProgress = false;
+					if (!f.length || f.toLowerCase() != 'get') {
+						e.setAttribute('method', 'post');
+					}
+
+					outside.send = f = e;
+				}
+
+				a = {txt : 0, pic : 0};
+
+				for (i in a) if (!(a[i] = getElemById(i))) {
+					e = a[i] = cre('input', f);
+					e.name = i;
+					e.hidden = true;
+					e.type = 'hidden';
+					e.style.display = 'none';
+					setId(e, i);
+				}
+
+			var	dataSize, dataType, dataEnc, fileExt;
+
+				function setDataVars(data) {
+					if (data.type) {
+						dataSize = data.size;
+						dataType = data.type;
+						dataEnc = 'blob';
+					} else {
+					var	dataEncParts = data.split(',', 1)[0].split(';');
+						dataSize = data.length;
+						dataType = dataEncParts[0].split(':')[1];
+						dataEnc = dataEncParts[1];
+					}
+
+					fileExt = dataType.split('/')[1];
+
+					return data;
+				}
+
+				if (data.type) {
+					setDataVars(data);
+
+				var	fileName = +new Date + '.' + fileExt;
+				var	file = new File([data], fileName, {type : dataType});
+
+					a.pic.type = 'file';
+					a.pic.value = null;
+					a.pic.files = createFileList(file);
+				}
+
+//* Fallback to base64 for old Firefox 56:
+
+				if (!(
+					data.type
+				&&	a.pic.files
+				&&	a.pic.files.length > 0
+				)) {
+					a.pic.type = 'hidden';
+					a.pic.value = setDataVars(
+						data.type
+						? dataInBase64
+						: data
+					);
+				}
+
+				a.txt.type = 'hidden';
+				a.txt.value = getSendMeta(dataSize);
+
+				f.encoding = f.enctype = 'multipart/form-data';
+
+				confirmationText = (
+					canvas.width + 'x' + canvas.height
+				+	', '
+				+	dataSize + ' ' + lang.bytes
+				+	', '
+				+	dataEnc
+				+	', '
+				+	fileExt.toUpperCase()
+				+	'\n\n'
+				+	confirmationText
+				);
+
+				if (confirm(confirmationText)) {
+					try {
+						postingInProgress = true;
+
+						if (
+							(i = outside.check)
+						&&	(e = getElemById(i))
+						) {
+							e.setAttribute('data-id', f.id);
+							e.click();
+						} else {
+							f.submit();
+						}
+
+					} catch (error) {
+						console.error(error);
+
+						postingInProgress = false;
+					}
+				}
 			}
+
+//* Use less traffic in modern browsers with blob uploaded as file:
+
+			if (canvas.toBlob) {
+				try {
+					canvas.toBlob(
+						sendAfterConfirmation
+					,	isSendingAsJpg ? IJ : ''
+					);
+
+					return c;
+
+				} catch (error) {
+					console.error(error);
+				}
+			}
+
+//* Fallback to base64 for old Opera 11-12:
+
+			sendAfterConfirmation(dataInBase64);
 		}
 	}
 
@@ -3465,6 +3562,18 @@ var	e = new Image();
 	e.src = s.data;
 
 	return s.name;
+}
+
+//* The only way to change input[type=file] value is with a other FileList instance,
+//* and this is currently the only way to construct a new FileList.
+//* Source: https://stackoverflow.com/a/50169790
+
+function createFileList(a) {
+	a = Array.prototype.slice.call(Array.isArray(a) ? a : arguments);
+	for (var c, b = c = a.length, d = !0; b-- && d;) d = a[b] instanceof File;
+	if (!d) throw new TypeError('expected argument to FileList is File or array of File objects');
+	for (b = (new ClipboardEvent('')).clipboardData || new DataTransfer; c--;) b.items.add(a[c]);
+	return b.files;
 }
 
 //* Hot keys *-----------------------------------------------------------------
@@ -4236,6 +4345,7 @@ var	o = outside
 			bad_id : 	'Ошибка: действие не найдено.'
 		,	err_code :	'Код ошибки'
 		,	found_swap :	'Рисунок был в запасе, теперь сдвинут на первое место.'
+		,	bytes :		'байт'
 		,	confirm : {
 				send :	'Отправить рисунок в сеть?'
 			,	close :	'Покинуть эту страницу и выбросить открытый рисунок?'
@@ -4381,6 +4491,7 @@ var	o = outside
 			bad_id :	'Invalid action: case not found.'
 		,	err_code :	'Error code'
 		,	found_swap :	'Found same image still saved, swapped it to first slot.'
+		,	bytes :		'bytes'
 		,	confirm : {
 				send :	'Send image to server?'
 			,	close :	'Leave this page and discard the drawing?'

@@ -53,6 +53,6 @@ Another way to name the game is "broken telephone", it can be played with just a
 
 ### Помощь проекту
 
-* Участие в игре сохраняет смысль держать работающий сервер.
+* Участие в игре сохраняет смысл держать работающий сервер.
 * Помощь в доработке пригодится, будь то патчи, сообщения или идеи.
 * Поддержать оплату сервера будет кстати, через [Киви](https://qiwi.me/f2d), [Пейпал](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PY8G49CJCDQLU), [и т.д.](https://2draw.me/index.htm)
