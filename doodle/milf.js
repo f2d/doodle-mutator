@@ -5,12 +5,14 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v1.17'	//* needs complete rewrite, long ago
+var	INFO_VERSION = 'v1.18'	//* needs complete rewrite, long ago
 ,	INFO_DATE = '2014-07-16 — 2021-04-26'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
 ,	LS = this.LS = window.localStorage || localStorage
+,	isPointerEventSupported = !!window.PointerEvent
+,	isPointerEventCoalesced = isPointerEventSupported && !!PointerEvent.prototype.getCoalescedEvents
 ,	DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
 ,	DRAW_HELPER = {lineWidth: 1, shadowBlur: 0, shadowColor: A0, strokeStyle: 'rgba(123, 123, 123, 0.5)', globalCompositeOperation: SO}
 
@@ -728,14 +730,28 @@ var	i = (evt.which == 1)?1:0, j, t = tools[1-i]
 ,	pf = ((sf & 8) && (mode.shape || !mode.step))
 ,	sh = ((sf & 2) && (mode.shape || pf));
 	draw.clip = t.clip;
-	for (i in (t = mode.erase ? DRAW_HELPER : {
+
+	t = (mode.erase ? DRAW_HELPER : {
 		lineWidth: ((!fig || (pf && !mode.step))?1:t.width+(t.align === 'subpixel' ? ROUGH_LINE_WIDTH_FRAC : 0))
 	,	fillStyle: (sh ? 'rgba('+(mode.step?tools[i]:t).color+', '+t.opacity+')' : A0)
 	,	strokeStyle: (sh && !(mode.step || pf) ? A0 : 'rgba('+t.color+', '+(fig?t.opacity:(draw.step?0.33:0.66))+')')
 	,	shadowColor: (b ? 'rgb('+t.color+')' : A0)
 	,	shadowBlur: b
-	})) for (j in y) ctx[j][i] = t[i];
+	});
+
+	for (i in t) for (j in y) ctx[j][i] = t[i];
+
 	updatePosition(evt);		//* <- update pixel offset based on tool width && draw.active
+
+	if (isPointerEventCoalesced) {
+		draw.points = [{
+			x : draw.cur.x
+		,	y : draw.cur.y
+		,	pointerId : 0
+		,	timeStamp : 0
+		}];
+	}
+
 	for (i in draw.o) draw.prev[i] = draw.cur[i];
 	for (i in draw.line) draw.line[i] = false;
 	for (i in select.lineCaps) {
@@ -750,10 +766,19 @@ var	i = (evt.which == 1)?1:0, j, t = tools[1-i]
 function drawMove(evt) {
 	draw.evt = evt = evt || window.event;
 
-	if (mode.click == 1 && !evt.shiftKey) return mode.click = 0, drawEnd(evt);
+	if (evt) {
+		if (mode.click == 1 && !evt.shiftKey) {
+			mode.click = 0;
 
-	if (evt.type.indexOf('mouse') === 0) {
-		updatePosition(evt);
+			return drawEnd(evt);
+		}
+
+		if (
+			evt.type.indexOf('mouse') === 0
+		||	evt.type.indexOf('pointer') === 0
+		) {
+			updatePosition(evt);
+		}
 	}
 
 	if (draw.turn) return updateViewport(draw.turn.pan?1:draw.turn.delta = getCursorRad() - draw.turn.origin);
@@ -762,7 +787,9 @@ var	s = draw.shape
 ,	sf = draw.shapeFlags
 ,	fig = draw.shapeFig
 ,	redraw = true, i
-,	newLine = (draw.active && !((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8)));
+,	newLine = (draw.active && !((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8)))
+,	points
+	;
 
 	if (mode.click) mode.click = 1;
 	if (newLine) {
@@ -771,12 +798,43 @@ var	s = draw.shape
 		} else
 		if (draw.line.back = mode.step) {
 			if (noShadowBlurCurve) ctx.draw.shadowColor = A0, ctx.draw.shadowBlur = 0;
-			if (draw.line.started) ctx.draw.quadraticCurveTo(draw.prev.x, draw.prev.y, (draw.cur.x + draw.prev.x)/2, (draw.cur.y + draw.prev.y)/2);
-		} else ctx.draw.lineTo(draw.cur.x, draw.cur.y);
-		draw.line.preview =	!(draw.line.started = true);
+			if (draw.line.started) {
+				if (points = draw.points) {
+					points.quadraticCurve = true;
+					points.push({
+						x : draw.cur.x
+					,	y : draw.cur.y
+					,	pointerId : evt.pointerId
+					,	timeStamp : evt.timeStamp
+					});
+				} else {
+					ctx.draw.quadraticCurveTo(
+						draw.prev.x
+					,	draw.prev.y
+					,	(draw.cur.x + draw.prev.x)/2
+					,	(draw.cur.y + draw.prev.y)/2
+					);
+				}
+			}
+		} else {
+			if (points = draw.points) {
+				points.push({
+					x : draw.cur.x
+				,	y : draw.cur.y
+				,	pointerId : evt.pointerId
+				,	timeStamp : evt.timeStamp
+				});
+			} else {
+				ctx.draw.lineTo(draw.cur.x, draw.cur.y);
+			}
+		}
+		draw.line.preview = false;
+		draw.line.started = true;
 	} else if (draw.line.back) {
 		ctx.draw.lineTo(draw.prev.x, draw.prev.y);
-		draw.line.back =	!(draw.line.started = true);
+
+		draw.line.back = false;
+		draw.line.started = true;
 	}
 	if (mode.limitFPS) {
 	var	t = +new Date;
@@ -800,7 +858,50 @@ var	s = draw.shape
 					ctx.draw.drawImage(cnv.temp, 0, 0), ++redraw;
 				}
 			} else
-			if (draw.line.started) ctx.draw.stroke(), ++redraw;
+			if (draw.line.started) {
+				if (points) {
+					points.sort(sortEventPoints);			//* <- fix for out-of-order pen points in Firefox
+
+					ctx.draw.beginPath();
+					ctx.draw.moveTo(points[0].x, points[0].y);
+
+					if (points.quadraticCurve) {
+						for (
+						var	i = 2
+						,	k = points.length
+						,	nextPoint
+						,	prevPoint
+							; i < k
+						&&	(nextPoint = points[i])
+						&&	(prevPoint = points[i - 1])
+							; ++i
+						) {
+							ctx.draw.quadraticCurveTo(
+								prevPoint.x
+							,	prevPoint.y
+							,	(nextPoint.x + prevPoint.x)/2
+							,	(nextPoint.y + prevPoint.y)/2
+							);
+						}
+					} else {
+						for (
+						var	i = 1
+						,	k = points.length
+						,	nextPoint
+							; i < k
+						&&	(nextPoint = points[i])
+							; ++i
+						) {
+							ctx.draw.lineTo(
+								nextPoint.x
+							,	nextPoint.y
+							);
+						}
+					}
+				}
+
+				ctx.draw.stroke(), ++redraw;
+			}
 		} else if (i && mode.brushView && !mode.lowQ) drawCursor(), ++redraw;
 		updateDebugScreen();
 		if (redraw) {
@@ -1448,8 +1549,18 @@ function updatePalette() {
 	function pickHue(evt) {
 		evt = evt || window.event;
 
-		if (evt.type === 'mousemove' && (!draw.target || draw.target != evt.target)) return;
+		if (
+			(
+				evt.type === 'mousemove'
+			||	evt.type === 'pointermove'
+			)
+		&&	(!draw.target || draw.target !== evt.target)
+		) {
+			return;
+		}
+
 		eventStop(evt).preventDefault();
+
 		if (!draw.target) draw.target = getElemById('color-wheel-round');
 	var	hue = pickColor(evt, draw.target, getElemById('color-wheel-hue'));
 		drawGradient(getElemById('color-wheel-box'), getBoxGradientPixel, hue);
@@ -1508,7 +1619,7 @@ var	pt = getElemById('colors')
 
 			c.setAttribute('onscroll', f);
 			c.setAttribute('oncontextmenu', f);
-			c.onmousedown = pickColor;
+			c.addEventListener((isPointerEventSupported ? 'pointerdown' : 'mousedown'), pickColor, true);
 		} else
 		if (c == 'w') {
 		var	border = CANVAS_BORDER
@@ -1995,7 +2106,7 @@ function saveDL(data, suffix) {
 	}
 
 	function dataToBlob(data) {
-		if (u && u.createObjectURL) {
+		if (URL && URL.createObjectURL) {
 			if (data.slice(0, k = prefix.length) == prefix) {
 			var	i = data.indexOf(',')
 			,	meta = data.slice(k,i)
@@ -2009,11 +2120,11 @@ function saveDL(data, suffix) {
 				}
 			}
 			data = Uint8Array.from(MODE_NAMES.map.call(data, function(v) {return v.charCodeAt(0);}));
-			return u.createObjectURL(new Blob([data], {'type': type}));
+			return URL.createObjectURL(new Blob([data], {'type': type}));
 		}
 	}
 
-var	u = window.URL || window.webkitURL
+var	URL = window.URL || window.webkitURL
 ,	data = ''+data
 ,	prefix = 'data:'
 ,	type = 'text/plain'
@@ -2027,7 +2138,7 @@ var	u = window.URL || window.webkitURL
 			a[DL] = getSaveFileName(suffix);
 			a.click();
 			setTimeout(function() {
-				if (blob) u.revokeObjectURL(blob);
+				if (blob) URL.revokeObjectURL(blob);
 				a.parentNode.removeChild(a);
 			}, 12345);
 		} catch(e) {
@@ -3128,15 +3239,6 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 
 	for (i in MODE_NAMES) if (mode[MODE_NAMES[i]]) toggleMode(i, 1);		//* <- only after select lists are defined
 
-	addEventListeners(
-		// canvas
-		cnv.view
-	,	{
-			scroll:		f = stopScroll		//* <- against FireFox always scrolling on mousewheel
-		,	contextmenu:	f
-		}
-	);
-
 //* listen on all page to prevent dead zones:
 //* still fails to catch events outside of document block height less than of browser window.
 
@@ -3144,18 +3246,43 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 		// document.body
 		window
 	,	{
-			dragover:	dragOver
-		,	drop:		drop
-		,	mousedown:	drawStart
-		,	mousemove:	drawMove
-		,	mouseup:	drawEnd
-		,	keypress:	k = hotKeys
-		,	keydown:	k
-		,	keyup:		k
-		,	mousewheel:	f = hotWheel
-		,	wheel:		f
-		,	scroll:		f
-		,	beforeunload:	beforeUnload
+			'beforeunload' : beforeUnload
+		,	'dragover' :	dragOver
+		,	'drop' :	drop
+		,	'keypress' :	k = hotKeys
+		,	'keydown' :	k
+		,	'keyup' :	k
+		,	'mousewheel' :	f = hotWheel
+		,	'wheel' :	f
+		,	'scroll' :	f
+		}
+	);
+
+	addEventListeners(
+		window
+	,	(
+			isPointerEventSupported
+			? {
+				'pointerdown' :	drawStart
+			,	'pointermove' :	drawMove
+			,	'pointerup' :	drawEnd
+			}
+			: {
+				'mousedown' :	drawStart
+			,	'mousemove' :	drawMove
+			,	'mouseup' :	drawEnd
+			}
+		)
+	);
+
+	addEventListeners(
+		// canvas
+		cnv.view
+	,	{
+			'scroll' :	f = stopScroll		//* <- against FireFox always scrolling on mousewheel
+		,	'contextmenu' :	f
+		,	'touchstart' :	k = prevent
+		,	'touchmove' :	k
 		}
 	);
 
@@ -3616,12 +3743,27 @@ function ang_btw(x,y) {return cut_period(y-x);}
 function o0(line,delim) {var a=line.split(delim||','),i,o={}; for(i in a) o[a[i]]=0; return o;}
 function showProps(o,r,z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; if(r)return t; alert(t); return o;}
 
-function eventStop(e) {
-	if (e && e.eventPhase?e:e = window.event) {
-		if (e.stopPropagation) e.stopPropagation();
-		if (e.cancelBubble != null) e.cancelBubble = true;
+function sortEventPoints(a,b) {
+	return (
+		a.timeStamp > b.timeStamp ? 1 :
+		a.timeStamp < b.timeStamp ? -1 :
+		a.pointerId > b.pointerId ? 1 :
+		a.pointerId < b.pointerId ? -1 :
+		0
+	);
+}
+
+function prevent(evt) {
+	evt = evt || window.event;
+	evt.preventDefault();
+}
+
+function eventStop(evt) {
+	if (evt && evt.eventPhase ? evt : (evt = window.event)) {
+		if (evt.stopPropagation) evt.stopPropagation();
+		if (evt.cancelBubble != null) evt.cancelBubble = true;
 	}
-	return e;
+	return evt;
 }
 
 //* To get started *-----------------------------------------------------------

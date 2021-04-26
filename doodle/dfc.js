@@ -5,7 +5,7 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.84'
+var	INFO_VERSION = 'v0.9.85'
 ,	INFO_DATE = '2013-04-01 — 2021-04-26'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
@@ -255,6 +255,8 @@ var	INFO_VERSION = 'v0.9.84'
 ,	outside = this.o = {}
 ,	container, canvas, c2d, cnvHid, c2s, hue, lang, i,DL,HP,LP
 ,	LS = window.localStorage || localStorage
+,	isPointerEventSupported = !!window.PointerEvent
+,	isPointerEventCoalesced = isPointerEventSupported && !!PointerEvent.prototype.getCoalescedEvents
 ,	fps = 0
 ,	ticks = 0
 ,	timer = 0
@@ -492,6 +494,16 @@ function eventStop(evt) {
 	}
 
 	return evt;
+}
+
+function sortEventPoints(a,b) {
+	return (
+		a.timeStamp > b.timeStamp ? 1 :
+		a.timeStamp < b.timeStamp ? -1 :
+		a.pointerId > b.pointerId ? 1 :
+		a.pointerId < b.pointerId ? -1 :
+		0
+	);
 }
 
 function isTransparent(s) {return (s == A0 || regA0.test(s));}
@@ -768,6 +780,15 @@ var	i = (evt.which == 1 ? 1 : 0)
 
 	updatePosition(evt);
 
+	if (isPointerEventCoalesced) {
+		draw.points = [{
+			x : draw.cur.x
+		,	y : draw.cur.y
+		,	pointerId : 0
+		,	timeStamp : 0
+		}];
+	}
+
 	for (i in draw.o) draw.prev[i] = draw.cur[i];
 	for (i in draw.line) draw.line[i] = false;
 	for (i in select.lineCaps) c2s[i] = c2d[i] = select.options[i][select[i].value];
@@ -838,7 +859,10 @@ function drawMove(evt) {
 			return drawEnd(evt);
 		}
 
-		if (evt.type.indexOf('mouse') === 0) {
+		if (
+			evt.type.indexOf('mouse') === 0
+		||	evt.type.indexOf('pointer') === 0
+		) {
 			updatePosition(evt);
 		}
 	}
@@ -851,6 +875,7 @@ var	redraw = true
 ,	s = draw.shape
 ,	sf = draw.shapeFlags
 ,	newLine = (draw.active && !((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8)))
+,	points
 	;
 
 	if (mode.click) {
@@ -867,14 +892,35 @@ var	redraw = true
 				c2d.shadowBlur = 0;
 			}
 
-			if (draw.line.started) c2d.quadraticCurveTo(
-				draw.prev.x
-			,	draw.prev.y
-			,	(draw.cur.x + draw.prev.x)/2
-			,	(draw.cur.y + draw.prev.y)/2
-			);
+			if (draw.line.started) {
+				if (points = draw.points) {
+					points.quadraticCurve = true;
+					points.push({
+						x : draw.cur.x
+					,	y : draw.cur.y
+					,	pointerId : evt.pointerId
+					,	timeStamp : evt.timeStamp
+					});
+				} else {
+					c2d.quadraticCurveTo(
+						draw.prev.x
+					,	draw.prev.y
+					,	(draw.cur.x + draw.prev.x)/2
+					,	(draw.cur.y + draw.prev.y)/2
+					);
+				}
+			}
 		} else {
-			c2d.lineTo(draw.cur.x, draw.cur.y);
+			if (points = draw.points) {
+				points.push({
+					x : draw.cur.x
+				,	y : draw.cur.y
+				,	pointerId : evt.pointerId
+				,	timeStamp : evt.timeStamp
+				});
+			} else {
+				c2d.lineTo(draw.cur.x, draw.cur.y);
+			}
 		}
 
 		draw.line.preview = false;
@@ -908,6 +954,47 @@ var	redraw = true
 			}
 
 			if (draw.line.started) {
+				if (points) {
+					points.sort(sortEventPoints);			//* <- fix for out-of-order pen points in Firefox
+
+					c2d.beginPath();
+					c2d.moveTo(points[0].x, points[0].y);
+
+					if (points.quadraticCurve) {
+						for (
+						var	i = 2
+						,	k = points.length
+						,	nextPoint
+						,	prevPoint
+							; i < k
+						&&	(nextPoint = points[i])
+						&&	(prevPoint = points[i - 1])
+							; ++i
+						) {
+							c2d.quadraticCurveTo(
+								prevPoint.x
+							,	prevPoint.y
+							,	(nextPoint.x + prevPoint.x)/2
+							,	(nextPoint.y + prevPoint.y)/2
+							);
+						}
+					} else {
+						for (
+						var	i = 1
+						,	k = points.length
+						,	nextPoint
+							; i < k
+						&&	(nextPoint = points[i])
+							; ++i
+						) {
+							c2d.lineTo(
+								nextPoint.x
+							,	nextPoint.y
+							);
+						}
+					}
+				}
+
 				c2d.stroke();
 			}
 		} else if (neverFlushCursor && !mode.lowQ && isMouseIn()) {
@@ -1885,7 +1972,10 @@ function updatePalette() {
 		evt = evt || window.event;
 
 		if (
-			evt.type === 'mousemove'
+			(
+				evt.type === 'mousemove'
+			||	evt.type === 'pointermove'
+			)
 		&&	(!draw.target || draw.target !== evt.target)
 		) {
 			return;
@@ -1959,7 +2049,7 @@ var	pt = getElemById('palette-table')
 
 			c.setAttribute('onscroll', f);
 			c.setAttribute('oncontextmenu', f);
-			c.onmousedown = pickColor;
+			c.addEventListener((isPointerEventSupported ? 'pointerdown' : 'mousedown'), pickColor, true);
 		} else
 		if (c == 'w') {
 		var	border = CANVAS_BORDER
@@ -3092,15 +3182,15 @@ var	d = getSaveLSDict(i
 
 function saveDL(dataURI, suffix) {
 	if (DL) {
-	var	u = window.URL || window.webkitURL
+	var	URL = window.URL || window.webkitURL
 	,	a = cre('a', getElemById())
 		;
 
-		if (u && u.createObjectURL) {
+		if (URL && URL.createObjectURL) {
 		var	type = dataURI.split(';', 1)[0].split(':', 2)[1]
 		,	data = dataURI.slice(dataURI.indexOf(',')+1)
 		,	data = Uint8Array.from(MODE_NAMES.map.call(atob(data), function(v) { return v.charCodeAt(0); }))
-		,	blob = window.URL.createObjectURL(new Blob([data], {'type' : type}))
+		,	blob = URL.createObjectURL(new Blob([data], {'type' : type}))
 			;
 
 			a.href = ''+blob;
@@ -3112,7 +3202,7 @@ function saveDL(dataURI, suffix) {
 		a.click();
 
 		setTimeout(function() {
-			if (blob) u.revokeObjectURL(blob);
+			if (blob) URL.revokeObjectURL(blob);
 			a.parentNode.removeChild(a);
 		}, 12345);
 	} else {
@@ -3588,6 +3678,11 @@ function addEventListeners(e, funcByEventName) {
 			e.addEventListener(i, funcByEventName[i], true);
 		}
 	}
+}
+
+function prevent(evt) {
+	evt = evt || window.event;
+	evt.preventDefault();
 }
 
 function browserHotKeyPrevent(evt) {
@@ -4203,31 +4298,47 @@ var	a,b,c = 'canvas'
 //* still fails to catch events outside of document block height less than of browser window.
 
 	addEventListeners(
-		// document.body
 		window
 	,	{
-			dragover :	dragOver
-		,	drop :		drop
-		,	mousedown :	drawStart
-		,	mousemove :	drawMove
-		,	mouseup :	drawEnd
-		,	keypress :	k = hotKeys
-		,	keydown :	k
-		,	keyup :		k
-		,	mousewheel :	f = hotWheel
-		,	wheel :		f
-		,	scroll :	f
-		,	beforeunload :	beforeUnload
+			'beforeunload' : beforeUnload
+		,	'dragover' :	dragOver
+		,	'drop' :	drop
+		,	'keypress' :	k = hotKeys
+		,	'keydown' :	k
+		,	'keyup' :	k
+		,	'mousewheel' :	f = hotWheel
+		,	'wheel' :	f
+		,	'scroll' :	f
 		}
+	);
+
+	addEventListeners(
+		window
+	,	(
+			isPointerEventSupported
+			? {
+				'pointerdown' :	drawStart
+			,	'pointermove' :	drawMove
+			,	'pointerup' :	drawEnd
+			}
+			: {
+				'mousedown' :	drawStart
+			,	'mousemove' :	drawMove
+			,	'mouseup' :	drawEnd
+			}
+		)
 	);
 
 	addEventListeners(
 		canvas
 	,	{
-			scroll :	f = stopScroll	//* <- against FireFox always scrolling on mousewheel
-		,	contextmenu :	f
+			'scroll' :	f = stopScroll	//* <- against FireFox always scrolling on mousewheel
+		,	'contextmenu' :	f
+		,	'touchstart' :	k = prevent
+		,	'touchmove' :	k
 		}
 	);
+
 }; //* <- END init()
 
 //* External config *----------------------------------------------------------
