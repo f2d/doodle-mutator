@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.85'
-,	INFO_DATE = '2013-04-01 — 2021-04-26'
+var	INFO_VERSION = 'v0.9.86'
+,	INFO_DATE = '2013-04-01 — 2021-04-27'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	CR = 'CanvasRecovery'
@@ -496,12 +496,22 @@ function eventStop(evt) {
 	return evt;
 }
 
+function getEventPointsDist(a,b) {
+	return (
+		Math.abs(a.x - b.x)
+	+	Math.abs(a.y - b.y)
+		// dist(a.x - b.x, a.y - b.y)
+	);
+}
+
 function sortEventPoints(a,b) {
 	return (
 		a.timeStamp > b.timeStamp ? 1 :
 		a.timeStamp < b.timeStamp ? -1 :
 		a.pointerId > b.pointerId ? 1 :
 		a.pointerId < b.pointerId ? -1 :
+		a.distFromPrevTime > b.distFromPrevTime ? 1 :
+		a.distFromPrevTime < b.distFromPrevTime ? -1 :
 		0
 	);
 }
@@ -781,12 +791,17 @@ var	i = (evt.which == 1 ? 1 : 0)
 	updatePosition(evt);
 
 	if (isPointerEventCoalesced) {
-		draw.points = [{
-			x : draw.cur.x
-		,	y : draw.cur.y
-		,	pointerId : 0
-		,	timeStamp : 0
-		}];
+		draw.points = (
+			evt.pointerId
+		// ||	evt.timeStamp
+			? [{
+				x : draw.cur.x
+			,	y : draw.cur.y
+			,	pointerId : 0
+			,	timeStamp : 0	//* <- keep this point first in sorting
+			}]
+			: null
+		);
 	}
 
 	for (i in draw.o) draw.prev[i] = draw.cur[i];
@@ -894,7 +909,7 @@ var	redraw = true
 
 			if (draw.line.started) {
 				if (points = draw.points) {
-					points.quadraticCurve = true;
+					points.isCurve = true;
 					points.push({
 						x : draw.cur.x
 					,	y : draw.cur.y
@@ -939,9 +954,14 @@ var	redraw = true
 	}
 
 	if (redraw) {
+
+//* Restore the view before current unfinished action:
+
 		if ((flushCursor || neverFlushCursor) && !(mode.lowQ && draw.active)) {
 			draw.screen();
 		}
+
+//* Redraw current active shape:
 
 		if (draw.active) {
 			if ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8)) {
@@ -954,21 +974,57 @@ var	redraw = true
 			}
 
 			if (draw.line.started) {
+
+//* Fix for out-of-order pen points in Firefox:
+
 				if (points) {
-					points.sort(sortEventPoints);			//* <- fix for out-of-order pen points in Firefox
+					points.sort(sortEventPoints);
+
+					function setEventPointDist(point) {
+						if (typeof point.distFromPrevTime === 'undefined') {
+							point.distFromPrevTime = getEventPointsDist(refPoint, point);
+
+							isResortingNeeded = true;
+						}
+					}
+
+					for (
+					var	i = 2
+					,	k = points.length
+					,	isResortingNeeded = false
+					,	refPoint = points[0]
+					,	prevPoint
+					,	nextPoint = points[1]
+						; i < k
+					&&	(prevPoint = nextPoint)
+					&&	(nextPoint = points[i])
+						; ++i
+					) if (
+						prevPoint.timeStamp === nextPoint.timeStamp
+					&&	prevPoint.pointerId === nextPoint.pointerId
+					) {
+						setEventPointDist(prevPoint);
+						setEventPointDist(nextPoint);
+					} else {
+						refPoint = prevPoint;
+					}
+
+					if (isResortingNeeded) {
+						points.sort(sortEventPoints);
+					}
 
 					c2d.beginPath();
 					c2d.moveTo(points[0].x, points[0].y);
 
-					if (points.quadraticCurve) {
+					if (points.isCurve) {
 						for (
 						var	i = 2
 						,	k = points.length
-						,	nextPoint
 						,	prevPoint
+						,	nextPoint = points[1]
 							; i < k
+						&&	(prevPoint = nextPoint)
 						&&	(nextPoint = points[i])
-						&&	(prevPoint = points[i - 1])
 							; ++i
 						) {
 							c2d.quadraticCurveTo(
@@ -994,6 +1050,8 @@ var	redraw = true
 						}
 					}
 				}
+
+//* Redraw the plotted stroke:
 
 				c2d.stroke();
 			}

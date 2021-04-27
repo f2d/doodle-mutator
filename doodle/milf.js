@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v1.18'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2021-04-26'
+var	INFO_VERSION = 'v1.30'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2021-04-27'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -744,12 +744,17 @@ var	i = (evt.which == 1)?1:0, j, t = tools[1-i]
 	updatePosition(evt);		//* <- update pixel offset based on tool width && draw.active
 
 	if (isPointerEventCoalesced) {
-		draw.points = [{
-			x : draw.cur.x
-		,	y : draw.cur.y
-		,	pointerId : 0
-		,	timeStamp : 0
-		}];
+		draw.points = (
+			evt.pointerId
+		// ||	evt.timeStamp
+			? [{
+				x : draw.cur.x
+			,	y : draw.cur.y
+			,	pointerId : 0
+			,	timeStamp : 0	//* <- keep this point first in sorting
+			}]
+			: null
+		);
 	}
 
 	for (i in draw.o) draw.prev[i] = draw.cur[i];
@@ -800,7 +805,7 @@ var	s = draw.shape
 			if (noShadowBlurCurve) ctx.draw.shadowColor = A0, ctx.draw.shadowBlur = 0;
 			if (draw.line.started) {
 				if (points = draw.points) {
-					points.quadraticCurve = true;
+					points.isCurve = true;
 					points.push({
 						x : draw.cur.x
 					,	y : draw.cur.y
@@ -859,21 +864,57 @@ var	s = draw.shape
 				}
 			} else
 			if (draw.line.started) {
+
+//* Fix for out-of-order pen points in Firefox:
+
 				if (points) {
-					points.sort(sortEventPoints);			//* <- fix for out-of-order pen points in Firefox
+					points.sort(sortEventPoints);
+
+					function setEventPointDist(point) {
+						if (typeof point.distFromPrevTime === 'undefined') {
+							point.distFromPrevTime = getEventPointsDist(refPoint, point);
+
+							isResortingNeeded = true;
+						}
+					}
+
+					for (
+					var	i = 2
+					,	k = points.length
+					,	isResortingNeeded = false
+					,	refPoint = points[0]
+					,	prevPoint
+					,	nextPoint = points[1]
+						; i < k
+					&&	(prevPoint = nextPoint)
+					&&	(nextPoint = points[i])
+						; ++i
+					) if (
+						prevPoint.timeStamp === nextPoint.timeStamp
+					&&	prevPoint.pointerId === nextPoint.pointerId
+					) {
+						setEventPointDist(prevPoint);
+						setEventPointDist(nextPoint);
+					} else {
+						refPoint = prevPoint;
+					}
+
+					if (isResortingNeeded) {
+						points.sort(sortEventPoints);
+					}
 
 					ctx.draw.beginPath();
 					ctx.draw.moveTo(points[0].x, points[0].y);
 
-					if (points.quadraticCurve) {
+					if (points.isCurve) {
 						for (
 						var	i = 2
 						,	k = points.length
-						,	nextPoint
 						,	prevPoint
+						,	nextPoint = points[1]
 							; i < k
+						&&	(prevPoint = nextPoint)
 						&&	(nextPoint = points[i])
-						&&	(prevPoint = points[i - 1])
 							; ++i
 						) {
 							ctx.draw.quadraticCurveTo(
@@ -3743,12 +3784,22 @@ function ang_btw(x,y) {return cut_period(y-x);}
 function o0(line,delim) {var a=line.split(delim||','),i,o={}; for(i in a) o[a[i]]=0; return o;}
 function showProps(o,r,z /*incl.zero*/) {var i,t=''; for(i in o)if(z||o[i])t+='\n'+i+'='+o[i]; if(r)return t; alert(t); return o;}
 
+function getEventPointsDist(a,b) {
+	return (
+		Math.abs(a.x - b.x)
+	+	Math.abs(a.y - b.y)
+		// dist(a.x - b.x, a.y - b.y)
+	);
+}
+
 function sortEventPoints(a,b) {
 	return (
 		a.timeStamp > b.timeStamp ? 1 :
 		a.timeStamp < b.timeStamp ? -1 :
 		a.pointerId > b.pointerId ? 1 :
 		a.pointerId < b.pointerId ? -1 :
+		a.distFromPrevTime > b.distFromPrevTime ? 1 :
+		a.distFromPrevTime < b.distFromPrevTime ? -1 :
 		0
 	);
 }
