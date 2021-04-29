@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v1.30'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2021-04-27'
+var	INFO_VERSION = 'v1.31'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2021-04-29'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -653,6 +653,10 @@ var	c = ctx[mode.brushView?'draw':'view']
 function drawStart(evt) {
 	draw.evt = evt = evt || window.event;
 
+	if (!evt || draw.active) {
+		return;
+	}
+
 	try {
 		showProps(evt,1,1);	//* <- check if permission denied to read some property
 	} catch (err) {
@@ -716,7 +720,7 @@ var	y = draw.history, i = y.layer;
 	}
 //	if (evt.shiftKey) mode.click = 1;	//* <- draw line/form chains, meh, forget for now
 
-	if ((draw.btn = evt.which) != 1 && draw.btn != 3) return pickColor(), drawEnd();
+	if ((draw.btn = evt.which) != 1 && draw.btn != 3) return pickColor(), drawEnd(evt);
 
 //* Start drawing:
 
@@ -954,13 +958,19 @@ var	s = draw.shape
 }
 
 function drawEnd(evt) {
+	draw.evt = evt = evt || window.event;
+	draw.target = 0;
+
 	if (!evt || draw.turn) return draw.active = draw.step = draw.btn = draw.turn = 0, draw.view(1);
 
-	draw.evt = evt = evt || window.event;
+	if (evt.which && evt.which != 1 && draw.btn != 3) {
+		draw.active = draw.btn = draw.step = draw.turn = draw.text = 0;
+
+		return;
+	}
+
 	if (mode.click == 1 && evt.shiftKey) return drawMove(evt);
 	if (draw.active) {
-		if (draw.target != cnv.view) return;
-
 	var	s = draw.shape
 	,	sf = draw.shapeFlags
 	,	fig = draw.shapeFig
@@ -1020,7 +1030,6 @@ function drawEnd(evt) {
 		if (cue.autoSave < 0) autoSave(); else cue.autoSave = 1;
 		if (mode.click && evt.shiftKey) return mode.click = 0, drawStart(evt);
 	}
-	draw.target = 0;
 	updateDebugScreen();
 }
 

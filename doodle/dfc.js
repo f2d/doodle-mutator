@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.86'
-,	INFO_DATE = '2013-04-01 — 2021-04-27'
+var	INFO_VERSION = 'v0.9.87'
+,	INFO_DATE = '2013-04-01 — 2021-04-29'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	CR = 'CanvasRecovery'
@@ -683,7 +683,7 @@ var	sf = draw.shapeFlags;
 function drawStart(evt) {
 	draw.evt = evt = evt || window.event;
 
-	if (!evt) {
+	if (!evt || draw.active) {
 		return;
 	}
 
@@ -760,7 +760,7 @@ var	s = draw.shape = select.shape.value
 	if ((draw.btn = evt.which) != 1 && draw.btn != 3) {
 		pickColor();
 
-		return drawEnd();
+		return drawEnd(evt);
 	}
 
 //* start drawing:
@@ -1011,6 +1011,8 @@ var	redraw = true
 
 					if (isResortingNeeded) {
 						points.sort(sortEventPoints);
+
+						// console.log('isResortingNeeded:', isResortingNeeded, points);
 					}
 
 					c2d.beginPath();
@@ -1068,6 +1070,7 @@ var	redraw = true
 }
 
 function drawEnd(evt) {
+	draw.evt = evt = evt || window.event;
 	draw.target = 0;
 
 	if (!evt || draw.turn) {
@@ -1076,7 +1079,11 @@ function drawEnd(evt) {
 		return draw.screen();
 	}
 
-	draw.evt = evt = evt || window.event;
+	if (evt.which && evt.which != 1 && draw.btn != 3) {
+		draw.active = draw.btn = draw.step = draw.turn = draw.text = 0;
+
+		return;
+	}
 
 	if (mode.click == 1 && evt.shiftKey) {
 		return drawMove(evt);
