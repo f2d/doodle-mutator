@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.87'
-,	INFO_DATE = '2013-04-01 — 2021-04-29'
+var	INFO_VERSION = 'v0.9.88'
+,	INFO_DATE = '2013-04-01 — 2021-05-21'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	CR = 'CanvasRecovery'
@@ -683,7 +683,8 @@ var	sf = draw.shapeFlags;
 function drawStart(evt) {
 	draw.evt = evt = evt || window.event;
 
-	if (!evt || draw.active) {
+	// if (!evt || draw.active) {	//* <- breaks line+curve 2nd point
+	if (!evt) {
 		return;
 	}
 
@@ -719,7 +720,10 @@ var	s = draw.shape = select.shape.value
 ,	sf = draw.shapeFlags = select.shapeFlags[s]
 	;
 
-	if (evt.altKey && (draw.step && mode.step && mode.shape && (sf & 1))); else	//* <- line+curve
+	if (
+		(evt.altKey || evt.ctrlKey || evt.shiftKey)
+	&&	(draw.step && mode.step && mode.shape && (sf & 1))	//* <- line+curve
+	); else
 	if (evt.altKey)   draw.turn = {prev : draw.zoom,  zoom  : 1}; else
 	if (evt.ctrlKey)  draw.turn = {prev : draw.angle, angle : 1}; else
 	if (evt.shiftKey) draw.turn = {
@@ -746,7 +750,7 @@ var	s = draw.shape = select.shape.value
 		) {
 			for (i in draw.o) draw.prev[i] = draw.cur[i];
 
-			draw.step.swap = evt.altKey;
+			draw.step.swap = evt.altKey || evt.ctrlKey || evt.shiftKey;
 			draw.step.done = 1;
 
 			return;
@@ -778,6 +782,9 @@ var	i = (evt.which == 1 ? 1 : 0)
 ,	fig = ((sf & 2) && (mode.shape || pf))
 	;
 
+	draw.fig = (mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8);
+	draw.points = null;
+
 	t = (sf & 4 ? DRAW_HELPER : {
 		lineWidth : (pf && !mode.step ? 1 : t.width + (mode.roughLine ? ROUGH_LINE_WIDTH_FRAC : 0))
 	,	fillStyle : (fig ? 'rgba('+(mode.step ? tools[i] : t).color+', '+t.opacity+')' : A0)
@@ -790,18 +797,20 @@ var	i = (evt.which == 1 ? 1 : 0)
 
 	updatePosition(evt);
 
-	if (isPointerEventCoalesced) {
-		draw.points = (
+	if (
+		isPointerEventCoalesced
+	&&	!draw.fig
+	&&	(
 			evt.pointerId
 		// ||	evt.timeStamp
-			? [{
-				x : draw.cur.x
-			,	y : draw.cur.y
-			,	pointerId : 0
-			,	timeStamp : 0	//* <- keep this point first in sorting
-			}]
-			: null
-		);
+		)
+	) {
+		draw.points = [{
+			x : draw.cur.x
+		,	y : draw.cur.y
+		,	pointerId : 0
+		,	timeStamp : 0	//* <- keep this point first in sorting
+		}];
 	}
 
 	for (i in draw.o) draw.prev[i] = draw.cur[i];
@@ -889,7 +898,7 @@ function drawMove(evt) {
 var	redraw = true
 ,	s = draw.shape
 ,	sf = draw.shapeFlags
-,	newLine = (draw.active && !((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8)))
+,	newLine = (draw.active && !draw.fig)
 ,	points
 	;
 
@@ -964,7 +973,7 @@ var	redraw = true
 //* Redraw current active shape:
 
 		if (draw.active) {
-			if ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8)) {
+			if (draw.fig) {
 				draw.line.preview = true;
 				c2s.clearRect(0,0, canvas.width, canvas.height);
 				c2s.beginPath();
@@ -1093,7 +1102,6 @@ function drawEnd(evt) {
 	var	c = c2d
 	,	s = draw.shape
 	,	sf = draw.shapeFlags
-	,	m = ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8))
 		;
 
 	//* normal straight 2pt line, base for 4pt curve:
@@ -1140,7 +1148,7 @@ function drawEnd(evt) {
 
 			used.poly = 'Poly';
 		} else
-		if ((sf & 64) || (m && draw.line.preview)) {
+		if ((sf & 64) || (draw.fig && draw.line.preview)) {
 			c.beginPath();
 			drawShape(c, s);
 
@@ -1148,7 +1156,7 @@ function drawEnd(evt) {
 				used.shape = 'Shape';
 			}
 		} else
-		if (m || draw.line.back || !draw.line.started) {//* <- draw 1 pixel on short click, regardless of mode or browser
+		if (draw.fig || draw.line.back || !draw.line.started) {//* <- draw 1 pixel on short click, regardless of mode or browser
 			c.lineTo(draw.cur.x, draw.cur.y + (draw.cur.y == draw.prev.y ? 0.01 : 0));
 		}
 
@@ -1496,7 +1504,7 @@ var	evt = draw.evt
 
 				c2s.beginPath();
 		//* curve
-			var	swapKey = (evt && evt.altKey)
+			var	swapKey = (evt && (evt.altKey || evt.ctrlKey || evt.shiftKey))
 			,	swapPoint1 = (s.done ? s.swap : swapKey)
 			,	swapPoint2 = (s.done ? !swapKey : swapKey)
 			,	linePoint1 = (swapPoint1 ? u : w)
@@ -3933,7 +3941,11 @@ function hotKeys(evt) {
 //* Swap control/end points of curved line:
 
 			if (
-				evt.keyCode == 18	//* 16=Shift, 17=Ctrl, 18=Alt
+				(
+					evt.keyCode == 16	//* 16=Shift
+				||	evt.keyCode == 17	//* 17=Ctrl
+				||	evt.keyCode == 18	//* 18=Alt
+				)
 			&&	draw.step
 			&&	mode.step
 			&&	mode.shape
@@ -4605,7 +4617,7 @@ var	o = outside
 			,	line	: {sub : 'прямая',	t : 'Прямая линия (1 клик-зажатие).'}
 			,	curve	: {sub : 'сгиб',	t : 'Сглаживать углы линии.'
 				+TITLE_LINE_BREAK+	'Вместе с включением "прямой" — одна ровная кривая линия (2 клик-зажатия подряд).'
-				+TITLE_LINE_BREAK+	'Зажатие кнопки Alt меняет местами концевую и контрольную точку линии.'
+				+TITLE_LINE_BREAK+	'Зажатие кнопки Alt, Ctrl или Shift меняет местами концевую и контрольную точку линии.'
 				}
 			,	area	: {sub : 'закрас.',	t : 'Закрашивать площадь геометрических фигур.'}
 			,	outline	: {sub : 'контур',	t : 'Рисовать контур геометрических фигур.'}
@@ -4749,7 +4761,7 @@ var	o = outside
 			,	line	: 'Draw straight line (1 click-drag).'
 			,	curve	: 'Draw lines with smooth corners.'
 			+TITLE_LINE_BREAK+	'With "straight" enabled — draw single curve (2 click-drags).'
-			+TITLE_LINE_BREAK+	'Holding Alt key swaps line end and control point.'
+			+TITLE_LINE_BREAK+	'Holding Alt, Ctrl or Shift key swaps line end and control point.'
 			,	area	: 'Fill geometric shapes.'
 			,	outline	: 'Draw outline of geometric shapes.'
 			,	copy	: 'Keep old copy.'

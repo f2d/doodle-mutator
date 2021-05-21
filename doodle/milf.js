@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v1.31'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2021-04-29'
+var	INFO_VERSION = 'v1.32'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2021-05-21'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -653,7 +653,8 @@ var	c = ctx[mode.brushView?'draw':'view']
 function drawStart(evt) {
 	draw.evt = evt = evt || window.event;
 
-	if (!evt || draw.active) {
+	// if (!evt || draw.active) {	//* <- breaks line+curve 2nd point
+	if (!evt) {
 		return;
 	}
 
@@ -680,7 +681,10 @@ var	s = draw.shape = select.shape.value
 ,	fig = draw.shapeFig = select.shapeFig[s]
 	;
 
-	if (evt.altKey && (draw.step && mode.step && mode.shape && (sf & 1))); else	//* <- line+curve
+	if (
+		(evt.altKey || evt.ctrlKey || evt.shiftKey)
+	&&	(draw.step && mode.step && mode.shape && (sf & 1))	//* <- line+curve
+	); else
 	if (evt.altKey) draw.turn = {prev: draw.zoom, zoom: 1}; else
 	if (evt.ctrlKey) draw.turn = {prev: draw.angle, angle: 1}; else
 	if (evt.shiftKey) draw.turn = {prev: draw.pan ? {x: draw.pan.x, y: draw.pan.y} : {x:0,y:0}, pan: 1};
@@ -692,7 +696,9 @@ var	s = draw.shape = select.shape.value
 		ctx.view.lineTo(cnv.view.width/2, cnv.view.height/2);
 		ctx.view.stroke();
 	}
+
 	updatePosition(evt);
+
 	if (draw.turn) return draw.turn.origin = getCursorRad();
 
 //* Drawing on cnv.draw:
@@ -710,7 +716,7 @@ var	y = draw.history, i = y.layer;
 		) {
 			for (i in draw.o) draw.prev[i] = draw.cur[i];
 
-			draw.step.swap = evt.altKey;
+			draw.step.swap = evt.altKey || evt.ctrlKey || evt.shiftKey;
 			draw.step.done = 1;
 
 			return;
@@ -733,7 +739,10 @@ var	i = (evt.which == 1)?1:0, j, t = tools[1-i]
 ,	b = (fig ? t.blur : 0)
 ,	pf = ((sf & 8) && (mode.shape || !mode.step))
 ,	sh = ((sf & 2) && (mode.shape || pf));
+
 	draw.clip = t.clip;
+	draw.fig = (mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8);
+	draw.points = null;
 
 	t = (mode.erase ? DRAW_HELPER : {
 		lineWidth: ((!fig || (pf && !mode.step))?1:t.width+(t.align === 'subpixel' ? ROUGH_LINE_WIDTH_FRAC : 0))
@@ -747,18 +756,20 @@ var	i = (evt.which == 1)?1:0, j, t = tools[1-i]
 
 	updatePosition(evt);		//* <- update pixel offset based on tool width && draw.active
 
-	if (isPointerEventCoalesced) {
-		draw.points = (
+	if (
+		isPointerEventCoalesced
+	&&	!draw.fig
+	&&	(
 			evt.pointerId
 		// ||	evt.timeStamp
-			? [{
-				x : draw.cur.x
-			,	y : draw.cur.y
-			,	pointerId : 0
-			,	timeStamp : 0	//* <- keep this point first in sorting
-			}]
-			: null
-		);
+		)
+	) {
+		draw.points = [{
+			x : draw.cur.x
+		,	y : draw.cur.y
+		,	pointerId : 0
+		,	timeStamp : 0	//* <- keep this point first in sorting
+		}];
 	}
 
 	for (i in draw.o) draw.prev[i] = draw.cur[i];
@@ -796,7 +807,7 @@ var	s = draw.shape
 ,	sf = draw.shapeFlags
 ,	fig = draw.shapeFig
 ,	redraw = true, i
-,	newLine = (draw.active && !((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8)))
+,	newLine = (draw.active && !draw.fig)
 ,	points
 	;
 
@@ -854,7 +865,7 @@ var	s = draw.shape
 		if (i || (draw.active && !mode.lowQ)) draw.preload(), ++redraw;
 		if (draw.active) {
 			if (fig) ctx.draw.globalCompositeOperation = draw.clip;
-			if ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8)) {
+			if (draw.fig) {
 				draw.line.preview = true;
 				if (mode.erase && (sf & 2)) {
 					ctx.draw.beginPath();
@@ -961,7 +972,11 @@ function drawEnd(evt) {
 	draw.evt = evt = evt || window.event;
 	draw.target = 0;
 
-	if (!evt || draw.turn) return draw.active = draw.step = draw.btn = draw.turn = 0, draw.view(1);
+	if (!evt || draw.turn) {
+		draw.active = draw.step = draw.btn = draw.turn = 0;
+
+		return draw.view(1);
+	}
 
 	if (evt.which && evt.which != 1 && draw.btn != 3) {
 		draw.active = draw.btn = draw.step = draw.turn = draw.text = 0;
@@ -974,7 +989,6 @@ function drawEnd(evt) {
 	var	s = draw.shape
 	,	sf = draw.shapeFlags
 	,	fig = draw.shapeFig
-	,	m = ((mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8))
 		;
 
 	//* 2pt line, base for 4pt curve:
@@ -1011,11 +1025,11 @@ function drawEnd(evt) {
 				if (mode.shape || !mode.step) ctx.draw.fill();
 				used.poly = 'Poly';
 			} else
-			if ((sf & 64) || (m && draw.line.preview)) {
+			if ((sf & 64) || (draw.fig && draw.line.preview)) {
 				drawShape(ctx.draw, s);
 				if (fig) ++used_shape[select.options.shape[s]];//used.shape = 'Shape';
 			} else
-			if (m || draw.line.back || !draw.line.started) {//* <- draw 1 pixel on short click, regardless of mode or browser
+			if (draw.fig || draw.line.back || !draw.line.started) {//* <- draw 1 pixel on short click, regardless of mode or browser
 				ctx.draw.lineTo(draw.cur.x, draw.cur.y + (draw.cur.y == draw.prev.y ? 0.01 : 0));
 			}
 			if (!fig) used.move = 'Move';
@@ -1072,7 +1086,7 @@ var	cd = ctx.draw, v = draw.prev, r = draw.cur
 
 				propSwap(ct, old, 0);
 		//* curve
-			var	swapKey = (evt && evt.altKey)
+			var	swapKey = (evt && (evt.altKey || evt.ctrlKey || evt.shiftKey))
 			,	swapPoint1 = (s.done ? s.swap : swapKey)
 			,	swapPoint2 = (s.done ? !swapKey : swapKey)
 			,	linePoint1 = (swapPoint1 ? u : w)
@@ -2786,7 +2800,11 @@ function hotKeys(evt) {
 //* Swap control/end points of curved line:
 
 			if (
-				evt.keyCode == 18	//* 16=Shift, 17=Ctrl, 18=Alt
+				(
+					evt.keyCode == 16	//* 16=Shift
+				||	evt.keyCode == 17	//* 17=Ctrl
+				||	evt.keyCode == 18	//* 18=Alt
+				)
 			&&	draw.step
 			&&	mode.step
 			&&	mode.shape
@@ -3496,7 +3514,7 @@ select.lineCaps = {lineCap: 'Концы линий', lineJoin: 'Сгибы ли�
 	},	line:	{sub:'прямая',	t:'Прямая линия 1 зажатием.'
 	},	curve:	{sub:'кривая',	t:'Сглаживать углы линии.'
 +TITLE_LINE_BREAK+	'Вместе с включением "прямой" — одна ровная кривая линия (2 клик-зажатия подряд).'
-+TITLE_LINE_BREAK+	'Зажатие кнопки Alt меняет местами концевую и контрольную точку линии.'
++TITLE_LINE_BREAK+	'Зажатие кнопки Alt, Ctrl или Shift меняет местами концевую и контрольную точку линии.'
 	},	area:	{sub:'закрас.',	t:'Закрашивать площадь геометрических фигур.'
 +TITLE_LINE_BREAK+	'Не обводить + не закрашивать = удалить площадь.'
 	},	outline:{sub:'контур',	t:'Рисовать контур геометрических фигур.'
@@ -3630,7 +3648,7 @@ else o.lang = 'en'
 	,	line:	'Draw straight line with 1 drag.'
 	,	curve	: 'Draw lines with smooth corners.'
 +TITLE_LINE_BREAK+	'With "straight" enabled — draw single curve (2 click-drags).'
-+TITLE_LINE_BREAK+	'Holding Alt key swaps line end and control point.'
++TITLE_LINE_BREAK+	'Holding Alt, Ctrl or Shift key swaps line end and control point.'
 	,	area:	'Fill geometric shapes.'
 +TITLE_LINE_BREAK+	'No outline + no fill = erase area.'
 	,	outline:'Draw outline of geometric shapes.'
