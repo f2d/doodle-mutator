@@ -37,8 +37,8 @@
 ,	timeRange
 
 ,	la
-,	lang = getCookie('lang') || (LS ? LS.lang : '') || document.documentElement.lang || 'en'
-	;
+,	langs = ['en', 'ru']
+,	lang = getActiveLang() || 'en';
 
 //* UI translation *-----------------------------------------------------------
 
@@ -156,6 +156,16 @@ function eventStop(e,i,d) {
 		if (e.cancelBubble !== null) e.cancelBubble = true;
 	}
 	return e;
+}
+
+function getActiveLang() {
+	return (
+		getCookie('lang')
+	||	(LS ? LS.lang : null)
+	||	(navigator.languages ? navigator.languages.reduce(function(r,v) { return r || (langs.indexOf(v) < 0 ? r : v); }, null) : null)
+	||	navigator.language
+	||	document.documentElement.lang
+	);
 }
 
 function getCookie(name) {
