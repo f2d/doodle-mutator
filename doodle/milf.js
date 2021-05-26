@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v1.32'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2021-05-21'
+var	INFO_VERSION = 'v1.33'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2021-05-27'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -14,11 +14,23 @@ var	INFO_VERSION = 'v1.32'	//* needs complete rewrite, long ago
 ,	isPointerEventSupported = !!window.PointerEvent
 ,	isPointerEventCoalesced = isPointerEventSupported && !!PointerEvent.prototype.getCoalescedEvents
 ,	DRAW_PIXEL_OFFSET = 0.5, CANVAS_BORDER = 1
-,	DRAW_HELPER = {lineWidth: 1, shadowBlur: 0, shadowColor: A0, strokeStyle: 'rgba(123, 123, 123, 0.5)', globalCompositeOperation: SO}
+,	DRAW_HELPER = {
+		lineWidth: 1
+	,	shadowBlur: 0
+	,	shadowColor: A0
+	,	strokeStyle: 'rgba(123, 123, 123, 0.5)'
+	,	globalCompositeOperation: SO
+	// ,	globalAlpha : 1
+	}
+,	CTX_RESET_PROPS = {
+		globalAlpha : 1
+	,	shadowBlur : 0
+	,	shadowColor : A0
+	}
 
 ,	mode = {debug:	false	//* <- safe to define here
 	,	shape:	false	//* <- safe to define here;	straight line	/ fill area	/ copy
-	,	step:	true	//* <- safe to define here;	curve		/ outline	/ part
+	,	step:	false	//* <- safe to define here;	curve		/ outline	/ part
 	,	lowQ:	false
 	,	erase:	false
 	,	brushView:	false	//* <- safe to define here
@@ -127,11 +139,14 @@ var	INFO_VERSION = 'v1.32'	//* needs complete rewrite, long ago
 
 //* Set up (don't change) *----------------------------------------------------
 
+,	TESTING = false && (location.protocol === 'file:')
 ,	CUSTOM_CURSOR_DOT = false
-,	TITLE_LINE_BREAK = ' \r\n'
 ,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)	//* <- broken forever, sadly
 ,	noBorderRadius = /^Opera.* Version\D*1\d\.\d+$/i.test(navigator.userAgent)
+
+,	TITLE_LINE_BREAK = ' \r\n'
 ,	abc = 'abc'.split('')
+
 ,	regLastNum = /^.*\D(\d+)$/
 ,	regHex = /^#*[0-9a-f]{6}$/i
 ,	regHex3 = /^#*([0-9a-f])([0-9a-f])([0-9a-f])$/i
@@ -220,11 +235,17 @@ var	INFO_VERSION = 'v1.32'	//* needs complete rewrite, long ago
 			), j, k, l, t, s = this.shift || 0, z;
 			for (i in ctx) ctx[i].globalCompositeOperation = SO;
 			for (i in a) {
+			var	oldProps = getAndResetCtxAlphaAndShadow(ctx[i]);
+				oldProps.globalAlpha = 1;
+
 				ctx[i].clearRect(0, 0, cnv.view.width, cnv.view.height);
 				for (j = a[i][0], l = a[i][1]; j <= l; j++) if (j && (t = d[j]).show && (k = y.cur(j))) {
 					if (j == c) ctx[i].putImageData(k, 0, 0);
 					else {
 						if (t.clip && !(k = getClippedImageData(k, j))) continue;
+
+						resetCtxAlphaAndShadow(ctx.temp);
+
 						ctx.temp.clearRect(0, 0, cnv.view.width, cnv.view.height);
 						ctx.temp.putImageData(k, 0, 0);
 						if (t.blur) filterCanvas(t.blur, t.filter);
@@ -232,12 +253,17 @@ var	INFO_VERSION = 'v1.32'	//* needs complete rewrite, long ago
 						ctx[i].drawImage(cnv.temp, z = (s?s*(j-c):0), z);
 					}
 				}
-				ctx[i].globalAlpha = 1;
+
+				resetCtxAlphaAndShadow(ctx[i], oldProps);
 			}
 		}
 	,	view: function(i) {
 			if (i) draw.preload(i === 2);
 		var	y = this.history, c = y.layer, d = y.layers, a = ['lower', 'draw', 'upper'], j, k, l;
+
+		var	oldProps = getAndResetCtxAlphaAndShadow(ctx.view);
+			oldProps.globalAlpha = 1;
+
 			if (d[0].show) {
 				ctx.view.fillStyle = d[0].color;
 				ctx.view.fillRect(0, 0, cnv.view.width, cnv.view.height);
@@ -256,6 +282,8 @@ var	INFO_VERSION = 'v1.32'	//* needs complete rewrite, long ago
 				} else ctx.view.globalAlpha = 1;
 				ctx.view.drawImage(cnv[j], 0, 0);
 			}
+
+			resetCtxAlphaAndShadow(ctx.view, oldProps);
 		}
 	};
 
@@ -310,13 +338,18 @@ var	y = draw.history, c = y.layer, d = y.layers, z, u;
 //* merge down
 		if (c < 2) return;
 		if (z = y.cur()) {
+		var	oldProps = getAndResetCtxAlphaAndShadow(ctx.draw);
+			oldProps.globalAlpha = 1;
+
 			d[c].show = 0, u = y.cur(--c);
 			u ?	ctx.draw.putImageData(u, 0, 0)
 			:	ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
 			ctx.temp.putImageData(z, 0, 0);
 			ctx.draw.globalAlpha = d[y.layer--].alpha/RANGE.A.max;
 			ctx.draw.drawImage(cnv.temp, 0, 0);
-			ctx.draw.globalAlpha = 1;
+
+			resetCtxAlphaAndShadow(ctx.draw, oldProps);
+
 			historyAct();
 			cue.autoSave = 1;
 		}
@@ -495,10 +528,19 @@ var	c = cnv[i?i:i = 'temp'], x = ctx[i];
 		iiBlurCanvasRGBA(i, 0, 0, c.width, c.height, r, 0);
 	} else {
 //* dummy rescale as a fallback:
-		ctx.filter.clearRect(0, 0, c.width, c.height);
-		ctx.filter.drawImage(c, 0, 0, c.width/r, c.height/r);
+	var	oldProps = getAndResetCtxAlphaAndShadow(f = ctx.filter);
+
+		f.clearRect(0, 0, c.width, c.height);
+		f.drawImage(c, 0, 0, c.width/r, c.height/r);
+
+		resetCtxAlphaAndShadow(f, oldProps);
+
+		oldProps = getAndResetCtxAlphaAndShadow(x);
+
 		x.clearRect(0, 0, c.width, c.height);
 		x.drawImage(cnv.filter, 0, 0, c.width/r, c.height/r, 0, 0, c.width, c.height);
+
+		resetCtxAlphaAndShadow(x, oldProps);
 	}
 }
 
@@ -617,7 +659,11 @@ var	c = ii.context, d = ii.imageData, p = ii.pixels;
 
 function drawCursor() {
 var	c = ctx[mode.brushView?'draw':'view']
-,	g = (tool.align === 'grid' ? tool.grid : 1);
+,	g = (tool.align === 'grid' ? tool.grid : 1)
+	;
+
+var	oldProps = getAndResetCtxAlphaAndShadow(c);
+
 	if (g > 1) {
 	var	m, n = Math.floor(tool.width/g), o = draw.o, v = (n < 1?(n = 1):n)*g, p = DRAW_PIXEL_OFFSET, w = v+p, v = v-p;
 		for (i in DRAW_HELPER) c[i] = DRAW_HELPER[i];
@@ -645,9 +691,12 @@ var	c = ctx[mode.brushView?'draw':'view']
 		c.lineWidth = 1;
 	}
 	c.beginPath();
-	c.arc(draw.cur.x, draw.cur.y, tool.width/2, 0, 7);
+	c.arc(draw.cur.x, draw.cur.y, tool.width/2, 0, 7, false);
 	mode.brushView ? c.fill() : c.stroke();
+
 	c.globalCompositeOperation = SO;
+
+	resetCtxAlphaAndShadow(c, oldProps);
 }
 
 function drawStart(evt) {
@@ -806,9 +855,9 @@ function drawMove(evt) {
 var	s = draw.shape
 ,	sf = draw.shapeFlags
 ,	fig = draw.shapeFig
-,	redraw = true, i
+,	redraw = true
 ,	newLine = (draw.active && !draw.fig)
-,	points
+,	points, i,j,k, isCursorIn
 	;
 
 	if (mode.click) mode.click = 1;
@@ -860,13 +909,16 @@ var	s = draw.shape
 	var	t = +new Date;
 		if (t-draw.refresh > 30) draw.refresh = t; else redraw = false;		//* <- put "> 1000/N" to redraw maximum N FPS
 	}
-	if (redraw && ((i = isMouseIn()) > 0 || draw.active)) {
+	if (redraw && ((isCursorIn = isMouseIn()) > 0 || draw.active)) {
 		redraw = 0;
-		if (i || (draw.active && !mode.lowQ)) draw.preload(), ++redraw;
+		if (isCursorIn || (draw.active && !mode.lowQ)) draw.preload(), ++redraw;
 		if (draw.active) {
 			if (fig) ctx.draw.globalCompositeOperation = draw.clip;
 			if (draw.fig) {
 				draw.line.preview = true;
+
+			var	oldProps = getAndResetCtxAlphaAndShadow(ctx.draw);
+
 				if (mode.erase && (sf & 2)) {
 					ctx.draw.beginPath();
 					drawShape(ctx.draw, s, 1), ++redraw;		//* <- erase shape area
@@ -875,8 +927,11 @@ var	s = draw.shape
 					ctx.temp.beginPath();
 					drawShape(ctx.temp, s);
 					ctx.temp.stroke();
+
 					ctx.draw.drawImage(cnv.temp, 0, 0), ++redraw;
 				}
+
+				resetCtxAlphaAndShadow(ctx.draw, oldProps);
 			} else
 			if (draw.line.started) {
 
@@ -958,11 +1013,11 @@ var	s = draw.shape
 
 				ctx.draw.stroke(), ++redraw;
 			}
-		} else if (i && mode.brushView && !mode.lowQ) drawCursor(), ++redraw;
+		} else if (isCursorIn && mode.brushView && !mode.lowQ) drawCursor(), ++redraw;
 		updateDebugScreen();
 		if (redraw) {
 			draw.view();
-			if (i && !(draw.active || mode.brushView || mode.lowQ)) drawCursor();
+			if (isCursorIn && !(draw.active || mode.brushView || mode.lowQ)) drawCursor();
 		}
 	}
 	if (newLine) for (i in draw.o) draw.prev[i] = draw.cur[i];
@@ -1056,7 +1111,7 @@ var	cd = ctx.draw, v = draw.prev, r = draw.cur
 		(c?c:c = ct).moveTo(
 		(a?a:a = x)+r,
 		(b?b:b = y));
-		c.arc(a, b, r, 0, 7);
+		c.arc(a, b, r, 0, 7, false);
 	}
 
 	switch (fig) {
@@ -1144,7 +1199,7 @@ var	cd = ctx.draw, v = draw.prev, r = draw.cur
 					if (xRadius > yRadius) c.scale(x, y = yRadius/xRadius); else
 					if (xRadius < yRadius) c.scale(x = xRadius/yRadius, y);
 					c.moveTo((xCenter+xRadius)/x, yCenter/y);
-					c.arc(xCenter/x, yCenter/y, Math.max(xRadius, yRadius), 0, 7);
+					c.arc(xCenter/x, yCenter/y, Math.max(xRadius, yRadius), 0, 7, false);
 					c.restore();
 				}
 				if (clear) insideClear(cd);
@@ -1281,10 +1336,28 @@ function propSwap(a, b, c, r) {
 	return r;
 }
 
+function getAndResetCtxAlphaAndShadow(ctx, ref) {
+var	result = {};
+	if (!ref) ref = CTX_RESET_PROPS;
+	for (var i in ref) {
+		result[i] = ctx[i];
+		ctx[i] = ref[i];
+	}
+	return result;
+}
+
+function resetCtxAlphaAndShadow(ctx, ref) {
+	if (!ref) ref = CTX_RESET_PROPS;
+	for (var i in ref) {
+		ctx[i] = ref[i];
+	}
+}
+
 //* One-click all-screen manipulation *----------------------------------------
 
 function moveScreen(dx, dy, fin) {
 var	y = draw.history, l = y.layers, z = y.layer, p = draw.step, n = !mode.shape, v = cnv.view;
+
 	if (z) {
 		if (d = y.cur()) (c = ctx.draw).putImageData(d, 0, 0);
 		else return;
@@ -1298,7 +1371,12 @@ var	y = draw.history, l = y.layers, z = y.layer, p = draw.step, n = !mode.shape,
 		var	c = ctx.upper, d = c.getImageData(0, 0, v.width, v.height);
 		}
 	}
+
+var	oldProps = getAndResetCtxAlphaAndShadow(c);
+var	oldTemp = getAndResetCtxAlphaAndShadow(ctx.temp);
+
 	ctx.temp.clearRect(0, 0, v.width, v.height);
+
 	if (p) {
 		for (i in {min:0,max:0}) p[i] = {
 			x:Math[i](p.cur.x, p.prev.x)
@@ -1312,7 +1390,11 @@ var	y = draw.history, l = y.layers, z = y.layer, p = draw.step, n = !mode.shape,
 		if (n) c.clearRect(0, 0, v.width, v.height);
 		ctx.temp.putImageData(d, dx, dy);
 	}
+
 	c.drawImage(cnv.temp, 0, 0);
+
+	resetCtxAlphaAndShadow(c, oldProps);
+	resetCtxAlphaAndShadow(ctx.temp, oldTemp);
 }
 
 function fillCheck(c, returnRGBA) {
@@ -2540,8 +2622,14 @@ var	e = new Image(), i = 'lcd', lcd = getElemById(i);
 		if (t) updateDim();
 		i = draw.history, j = i.layer;
 		if (j > 0 && !i.layers[j].last && !i.cur()) tweakLayer(s.name,j,1); else newLayer(s);
+
+	var	oldProps = getAndResetCtxAlphaAndShadow(ctx.draw);
+
 		ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
 		ctx.draw.drawImage(e, 0, 0);
+
+		resetCtxAlphaAndShadow(ctx.draw, oldProps);
+
 		historyAct(s.z ? draw.time.all[1] : null);
 		cue.autoSave = 0;
 		if (d = e.parentNode) d.removeChild(e);
@@ -3092,7 +3180,22 @@ var	a = {B:'RST',W:'A'},b,c = 'canvas',d,e,f,g,h,i,j,k,l,m,n, o = outside, style
 	setContent(container = getElemById(), a), e = getElemById(c);
 	if (!e.getContext) return;
 
-	for (i in cnv) ctx[i] = (cnv[i] = (i == 'view'?e:document.createElement(c))).getContext('2d');
+	for (i in cnv) {
+	var	canvas = cnv[i] = (i == 'view'?e:document.createElement(c));
+	var	c2d = ctx[i] = canvas.getContext('2d', {
+			'alpha' : true,
+			'desynchronized' : true,	//* <- https://developers.google.com/web/updates/2019/05/desynchronized
+		});
+
+		if (TESTING) {
+			if (c2d.getContextAttributes) {
+				console.log(i, ['ctx:', c2d, 'canvas:', canvas, 'getContextAttributes:', c2d.getContextAttributes()]);
+			} else {
+				console.log(i, ['ctx:', c2d, 'canvas:', canvas]);
+			}
+		}
+	}
+
 	for (i in select.imgRes) {
 		b = o[a = i[0]]?o[a]:(o[a] = o[i]?o[i]:select.imgRes[i]);
 		for (j in cnv) cnv[j][i] = b;

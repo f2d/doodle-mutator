@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.88'
-,	INFO_DATE = '2013-04-01 — 2021-05-21'
+var	INFO_VERSION = 'v0.9.89'
+,	INFO_DATE = '2013-04-01 — 2021-05-27'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	CR = 'CanvasRecovery'
@@ -224,10 +224,12 @@ var	INFO_VERSION = 'v0.9.88'
 
 //* Set up (don't change) *----------------------------------------------------
 
+,	TESTING = false && (location.protocol === 'file:')
 ,	CUSTOM_CURSOR_DOT = false
 ,	noTransformByProp = /^Opera.* Version\D*11\.\d+$/i.test(navigator.userAgent)
 ,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)
 ,	noBorderRadius	= noTransformByProp || noShadowBlurCurve
+
 ,	regA0		= /^[rgba(]+[\d,\s]+[.0)]+$/i
 ,	regCommaSpace	= /\s*(,)[\s,]*/g
 ,	regCommaSplit	= /,\s*/
@@ -413,7 +415,7 @@ var	INFO_VERSION = 'v0.9.88'
 
 		var	c = canvas
 		,	s = select.imgSizes
-		,	i
+		,	i,j,k
 			;
 
 			if (res && mode.scale) {
@@ -422,8 +424,18 @@ var	INFO_VERSION = 'v0.9.88'
 					c[i] = orz(getElemById('img-'+i).value);
 				}
 
+				i = c2d.globalAlpha;
+				j = c2d.shadowBlur;
+				k = c2d.shadowColor;
+
+				resetCtxAlphaAndShadow(c2d);
+
 				c2s.putImageData(d, 0,0);
 				clearFill(c).drawImage(cnvHid, 0,0, d.width, d.height, 0,0, c.width, c.height);
+
+				c2d.globalAlpha = i;
+				c2d.shadowBlur = j;
+				c2d.shadowColor = k;
 
 				for (i in s) {
 					cnvHid[i] = c[i];
@@ -649,6 +661,8 @@ var	k,v,j = ' '
 
 function drawCursor() {
 var	sf = draw.shapeFlags;
+
+	resetCtxAlphaAndShadow(c2d);
 
 	if (sf & 16) {
 		for (i in DRAW_HELPER) c2d[i] = DRAW_HELPER[i];
@@ -899,7 +913,7 @@ var	redraw = true
 ,	s = draw.shape
 ,	sf = draw.shapeFlags
 ,	newLine = (draw.active && !draw.fig)
-,	points
+,	points, i,j,k
 	;
 
 	if (mode.click) {
@@ -975,11 +989,23 @@ var	redraw = true
 		if (draw.active) {
 			if (draw.fig) {
 				draw.line.preview = true;
+
+				i = c2d.globalAlpha;
+				j = c2d.shadowBlur;
+				k = c2d.shadowColor;
+
+				resetCtxAlphaAndShadow(c2d);
+
 				c2s.clearRect(0,0, canvas.width, canvas.height);
 				c2s.beginPath();
 				drawShape(c2s, (mode.step && (sf & 4) && (!draw.step || !draw.step.done) ? -1 : s));
 				c2s.stroke();
+
 				c2d.drawImage(cnvHid, 0,0);				//* <- draw 2nd canvas overlay with sole shape
+
+				c2d.globalAlpha = i;
+				c2d.shadowBlur = j;
+				c2d.shadowColor = k;
 			}
 
 			if (draw.line.started) {
@@ -1102,6 +1128,7 @@ function drawEnd(evt) {
 	var	c = c2d
 	,	s = draw.shape
 	,	sf = draw.shapeFlags
+	,	i,j,k
 		;
 
 	//* normal straight 2pt line, base for 4pt curve:
@@ -1168,7 +1195,17 @@ function drawEnd(evt) {
 		}
 
 		if (draw.text) {
+			i = c2d.globalAlpha;
+			j = c2d.shadowBlur;
+			k = c2d.shadowColor;
+
+			resetCtxAlphaAndShadow(c2d);
+
 			c2d.drawImage(cnvHid, 0,0);
+
+			c2d.globalAlpha = i;
+			c2d.shadowBlur = j;
+			c2d.shadowColor = k;
 		}
 
 		historyAct();
@@ -1565,7 +1602,8 @@ var	evt = draw.evt
 //* One-click all-screen manipulation *----------------------------------------
 
 function moveScreen(x, y) {
-var	d = draw.history.cur()
+var	i
+,	d = draw.history.cur()
 ,	p = draw.step
 ,	notCopy = !mode.shape
 	;
@@ -1669,8 +1707,14 @@ function fillScreen(i) {
 	historyAct();
 }
 
-function clearFill(c) {
-var	d = c.ctx || (c.ctx = c.getContext('2d'));
+function resetCtxAlphaAndShadow(ctx) {
+	ctx.globalAlpha = 1;
+	ctx.shadowBlur = 0;
+	ctx.shadowColor = A0;
+}
+
+function clearFill(c, param) {
+var	d = c.ctx || (c.ctx = (param ? c.getContext('2d', param) : c.getContext('2d')));
 	d.fillStyle = 'white';
 	d.fillRect(0,0, c.width, c.height);
 
@@ -2338,7 +2382,8 @@ var	i = SLIDER_LETTERS.indexOf(b)
 ,	j
 ,	r = RANGE[i > 0 ? i : 0]
 ,	k = (i < 0 ? '' : ' ['+SLIDER_LETTERS[i]+']')
-,	s = '';
+,	s = ''
+	;
 
 	for (j in r) {
 		s += '" '+j+'="'+r[j];
@@ -2460,9 +2505,10 @@ function updateShape(s) {
 		s = 0;
 	}
 
-var	c = select.shapeClass[s = orz((s||select.shape).value)]
+var	i
+,	j = []
+,	c = select.shapeClass[s = orz((s||select.shape).value)]
 ,	sf = select.shapeFlags[s]
-,	i,j = []
 	;
 
 	if (
@@ -2523,7 +2569,7 @@ function updateHistoryButtons() {
 var	a = {R : draw.history.last, U : 0}
 ,	b = 'button'
 ,	d = b+'-disabled'
-,	e
+,	e,i
 	;
 
 	for (i in a) {
@@ -2962,7 +3008,8 @@ function updateDebugScreen(lsid, refresh) {
 }
 
 function updatePosition(evt) {
-var	sf = draw.shapeFlags
+var	i
+,	sf = draw.shapeFlags
 ,	isHandDrawnLine = ((sf & 1) && !mode.shape)
 ,	isFillOnlyFigure = ((sf & 2) && mode.shape && !mode.step)
 ,	isMoveToolOrEvenWidthLine = ((sf & 4) || ((draw.active ? c2d.lineWidth : tool.width) % 2))
@@ -2972,7 +3019,7 @@ var	sf = draw.shapeFlags
 		: 0
 	)
 ,	containerOffset = getOffsetXY(draw.container)
-,	i;
+	;
 
 	evt = evt || window.event;
 	draw.o.x = evt.pageX - CANVAS_BORDER - containerOffset.x;
@@ -3078,7 +3125,8 @@ function timeElapsed() {
 }
 
 function unixDateToHMS(t,u,y) {
-var	d = (
+var	i
+,	d = (
 		t
 		? new Date(t+(t > 0 ? 0 : new Date()))
 		: new Date()
@@ -3106,7 +3154,8 @@ var	d = (
 }
 
 function getSendMeta(sz) {
-var	i,j = ', '
+var	i
+,	j = ', '
 ,	t = +new Date
 ,	u = []
 ,	a = [
@@ -3202,8 +3251,7 @@ function saveShiftUp(i) {
 	&&	i < CR.length-1
 	) {
 	var	n = i+1
-	,	d = getSaveLSDict(i
-	,	n)
+	,	d = getSaveLSDict(i,n)
 	,	m = d.sum
 	,	d = d.dict
 		;
@@ -4094,8 +4142,25 @@ var	a,b,c = 'canvas'
 		}
 	}
 
-	c2s = clearFill(cnvHid);
-	c2d = clearFill(canvas);
+	c2s = clearFill(cnvHid, {
+		'alpha' : true,
+		'desynchronized' : true,
+	});
+
+	c2d = clearFill(canvas, {
+		'alpha' : false,
+		'desynchronized' : true,	//* <- https://developers.google.com/web/updates/2019/05/desynchronized
+	});
+
+	if (TESTING) {
+		if (c2d.getContextAttributes) {
+			console.log('drawing ctx:', [c2d, 'canvas:', canvas, 'getContextAttributes:', c2d.getContextAttributes()]);
+			console.log('helper ctx:',  [c2s, 'canvas:', cnvHid, 'getContextAttributes:', c2s.getContextAttributes()]);
+		} else {
+			console.log('drawing ctx:', [c2d, 'canvas:', canvas]);
+			console.log('helper ctx:',  [c2s, 'canvas:', cnvHid]);
+		}
+	}
 
 	a = {
 		left : '←</label>'
