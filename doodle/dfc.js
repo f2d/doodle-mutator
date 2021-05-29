@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.89'
-,	INFO_DATE = '2013-04-01 — 2021-05-27'
+var	INFO_VERSION = 'v0.9.90'
+,	INFO_DATE = '2013-04-01 — 2021-05-29'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	CR = 'CanvasRecovery'
@@ -224,7 +224,7 @@ var	INFO_VERSION = 'v0.9.89'
 
 //* Set up (don't change) *----------------------------------------------------
 
-,	TESTING = false && (location.protocol === 'file:')
+,	TESTING = (location.protocol === 'file:')
 ,	CUSTOM_CURSOR_DOT = false
 ,	noTransformByProp = /^Opera.* Version\D*11\.\d+$/i.test(navigator.userAgent)
 ,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)
@@ -255,7 +255,7 @@ var	INFO_VERSION = 'v0.9.89'
 ,	t0 = +new Date
 ,	self = this
 ,	outside = this.o = {}
-,	container, canvas, c2d, cnvHid, c2s, hue, lang, i,DL,HP,LP
+,	container, hue, lang, i,DL,HP,LP
 ,	LS = window.localStorage || localStorage
 ,	isPointerEventSupported = !!window.PointerEvent
 ,	isPointerEventCoalesced = isPointerEventSupported && !!PointerEvent.prototype.getCoalescedEvents
@@ -273,6 +273,12 @@ var	INFO_VERSION = 'v0.9.89'
 	,	timer : 0
 	,	undo  : 0
 	}
+,	cnv = {
+		result : null
+	,	figure : null
+	,	helper : null
+	}
+,	ctx = {}
 ,	used = {}
 ,	cue = {upd : {}}
 ,	postingInProgress
@@ -344,7 +350,11 @@ var	INFO_VERSION = 'v0.9.89'
 						return 0;
 					}
 
-					if ((d = t.data[t.pos]) && d.timeRest && (a = d.time)) for (i in a) {
+					if (
+						(historyData = t.data[t.pos])
+					&&	historyData.timeRest
+					&&	(a = historyData.time)
+					) for (i in a) {
 						dt[i] = a[i];
 					}
 
@@ -361,7 +371,15 @@ var	INFO_VERSION = 'v0.9.89'
 							i = select.resize.value;
 							if (t.reversable == i) --t.pos;
 							else t.reversable = i;
-							for (i in select.imgSizes) cnvHid[i] = canvas[i] = orz(getElemById('img-'+i).value);
+
+							for (i in select.imgSizes) {
+							var	size = orz(getElemById('img-'+i).value);
+
+								for (k in cnv) {
+									cnv[k][i] = size;
+								}
+							}
+
 							draw.screen(1);
 						} else {
 							if (t.reversable == i) {
@@ -384,7 +402,7 @@ var	INFO_VERSION = 'v0.9.89'
 				var	a = ['all', 'activeStart', 'activeSum']
 				,	b
 				,	c = {}
-				,	d = c2d.getImageData(0,0, canvas.width, canvas.height)
+				,	historyData = ctx.result.getImageData(0,0, cnv.result.width, cnv.result.height)
 					;
 
 					for (i in a) {
@@ -392,8 +410,8 @@ var	INFO_VERSION = 'v0.9.89'
 						c[k] = (b ? (b.join ? b.slice(0) : b) : 0);
 					}
 
-					d.time = c;
-					t.data[t.data.length = t.pos] = d;
+					historyData.time = c;
+					t.data[t.data.length = t.pos] = historyData;
 				}
 
 				text.undo.textContent = t.pos+' / '+t.last+' / '+z;
@@ -401,52 +419,54 @@ var	INFO_VERSION = 'v0.9.89'
 				return 1;
 			}
 		,	storeTime : function() {
-			var	d = this.cur();
-				if (d) d.timeRest = 1;
+			var	historyData = this.cur();
+
+				if (historyData) {
+					historyData.timeRest = 1;
+				}
 			}
 		}
 	,	screen : function(res) {
-			clearFill(canvas);
+		var	historyData = this.history.cur();
 
-		var	d = this.history.cur();
-			if (!d) {
+			if (!historyData) {
+				clearFill(cnv.result);
+
 				return;
 			}
 
-		var	c = canvas
-		,	s = select.imgSizes
+		var	s = select.imgSizes
 		,	i,j,k
 			;
 
 			if (res && mode.scale) {
 				for (i in s) {
-					cnvHid[i] = d[i];
-					c[i] = orz(getElemById('img-'+i).value);
+					cnv.helper[i] = historyData[i];
+					cnv.result[i] = orz(getElemById('img-'+i).value);
 				}
 
-				i = c2d.globalAlpha;
-				j = c2d.shadowBlur;
-				k = c2d.shadowColor;
+				ctx.helper.putImageData(historyData, 0,0);
 
-				resetCtxAlphaAndShadow(c2d);
+				clearFill(cnv.result).drawImage(
+					cnv.helper
+				,	0,0
+				,	historyData.width
+				,	historyData.height
+				,	0,0
+				,	cnv.result.width
+				,	cnv.result.height
+				);
 
-				c2s.putImageData(d, 0,0);
-				clearFill(c).drawImage(cnvHid, 0,0, d.width, d.height, 0,0, c.width, c.height);
-
-				c2d.globalAlpha = i;
-				c2d.shadowBlur = j;
-				c2d.shadowColor = k;
-
-				for (i in s) {
-					cnvHid[i] = c[i];
+				for (i in s) for (k in cnv) if (cnv[k][i] != cnv.result[i]) {
+					cnv[k][i] = cnv.result[i];
 				}
 			} else {
 				if (res) {
 				var	a = select.resize.value.split(' ')
-				,	w = c.width
-				,	h = c.height
-				,	i = d.width
-				,	j = d.height
+				,	w = cnv.result.width
+				,	h = cnv.result.height
+				,	i = historyData.width
+				,	j = historyData.height
 				,	y = (a.indexOf('top') < 0 ? h-j : 0)
 				,	x = (a.indexOf('left') < 0 ? w-i : 0)
 					;
@@ -460,19 +480,20 @@ var	INFO_VERSION = 'v0.9.89'
 					;
 
 					for (i in s) {
-						if (c[i] != d[i]) {
-							cnvHid[i] = c[i] = d[i];
+						for (k in cnv) if (cnv[k][i] != historyData[i]) {
+							cnv[k][i] = historyData[i];
 						}
 
-						if (unfocused && (e = getElemById('img-'+i)).value != d[i]) {
-							e.value = d[i];
+						if (unfocused && (e = getElemById('img-'+i)).value != historyData[i]) {
+							e.value = historyData[i];
 							++dif;
 						}
 					}
 
 					if (dif) updateDimension();
 				}
-				c2d.putImageData(d, x,y);
+
+				clearFill(cnv.result).putImageData(historyData, x,y);
 			}
 		}
 	};
@@ -662,34 +683,45 @@ var	k,v,j = ' '
 function drawCursor() {
 var	sf = draw.shapeFlags;
 
-	resetCtxAlphaAndShadow(c2d);
+	resetCtxAlphaAndShadow(ctx.result);
+	resetCtxAlphaAndShadow(ctx.helper);
+
+	ctx.helper.clearRect(0,0, cnv.helper.width, cnv.helper.height);
 
 	if (sf & 16) {
-		for (i in DRAW_HELPER) c2d[i] = DRAW_HELPER[i];
+		for (i in DRAW_HELPER) ctx.helper[i] = DRAW_HELPER[i];
 
-	var	i,o = draw.o
+	var	i
+	,	o = draw.o
 	,	p = DRAW_PIXEL_OFFSET
 		;
 
-		c2d.beginPath();
-		c2d.moveTo(o.x+p, 0), c2d.lineTo(o.x+p, canvas.height);
-		c2d.moveTo(0, o.y+p), c2d.lineTo(canvas.width, o.y+p);
-		c2d.stroke();
+		ctx.helper.beginPath();
+		ctx.helper.moveTo(o.x+p, 0), ctx.helper.lineTo(o.x+p, cnv.helper.height);
+		ctx.helper.moveTo(0, o.y+p), ctx.helper.lineTo(cnv.helper.width, o.y+p);
+		ctx.helper.stroke();
 	}
 
 	if (!(sf & 128)) {
 		if (mode.brushView) {
-			c2d.fillStyle = 'rgba('+tool.color+', '+tool.opacity+')';
-			c2d.shadowColor = ((c2d.shadowBlur = tool.blur) ? 'rgb('+tool.color+')' : A0);
+			ctx.result.globalAlpha = tool.opacity;
+			ctx.helper.fillStyle = 'rgb('+tool.color/*+', '+tool.opacity*/+')';
+			ctx.helper.shadowColor = ((ctx.helper.shadowBlur = tool.blur) ? 'rgb('+tool.color+')' : A0);
 		} else {
-			for (i in DRAW_HELPER) c2d[i] = DRAW_HELPER[i];
+			for (i in DRAW_HELPER) ctx.helper[i] = DRAW_HELPER[i];
 		}
 
-		c2d.beginPath();
-		c2d.arc(draw.cur.x, draw.cur.y, tool.width/2, 0, 7, false);
-		c2d.closePath();
-		mode.brushView ? c2d.fill() : c2d.stroke();
+		ctx.helper.beginPath();
+		ctx.helper.arc(draw.cur.x, draw.cur.y, tool.width/2, 0, 7, false);
+		ctx.helper.closePath();
+
+		mode.brushView
+		? ctx.helper.fill()
+		: ctx.helper.stroke();
 	}
+
+	ctx.result.drawImage(cnv.helper, 0,0);
+	ctx.result.globalAlpha = 1;
 
 	if (!neverFlushCursor) flushCursor = true;
 }
@@ -718,7 +750,7 @@ function drawStart(evt) {
 
 	eventStop(evt).preventDefault();
 	draw.target = evt.target;
-//	canvas.focus();
+//	cnv.result.focus();
 
 	if (draw.btn && (draw.btn != evt.which)) {
 		return drawEnd();
@@ -798,16 +830,19 @@ var	i = (evt.which == 1 ? 1 : 0)
 
 	draw.fig = (mode.click == 1 || mode.shape || !(sf & 1)) && !(sf & 8);
 	draw.points = null;
+	draw.opacity = t.opacity;
 
 	t = (sf & 4 ? DRAW_HELPER : {
 		lineWidth : (pf && !mode.step ? 1 : t.width + (mode.roughLine ? ROUGH_LINE_WIDTH_FRAC : 0))
-	,	fillStyle : (fig ? 'rgba('+(mode.step ? tools[i] : t).color+', '+t.opacity+')' : A0)
-	,	strokeStyle : (fig && !(mode.step || pf) ? A0 : 'rgba('+t.color+', '+t.opacity+')')
+	,	fillStyle : (fig ? 'rgb('+(mode.step ? tools[i] : t).color/*+', '+t.opacity*/+')' : A0)
+	,	strokeStyle : (fig && !(mode.step || pf) ? A0 : 'rgb('+t.color/*+', '+t.opacity*/+')')
 	,	shadowColor : (t.blur ? 'rgb('+t.color+')' : A0)
 	,	shadowBlur : t.blur
 	});
 
-	for (i in t) c2s[i] = c2d[i] = t[i];
+	for (i in t) for (k in ctx) if (k !== 'result') {
+		ctx[k][i] = t[i];
+	}
 
 	updatePosition(evt);
 
@@ -829,15 +864,21 @@ var	i = (evt.which == 1 ? 1 : 0)
 
 	for (i in draw.o) draw.prev[i] = draw.cur[i];
 	for (i in draw.line) draw.line[i] = false;
-	for (i in select.lineCaps) c2s[i] = c2d[i] = select.options[i][select[i].value];
+	for (i in select.lineCaps) {
+	var	j = select.options[i][select[i].value];
+
+		for (k in ctx) if (k !== 'result') {
+			ctx[k][i] = j;
+		}
+	}
 
 	if (
 		(sf & 32)
 	&&	(t = getElemById('text-content').value).replace(regTrim, '').length
 	) {
 	var	i = getElemById('text-font')
-	,	f = c2d.font = DEFAULT_FONT
-	,	s = c2d.strokeStyle
+	,	f = ctx.figure.font = DEFAULT_FONT
+	,	s = ctx.figure.strokeStyle
 	,	a = draw.textAlign || 'center'
 	,	t = t.split(regVertSpace)
 		;
@@ -865,7 +906,7 @@ var	i = (evt.which == 1 ? 1 : 0)
 
 		if (isTransparent(s)) {
 			i = (draw.btn == 1 ? 1 : 0);
-			s = 'rgba('+tools[i].color+', '+tools[1-i].opacity+')';
+			s = 'rgb('+tools[i].color/*+', '+tools[1-i].opacity*/+')';
 		}
 
 		draw.text = {
@@ -873,7 +914,7 @@ var	i = (evt.which == 1 ? 1 : 0)
 		,	style : s
 		,	align : a
 		,	lines : t
-		,	offset : (k ? getTextOffsetXY(f,c2d,a,t) : {x : 0, y : 0})
+		,	offset : (k ? getTextOffsetXY(f, ctx.figure, a,t) : {x : 0, y : 0})
 		};
 	} else {
 		draw.text = 0;
@@ -883,8 +924,8 @@ var	i = (evt.which == 1 ? 1 : 0)
 		return drawEnd(evt);
 	}
 
-	c2d.beginPath();
-	c2d.moveTo(draw.cur.x, draw.cur.y);
+	ctx.figure.beginPath();
+	ctx.figure.moveTo(draw.cur.x, draw.cur.y);
 }
 
 function drawMove(evt) {
@@ -922,12 +963,12 @@ var	redraw = true
 
 	if (newLine) {
 		if (draw.line.preview) {
-			drawShape(c2d, s);
+			drawShape(s);
 		} else
 		if (draw.line.back = mode.step) {
 			if (noShadowBlurCurve) {
-				c2d.shadowColor = A0;
-				c2d.shadowBlur = 0;
+				ctx.figure.shadowColor = A0;
+				ctx.figure.shadowBlur = 0;
 			}
 
 			if (draw.line.started) {
@@ -940,7 +981,7 @@ var	redraw = true
 					,	timeStamp : evt.timeStamp
 					});
 				} else {
-					c2d.quadraticCurveTo(
+					ctx.figure.quadraticCurveTo(
 						draw.prev.x
 					,	draw.prev.y
 					,	(draw.cur.x + draw.prev.x)/2
@@ -957,7 +998,7 @@ var	redraw = true
 				,	timeStamp : evt.timeStamp
 				});
 			} else {
-				c2d.lineTo(draw.cur.x, draw.cur.y);
+				ctx.figure.lineTo(draw.cur.x, draw.cur.y);
 			}
 		}
 
@@ -965,7 +1006,7 @@ var	redraw = true
 		draw.line.started = true;
 	} else
 	if (draw.line.back) {
-		c2d.lineTo(draw.prev.x, draw.prev.y);
+		ctx.figure.lineTo(draw.prev.x, draw.prev.y);
 
 		draw.line.back = false;
 		draw.line.started = true;
@@ -982,6 +1023,8 @@ var	redraw = true
 
 		if ((flushCursor || neverFlushCursor) && !(mode.lowQ && draw.active)) {
 			draw.screen();
+
+			ctx.figure.clearRect(0,0, cnv.figure.width, cnv.figure.height);
 		}
 
 //* Redraw current active shape:
@@ -990,22 +1033,9 @@ var	redraw = true
 			if (draw.fig) {
 				draw.line.preview = true;
 
-				i = c2d.globalAlpha;
-				j = c2d.shadowBlur;
-				k = c2d.shadowColor;
+				drawShape(mode.step && (sf & 4) && (!draw.step || !draw.step.done) ? -1 : s);
 
-				resetCtxAlphaAndShadow(c2d);
-
-				c2s.clearRect(0,0, canvas.width, canvas.height);
-				c2s.beginPath();
-				drawShape(c2s, (mode.step && (sf & 4) && (!draw.step || !draw.step.done) ? -1 : s));
-				c2s.stroke();
-
-				c2d.drawImage(cnvHid, 0,0);				//* <- draw 2nd canvas overlay with sole shape
-
-				c2d.globalAlpha = i;
-				c2d.shadowBlur = j;
-				c2d.shadowColor = k;
+				ctx.figure.stroke();
 			}
 
 			if (draw.line.started) {
@@ -1050,8 +1080,8 @@ var	redraw = true
 						// console.log('isResortingNeeded:', isResortingNeeded, points);
 					}
 
-					c2d.beginPath();
-					c2d.moveTo(points[0].x, points[0].y);
+					ctx.figure.beginPath();
+					ctx.figure.moveTo(points[0].x, points[0].y);
 
 					if (points.isCurve) {
 						for (
@@ -1064,7 +1094,7 @@ var	redraw = true
 						&&	(nextPoint = points[i])
 							; ++i
 						) {
-							c2d.quadraticCurveTo(
+							ctx.figure.quadraticCurveTo(
 								prevPoint.x
 							,	prevPoint.y
 							,	(nextPoint.x + prevPoint.x)/2
@@ -1080,7 +1110,7 @@ var	redraw = true
 						&&	(nextPoint = points[i])
 							; ++i
 						) {
-							c2d.lineTo(
+							ctx.figure.lineTo(
 								nextPoint.x
 							,	nextPoint.y
 							);
@@ -1090,8 +1120,19 @@ var	redraw = true
 
 //* Redraw the plotted stroke:
 
-				c2d.stroke();
+				ctx.figure.stroke();
 			}
+
+			ctx.result.globalAlpha = draw.opacity;
+			ctx.result.drawImage(cnv.figure, 0,0);				//* <- draw 2nd canvas overlay with sole shape
+
+			if (draw.helper) {
+				ctx.result.globalAlpha = 1;
+				ctx.result.drawImage(cnv.helper, 0,0);
+
+				draw.helper = false;
+			}
+
 		} else if (neverFlushCursor && !mode.lowQ && isMouseIn()) {
 			drawCursor();
 		}
@@ -1125,8 +1166,7 @@ function drawEnd(evt) {
 	}
 
 	if (draw.active) {
-	var	c = c2d
-	,	s = draw.shape
+	var	s = draw.shape
 	,	sf = draw.shapeFlags
 	,	i,j,k
 		;
@@ -1155,58 +1195,44 @@ function drawEnd(evt) {
 
 		draw.time.all[1] = +new Date;
 		draw.screen();
-		c2d.fillStyle = c2s.fillStyle;
+
+		ctx.figure.clearRect(0,0, cnv.figure.width, cnv.figure.height);
 
 		if (draw.text) {
-			c = c2s;
-			c.beginPath();
-			c.clearRect(0,0, canvas.width, canvas.height);
-			drawShape(c, s);
+			drawShape(s);
 
 			used.shape = 'Shape';
 			used.text = 'Text';
 		} else
 		if (sf & 8) {
-			c.closePath();
+			ctx.figure.closePath();
 
 			if (mode.shape || !mode.step) {
-				c.fill(FILL_RULE);
+				ctx.figure.fill(FILL_RULE);
 			}
 
 			used.poly = 'Poly';
 		} else
 		if ((sf & 64) || (draw.fig && draw.line.preview)) {
-			c.beginPath();
-			drawShape(c, s);
+			drawShape(s);
 
 			if (!(sf & 4)) {
 				used.shape = 'Shape';
 			}
 		} else
 		if (draw.fig || draw.line.back || !draw.line.started) {//* <- draw 1 pixel on short click, regardless of mode or browser
-			c.lineTo(draw.cur.x, draw.cur.y + (draw.cur.y == draw.prev.y ? 0.01 : 0));
+			ctx.figure.lineTo(draw.cur.x, draw.cur.y + (draw.cur.y == draw.prev.y ? 0.01 : 0));
 		}
 
 		if (sf & 4) {
 			used.move = 'Move';
 		} else
 		if (!(sf & 8) || mode.step) {
-			c.stroke();
+			ctx.figure.stroke();
 		}
 
-		if (draw.text) {
-			i = c2d.globalAlpha;
-			j = c2d.shadowBlur;
-			k = c2d.shadowColor;
-
-			resetCtxAlphaAndShadow(c2d);
-
-			c2d.drawImage(cnvHid, 0,0);
-
-			c2d.globalAlpha = i;
-			c2d.shadowBlur = j;
-			c2d.shadowColor = k;
-		}
+		ctx.result.globalAlpha = draw.opacity;
+		ctx.result.drawImage(cnv.figure, 0,0);
 
 		historyAct();
 		draw.active = draw.btn = draw.step = draw.text = 0;
@@ -1227,7 +1253,7 @@ function drawEnd(evt) {
 	updateDebugScreen();
 }
 
-function drawShape(ctx, i) {
+function drawShape(i) {
 var	evt = draw.evt
 ,	s = draw.step
 ,	v = draw.prev
@@ -1235,8 +1261,12 @@ var	evt = draw.evt
 ,	AREA = 0
 	;
 
+	ctx.figure.beginPath();
+
 	switch (select.shapeModel[i] || '[') {
-	//* pan
+
+	//* pan:
+
 		case '<':
 		case '>':
 			if (
@@ -1246,10 +1276,14 @@ var	evt = draw.evt
 				moveScreen(r.x-v.x, r.y-v.y);
 			}
 		break;
-	//* rect
+
+	//* rect:
+
 		case '[':
 			if (s) {
+
 		//* show pan source area
+
 				v = s.prev;
 				r = s.cur;
 			} else {
@@ -1263,13 +1297,15 @@ var	evt = draw.evt
 				AREA = 1;
 			}
 
-			ctx.moveTo(v.x, v.y);
-			ctx.lineTo(r.x, v.y);
-			ctx.lineTo(r.x, r.y);
-			ctx.lineTo(v.x, r.y);
-			ctx.closePath();
+			ctx.figure.moveTo(v.x, v.y);
+			ctx.figure.lineTo(r.x, v.y);
+			ctx.figure.lineTo(r.x, r.y);
+			ctx.figure.lineTo(v.x, r.y);
+			ctx.figure.closePath();
 		break;
-	//* circle
+
+	//* circle:
+
 		case 'o':
 		var	x = xCenter = (v.x+r.x)/2
 		,	y = yCenter = (v.y+r.y)/2
@@ -1277,12 +1313,14 @@ var	evt = draw.evt
 		,	h = radius*2
 			;
 
-			ctx.moveTo(xCenter + radius, yCenter);
-			ctx.arc(xCenter, yCenter, radius, 0, 7, false);
-			ctx.closePath();
+			ctx.figure.moveTo(xCenter + radius, yCenter);
+			ctx.figure.arc(xCenter, yCenter, radius, 0, 7, false);
+			ctx.figure.closePath();
 			AREA = 1;
 		break;
-	//* ellipse
+
+	//* ellipse:
+
 		case 'O':
 			if (s) {
 				p = v;
@@ -1310,37 +1348,41 @@ var	evt = draw.evt
 			x = xCenter;
 			y = yCenter;
 
-			ctx.save();
+			ctx.figure.save();
 
 			if (xRadius < yRadius) {
 				xCenter /= a = xRadius/yRadius;
-				ctx.scale(a, b);
+				ctx.figure.scale(a, b);
 			} else
 			if (xRadius > yRadius) {
 				yCenter /= b = yRadius/xRadius;
-				ctx.scale(a, b);
+				ctx.figure.scale(a, b);
 			}
 
 			if (s) {
+
 		//* speech balloon
+
 			var	a = q.x/a
 			,	b = q.y/b
 			,	a1 = (Math.min(radius/8, TAIL_WIDTH) + tool.width)/8/radius*p2
 			,	a2 = Math.atan2(b-yCenter, a-xCenter)
 				;
 
-				ctx.moveTo(a, b);
-				ctx.arc(xCenter, yCenter, radius, a1+a2, p2-a1+a2, false);
+				ctx.figure.moveTo(a, b);
+				ctx.figure.arc(xCenter, yCenter, radius, a1+a2, p2-a1+a2, false);
 			} else {
-				ctx.moveTo(xCenter + xRadius/a, yCenter);
-				ctx.arc(xCenter, yCenter, radius, 0, p2, false);
+				ctx.figure.moveTo(xCenter + xRadius/a, yCenter);
+				ctx.figure.arc(xCenter, yCenter, radius, 0, p2, false);
 			}
 
-			ctx.closePath();
-			ctx.restore();
+			ctx.figure.closePath();
+			ctx.figure.restore();
 			AREA = 1;
 		break;
-	//* speech box
+
+	//* speech box:
+
 		case '{':
 			if (s) {
 				p = v;
@@ -1381,7 +1423,7 @@ var	evt = draw.evt
 				;
 
 				if (isNaN(xTail) || isNaN(yTail)) {
-					ctx.moveTo(xCenter - xRadius, yCenter);
+					ctx.figure.moveTo(xCenter - xRadius, yCenter);
 				} else {
 				var	w = Math.min(r1, TAIL_WIDTH/2) + tool.width
 				,	x = xTail-xCenter
@@ -1415,7 +1457,7 @@ var	evt = draw.evt
 						--i;
 					}
 
-					ctx.moveTo(xTail, yTail);
+					ctx.figure.moveTo(xTail, yTail);
 					drawTailPart(tc-w);
 				}
 
@@ -1444,7 +1486,7 @@ var	evt = draw.evt
 							td = -td;
 						}
 
-						ctx.lineTo(
+						ctx.figure.lineTo(
 							xCenter + ac*rc + as*td
 						,	yCenter + as*rc + ac*td
 						);
@@ -1458,7 +1500,7 @@ var	evt = draw.evt
 				,	a3 = a1-(f = -f)
 					;
 
-					ctx.arc(
+					ctx.figure.arc(
 						xCenter + Math.cos(a3)*d - Math.cos(a1)*r
 					,	yCenter + Math.sin(a3)*d - Math.sin(a1)*r
 					,	roundRadius
@@ -1478,7 +1520,7 @@ var	evt = draw.evt
 					drawTailPart(te, 1);
 				}
 
-				ctx.closePath();
+				ctx.figure.closePath();
 			}
 
 			if (s && s.done) {
@@ -1502,45 +1544,41 @@ var	evt = draw.evt
 
 			AREA = 1;
 		break;
-	//* line
+
+	//* line:
+
 		default:
 			if (s) {
 			var	d = r
 			,	w = s.prev
 			,	u = s.cur
-			,	old = {}
-			,	t = DRAW_HELPER
 				;
 
 		//* curve helpers
 
-				for (i in t) {
-					old[i] = c2s[i];
-					c2s[i] = t[i];
-				}
+				draw.helper = true;
 
-				c2s.beginPath();
+				ctx.helper.clearRect(0,0, cnv.helper.width, cnv.helper.height);
+				ctx.helper.beginPath();
+
+				for (i in DRAW_HELPER) ctx.helper[i] = DRAW_HELPER[i];
 
 		//* control point 1 phantom
 
-				c2s.moveTo(u.x, u.y);
-				c2s.lineTo(w.x, w.y);
+				ctx.helper.moveTo(u.x, u.y);
+				ctx.helper.lineTo(w.x, w.y);
 
 		//* control point 2 phantom
 
 				if (w.x != v.x || w.y != v.y) {
-					c2s.moveTo(d.x, d.y), d = v;
-					c2s.lineTo(d.x, d.y);
+					ctx.helper.moveTo(d.x, d.y), d = v;
+					ctx.helper.lineTo(d.x, d.y);
 				}
 
-				c2s.stroke();
+				ctx.helper.stroke();
 
-				for (i in t) {
-					c2s[i] = old[i];
-				}
-
-				c2s.beginPath();
 		//* curve
+
 			var	swapKey = (evt && (evt.altKey || evt.ctrlKey || evt.shiftKey))
 			,	swapPoint1 = (s.done ? s.swap : swapKey)
 			,	swapPoint2 = (s.done ? !swapKey : swapKey)
@@ -1550,21 +1588,23 @@ var	evt = draw.evt
 			,	linePoint2 = (swapPoint2 ? d : r)
 				;
 
-				ctx.moveTo(linePoint1.x, linePoint1.y);
-				ctx.bezierCurveTo(
+				ctx.figure.moveTo(linePoint1.x, linePoint1.y);
+				ctx.figure.bezierCurveTo(
 					ctrlPoint1.x, ctrlPoint1.y
 				,	ctrlPoint2.x, ctrlPoint2.y
 				,	linePoint2.x, linePoint2.y
 				);
 			} else {
+
 		//* straight
-				ctx.moveTo(v.x, v.y);
-				ctx.lineTo(r.x, r.y);
+
+				ctx.figure.moveTo(v.x, v.y);
+				ctx.figure.lineTo(r.x, r.y);
 			}
 	}
 
-	if (AREA && !isTransparent(ctx.fillStyle)) {
-		ctx.fill(FILL_RULE);
+	if (AREA && !isTransparent(ctx.figure.fillStyle)) {
+		ctx.figure.fill(FILL_RULE);
 	}
 
 	if (draw.text) {
@@ -1576,27 +1616,28 @@ var	evt = draw.evt
 
 		if (!o.y) {
 			f = Math.round(h/(t.length*2-1))+'px '+f;
-			o = getTextOffsetXY(f, ctx, d.align, t);
+			o = getTextOffsetXY(f, ctx.figure, d.align, t);
 		}
 
 		h = o.y*2;
 		x += o.x;
 		y -= h/2*(t.length-1);
-		ctx.save();
-		ctx.clip();
-		ctx.font = f;
-		ctx.fillStyle = d.style;
-		ctx.textAlign = d.align;
-		ctx.textBaseline = 'middle';
+		ctx.figure.save();
+		ctx.figure.clip();
+		ctx.figure.font = f;
+		ctx.figure.fillStyle = d.style;
+		ctx.figure.textAlign = d.align;
+		ctx.figure.textBaseline = 'middle';
 
 		for (i in t) {
-			ctx.fillText(t[i], Math.round(x), Math.round(y));
+			ctx.figure.fillText(t[i], Math.round(x), Math.round(y));
 			y += h;
 		}
 
-		ctx.restore();
+		ctx.figure.restore();
 	}
-	ctx.moveTo(r.x, r.y);
+
+	ctx.figure.moveTo(r.x, r.y);
 }
 
 //* One-click all-screen manipulation *----------------------------------------
@@ -1608,7 +1649,7 @@ var	i
 ,	notCopy = !mode.shape
 	;
 
-	c2d.fillStyle = 'rgb(' + tools[1].color + ')';
+	ctx.result.fillStyle = 'rgb(' + tools[1].color + ')';
 
 	if (p) {
 		for (i in {min : 0, max : 0}) {
@@ -1622,16 +1663,16 @@ var	i
 		p.max.y -= p.min.y;
 
 		if (notCopy) {
-			c2d.fillRect(p.min.x, p.min.y, p.max.x, p.max.y);
+			ctx.result.fillRect(p.min.x, p.min.y, p.max.x, p.max.y);
 		}
 
-		c2d.putImageData(d, x,y, p.min.x, p.min.y, p.max.x, p.max.y);
+		ctx.result.putImageData(d, x,y, p.min.x, p.min.y, p.max.x, p.max.y);
 	} else {
 		if (notCopy) {
-			c2d.fillRect(0,0, canvas.width, canvas.height);
+			ctx.result.fillRect(0,0, cnv.result.width, cnv.result.height);
 		}
 
-		c2d.putImageData(d, x,y);
+		ctx.result.putImageData(d, x,y);
 	}
 }
 
@@ -1651,7 +1692,7 @@ var	c = draw.history.cur()
 function fillScreen(i) {
 	if (isNaN(i)) {
 		used.wipe = 'Wipe';
-		c2d.clearRect(0,0, canvas.width, canvas.height);
+		ctx.result.clearRect(0,0, cnv.result.width, cnv.result.height);
 	} else
 	if (i < 0) {
 		historyAct('flip');	//* <- only push history 1 time for all consecutive attempts with same label
@@ -1668,8 +1709,8 @@ function fillScreen(i) {
 		} else {
 		var	hw = d.width
 		,	hh = d.height
-		,	w = canvas.width
-		,	h = canvas.height
+		,	w = cnv.result.width
+		,	h = cnv.result.height
 		,	hr = (i == -2)
 		,	l = (hr ? w : h)/2
 		,	j,k,m,n,x,y
@@ -1678,8 +1719,8 @@ function fillScreen(i) {
 			if (hr) used.flip_h = 'Hor.Flip';
 			else	used.flip_v = 'Ver.Flip';
 
-			x = canvas.width; while (x--) if ((!hr || x >= l) && x < hw) {
-			y = canvas.height; while (y--) if ((hr || y >= l) && y < hh) {
+			x = cnv.result.width; while (x--) if ((!hr || x >= l) && x < hw) {
+			y = cnv.result.height; while (y--) if ((hr || y >= l) && y < hh) {
 				m = (hr ? w-x-1 : x);
 				n = (hr ? y : h-y-1);
 				i = (x+y*hw)*(k = 4);
@@ -1694,13 +1735,13 @@ function fillScreen(i) {
 			}}
 		}
 
-		c2d.putImageData(d, 0,0);
+		ctx.result.putImageData(d, 0,0);
 
 		return;
 	} else {
 		used.fill = 'Fill';
-		c2d.fillStyle = 'rgb(' + tools[i].color + ')';
-		c2d.fillRect(0,0, canvas.width, canvas.height);
+		ctx.result.fillStyle = 'rgb(' + tools[i].color + ')';
+		ctx.result.fillRect(0,0, cnv.result.width, cnv.result.height);
 	}
 
 	cue.autoSave = 0;
@@ -1711,14 +1752,16 @@ function resetCtxAlphaAndShadow(ctx) {
 	ctx.globalAlpha = 1;
 	ctx.shadowBlur = 0;
 	ctx.shadowColor = A0;
+
+	return ctx;
 }
 
-function clearFill(c, param) {
-var	d = c.ctx || (c.ctx = (param ? c.getContext('2d', param) : c.getContext('2d')));
-	d.fillStyle = 'white';
-	d.fillRect(0,0, c.width, c.height);
+function clearFill(canvas, param) {
+var	ctx = resetCtxAlphaAndShadow(canvas.ctx || (canvas.ctx = (param ? canvas.getContext('2d', param) : canvas.getContext('2d'))));
+	ctx.fillStyle = 'white';
+	ctx.fillRect(0,0, canvas.width, canvas.height);
 
-	return d;
+	return ctx;
 }
 
 function pickColor(evt, e, keep) {
@@ -1769,7 +1812,7 @@ function pickColor(evt, e, keep) {
 //* from drawing container:
 
 	if (!d) {
-		c = (Math.floor(draw.o.x) + Math.floor(draw.o.y)*canvas.width)*4;
+		c = (Math.floor(draw.o.x) + Math.floor(draw.o.y)*cnv.result.width)*4;
 		d = draw.history.cur().data;
 	}
 
@@ -2492,7 +2535,7 @@ function updateSliders(s) {
 	if (draw.o.length) {
 		drawEnd();
 		s = tool.width+4;
-		c2d.putImageData(draw.history.cur(), 0,0, draw.o.x - s/2, draw.o.y - s/2, s, s);
+		ctx.result.putImageData(draw.history.cur(), 0,0, draw.o.x - s/2, draw.o.y - s/2, s, s);
 		drawCursor();
 	}
 
@@ -2558,8 +2601,8 @@ function checkTextStyle(e, test) {
 var	v = (e.value ? (e.value = getSpaceReduced(e.value)) : e);
 
 	if (test) {
-		c2d.font = v;
-		return (c2d.font === v);
+		ctx.result.font = v;
+		return (ctx.result.font === v);
 	}
 
 	return false;
@@ -2588,7 +2631,7 @@ var	i = e.id.slice(-1);
 		e.title = (
 			e.title.replace(regTailBrackets, '')
 		+	' ('
-		+	(canvas.toDataURL({J : IJ, P : ''}[i]).length / 1300).toFixed(0)
+		+	(cnv.result.toDataURL({J : IJ, P : ''}[i]).length / 1300).toFixed(0)
 		+	' KB)'
 		);
 	}
@@ -2597,8 +2640,7 @@ var	i = e.id.slice(-1);
 function updateResize(e) {
 	if (e.value == 'auto crop') {
 		if (d = draw.history.cur()) {
-		var	c = c2d.canvas
-		,	d,a = d.data
+		var	d,a = d.data
 		,	i = a.length
 		,	j = i-4
 		,	k,z,x,y = 0
@@ -2632,24 +2674,24 @@ function updateResize(e) {
 					break ltr;
 				}
 //* draw cut box:
-				if (x || y || w != c.width || h != c.height) {
-					c2d.save();
-					for (i in DRAW_HELPER) c2d[i] = DRAW_HELPER[i];
+				if (x || y || w != cnv.result.width || h != cnv.result.height) {
+					ctx.result.save();
+					for (i in DRAW_HELPER) ctx.result[i] = DRAW_HELPER[i];
 					i = DRAW_PIXEL_OFFSET;
-					c2d.translate(i,i);
-					c2d.beginPath();
-					c2d.moveTo(x, 0), c2d.lineTo(x, c.height), z = x+w;
-					c2d.moveTo(z, 0), c2d.lineTo(z, c.height);
-					c2d.moveTo(0, y), c2d.lineTo(c.width, y), z = y+h;
-					c2d.moveTo(0, z), c2d.lineTo(c.width, z);
-					c2d.stroke();
-					c2d.restore();
+					ctx.result.translate(i,i);
+					ctx.result.beginPath();
+					ctx.result.moveTo(x, 0), ctx.result.lineTo(x, cnv.result.height), z = x+w;
+					ctx.result.moveTo(z, 0), ctx.result.lineTo(z, cnv.result.height);
+					ctx.result.moveTo(0, y), ctx.result.lineTo(cnv.result.width, y), z = y+h;
+					ctx.result.moveTo(0, z), ctx.result.lineTo(cnv.result.width, z);
+					ctx.result.stroke();
+					ctx.result.restore();
 //* save:
 					if (confirm('x = '+x+', y = '+y+'\nw = '+w+', h = '+h)) {
-						c2s.putImageData(d, 0,0);
-						d = c2s.getImageData(x,y, w,h);
+						ctx.helper.putImageData(d, 0,0);
+						d = ctx.helper.getImageData(x,y, w,h);
 						updateDimension(w,h);
-						c2d.putImageData(d, 0,0);
+						ctx.result.putImageData(d, 0,0);
 						historyAct();
 					}
 				} else {
@@ -2666,19 +2708,21 @@ function updateResize(e) {
 }
 
 function updateDimension(e,h) {
-var	c = canvas;
-
 	if (e && e.id) {
 	var	i = mode.scale
-	,	a = (i == 'W' || i == 'H' ? c.width/c.height : 0)
+	,	a = (i == 'W' || i == 'H' ? cnv.result.width / cnv.result.height : 0)
 	,	i = getLastWord(e.id)
 	,	v = orz(e.value)
 		;
 
-		cnvHid[i] = c[i] = e.value = v = (
+	var	size = e.value = v = (
 			v < (b = select.imgLimits[i][0]) ? b : (
 			v > (b = select.imgLimits[i][1]) ? b : v)
 		);
+
+		for (k in cnv) if (cnv[k][i] != size) {
+			cnv[k][i] = size;
+		}
 
 		if (a) {
 			if (i == 'width') {
@@ -2689,7 +2733,11 @@ var	c = canvas;
 				b = 'width';
 			}
 
-			cnvHid[b] = c[b] = getElemById('img-'+b).value = Math.max(1, Math.round(a));
+		var	otherSide = getElemById('img-'+b).value = Math.max(1, Math.round(a));
+
+			for (k in cnv) if (cnv[k][b] != otherSide) {
+				cnv[k][b] = otherSide;
+			}
 		}
 
 		historyAct(mode.scale ? 'rescale' : 'resize');
@@ -2703,7 +2751,11 @@ var	c = canvas;
 		}
 
 		for (i in select.imgSizes) {
-			getElemById('img-'+i).value = cnvHid[i] = c[i] = orz(e[i]);
+		var	size = getElemById('img-'+i).value = orz(e[i]);
+
+			for (k in cnv) if (cnv[k][i] != size) {
+				cnv[k][i] = size;
+			}
 		}
 	}
 
@@ -2713,7 +2765,7 @@ var	c = canvas;
 	,	i = getElemById('info').style
 		;
 
-		if (canvas.height < BOTH_PANELS_HEIGHT) {
+		if (cnv.result.height < BOTH_PANELS_HEIGHT) {
 		var	a = (b.className.indexOf('active') >= 0)
 		,	v = 'none'
 			;
@@ -2728,7 +2780,7 @@ var	c = canvas;
 
 	c = container.style;
 	b = 'minWidth';
-	a = (v = canvas.width+getElemById('right').offsetWidth+14)+'px';
+	a = (v = cnv.result.width+getElemById('right').offsetWidth+14)+'px';
 
 	if (c[b] != a) {
 		c[b] = a;
@@ -3012,7 +3064,7 @@ var	i
 ,	sf = draw.shapeFlags
 ,	isHandDrawnLine = ((sf & 1) && !mode.shape)
 ,	isFillOnlyFigure = ((sf & 2) && mode.shape && !mode.step)
-,	isMoveToolOrEvenWidthLine = ((sf & 4) || ((draw.active ? c2d.lineWidth : tool.width) % 2))
+,	isMoveToolOrEvenWidthLine = ((sf & 4) || ((draw.active ? ctx.result.lineWidth : tool.width) % 2))
 ,	toolOffset = (
 		isMoveToolOrEvenWidthLine && !isFillOnlyFigure
 		? DRAW_PIXEL_OFFSET
@@ -3035,8 +3087,8 @@ var	i
 		if (draw.angle    ) cursorOffset.a -= draw.aRad;
 		if (draw.zoom != 1) cursorOffset.d /= draw.zoom;
 
-		draw.o.x = Math.cos(cursorOffset.a) * cursorOffset.d + canvas.width/2;
-		draw.o.y = Math.sin(cursorOffset.a) * cursorOffset.d + canvas.height/2;
+		draw.o.x = Math.cos(cursorOffset.a) * cursorOffset.d + cnv.result.width/2;
+		draw.o.y = Math.sin(cursorOffset.a) * cursorOffset.d + cnv.result.height/2;
 
 		toolOffset = 0;
 	}
@@ -3070,8 +3122,8 @@ function getCursorRad(r, x, y) {
 		};
 	}
 
-	x = (isNaN(x) ? draw.cur.x : x) - canvas.width/2;
-	y = (isNaN(y) ? draw.cur.y : y) - canvas.height/2;
+	x = (isNaN(x) ? draw.cur.x : x) - cnv.result.width/2;
+	y = (isNaN(y) ? draw.cur.y : y) - cnv.result.height/2;
 
 	return (
 		r
@@ -3103,8 +3155,8 @@ function isMouseIn() {
 	return (
 		draw.o.x >= 0
 	&&	draw.o.y >= 0
-	&&	draw.o.x < canvas.width
-	&&	draw.o.y < canvas.height
+	&&	draw.o.x < cnv.result.width
+	&&	draw.o.y < cnv.result.height
 	);
 }
 
@@ -3163,11 +3215,11 @@ var	i
 	,	'draw_time: '+draw.time.all.join('-')
 	,	'active_time: '+draw.time.sum()
 	,	'app: '+NS+' '+INFO_VERSION
-	,	'pixels: '+canvas.width+'x'+canvas.height
+	,	'pixels: '+cnv.result.width+'x'+cnv.result.height
 	,	'bytes: '+(
 			sz || [
-				'png = '+ canvas.toDataURL().length
-			,	'jpg = '+ canvas.toDataURL(IJ).length
+				'png = '+ cnv.result.toDataURL().length
+			,	'jpg = '+ cnv.result.toDataURL(IJ).length
 			].join(j)
 		)
 	];
@@ -3372,7 +3424,7 @@ var	t = (lsid > 0)
 			c = (
 				t
 				? LS[CR[lsid].R]
-				: canvas.toDataURL(dest ? IJ : '')
+				: cnv.result.toDataURL(dest ? IJ : '')
 			)
 		,	'_'+(
 				t
@@ -3386,7 +3438,7 @@ var	t = (lsid > 0)
 //* save to memory:
 
 	case 2:
-		c = canvas.toDataURL();
+		c = cnv.result.toDataURL();
 
 		if (!c || fillCheck())	return a ? c : alert(lang.no.drawn);
 		if (!LS)		return a ? c : alert(lang.no.LS);
@@ -3459,7 +3511,7 @@ var	t = (lsid > 0)
 			return 0;
 		}
 
-		c = canvas.toDataURL();
+		c = cnv.result.toDataURL();
 		j = CR.length;
 		i = seekSavePos(lsid || lastUsedSaveSlot+1) || seekSavePos();
 		lastUsedSaveSlot = 0;
@@ -3528,8 +3580,8 @@ var	t = (lsid > 0)
 			a = select.imgLimits;
 
 			for (i in a) if (
-				canvas[i] < a[i][0]
-			||	canvas[i] > a[i][1]
+				cnv.result[i] < a[i][0]
+			||	cnv.result[i] > a[i][1]
 			) {
 				j = a.width.length;
 				confirmationText = lang.confirm.size.map(
@@ -3548,7 +3600,7 @@ var	t = (lsid > 0)
 			;
 
 			e = pngData.length;
-			c = canvas;
+			c = cnv.result;
 			d = select.imgSizes;
 			c = c.width * c.height;
 			d = d.width * d.height;
@@ -3646,7 +3698,7 @@ var	t = (lsid > 0)
 				f.encoding = f.enctype = 'multipart/form-data';
 
 				confirmationText = (
-					canvas.width + 'x' + canvas.height
+					cnv.result.width + 'x' + cnv.result.height
 				+	', '
 				+	dataSize + ' ' + lang.bytes
 				+	', '
@@ -3681,9 +3733,9 @@ var	t = (lsid > 0)
 
 //* Use less traffic in modern browsers with blob uploaded as file:
 
-			if (canvas.toBlob) {
+			if (cnv.result.toBlob) {
 				try {
-					canvas.toBlob(
+					cnv.result.toBlob(
 						sendAfterConfirmation
 					,	isSendingAsJpg ? IJ : ''
 					);
@@ -3732,7 +3784,7 @@ var	e = new Image();
 
 	//* actual work:
 
-		var	d = canvas
+		var	d = cnv.result
 		,	i = mode.scale
 			;
 
@@ -4122,14 +4174,23 @@ var	a,b,c = 'canvas'
 	+	d+'debug"></div>'
 	);
 
-	if (!(canvas = getElemById(c)).getContext) {
-		return;
+
+	for (k in cnv) {
+		if (k === 'result') {
+			if (!(cnv[k] = getElemById(c)).getContext) {
+				return;
+			}
+		} else {
+			cnv[k] = cre(c);
+		}
 	}
 
-	cnvHid = cre(c);
-
 	for (i in select.imgSizes) {
-		cnvHid[i] = canvas[i] = (o[a = i[0]] || (o[a] = o[i] || select.imgSizes[i]));
+	var	size = (o[a = i[0]] || (o[a] = o[i] || select.imgSizes[i]));
+
+		for (k in cnv) {
+			cnv[k][i] = size;
+		}
 
 		if (
 			(o[b = a+'l'] || o[b = i+'Limit'])
@@ -4142,23 +4203,18 @@ var	a,b,c = 'canvas'
 		}
 	}
 
-	c2s = clearFill(cnvHid, {
-		'alpha' : true,
-		'desynchronized' : true,
-	});
+	for (k in cnv) {
+		ctx[k] = clearFill(cnv[k], {
+			'alpha' : (k !== 'result'),
+			'desynchronized' : true,	//* <- https://developers.google.com/web/updates/2019/05/desynchronized
+		});
 
-	c2d = clearFill(canvas, {
-		'alpha' : false,
-		'desynchronized' : true,	//* <- https://developers.google.com/web/updates/2019/05/desynchronized
-	});
-
-	if (TESTING) {
-		if (c2d.getContextAttributes) {
-			console.log('drawing ctx:', [c2d, 'canvas:', canvas, 'getContextAttributes:', c2d.getContextAttributes()]);
-			console.log('helper ctx:',  [c2s, 'canvas:', cnvHid, 'getContextAttributes:', c2s.getContextAttributes()]);
-		} else {
-			console.log('drawing ctx:', [c2d, 'canvas:', canvas]);
-			console.log('helper ctx:',  [c2s, 'canvas:', cnvHid]);
+		if (TESTING) {
+			if (ctx[k].getContextAttributes) {
+				console.log(k, 'ctx:', [ctx[k], 'canvas:', cnv[k], 'getContextAttributes:', ctx[k].getContextAttributes()]);
+			} else {
+				console.log(k, 'ctx:', [ctx[k], 'canvas:', cnv[k]]);
+			}
 		}
 	}
 
@@ -4370,7 +4426,7 @@ var	a,b,c = 'canvas'
 		}
 	}
 
-	if (canvas.height < BOTH_PANELS_HEIGHT) {
+	if (cnv.result.height < BOTH_PANELS_HEIGHT) {
 		toggleView('info');
 	} else {
 		setClass(getElemById(b+'H'), b+'-active');
@@ -4472,7 +4528,7 @@ var	a,b,c = 'canvas'
 	);
 
 	addEventListeners(
-		canvas
+		cnv.result
 	,	{
 			'scroll' :	f = stopScroll	//* <- against FireFox always scrolling on mousewheel
 		,	'contextmenu' :	f
