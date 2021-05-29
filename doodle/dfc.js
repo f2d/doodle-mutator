@@ -4645,9 +4645,28 @@ var	o = outside
 
 	j = SHAPE_HOTKEYS.split('').join(k = ', ');
 
-	if (!o.lang) {
-		o.lang = document.documentElement.lang || 'en';
+var	SUPPORTED_LANGS = ['en', 'ru'];
+
+	function getSupportedPreferredLang(lastResult, nextValue) {
+		return lastResult || (
+			!nextValue
+			? lastResult
+			:
+			nextValue.reduce
+			? nextValue.reduce(getSupportedPreferredLang, lastResult)
+			:
+			SUPPORTED_LANGS.indexOf(nextValue) < 0
+			? lastResult
+			: nextValue
+		);
 	}
+
+	if (!o.lang) o.lang = getSupportedPreferredLang(null, [
+		document.documentElement.lang
+	,	navigator.languages
+	,	navigator.language
+	,	'en'
+	]);
 
 	if (o.lang == 'ru') {
 		r = ' браузера (содержит очередь из '+o.save+' позиций максимум).';

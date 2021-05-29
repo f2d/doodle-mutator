@@ -3521,7 +3521,28 @@ var	o = outside
 	o.undo = draw.history.max = getNumClamped(o.undo, 99);
 	o.idle = draw.time.idle = getNumClamped(o.idle, 60)*1000;
 
-	if (!o.lang) o.lang = document.documentElement.lang || 'en';
+var	SUPPORTED_LANGS = ['en', 'ru'];
+
+	function getSupportedPreferredLang(lastResult, nextValue) {
+		return lastResult || (
+			!nextValue
+			? lastResult
+			:
+			nextValue.reduce
+			? nextValue.reduce(getSupportedPreferredLang, lastResult)
+			:
+			SUPPORTED_LANGS.indexOf(nextValue) < 0
+			? lastResult
+			: nextValue
+		);
+	}
+
+	if (!o.lang) o.lang = getSupportedPreferredLang(null, [
+		document.documentElement.lang
+	,	navigator.languages
+	,	navigator.language
+	,	'en'
+	]);
 
 //* translation: Russian *-----------------------------------------------------
 

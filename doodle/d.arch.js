@@ -36,9 +36,17 @@
 ,	thisPage
 ,	timeRange
 
+,	SUPPORTED_LANGS = ['en', 'ru']
+
 ,	la
-,	langs = ['en', 'ru']
-,	lang = getActiveLang() || 'en';
+,	lang = getSupportedPreferredLang(null, [
+		getCookie('lang')
+	,	(LS ? LS.lang : null)
+	,	navigator.languages
+	,	navigator.language
+	,	document.documentElement.lang
+	,	'en'
+	]);
 
 //* UI translation *-----------------------------------------------------------
 
@@ -158,13 +166,17 @@ function eventStop(e,i,d) {
 	return e;
 }
 
-function getActiveLang() {
-	return (
-		getCookie('lang')
-	||	(LS ? LS.lang : null)
-	||	(navigator.languages ? navigator.languages.reduce(function(r,v) { return r || (langs.indexOf(v) < 0 ? r : v); }, null) : null)
-	||	navigator.language
-	||	document.documentElement.lang
+function getSupportedPreferredLang(lastResult, nextValue) {
+	return lastResult || (
+		!nextValue
+		? lastResult
+		:
+		nextValue.reduce
+		? nextValue.reduce(getSupportedPreferredLang, lastResult)
+		:
+		SUPPORTED_LANGS.indexOf(nextValue) < 0
+		? lastResult
+		: nextValue
 	);
 }
 
