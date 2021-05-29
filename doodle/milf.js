@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v1.33'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2021-05-27'
+var	INFO_VERSION = 'v1.34'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2021-05-29'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -2004,14 +2004,19 @@ function updateDim(i) {
 		if (v > c) //historyAct(0),
 			draw.view(2);
 	}
-	c = container.style, b = 'minWidth', a = (v = cnv.view.width)+'px';
+
+var	k, fun, size = cnv.view.width;
+	c = container.style, b = 'minWidth', a = size+'px';
+
 	if (c[b] != a) {
 		c[b] = a;
-		if (a = outside[i = 'resize_style']) {
-			v += 24;
-			if ((e = outside.resize_min_id) && (e = document.getElementById(e)) && (e = e.offsetWidth) && e > v) v = e;
-			c = getElemById(i) || setId(cre('style'), i);
-			c.innerHTML = a+'{max-width:'+v+'px;}';
+
+		if (
+			(k = outside.resize_callback)
+		&&	(fun = window[k] || self[k])
+		&&	typeof fun === 'function'
+		) {
+			fun(size);
 		}
 	}
 }
@@ -2553,24 +2558,30 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view, canvas = v;
 				+	confirmationText
 				);
 
+				function onError(evt) {
+					console.error(evt);
+
+					postingInProgress = false;
+				}
+
 				if (confirm(confirmationText)) {
 					try {
 						postingInProgress = true;
 
+					var	k, fun;
+
 						if (
-							(i = outside.check)
-						&&	(e = getElemById(i))
+							(k = outside.send_callback)
+						&&	(fun = window[k] || self[k])
+						&&	typeof fun === 'function'
 						) {
-							e.setAttribute('data-id', f.id);
-							e.click();
+							fun(f, onError);
 						} else {
 							f.submit();
 						}
 
 					} catch (error) {
-						console.error(error);
-
-						postingInProgress = false;
+						onError(error);
 					}
 				}
 			}

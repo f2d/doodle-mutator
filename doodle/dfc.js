@@ -5,7 +5,7 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.90'
+var	INFO_VERSION = 'v0.9.91'
 ,	INFO_DATE = '2013-04-01 — 2021-05-29'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
@@ -2778,27 +2778,23 @@ function updateDimension(e,h) {
 		}
 	}
 
-	c = container.style;
-	b = 'minWidth';
-	a = (v = cnv.result.width+getElemById('right').offsetWidth+14)+'px';
+var	k
+,	fun
+,	size = cnv.result.width + getElemById('right').offsetWidth + 14
+,	c = container.style
+,	b = 'minWidth'
+,	a = size+'px'
+	;
 
 	if (c[b] != a) {
 		c[b] = a;
 
-		if (a = outside[i = 'resize_style']) {
-			v += 24;
-
-			if (
-				(e = outside.resize_min_id)
-			&&	(e = getElemById(e))
-			&&	(e = e.offsetWidth)
-			&&	e > v
-			) {
-				v = e;
-			}
-
-			c = getElemById(i) || setId(cre('style', getElemById()), i);
-			c.innerHTML = a+'{max-width:'+v+'px;}';
+		if (
+			(k = outside.resize_callback)
+		&&	(fun = window[k] || self[k])
+		&&	typeof fun === 'function'
+		) {
+			fun(size);
 		}
 	}
 }
@@ -3561,7 +3557,7 @@ var	t = (lsid > 0)
 			(a = lsid)
 		||	(
 				(outside.read || (outside.read = getElemById('read')))
-			&&	(a = outside.read.value)
+			&&	(a = outside.read.value || outside.read)
 			)
 		) {
 			draw.time.act(1);
@@ -3709,24 +3705,30 @@ var	t = (lsid > 0)
 				+	confirmationText
 				);
 
+				function onError(evt) {
+					console.error(evt);
+
+					postingInProgress = false;
+				}
+
 				if (confirm(confirmationText)) {
 					try {
 						postingInProgress = true;
 
+					var	k, fun;
+
 						if (
-							(i = outside.check)
-						&&	(e = getElemById(i))
+							(k = outside.send_callback)
+						&&	(fun = window[k] || self[k])
+						&&	typeof fun === 'function'
 						) {
-							e.setAttribute('data-id', f.id);
-							e.click();
+							fun(f, onError);
 						} else {
 							f.submit();
 						}
 
 					} catch (error) {
-						console.error(error);
-
-						postingInProgress = false;
+						onError(error);
 					}
 				}
 			}

@@ -671,6 +671,38 @@ function getFormattedNumUnits(num, unit) {
 
 //* Room-specific functions *--------------------------------------------------
 
+function onSendDrawing(form, onError) {
+	if (form) {
+	var	e = id(CS);
+
+		if (e) {
+			e.setAttribute('data-id', form.id);
+			e.click();
+		} else {
+			form.submit();
+		}
+	}
+}
+
+function onResizeDrawing(width, height) {
+
+	width += 24;
+
+	if (
+		(e = id('header'))
+	&&	(i = e.offsetWidth)
+	&&	i > width
+	) {
+		width = i;
+	}
+
+var	e,i,w,a = [document.body, id('task')];
+
+	for (i in a) if (e = a[i]) {
+		e.style.maxWidth = width+'px';
+	}
+}
+
 function checkMyTask(event, e) {
 
 	function stateChange() {
