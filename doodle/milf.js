@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v1.34'	//* needs complete rewrite, long ago
-,	INFO_DATE = '2014-07-16 — 2021-05-29'
+var	INFO_VERSION = 'v1.35'	//* needs complete rewrite, long ago
+,	INFO_DATE = '2014-07-16 — 2021-05-31'
 ,	INFO_ABBR = 'Multi-Layer Fork of DFC'
 ,	A0 = 'transparent', IJ = 'image/jpeg', SO = 'source-over', DO = 'destination-out'
 ,	CR = 'CanvasRecover', CT = 'Time', CL = 'Layers', DL
@@ -2455,7 +2455,7 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view, canvas = v;
 			d = d.width * d.height;
 
 		var	isSendingAsJpg = (
-				(i = outside.jpg)
+				(i = outside.send_jpg)
 			&&	e > i
 			&&	((c <= d) || (e > (i *= c/d)))
 			&&	e > (t = (jpgData = c.toDataURL(IJ)).length)
@@ -2588,7 +2588,7 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view, canvas = v;
 
 //* Use less traffic in modern browsers with blob uploaded as file:
 
-			if (canvas.toBlob) {
+			if (canvas.toBlob && outside.send_blob) {
 				try {
 					canvas.toBlob(
 						sendAfterConfirmation
@@ -2610,47 +2610,116 @@ var	a = auto || false, b,c,d,e,f,i,j,k,l,t,v = cnv.view, canvas = v;
 	return c;
 }
 
-function readPic(s) {
-	if (!s || s == 0 || (!s.data && !s.length)) return;
-	if (!s.data) s = {data: s, name: (0 === s.indexOf('data:') ? s.split(',', 1) : s)};
-var	e = new Image(), i = 'lcd', lcd = getElemById(i);
-	if (!lcd) setId(lcd = document.createElement('div'), i), container.parentNode.insertBefore(lcd, container);
-	setRemove(e);
+function readPic(source, saveSlot, onDone, onError) {
+	if (!source || source == 0 || (!source.data && !source.length)) return;
+	if (!source.data) source = {data: source, name: (0 === source.indexOf('data:') ? source.split(',', 1) : source)};
 
 	function setLCD() {
 		lcd.textContent = lang.loading+': '+loading;
 		lcd.style.lineHeight = cnv.view.height+'px';
 	}
 
-	e.onload = function () {
-		delete s.data;
-	var	d,t = 1;
-		for (i in select.imgRes) if (s.z || cnv.view[i] < e[i]) {
-			getElemById('img-'+i).value = e[i];
-			for (d in cnv) cnv[d][i] = e[i];
+	function drawImage() {
+	var	i,j,k
+	,	t = 1
+	,	imgSize = {
+			width  : img.naturalWidth  || img.width
+		,	height : img.naturalHeight || img.height
+		};
+
+		for (i in imgSize) if (source.z || cnv.view[i] < imgSize[i]) {
+			getElemById('img-'+i).value = imgSize[i];
+			for (k in cnv) cnv[k][i] = imgSize[i];
 			if (outside[i[0]+'l']) updateDim(i), t = 0;
 		}
+
 		if (t) updateDim();
-		i = draw.history, j = i.layer;
-		if (j > 0 && !i.layers[j].last && !i.cur()) tweakLayer(s.name,j,1); else newLayer(s);
+	var	i = draw.history, j = i.layer;
+		if (j > 0 && !i.layers[j].last && !i.cur()) tweakLayer(source.name,j,1); else newLayer(source);
 
 	var	oldProps = getAndResetCtxAlphaAndShadow(ctx.draw);
 
 		ctx.draw.clearRect(0, 0, cnv.view.width, cnv.view.height);
-		ctx.draw.drawImage(e, 0, 0);
+		ctx.draw.drawImage(img, 0, 0);
+
+		onImageCleanup();
 
 		resetCtxAlphaAndShadow(ctx.draw, oldProps);
 
-		historyAct(s.z ? draw.time.all[1] : null);
+		historyAct(source.z ? draw.time.all[1] : null);
 		cue.autoSave = 0;
-		if (d = e.parentNode) d.removeChild(e);
+
 		if (--loading < 1) loading = 0, container.style.visibility = lcd.textContent = '';
 		else setLCD();
 	}
 
+	function onImageLoad(evt) {
+		try {
+			if (isImageSafe(img)) {
+				drawImage();
+			}
+
+			if (onDone) {
+				onDone(evt);
+			}
+
+		} catch (error) {
+			alert(lang.err_code+': '+error.code+', '+error.message);
+
+			onImageCleanup();
+
+			if (onError) {
+				onError(error);
+			}
+		}
+
+	}
+
+	function onImageError(evt) {
+		onImageCleanup();
+
+		if (onError) {
+			onError(evt);
+		}
+	}
+
+	function onImageCleanup() {
+	var	container = img.parentNode;
+
+		if (container) {
+			container.removeChild(img);
+		}
+	}
+
+var	i = 'lcd'
+,	lcd = getElemById(i)
+,	img = new Image()
+	;
+
+	if (!lcd) setId(lcd = document.createElement('div'), i), container.parentNode.insertBefore(lcd, container);
+	setRemove(img);
+
 	if (!(mode.debug || text.debug.innerHTML) && ++loading > 1) container.style.visibility = 'hidden', setLCD();
-	draw.container.appendChild(e);
-	return e.src = s.data, s.name;
+	draw.container.appendChild(img);
+
+	img.onerror = onImageError;
+	img.onload = onImageLoad;
+	img.src = source.data;
+
+	delete source.data;
+
+	return source.name;
+}
+
+function isImageSafe(img) {
+var	canvas = cre('canvas');
+	canvas.width = canvas.height = 1;
+
+	canvas = canvas.getContext('2d');
+	canvas.drawImage(img, 0,0, 1,1);
+	canvas.getImageData(0,0, 1,1);
+
+	return true;
 }
 
 //* The only way to change input[type=file] value is with a other FileList instance,
@@ -3325,7 +3394,7 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 			i = d.length; while (i--) setSlider(d[i]);
 
 			d = 'moveLayer(', h = 'historyAct(', l = 'layer', n = 'newLayer(';
-			btnArray([
+			d = btnArray([
 //* subtitle, hotkey, pictogram, function, id
 	['new'	,a+'L','&#x25A1;'	,n+')'
 ],	['delete',a+'E','&times;'	,d+'"del")',l+'E'
@@ -3350,8 +3419,15 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 0,	['undo'	,'Z'	,'&#x2190;'	,h+'-1)',b+'U'
 ],	['redo'	,'X'	,'&#x2192;'	,h+'1)'	,b+'R'
 //],1,	['global',a+'G','&#x25A4;'	,g+'"G")' ,h+'G'
-]], e.firstElementChild.nextSibling).appendChild(m = getElemById('sliderT'));
-			setClass(m, 'rf ri');
+]], e.firstElementChild.nextSibling);
+			m = d.lastElementChild;
+			n = null;
+			while (m && !(m.tagName && m.tagName.toLowerCase() === 'br')) {
+				n = m;
+				m = m.previousSibling;
+			}
+			setClass(m = getElemById('sliderT'), 'rf ri');
+			d.insertBefore(m,n);
 		} else
 		if (k == 'tool') {
 			btnArray([
@@ -3376,10 +3452,10 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 		e.addEventListener('mousedown', mouseClickBarrier, false);
 		e.firstElementChild.addEventListener('dragstart', dragStart, false);
 	}
+
 	newLayer();
 
 //* Global events, etc *-------------------------------------------------------
-
 
 	draw.container = getElemById('load'), b = 'button', i = (a = 'JP').length, h = /^header$/i;
 	while (i--) if (e = getElemById(b+a[i])) setEvent(e, 'onmouseover', 'updateSaveFileSize(this)');
@@ -3420,6 +3496,28 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 	).selected = (b == 'palette'?(i == f):!i);
 
 	for (i in MODE_NAMES) if (mode[MODE_NAMES[i]]) toggleMode(i, 1);		//* <- only after select lists are defined
+
+//* Get ready to work *--------------------------------------------------------
+
+	generatePalette(1, 85, 0);
+	getElemById('style').innerHTML += style;
+	toggleView('hotkeys');
+	toolSwap(3, 1);	//* <- not changing switches
+	updatePalette();
+	updateSelectedSlider(selectedSlider);
+	updateViewport();
+	resetAside();
+
+var	url = o.read_init || o.read_at_start;
+
+	if (url) {
+		readPic(url, null, initEventListeners, initEventListeners);
+	} else {
+		initEventListeners();
+	}
+}
+
+function initEventListeners() {
 
 //* listen on all page to prevent dead zones:
 //* still fails to catch events outside of document block height less than of browser window.
@@ -3467,17 +3565,6 @@ var	wnd = container.getElementsByTagName('aside'), wit = wnd.length;
 		,	'touchmove' :	k
 		}
 	);
-
-//* Get ready to work *--------------------------------------------------------
-
-	generatePalette(1, 85, 0);
-	getElemById('style').innerHTML += style;
-	toggleView('hotkeys');
-	toolSwap(3, 1);	//* <- not changing switches
-	updatePalette();
-	updateSelectedSlider(selectedSlider);
-	updateViewport();
-	resetAside();
 }
 
 //* External config *----------------------------------------------------------
@@ -3509,7 +3596,13 @@ var	o = outside
 				k = e.pop();
 				for (j in e) o[e[j]] = k;
 			} else o[e[0]] = k = 1;
-			if (e[0].substr(0,2) == 'jp') o.jpg = k;
+
+			if (
+				hasPrefix(e[0], 'jp')
+			||	hasPrefix(e[0], 'send_jp')
+			) {
+				o.send_jpg = k;
+			}
 		}
 		break;			//* <- read vars batch in the first found attribute only; no care about the rest
 	}
@@ -3858,7 +3951,7 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 #| aside header {display: block; cursor: move; padding: 2px 2px 4px 2px; margin-bottom: 2px; background-color: #ace; overflow: hidden;}\
 #| aside header:hover {background-color: #5ea6ed;}\
 #| aside i {font-style: normal;}\
-#| aside input[type="range"] {width: 156px; height: 16px; margin: 0; padding: 0;}\
+#| aside input[type="range"] {width: 156px; height: 16px; margin: 0; padding: 0; background-color: transparent;}\
 #| aside input[type="text"] {margin: 2px; width: 48px;}\
 #| aside p {line-height: 22px; margin: 0.5em;}\
 #| aside p, #|-info hr, #|-layers hr, #|-colors table {font-size: small;}\
@@ -3908,6 +4001,17 @@ document.write(replaceAll(replaceAdd('\n<style id="|-style">\
 </style>', '}', '\n'), '|', NS)+'\n<div id="'+NS+'">Loading '+NS+'...</div>\n');
 
 //* Generic helper functions *-------------------------------------------------
+
+function hasPrefix(value, prefix) {
+	return (
+		prefix
+	&&	prefix.length > 0
+	&&	value
+	&&	value.length >= prefix.length
+	&&	value.slice
+	&&	value.slice(0, prefix.length) === prefix
+	);
+}
 
 function repeat(t,n) {return new Array(n+1).join(t);}
 function replaceAll(t,s,j) {return t.split(s).join(j);}

@@ -5,8 +5,8 @@
 
 //* Configuration *------------------------------------------------------------
 
-var	INFO_VERSION = 'v0.9.91'
-,	INFO_DATE = '2013-04-01 — 2021-05-29'
+var	INFO_VERSION = 'v0.9.92'
+,	INFO_DATE = '2013-04-01 — 2021-05-31'
 ,	INFO_ABBR = 'Dumb Flat Canvas'
 
 ,	CR = 'CanvasRecovery'
@@ -224,7 +224,7 @@ var	INFO_VERSION = 'v0.9.91'
 
 //* Set up (don't change) *----------------------------------------------------
 
-,	TESTING = (location.protocol === 'file:')
+,	TESTING = false && (location.protocol === 'file:')
 ,	CUSTOM_CURSOR_DOT = false
 ,	noTransformByProp = /^Opera.* Version\D*11\.\d+$/i.test(navigator.userAgent)
 ,	noShadowBlurCurve = /^Opera.* Version\D*12\.\d+$/i.test(navigator.userAgent)
@@ -367,7 +367,7 @@ var	INFO_VERSION = 'v0.9.91'
 						if (!i || !i.length) {
 							t.reversable = '';
 						} else
-						if (i.slice && i.slice(0,3) == 'res') {
+						if (hasPrefix(i, 'res')) {
 							i = select.resize.value;
 							if (t.reversable == i) --t.pos;
 							else t.reversable = i;
@@ -559,6 +559,17 @@ function cutPeriod(x,y,z) {
 	return (x < y ? x-y+z : (x > z ? x+y-z : x));
 }
 
+function hasPrefix(value, prefix) {
+	return (
+		prefix
+	&&	prefix.length > 0
+	&&	value
+	&&	value.length >= prefix.length
+	&&	value.slice
+	&&	value.slice(0, prefix.length) === prefix
+	);
+}
+
 //* Source: http://www.webtoolkit.info/javascript-trim.html
 function ltrim(str, chars) {return str.replace(new RegExp('^['+(chars || '\\s')+']+', 'g'), '');}
 function rtrim(str, chars) {return str.replace(new RegExp('['+(chars || '\\s')+']+$', 'g'), '');}
@@ -654,6 +665,7 @@ function showProps(target, flags, spaces) {
 	2 = skip if value evaluates to false
 	4 = only keys
 	8 = only values
+	16 = use console.error, don't return or alert
 */
 var	k,v,j = ' '
 ,	output = ''
@@ -672,6 +684,9 @@ var	k,v,j = ' '
 	}
 
 	return (
+		(flags & 16)
+		? console.error(output)
+		:
 		(flags & 1)
 		? output
 		: alert(output)
@@ -3602,7 +3617,7 @@ var	t = (lsid > 0)
 			d = d.width * d.height;
 
 		var	isSendingAsJpg = (
-				(i = outside.jpg)
+				(i = outside.send_jpg)
 			&&	e > i
 			&&	((c <= d) || (e > (i *= c/d)))
 			&&	e > (t = (jpgData = c.toDataURL(IJ)).length)
@@ -3706,7 +3721,7 @@ var	t = (lsid > 0)
 				);
 
 				function onError(evt) {
-					console.error(evt);
+					showProps(evt, 16);
 
 					postingInProgress = false;
 				}
@@ -3735,7 +3750,7 @@ var	t = (lsid > 0)
 
 //* Use less traffic in modern browsers with blob uploaded as file:
 
-			if (cnv.result.toBlob) {
+			if (cnv.result.toBlob && outside.send_blob) {
 				try {
 					cnv.result.toBlob(
 						sendAfterConfirmation
@@ -3745,7 +3760,7 @@ var	t = (lsid > 0)
 					return c;
 
 				} catch (error) {
-					console.error(error);
+					showProps(error, 16);
 				}
 			}
 
@@ -3758,75 +3773,122 @@ var	t = (lsid > 0)
 	return c;
 }
 
-function readPic(s,ls) {
-	if (!s || s == 0 || (!s.data && !s.length)) {
+function readPic(source, saveSlot, onDone, onError) {
+
+	if (
+		source == 0
+	||	!source
+	||	(!source.data && !source.length)
+	) {
 		return;
 	}
 
-	if (!s.data) {
-		s = {
-			data : s
-		,	name : (0 === s.indexOf('data:') ? s.split(',', 1) : s)
+	if (!source.data) {
+		source = {
+			data : source
+		,	name : (
+				0 === source.indexOf('data:')
+				? source.split(',', 1)
+				: source
+			)
 		};
 	}
 
-var	e = new Image();
+	function drawImage() {
+	var	canvas = cnv.result
+	,	width  = img.naturalWidth  || img.width
+	,	height = img.naturalHeight || img.height
+	,	resize = mode.scale
+		;
 
-	e.onload = function () {
+		if (resize) {
+			if (
+				(resize == 'W' || resize == 'H')
+			&&	(canvas.width != width || canvas.height != height)
+			) {
+			var	ratio = width/height
+			,	newSize = {
+					width  : (resize == 'W' ? canvas.width  : Math.max(1, Math.round(canvas.height*ratio)))
+				,	height : (resize == 'H' ? canvas.height : Math.max(1, Math.round(canvas.width/ratio)))
+				};
+
+				updateDimension(newSize);
+			}
+
+			clearFill(canvas).drawImage(img, 0,0, width, height, 0,0, canvas.width, canvas.height);
+		} else {
+			updateDimension(img);
+
+			clearFill(canvas).drawImage(img, 0,0);
+		}
+
+		onImageCleanup();
+
+		historyAct();
+		draw.history.storeTime();
+		cue.autoSave = 0;
+
+		if (lastUsedSaveSlot = saveSlot) {
+			updateDebugScreen(saveSlot, 3);
+		}
+	}
+
+	function onImageLoad(evt) {
 		try {
-
-	//* throw-away test of data source safety:
-
-			d = cre('canvas');
-			d.width = d.height = 1;
-
-			d = d.getContext('2d');
-			d.drawImage(e, 0,0, 1,1);
-			d.getImageData(0,0, 1,1);
-
-	//* actual work:
-
-		var	d = cnv.result
-		,	i = mode.scale
-			;
-
-			if (i) {
-				if ((i == 'W' || i == 'H') && (d.width != e.width || d.height != e.height)) {
-				var	j = e.width/e.height
-				,	j = {
-						width  : (i == 'W' ? d.width  : Math.max(1, Math.round(d.height*j)))
-					,	height : (i == 'H' ? d.height : Math.max(1, Math.round(d.width/j)))
-					};
-
-					updateDimension(j);
-				}
-
-				clearFill(d).drawImage(e, 0,0, e.width, e.height, 0,0, d.width, d.height);
-			} else {
-				updateDimension(e);
-				clearFill(d).drawImage(e, 0,0);
+			if (isImageSafe(img)) {
+				drawImage();
 			}
 
-			historyAct();
-			draw.history.storeTime();
-			cue.autoSave = 0;
-
-			if (lastUsedSaveSlot = ls) {
-				updateDebugScreen(ls,3);
+			if (onDone) {
+				onDone(evt);
 			}
+
 		} catch (error) {
 			alert(lang.err_code+': '+error.code+', '+error.message);
-		} finally {
-			if (d = e.parentNode) {
-				d.removeChild(e);
+
+			onImageCleanup();
+
+			if (onError) {
+				onError(error);
 			}
 		}
 	}
 
-	draw.container.appendChild(setClickRemove(e));
-	e.src = s.data;
+	function onImageError(evt) {
+		onImageCleanup();
 
-	return s.name;
+		if (onError) {
+			onError(evt);
+		}
+	}
+
+	function onImageCleanup() {
+	var	container = img.parentNode;
+
+		if (container) {
+			container.removeChild(img);
+		}
+	}
+
+var	img = new Image();
+	img.onerror = onImageError;
+	img.onload = onImageLoad;
+	img.src = source.data;
+
+	draw.container.appendChild(setClickRemove(img));
+
+	return source.name;
+}
+
+function isImageSafe(img) {
+var	canvas = cre('canvas');
+	canvas.width = canvas.height = 1;
+
+	canvas = canvas.getContext('2d');
+	canvas.drawImage(img, 0,0, 1,1);
+	canvas.getImageData(0,0, 1,1);
+
+	return true;
 }
 
 //* The only way to change input[type=file] value is with a other FileList instance,
@@ -3848,7 +3910,7 @@ function addEventListeners(e, funcByEventName) {
 		try {
 			e.addEventListener(i, funcByEventName[i], { capture : true, passive : false });
 		} catch (error) {
-			console.error(error);
+			showProps(error, 16);
 
 			e.addEventListener(i, funcByEventName[i], true);
 		}
@@ -4492,7 +4554,19 @@ var	a,b,c = 'canvas'
 	updatePalette();
 	updateSliders();
 	updateViewport();
-	historyAct(0);
+
+var	url = o.read_init || o.read_at_start;
+
+	if (url) {
+		readPic(url, null, initEventListeners, initEventListeners);
+	} else {
+		historyAct(0);
+		initEventListeners();
+	}
+
+} //* <- END init()
+
+function initEventListeners() {
 
 //* listen on all page to prevent dead zones:
 //* still fails to catch events outside of document block height less than of browser window.
@@ -4539,7 +4613,7 @@ var	a,b,c = 'canvas'
 		}
 	);
 
-}; //* <- END init()
+} //* <- END initEventListeners()
 
 //* External config *----------------------------------------------------------
 
@@ -4584,8 +4658,11 @@ var	o = outside
 				o[e[0]] = k = 1;
 			}
 
-			if (e[0].substr(0,2) == 'jp') {
-				o.jpg = k;
+			if (
+				hasPrefix(e[0], 'jp')
+			||	hasPrefix(e[0], 'send_jp')
+			) {
+				o.send_jpg = k;
 			}
 		}
 
@@ -4978,7 +5055,7 @@ var	content = replaceAll(
 	,	'#| canvas {border: '+CANVAS_BORDER+'px solid #ddd; margin: 0; cursor: '+CURSOR_DOT+';}'
 	,	'#| canvas:hover, #| canvas:hover + #|-color-wheel-inner, #|-color-wheel-inner div:hover {border-color: #aaa;}'
 	,	'#| hr {border: none; border-top: 1px solid #aaa; margin: 8px 0;}'
-	,	'#| input[type="range"] {width: 100%; height: 100%; margin: 1px; padding: 0; vertical-align: top;}'
+	,	'#| input[type="range"] {width: 100%; height: 100%; margin: 1px; padding: 0; vertical-align: top; background-color: transparent;}'
 	,	'#| input[type="text"] {width: 40px; height: 22px;}'
 	,	'#| select optgroup option {margin: 0;}'
 	,	'#| select optgroup {margin-top: 1em 0;}'

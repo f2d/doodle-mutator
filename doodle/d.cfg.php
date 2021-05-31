@@ -152,7 +152,7 @@ define('DRAW_MAX_UNDO', 99);
 define('DRAW_TIME_IDLE', 300);		//* <- seconds, 5 minutes
 define('DRAW_PERSISTENT_PREFIX', NAMEPRFX.'Keep');
 define('DRAW_BACKUPCOPY_PREFIX', NAMEPRFX.'Save');
-define('DRAW_SEND', 'send=png; send_callback=onSendDrawing;');
+define('DRAW_SEND', 'send_callback=onSendDrawing; send_blob=yes; send=png;');
 define('DRAW_REST', 'resize_callback=onResizeDrawing;');
 
 define('QK_KEEP_AFTER_LOGOUT', false);
