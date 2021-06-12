@@ -1160,13 +1160,25 @@ page_ext = ".PAGE_EXT.get_flag_vars(
 
 if ($draw_test = (($qd_opts || !$qdir) && GET_Q)) {
 	$qd_opts = 2;
-	$n = get_draw_app_list(false);
-	$page['icon'] = $draw_test = $n['name'];
-	$page['task'] = '
+
+	if ($draw_app = get_draw_app_list(false)) {
+		$draw_test = $draw_app['name'];
+
+		$page['icon'] = (
+			$draw_app['path_prefix'] ?:
+			$draw_app['path'] ?:
+			$draw_app['name']
+		);
+
+		$page['task'] = '
 <p>'.get_localized_text('draw_free').':</p>
-<p class="hint">'.get_localized_text('draw_hint').'</p>'.$n['noscript'];
-	$page['subtask'] = $n['embed'].'
-<div class="task">'.indent($n['list']).'</div>';
+<p class="hint">'.get_localized_text('draw_hint').'</p>'.$draw_app['noscript'];
+
+		$page['subtask'] = $draw_app['embed'].'
+<div class="task">'.indent($draw_app['list']).'</div>';
+	} else {
+		$page['task'] = get_localized_text('empty');
+	}
 } else
 
 if ($u_key) {
@@ -1241,10 +1253,12 @@ NL.get_localized_text('options_name').$t.(
 //* site view options ---------------------------------------------------------
 
 		$d = '';
+		$draw_app_names = array_map('get_draw_app_name', $cfg_draw_app);
+		$draw_app_labels = array_map('get_draw_app_label', $draw_app_names);
 		$draw_app = implode($sp, array(
-			(array_search($u_draw_app, $cfg_draw_app) ?: 0)
-		,	implode($so, get_localized_text_array('draw_app'))
-		,	implode($so, $cfg_draw_app)
+			(array_search($u_draw_app, $draw_app_names) ?: 0)
+		,	implode($so, $draw_app_labels)
+		,	implode($so, $draw_app_names)
 		,	DRAW_APP_NONE
 		,	'?'.ARG_DRAW_APP.'=*'
 		));

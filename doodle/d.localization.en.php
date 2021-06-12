@@ -104,9 +104,9 @@ define('LOCALIZATION_TEXT', [
 ,	'describe_next' => 'Write what happens after this'
 ,	'describe_this' => 'Describe what you see on this picture'
 ,	'draw_app' => [
-		'JS Flat'
-	,	'JS Layers'
-	,	'Simply upload your own file'
+		'dfc' => 'JS Flat'
+	,	'milf' => 'JS Layers'
+	,	'no' => 'Simply upload your own file'
 	]
 ,	'draw_app_select' => 'Drawing tool variant'
 ,	'draw_free' => 'Draw anything'

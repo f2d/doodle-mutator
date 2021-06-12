@@ -29,6 +29,7 @@ $cfg_game_type_dir = array(
 define('GAME_TYPE_DEFAULT', reset($cfg_game_type_dir));	//* <- if this or none of types is empty, no-subfolder will not be allowed
 
 define('BOARD_LINK', '/board/');	//* <- prepend ROOTPRFX (the script folder) here for a relative link
+define('DIR_DRAW_APP', '/draw_app/');	//* <- real folder with all draw-app related JS/CSS/etc.
 define('DIR_ARCH_DL', 'dl/');		//* <- real folder to keep listfiles for zip streaming
 define('DIR_PICS', 'i/');		//* <- real folder
 define('DIR_PICS_DEL', DIR_PICS.'deleted/');
@@ -77,7 +78,12 @@ define('PIC_OPT_TRY_GLOBAL_EXEC', false);
 	so remove or comment out lines of those you don't have installed.
 */
 
-$cfg_draw_app = array('dfc', 'milf', DRAW_APP_NONE);
+$cfg_draw_app = array(
+	// DIR_DRAW_APP.'dfc.js',
+	// DIR_DRAW_APP.'milf.js',
+	DRAW_APP_NONE
+);
+
 $cfg_draw_file_types = array('png', 'jpg', 'jpeg');
 $cfg_optimize_pics = array(
 /*
@@ -153,7 +159,7 @@ define('DRAW_TIME_IDLE', 300);		//* <- seconds, 5 minutes
 define('DRAW_PERSISTENT_PREFIX', NAMEPRFX.'Keep');
 define('DRAW_BACKUPCOPY_PREFIX', NAMEPRFX.'Save');
 define('DRAW_SEND', 'send_callback=onSendDrawing; send_blob=yes; send=png;');
-define('DRAW_REST', 'resize_callback=onResizeDrawing;');
+define('DRAW_REST', 'resize_callback=onResizeDrawing; palettes='.DIR_DRAW_APP.'palettes.js');
 
 define('QK_KEEP_AFTER_LOGOUT', false);
 define('QK_EXPIRES', 100200300);		//* <- seconds; renewed with every successful POST, incl.options

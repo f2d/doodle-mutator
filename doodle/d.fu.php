@@ -1447,49 +1447,113 @@ function get_date_class($t_first = 0, $t_last = 0) {	//* <- use time frame for a
 	return $date_classes;
 }
 
+function get_draw_app_name($file_path) {
+	$app_name = $file_path;
+
+	if (false !== ($index = mb_strrpos_after($app_name, '/'))) {
+		$app_name = mb_substr($app_name, $index);
+	}
+
+	if (false !== ($index = mb_strrpos($app_name, '.'))) {
+		$app_name = mb_substr($app_name, 0, $index);
+	}
+
+	return $app_name;
+}
+
+function get_draw_app_label($app_name) {
+	return get_localized_text('draw_app', $app_name);
+}
+
 function get_draw_app_list($allow_upload = true) {
 	global $cfg_draw_app;
 
-	$draw_app_selection_text = get_localized_text('draw_app_select');
-
 	if (
 		!$allow_upload
-	&&	false !== ($k = array_search(DRAW_APP_NONE, $cfg_draw_app))
+	&&	false !== ($index = array_search(DRAW_APP_NONE, $cfg_draw_app))
 	) {
-		unset($cfg_draw_app[$k]);
+		unset($cfg_draw_app[$index]);
+	}
+
+	$draw_app_selection_text = get_localized_text('draw_app_select');
+	$draw_app_names = array_map('get_draw_app_name', $cfg_draw_app);
+
+	if (
+		!($app_name = $GLOBALS['query'][ARG_DRAW_APP] ?: $GLOBALS['u_draw_app'])
+	||	!in_array($app_name, $draw_app_names)
+	) {
+		$app_name = $draw_app_names[0];
+	}
+
+	foreach ($draw_app_names as $index => $name) {
+		$draw_app_selection_text .= (
+			$index
+			? ','
+			: ':'
+		).NL.(
+			$app_name === $name
+			? get_draw_app_label($name)
+			: (
+				'<a href="?'.ARG_DRAW_APP.'='.$name.'">'
+			.		get_draw_app_label($name)
+			.	'</a>'
+			)
+		);
+
+		if (
+			$app_name !== DRAW_APP_NONE
+		&&	$app_name === $name
+		) {
+			$file_path = $cfg_draw_app[$index];
+		}
+	}
+
+	$result_parts = array(
+		'list' => (
+			NL
+		.	'<p class="hint" id="draw-app-select">'
+		.		indent("$draw_app_selection_text.")
+		.	'</p>'
+		)
+	);
+
+	if ($file_path) {
+		$ext = get_file_ext($file_path);
+
+		if (!$ext && ($default_ext = get_const('DRAW_APP_DEFAULT_EXT'))) {
+			if (false === mb_strrpos($default_ext, '.')) {
+				$default_ext = ".$default_ext";
+			}
+
+			$file_path .= $default_ext;
+			$ext = get_file_ext($file_path);
+		}
+
+		if ($file_path[0] !== '/') {
+			$file_path = ROOTPRFX.$file_path;
+		}
+
+		$result_parts['name'] = $app_name;
+		$result_parts['path'] = $file_path;
+		$result_parts['path_prefix'] = rtrim(mb_substr($file_path, 0, -mb_strlen($ext)), '/.');
+
+		if (LINK_TIME) {
+			$file_path .= '?'.filemtime($_SERVER['DOCUMENT_ROOT'].$file_path);
+		}
 	}
 
 	if (
-		!($n = $GLOBALS['query'][ARG_DRAW_APP] ?: $GLOBALS['u_draw_app'])
-	||	!in_array($n, $cfg_draw_app)
+		$file_path
+	&&	$ext === 'js'
 	) {
-		$n = $cfg_draw_app[0];
-	}
-
-	foreach ($cfg_draw_app as $k => $v) $draw_app_selection_text .= ($k?',':':').NL.(
-		$n == $v
-		? get_localized_text('draw_app', $k)
-		: '<a href="?'.ARG_DRAW_APP.'='.$v.'">'.get_localized_text('draw_app', $k).'</a>'
-	);
-
-	$result_parts = array('list' => '
-<p class="hint" id="draw-app-select">'.indent("$draw_app_selection_text.").'</p>');
-
-	if ($n !== DRAW_APP_NONE) {
-		$f = $n;
-		if (false !== ($s = mb_strrpos	  ($n, '.'))) $n = mb_substr($n, 0, $s); else $f .= DRAW_APP_DEFAULT_EXT;
-		if (false !== ($s = mb_strrpos_after($n, '/'))) $n = mb_substr($n, $s);
-		$ext = get_file_ext($f);
-		$f = ROOTPRFX.$f.(LINK_TIME?'?'.filemtime($f):'');
-		$result_parts['name'] = $n;
-	}
-
-	if ($ext == 'js') {
 		$result_parts['noscript'] = '
 <noscript>'.indent('<p class="hint">'.get_localized_text('require_js').'</p>').'</noscript>';
 		$result_parts['embed'] = '
-<div id="draw-app">'.indent('<script id="'.$n.'-vars" src="'.$f.'" data-vars="'.get_draw_vars($allow_upload ? DRAW_SEND : '').'"></script>').'</div>';
-	} else {
+<div id="draw-app">'.indent(
+	'<script id="'.$app_name.'-vars" src="'.$file_path.'" data-vars="'.get_draw_vars($allow_upload ? DRAW_SEND : '').'"></script>'
+).'</div>';
+	} else
+	if ($allow_upload) {
 		$result_parts['embed'] = '
 <form method="post" enctype="multipart/form-data">
 	<b>
@@ -1498,6 +1562,8 @@ function get_draw_app_list($allow_upload = true) {
 	</b>
 	<input type="hidden" name="t0" value="'.T0.'">
 </form>';
+	} else {
+		return;
 	}
 
 	return $result_parts;
@@ -2448,7 +2514,7 @@ function get_template_page($page) {
 		)
 	,	'<link rel="shortcut icon" type="image/png" href="'.(
 			($v = $page['icon'])
-			? ROOTPRFX.$v
+			? ($v[0] !== '/' ? ROOTPRFX.$v : $v)
 			: $file_path_prefix
 		).'.png">'
 	,	(
