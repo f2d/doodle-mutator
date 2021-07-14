@@ -1576,7 +1576,9 @@ function get_draw_vars($send = '') {
 		';keep_prefix='.DRAW_PERSISTENT_PREFIX
 	.($GLOBALS['u_opts']['save2common']?'':
 		';save_prefix='.DRAW_BACKUPCOPY_PREFIX.';saveprfx='.NAMEPRFX
-	);
+	).($GLOBALS['query'][ARG_ERROR]?
+		';preload_last_save=yes'
+	:'');
 
 	foreach ($cfg_draw_vars as $k => $v) {
 		if (($i = $GLOBALS["u_$v"]) || ($i = get_const($v))) $vars .= ";$k=$i";

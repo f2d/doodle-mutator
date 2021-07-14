@@ -235,7 +235,7 @@ define('LOCALIZATION_TEXT', [
 	,	'deny_text_op'		=> 'Room type rules: cannot start a thread with text.'
 	,	'deny_text_reply'	=> 'Room type rules: cannot reply with text.'
 	,	'file_dup'	=> 'File denied: copy already exists.'
-	,	'file_part'	=> 'File denied: upload not completed, please try to load in draw app and send again.'
+	,	'file_part'	=> 'File denied: upload was not completed, please try again.'
 	,	'file_pic'	=> 'File denied: not image.'
 	,	'file_put'	=> 'File denied: saving failed.'
 	,	'file_size'	=> 'File denied: size out of limits.'
