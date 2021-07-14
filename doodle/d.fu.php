@@ -527,6 +527,7 @@ function is_deny_arg($k) {return is_prefix($k, ARG_DENY);}
 function is_desc_arg($k) {return is_prefix($k, ARG_DESC);}
 function is_draw_arg($k) {return is_prefix($k, ARG_DRAW);}
 function is_opt_arg($k) {return is_prefix($k, OPT_PRFX);}
+function is_post_error($k) {return !($k === 'trd_arch' || $k === 'trd_miss');}
 function is_tag_attr($t) {return mb_strpos($t, '<') === mb_strpos($t, '>');}	//* <- if only both === false
 function is_not_empty($var) {return !empty($var);}
 function is_not_dot($path) {return !!trim($path, './\\');}
@@ -1570,13 +1571,13 @@ function get_draw_app_list($allow_upload = true) {
 }
 
 function get_draw_vars($send = '') {
-	global $cfg_draw_vars, $cfg_wh;
+	global $cfg_draw_vars, $cfg_wh, $errors_after_POST;
 
 	$vars = ($send?"$send;":'').DRAW_REST.
 		';keep_prefix='.DRAW_PERSISTENT_PREFIX
 	.($GLOBALS['u_opts']['save2common']?'':
 		';save_prefix='.DRAW_BACKUPCOPY_PREFIX.';saveprfx='.NAMEPRFX
-	).($GLOBALS['query'][ARG_ERROR]?
+	).($errors_after_POST?
 		';preload_last_save=yes'
 	:'');
 

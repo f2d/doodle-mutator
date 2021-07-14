@@ -1515,12 +1515,7 @@ sep_select = '.$sp.'
 //* active room task and visible content --------------------------------------
 
 				$errors_in_query = $query[ARG_ERROR];
-				if ($errors_after_POST = mb_split_filter($errors_in_query, ARG_ERROR_SPLIT)) {
-					unset(
-						$errors_after_POST['trd_arch']
-					,	$errors_after_POST['trd_miss']
-					);
-				}
+				$errors_after_POST = array_filter(mb_split_filter($errors_in_query, ARG_ERROR_SPLIT), 'is_post_error');
 
 				$asked_to_keep_desc = isset($query[ARG_DESC]);
 				$asked_to_keep_draw = !!array_filter($query, 'is_draw_arg', ARRAY_FILTER_USE_KEY);
@@ -1570,7 +1565,10 @@ sep_select = '.$sp.'
 				,	'skip_threads' => $skip_threads
 				);
 
-if (TIME_PARTS) time_check_point('inb4 aim lock, params = '.get_print_or_none($task_changing_params));
+if (TIME_PARTS) time_check_point('inb4 aim lock'
+	.', params = '.get_print_or_none($task_changing_params)
+	.', errors_after_POST = '.get_print_or_none($errors_after_POST)
+);
 
 				data_aim($task_changing_params);
 
