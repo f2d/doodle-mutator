@@ -791,29 +791,23 @@ $x
 			) as $k
 		) {
 			if ($v = get_const($k)) {
-				$t .= "$k = ".gmdate($v, T0).NL;
+				$t .= "gmdate($k) = ".gmdate($v, T0).NL;
 			}
 		}
 
 		foreach (
 			array(
-				'shmop_open',
-				'strip_magic_slashes',
-				'normalizer_normalize',
-			) as $k
-		) {
-			if ($v = function_exists($k)) {
-				$t .= "$k: function exists".NL;
-			}
-		}
+				'shmop_open' => 'function_exists',
+				'strip_magic_slashes' => 'function_exists',
+				'normalizer_normalize' => 'function_exists',
 
-		foreach (
-			array(
+				'php_uname',
+				'PHP_OS',
+				'PHP_VERSION',
+				'PCRE_VERSION',
 				'mb_regex_encoding',
 				'mb_regex_set_options',
-				'PHP_VERSION',
-				'PHP_OS',
-				'php_uname',
+
 				'sys_getloadavg',
 				'get_system_memory_info',
 
@@ -831,22 +825,33 @@ $x
 				'room',
 				'room_type',
 
-				'_COOKIE',
-				'_ENV',
-				'_GET',
-				'_POST',
-				'_SERVER',
-				'_SESSION',
+				'_GET' => $_GET,
+				'_POST' => $_POST,
+				'_COOKIE' => $_COOKIE,
+				'_SESSION' => $_SESSION,
+				'_SERVER' => $_SERVER,
+				'_ENV' => $_ENV,
 
+				'getenv',
 				'headers_list',
 				'gd_info',
-			) as $k
+			) as $k => $v
 		) {
-			if ($v = (
-				function_exists($k)
-				? $k()
-				: (get_const($k) ?: $$k)
-			)) {
+			if (is_string($v)) {
+				if (is_string($k) && function_exists($v)) {
+					$e = "$v($k)";
+					$v = $v($k);
+					$k = $e;
+				} else {
+					$k = $v;
+					$v = (
+						function_exists($k) ? $k() :
+						(get_const($k) ?: $$k)
+					);
+				}
+			}
+
+			if ($v) {
 				if ($sort && is_array($v)) {
 					if (isset($v[0])) natsort($v);
 					else ksort($v);
