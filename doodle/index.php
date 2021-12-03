@@ -3059,8 +3059,9 @@ if ($f = $pic_final_path) {
 		imageSaveAlpha($p, true);
 		imageCopyResampled($p, $pic, 0,0,0,0, $x,$y, $w,$h);
 		imageDestroy($pic);
+		if (is_file($f = get_pic_resized_path($f))) unlink($f);
 		$i = "image$file_type";
-		$i($p, $f = get_pic_resized_path($f));
+		$i($p, $f);
 
 		if ($page_reload_after_pause) {
 			echo pic_opt_get_time().get_localized_text('post_progress', 'opt_res').': ';
@@ -3081,6 +3082,7 @@ if ($f = $pic_final_path) {
 			imageTrueColorToPalette($p, false, 255);
 			imageColorMatch($c, $p);
 			imageDestroy($c);
+			unlink($f);
 			$i($p, $f);
 			imageDestroy($p);
 
