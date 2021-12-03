@@ -470,8 +470,8 @@ function data_fix($what = '') {
 			}
 		}
 		data_unlock($t);
-
 	}
+
 	if (($d = 'logs') === ($t = $what ?: $d)) {
 		foreach (get_dir_contents($d = 'l/room/') as $room) {
 			delay_timeout();
@@ -504,9 +504,9 @@ function data_fix($what = '') {
 				}
 			}
 			data_unlock($lk);
-
 		}
 	}
+
 	if (!$what) {
 		if (is_dir($old)) {
 
@@ -630,7 +630,7 @@ function data_fix($what = '') {
 					delay_timeout();
 					$pic_end = mb_strpos($v, DATA_FIELD_SEPARATOR, $pic_start);
 					$pic = mb_substr($v, $pic_start, $pic_end - $pic_start);
-					$pic = get_post_pic_field_with_fixed_info($pic);
+					$pic = get_post_pic_field_with_fixed_info($pic, 2);
 					$line = mb_substr($v, 0, $pic_start).$pic.mb_substr($v, $pic_end);
 					if ($v !== $line) $lines[$k] = $line;
 				}
@@ -3387,16 +3387,8 @@ function data_log_post($post) {
 	$u = T0.DATA_FIELD_SEPARATOR.$u_num;
 	$result = array();
 
-	if ($pic = is_array($post)) {
-		$post[0] = get_post_pic_field_with_fixed_info($post[0]);
-	}
-
+	$pic = is_array($post);
 	$content_type = ($pic ? 'image' : 'text');
-	$post = $u.(
-		$pic
-		? DATA_MARK_IMG.implode(DATA_FIELD_SEPARATOR, $post)
-		: DATA_MARK_TXT.$post
-	);
 
 	$change = (
 		$target
@@ -3446,6 +3438,16 @@ function data_log_post($post) {
 
 		return $result;
 	}
+
+	if ($pic) {
+		$post[0] = get_post_pic_field_with_fixed_info($post[0]);
+	}
+
+	$post = $u.(
+		$pic
+		? DATA_MARK_IMG.implode(DATA_FIELD_SEPARATOR, $post)
+		: DATA_MARK_TXT.$post
+	);
 
 	if ($new) {
 
@@ -3544,6 +3546,7 @@ function data_rename_last_pic($old, $new) {
 		if (mb_substr($t, $pos_before, $pos_after - $pos_before) === $old) {
 			$before = mb_substr($t, 0, $pos_before);
 			$after = mb_substr($t, $pos_after);
+			$new = get_post_pic_field_with_fixed_info($new, 2);
 
 			return file_put_contents($f, "$before$new$after");
 		}

@@ -135,6 +135,7 @@ define('LOCALIZATION_TEXT', [
 		'arch' =>		'Rewrite all archives with newest template.'
 	,	'arch_pix_404' =>	'Rewrite all archives, replacing not found images with 404 placeholder, or vice versa.'
 	,	'arch_pix_hash' =>	'Rewrite all archives, recalculate file hashes (for zip, not filenames) + 404 placeholder.'
+	,	'threads' =>		'Rewrite active threads, recalculate image file sizes and hashes.'
 	,	'img2orphan_check' =>	'Find pics not used in any room thread or archive.'
 	,	'img2orphan' =>		'Move pics not used in any room thread or archive to separate backup folder.'
 	,	'img2subdir' =>		'Move pics in pic folder root to subfolders.'

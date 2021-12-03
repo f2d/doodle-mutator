@@ -137,8 +137,8 @@ define('HTTP_MOD_TIME_FORMAT', 'D, d M Y H:i:s \G\M\T');
 define('PAT_DATE', '~(?P<ym>(?P<y>\d+)-(?P<m>\d+))-(?P<d>\d+)~');
 define('PAT_REPORT', '~^(?P<thread>\d+)\D+(?P<post>\d+)\D+(?P<side>\d+)$~');
 define('PAT_CONTENT', '~^(?P<before>.*?<pre>)(?P<content>.*?\S)(?P<after>\s*</pre>.*)$~uis');
-define('PPM_BF', '~(?:^|[;,\s]+)');
-define('PPM_AF', '(?=[;,]|$)~ui');
+define('PPM_BF', '~(?:^|[;,]\s*)');
+define('PPM_AF', '(?=$|[;,])~ui');
 define('PAT_POST_PIC_CRC32', PPM_BF.'0x(?P<crc32>[0-9a-f]{8})'.PPM_AF);
 define('PAT_POST_PIC_BYTES', PPM_BF.'(?P<bytes>[^0\D]\d*)\s+B'.PPM_AF);
 define('PAT_POST_PIC_W_X_H', PPM_BF.'(?P<width>[^0\D]\d*)\D(?P<height>[^0\D]\d*)'.PPM_AF);
@@ -709,7 +709,7 @@ NL.(++$i)."	$old => $new	".($old === $new?'same':(rename($old, mkdir_if_none($ne
 				}
 if (TIME_PARTS && $i) time_check_point("done $i pics");
 			} else
-			if (is_prefix($do, 'img2or')) {
+			if (is_prefix($do, 'img2orphan')) {
 				require_once(NAMEPRFX.'.arch.php');
 				$i = $k = 0;
 				$c = count($links = array_unique(array_merge($r = data_get_visible_images(), $a = data_archive_get_images())));

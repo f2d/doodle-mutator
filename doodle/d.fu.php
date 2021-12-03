@@ -1754,19 +1754,30 @@ function optimize_pic($filepath) {
 		$out_path = $f.($out = '.out');
 		$bad_path = $f.($bad = '.bad');
 		$bak_path = $f.($bak = '.bak');
-		$d = DIRECTORY_SEPARATOR;
 
 		global $cfg_optimize_pics, $cfg_optimize_pics_not_supported;
 
 		foreach ($cfg_optimize_pics as $format => $tool) if ($ext == $format)
 		foreach ($tool as $tool_params) {
-			list($program, $command, $retries, $copy_suffix) = array_map('mb_normalize_slash', $tool_params);
+			list($program, $command_template, $retries, $temp_copy_suffix) = array_map(
+				'mb_normalize_slash'
+			,	(
+					$tool_params['name']
+					? array(
+						$tool_params['program']          ?: $tool_params['name']
+					,	$tool_params['command_template'] ?: $tool_params['command_line']  ?: '"%s" "%s" 2>&1'
+					,	$tool_params['retries']          ?: $tool_params['retry']         ?: null
+					,	$tool_params['temp_copy_suffix'] ?: $tool_params['temp_file_ext'] ?: null
+					)
+					: $tool_params
+				)
+			);
 
 			$program_name = get_file_name($program);
 
 			if (
 				is_file($program_path = $program)
-			||	is_file($program_path .= '.exe')
+			||	is_file($program_path = "$program.exe")
 			) {
 				$program_path = "./$program_path";
 			} else
@@ -1781,10 +1792,10 @@ function optimize_pic($filepath) {
 			retry_this_command:
 
 			if (
-				isset($copy_suffix)
-			&&	strlen($copy_suffix)
+				isset($temp_copy_suffix)
+			&&	strlen("$temp_copy_suffix")
 			) {
-				$file_path_arg = $f.$copy_suffix;
+				$file_path_arg = "$f$temp_copy_suffix";
 				copy($f, $file_path_arg);
 			} else {
 				$file_path_arg = $f;
@@ -1792,16 +1803,16 @@ function optimize_pic($filepath) {
 
 			$return_code = $size = 0;
 			$output = array('');
-			$cmd = sprintf($command, $program_path, $file_path_arg);
+			$command_line = sprintf($command_template, $program_path, $file_path_arg);
 
-			if ($d !== '/') {
-				$cmd = str_replace('/', $d, $cmd);
+			if (DIRECTORY_SEPARATOR !== '/') {
+				$command_line = str_replace('/', DIRECTORY_SEPARATOR, $command_line);
 			}
 
 			delay_timeout(PIC_OPT_ADD_TIMEOUT);
 
 			data_lock($lk = LK_PIC_OPT);
-			$return = exec($cmd, $output, $return_code);
+			$return = exec($command_line, $output, $return_code);
 			data_unlock($lk);
 
 			$not_supported = false;
@@ -1885,7 +1896,7 @@ function optimize_pic($filepath) {
 				data_log_action(
 "Optimization $done.
 Program name: $program_name
-Command line: $cmd
+Command line: $command_line
 Return code: $return_code
 Return text: $return
 Shell output: $o"

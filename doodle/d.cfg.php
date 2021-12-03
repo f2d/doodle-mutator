@@ -92,8 +92,14 @@ $cfg_optimize_pics = array(
 		array(
 			'program name or path',
 			'command line format string, first %s = program path, 2nd %s = source file path',
-			[optional number of additional retries],
-			[optional suffix for a throwaway file copy to work on, useful if the program only works in-place],
+			(optional number of additional retries),
+			(optional suffix for a throwaway file copy to work on, useful if the program only works in-place),
+		),
+		array(
+			'name' => '...',
+			'command_line' => '"%s" "%1$s" "%2$s" ...',
+			'temp_file_ext' => '.ext',
+			'retry' => 1,
 		),
 	),
  * JPEG notes:
@@ -108,6 +114,7 @@ $cfg_optimize_pics = array(
 	OxiPng with -Z (zopfli) takes forever to finish, but makes the smallest result (not much difference).
 	OxiPng with -Z takes too much CPU if thread count is too high (> 1, and especially > 6).
 	Both remove appended data (e.g. rarpng), but OptiPng - only with -fix option.
+	Only PngOptimizerCL supports APNG currently.
  * Overall notes:
 	Leanify only works in-place, so a copy of the image file should be made for safety.
 	All of these programs must be installed manually and PHP must be allowed to run them with exec().
@@ -121,19 +128,39 @@ $cfg_optimize_pics = array(
 	PngOptimizer: https://psydk.org/pngoptimizer
 */
 	'jpg' => array(
-		array('leanify', '"%s" -v --jpeg-keep-all "%s" 2>&1', 0, '.out'),
-		array('jpegoptim', '"%s" --all-progressive "%s" 2>&1'),
-		array('jpegtran', '"%1$s" -progressive -optimize -outfile "%2$s.out" "%2$s" 2>&1'),
+		array(
+			'name' => 'leanify'
+		,	'command_line' => '"%s" -v --jpeg-keep-all "%s" 2>&1'
+		,	'temp_file_ext' => '.out'
+		),
+		array(
+			'name' => 'jpegoptim'
+		,	'command_line' => '"%s" --all-progressive "%s" 2>&1'
+		),
+		array(
+			'name' => 'jpegtran'
+		,	'command_line' => '"%1$s" -progressive -optimize -outfile "%2$s.out" "%2$s" 2>&1'
+		),
 	//* Remove metadata:
-	//	array('jpegoptim', '"%s" --all-progressive --strip-all "%s" 2>&1'),
-	//	array('jpegtran', '"%1$s" -progressive -optimize -copy none -outfile "%2$s.out" "%2$s" 2>&1'),
+	//	array('name' => 'jpegoptim', 'command_line' => '"%s" --all-progressive --strip-all "%s" 2>&1'),
+	//	array('name' => 'jpegtran', 'command_line' => '"%1$s" -progressive -optimize -copy none -outfile "%2$s.out" "%2$s" 2>&1'),
 	),
 	'png' => array(
-		array('optipng', '"%s" -v -i 0 -fix "%s" 2>&1', 1),
-		array('oxipng', '"%s" -v -i 0 --fix -t 1 "%s" 2>&1'),
-		array('pngoptimizercl', '"%1$s" -stdio < "%2$s" > "%2$s.out" 2>&1'),
+		array(
+			'name' => 'optipng'
+		,	'command_line' => '"%s" -v -i 0 -fix "%s" 2>&1'
+		,	'retry' => 1
+		),
+		array(
+			'name' => 'oxipng'
+		,	'command_line' => '"%s" -v -i 0 --fix -t 1 "%s" 2>&1'
+		),
+		array(
+			'name' => 'pngoptimizercl'
+		,	'command_line' => '"%1$s" -stdio < "%2$s" > "%2$s.out" 2>&1'
+		),
 	//* Warning, Leanify may corrupt APNG:
-	//	array('leanify', '"%s" -v --iteration 3 --keep-icc "%s" 2>&1', 0, '.out'),
+	//	array('name' => 'leanify', 'command_line' => '"%s" -v --iteration 3 --keep-icc "%s" 2>&1', 'temp_file_ext' => '.out'),
 	),
 );
 
