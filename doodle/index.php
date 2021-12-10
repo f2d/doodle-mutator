@@ -2842,7 +2842,14 @@ if ($query[LK_MOD_ACT]) {
 		$qpath = array($qdir, $a[0], $a[1]);
 	}
 
-	$refresh_location = ROOTPRFX;
+	$refresh_location = (
+		(
+			SERVE_AS_INDEX_PAGE
+		||	'index' !== get_file_name_no_ext($_SERVER['REQUEST_URI'], 0)
+		)
+		? ROOTPRFX
+		: $_SERVER['PHP_SELF']
+	);
 
 	if (strlen($v = encode_URL_parts(array_filter($qpath, 'strlen')))) {
 		$refresh_location .= (strlen($qpath['etc']) ? $v : "$v/");
