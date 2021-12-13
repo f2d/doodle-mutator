@@ -243,9 +243,22 @@ $cfg_opts_order = array(
 		)
 	)
 ,	'check' => array(
-		'head', 'count', 'times', 'names', 'own', 'unknown', 'active'
-	,	'save2common', 'kbox', 'focus', 'modtime304'
-	,	'picprogress', 'capture_altclick', 'capture_textselection', 'task_timer'
+		'head'
+	,	'count'
+	,	'times'
+	,	'names'
+	,	'own'
+	,	'unknown'
+	,	'active'
+	,	'save2common'
+	,	'kbox'
+	,	'focus'
+	,	'modtime304'
+	,	'picprogress'
+	,	'capture_altclick'
+	,	'capture_textselection'
+	,	'task_timer'
+	,	'final_task_notice'
 	)
 ,	'admin' => array(
 		'time_check_points'

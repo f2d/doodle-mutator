@@ -116,6 +116,7 @@ define('LOCALIZATION_TEXT', [
 ,	'draw_test' => 'Test drawing pad'
 ,	'draw_this' => 'Try to draw'
 ,	'empty' => 'Empty'
+,	'final_task_notice' => 'This task wil complete a thread.'
 ,	'foot_notes' => [
 		'About this website'
 	,	'project'
@@ -206,6 +207,7 @@ define('LOCALIZATION_TEXT', [
 		,	'modtime304'		=> 'When a page has no new content|use your browser cache|reload anyway'
 		,	'unknown'		=> 'Prefer tasks|from unknown threads first|any available'
 		,	'task_timer'		=> 'Task timer while page is open|hide + autoupdate|show + countdown to zero'
+		,	'final_task_notice'	=> 'Final task in a thread|show as normal|show with notice'
 		,	'capture_altclick'	=> 'Capture posts (Ctrl/Shift + click: mark posts, Alt + click: save)'
 		,	'capture_textselection'	=> 'Capture posts with selected text (with buttons around text)'
 		]

@@ -1742,14 +1742,23 @@ left = ".get_localized_text('empty')."
 right = ".get_localized_text('empty')."$flags
 
 0,0	$left	v";	//* <- dummy thread for JS drop-down menus
-				} else $page['content'] = $t;
+				} else {
+					$page['content'] = $t;
+				}
 
 				$task_content = $target['task'];
+
 				if ($draw < 0) {
 					$page['task'] = '
 <p>'.indent(get_localized_text('room_thread_cap')).'</p>
 <p class="hint">'.indent(get_template_hint(get_localized_text('room_thread_cap_hint'))).'</p>';
 				} else {
+					$final_task_notice = (
+						$target['is_task_final']
+						? get_localized_text('final_task_notice')
+						: ''
+					);
+
 					if ($draw) {
 						$n = get_draw_app_list(true);
 						$head = (
@@ -1765,6 +1774,12 @@ right = ".get_localized_text('empty')."$flags
 						$page['task'] = '
 <p>'.indent($head).'</p>';
 						$hint = $n['list'];
+
+						if ($final_task_notice) {
+							$hint .= '
+<p class="hint">'.indent($final_task_notice).'</p>';
+						}
+
 						if ($x = $n['noscript']) {
 							$page['task'] .= $x;
 							$page['subtask'] = $n['embed'].'
@@ -1812,14 +1827,15 @@ right = ".get_localized_text('empty')."$flags
 							,	'min' =>	DESCRIBE_MIN_LENGTH
 							,	'max' =>	DESCRIBE_MAX_LENGTH
 							,	'head' =>	$head
-							,	'hint' =>	(
+							,	'hint' =>	[
 									get_localized_text('describe_hint')
 									.(
 										$u_flag['nop']
 										? '\\'.get_localized_text('no_play_hint')
 										: ''
 									)
-								)
+								,	$final_task_notice
+								]
 							,	'filter' =>	$filter
 							,	'checkbox' => (
 									$u_opts['kbox']

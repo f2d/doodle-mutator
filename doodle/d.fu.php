@@ -2191,7 +2191,7 @@ function get_template_form($t) {
 
 	if ($a = $hint) {
 		$hint = '';
-		foreach ((array)$a as $k => $v) $hint .= NL
+		foreach ((array)$a as $k => $v) if ($v) $hint .= NL
 		.'<p class="hint'.($k?" $k":'').'">'
 		.	indent(get_template_hint(
 				is_array($v)

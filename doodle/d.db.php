@@ -1321,10 +1321,38 @@ function data_get_mtime($type = COUNT_ROOM, $r = '', $uncached = false) {
 	return data_get_count($type, $r, $uncached, 'filemtime', 'get_dir_top_filemtime');
 }
 
+function data_get_thread_content($t) {
+	return (
+		false === mb_strpos($t, DATA_FIELD_SEPARATOR)
+		? data_cache($t)
+		: $t
+	);
+}
 function data_is_thread_full($n) {
 	return (
 		$n === 'f'
 	||	intval($n) >= TRD_MAX_POSTS
+	);
+}
+
+function data_is_thread_last_post_pic($t) {
+	$t = trim_bom(data_get_thread_content($t));
+	$last_txt = mb_strrpos_after($t, DATA_MARK_TXT);
+	$last_pic = mb_strrpos_after($t, DATA_MARK_IMG);
+
+	return $last_txt < $last_pic;
+}
+
+function data_is_task_final($t, $room_type) {
+	$t = data_get_thread_content($t);
+	$pics = mb_substr_count($t, DATA_MARK_IMG);
+
+	return (
+		$pics + 1 === TRD_MAX_POSTS
+	&&	(
+			!$room_type['alternate_reply_type']
+		||	!data_is_thread_last_post_pic($t)
+		)
 	);
 }
 
@@ -1374,21 +1402,6 @@ function data_get_last_post_time($t) {
 	return intval(mb_substr($t, mb_strrpos_after($t, NL)));
 }
 
-function data_is_thread_last_post_pic($t) {
-	$t = trim_bom(data_get_thread_content($t));
-	$last_txt = mb_strrpos_after($t, DATA_MARK_TXT);
-	$last_pic = mb_strrpos_after($t, DATA_MARK_IMG);
-
-	return $last_txt < $last_pic;
-}
-
-function data_get_thread_content($t) {
-	return (
-		false === mb_strpos($t, DATA_FIELD_SEPARATOR)
-		? data_cache($t)
-		: $t
-	);
-}
 
 function data_get_thread_pics($t, $full_path = false) {
 	$a = array();
@@ -3224,6 +3237,16 @@ function data_aim($task_changing_params = false) {
 	ksort($counts);
 	$target['free_task_counts'] = $counts;
 
+	$own_exists = (
+		is_file($path = $d.$own)
+	||	is_file($path = $d.$dropped)
+	||	is_file($path = "$d$i$e")
+	);
+
+	if ($u_opts['final_task_notice']) {
+		$target['is_task_final'] = data_is_task_final($path, $room_type);
+	}
+
 if (TIME_PARTS) time_check_point('got free task lists'
 	.', all = '.get_print_or_none($free_task_lists)
 	.', to pick = '.get_print_or_none($task_lists_to_pick)
@@ -3237,20 +3260,15 @@ if (TIME_PARTS) time_check_point('got free task lists'
 
 	$new_task = array();
 	$f = $own ?: '';
-	$own_exists = (
-		is_file($path = $d.$own)
-	||	is_file($path = $d.$dropped)
-	||	is_file($path = "$d$i$e")
-	);
 
 	if (!(
-		$old_target_thread
+		$own_exists
+	&&	$old_target_thread
+	&&	!($change || $change_from || $drop)
+	&&	(T0 < $target['time'] + TARGET_CHANGE_TIME)
 	&&	preg_match(DATA_PAT_TRD_PLAY, $own, $m)
 	&&	strlen($i = $m['id'])
 	&&	!in_array($i, $skip_threads)
-	&&	$own_exists
-	&&	!($change || $change_from || $drop)
-	&&	(T0 < $target['time'] + TARGET_CHANGE_TIME)
 	&&	($room_type['allow_reply_to_self'] || data_get_last_post_u(data_cache($path)) != $u_num)
 	)) {
 
@@ -3341,6 +3359,10 @@ if (TIME_PARTS) time_check_point('got free task lists'
 			}
 
 			$target['deadline'] = $t = T0 + get_const('TARGET_'.$type.'_TIME');
+
+			if ($u_opts['final_task_notice']) {
+				$target['is_task_final'] = data_is_task_final($path, $room_type);
+			}
 
 //* rename new target as taken (locked):
 
