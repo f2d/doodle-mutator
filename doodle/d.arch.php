@@ -68,14 +68,14 @@ function data_archive_get_visible_rooms($type = '') {
 	$last = 0;
 	$a = array();
 
-	foreach (get_dir_rooms(DIR_ARCH, '', F_NATSORT | F_HIDE, $type) as $r) if ($mt = data_get_mtime(COUNT_ARCH, $r)) {
+	foreach (get_dir_rooms(DIR_ARCH, '', F_NATSORT | F_HIDE, $type) as $each_room) if ($mt = data_get_mtime(COUNT_ARCH, $each_room)) {
 		if ($last < $mt) {
 			$last = $mt;
 		}
 
-		$a[$r] = array(
+		$a[$each_room] = array(
 			'last' => $mt
-		,	'count' => data_get_count(COUNT_ARCH, $r)
+		,	'count' => data_get_count(COUNT_ARCH, $each_room)
 		);
 	}
 
@@ -90,7 +90,7 @@ function data_archive_get_images($room = '') {
 	$d = DIR_ARCH;
 	$rooms = ($room ? (array)$room : get_dir_rooms($d));
 
-	foreach ($rooms as $r) if (is_dir($s = "$d$r/")) {
+	foreach ($rooms as $each_room) if (is_dir($s = "$d$each_room/")) {
 		foreach (get_dir_contents($s) as $f) if (is_file($path = $s.$f)) {
 			foreach (data_get_thread_pics($path) as $i) {
 				if (false === array_search($i, $a)) {
@@ -140,10 +140,10 @@ function data_archive_get_thumb($src, $xMax = 0, $yMax = 0) {
 	imageSaveAlpha($orig, true);
 	$w = $xMax;
 	$h = $yMax;
-	if ($r = ($w && $width > $w) + ($h && $height > $h)*2) {
-		if ($r == 3) $r = ($width/$w < $height/$h ? 2 : 1);
-		if ($r == 2) $w = round($h*$width/$height); else	//* <- h tops, w depends
-		if ($r == 1) $h = round($w*$height/$width);		//* <- w tops, h depends
+	if ($ratio = ($w && $width > $w) + ($h && $height > $h)*2) {
+		if ($ratio == 3) $ratio = ($width/$w < $height/$h ? 2 : 1);
+		if ($ratio == 2) $w = round($h*$width/$height); else	//* <- h tops, w depends
+		if ($ratio == 1) $h = round($w*$height/$width);		//* <- w tops, h depends
 		$res = imageCreateTrueColor($w,$h);
 		imageAlphaBlending($res, false);
 		imageSaveAlpha($res, true);
@@ -523,7 +523,7 @@ function data_archive_full_threads($threads) {
 		return false;
 	}
 
-	data_lock($lk = LK_ARCH.$r, true);
+	data_lock($lk = LK_ARCH.$room, true);
 
 	mkdir_if_none($p = ($d = DIR_ARCH."$room/").DIR_THUMB);
 	$done_count = 0;
@@ -577,7 +577,7 @@ function data_archive_rewrite($params = false) {
 	$d = DIR_ARCH;
 	$elen = -strlen(PAGE_EXT);
 
-	data_lock($lk = LK_ARCH.$r, true);
+	data_lock($lk = LK_ARCH.$room, true);
 	foreach (get_dir_rooms($d, '', F_NATSORT) as $room) {
 		$t = 0;
 
@@ -628,6 +628,8 @@ if (TIME_PARTS && $t) time_check_point("done $a: $room, $t threads");
 }
 
 function data_archive_rename_last_pic($old, $new, $n_last_pages = 0) {
+	global $room;
+
 	if ($new === $old) {
 		return 0;
 	}
@@ -640,7 +642,7 @@ function data_archive_rename_last_pic($old, $new, $n_last_pages = 0) {
 	list($old_name, $old_size) = mb_split($j, $old, 2);
 	list($new_name, $new_size) = mb_split($j, $new, 2);
 
-	data_lock($lk = LK_ARCH.$r, true);
+	data_lock($lk = LK_ARCH.$room, true);
 	if ($i = get_dir_top_file_id($d, $e)) {
 		while ($i > 0) {
 			if (
@@ -752,11 +754,11 @@ if (TIME_PARTS) time_check_point('inb4 archive pages search prep, terms = '.get_
 
 if (TIME_PARTS) time_check_point("got $c rooms, inb4 search iteration".NL);
 
-	foreach ($rooms as $r) {
+	foreach ($rooms as $each_room) {
 		$files = array();
 
-		data_lock($lk = LK_ARCH.$r);
-		foreach (get_dir_contents($dr = "$d$r", F_NATSORT) as $f) if (
+		data_lock($lk = LK_ARCH.$each_room);
+		foreach (get_dir_contents($dr = "$d$each_room", F_NATSORT) as $f) if (
 			substr($f, $elen) === $e
 		&&	is_file($path = "$dr/$f")
 		) {
@@ -781,7 +783,7 @@ if (TIME_PARTS) $n_check = '';
 				if (count($tab) > 3) $post['meta'] = $tab[3];	//* <- faster than array_filter on empty values
 
 				if ($found = is_post_matching($post, $terms, $caseless)) {
-					$results[$r][$i][] = get_post_fields_to_display($post);
+					$results[$each_room][$i][] = get_post_fields_to_display($post);
 
 if (TIME_PARTS) {++$n_found; $n_check .= "=$n_found: $found";}
 

@@ -116,7 +116,7 @@ define('LOCALIZATION_TEXT', [
 ,	'draw_test' => 'Test drawing pad'
 ,	'draw_this' => 'Try to draw'
 ,	'empty' => 'Empty'
-,	'final_task_notice' => 'This task wil complete a thread.'
+,	'final_task_notice' => 'This task will complete a thread.'
 ,	'foot_notes' => [
 		'About this website'
 	,	'project'

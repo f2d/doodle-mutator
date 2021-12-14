@@ -335,7 +335,10 @@ function data_unlock($k = '') {
 
 	$keys = (array)($k ?: array_keys($lock));
 
-	foreach ($keys as $k) if ($v = $lock[$k]) {
+	foreach ($keys as $k) if ($v = (
+		$lock[$k] ?:
+		$lock[$k = LK_ROOM.$k]
+	)) {
 		flock($v, LOCK_UN);	//* <- release the lock
 		fclose($v);
 		unset($lock[$k]);
@@ -1920,9 +1923,15 @@ function data_save_user_profile($a, $write = true) {
 function data_get_full_threads($get_content = true) {
 	global $room, $room_type, $usernames;
 
-	$wait = !!$room_type['arch_wait'];
-	$threads = array();
+	if ($get_content) {
+		$threads = array();
+	}
 
+	if ($room_type) {
+		$wait = !!$room_type['arch_wait'];
+	}
+
+	if ($room)
 	foreach (get_dir_contents($d = DATA_DIR_ROOM."$room/".DATA_SUB_TRD) as $f) if (
 		preg_match(DATA_PAT_TRD_PLAY, $f, $match)
 	&&	data_is_thread_full($count = $match['pics'])
@@ -1971,21 +1980,49 @@ function data_get_full_threads($get_content = true) {
 		}
 	}
 
-	if (!$get_content) {
+	if ($get_content) {
+		ksort($threads);
+
+		return $threads;
+	} else {
 		return false;
 	}
-
-	ksort($threads);
-
-	return $threads;
 }
 
-function data_archive_ready_go() {
-	if ($threads = data_get_full_threads()) {
-		require_once(NAMEPRFX.'.arch.php');
+function data_archive_ready_go($reloading = false) {
+	global $room, $room_type;
 
-		return data_archive_full_threads($threads);
+	$result = array();
+
+	if ($room) {
+		if ($reloading) {
+			data_lock($lk = LK_ROOM.$room);
+		}
+
+		if ($threads = data_get_full_threads()) {
+			require_once(NAMEPRFX.'.arch.php');
+
+			$result = data_archive_full_threads($threads);
+
+			if ($result && $reloading) {
+				data_post_refresh();
+			}
+		}
+
+		if ($reloading) {
+			data_unlock($lk);
+		}
+	} else {
+		foreach (get_dir_rooms(DATA_DIR_ROOM) as $each_room) {
+			$room = $each_room;
+			$room_type = get_room_type($room);
+			$result[$room] = data_archive_ready_go($reloading);
+		}
+
+		$room = $room_type = false;
 	}
+
+	return $result;
 }
 
 function data_get_post_pic_info($post_content, $check_file = 1) {

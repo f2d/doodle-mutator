@@ -983,6 +983,14 @@ if ($qd_arch) {
 
 //* archive threads list ------------------------------------------------------
 
+	if (
+		$room
+		? ARCH_FULL_THREADS_AT_ROOM_VIEW
+		: ARCH_FULL_THREADS_AT_ROOM_LIST
+	) {
+		data_archive_ready_go(true);
+	}
+
 	if ($room && ($thread_count = data_get_count(COUNT_ARCH))) {
 		exit_if_not_mod(data_get_mtime(COUNT_ARCH));
 
@@ -1411,6 +1419,14 @@ sep_select = '.$sp.'
 //* rooms ---------------------------------------------------------------------
 
 	if ($qd_room) {
+		if (
+			$room
+			? ARCH_FULL_THREADS_AT_ROOM_VIEW
+			: ARCH_FULL_THREADS_AT_ROOM_LIST
+		) {
+			data_archive_ready_go(true);
+		}
+
 		if ($room) {
 			if (!MOD && FROZEN_HELL) {
 				$page['task'] = (

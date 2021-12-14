@@ -44,6 +44,8 @@ define('LOG_IP', true);			//* <- for each visit, add IP Address to separate file
 define('LOG_UA', false);		//* <- for each post with pic, add User-Agent field to the post itself
 define('PIC_SUB', false);		//* <- true: img src="/i/p/0/0123.png", false: src="/i/0123.png" and leave it to rewrite rule
 define('ARCH_DL_ENABLED', false);	//* <- currently requires nginx build with zip streaming module
+define('ARCH_FULL_THREADS_AT_ROOM_VIEW', false);
+define('ARCH_FULL_THREADS_AT_ROOM_LIST', false);
 
 define('NOT_MOD_SEE_ACTIVE_TRD_REPORTS', true);
 define('NOT_MOD_SEE_STOPPED_TRD', true);
