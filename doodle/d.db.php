@@ -1359,12 +1359,14 @@ function data_is_task_final($t, $room_type) {
 	);
 }
 
-function data_is_thread_cap($r = '') {
+function data_is_thread_cap($r = '', $for_pic_post = false) {
+	$limit = ($for_pic_post ? 2 : 1) * TRD_MAX_PER_ROOM;
+
 	if ($r || ($r = $GLOBALS['room'])) {
 		foreach (get_dir_contents(DATA_DIR_ROOM."$r/".DATA_SUB_TRD) as $f) if (
 			preg_match(DATA_PAT_TRD_MOD, $f, $match)
 		&&	!$match['deleted']				//* <- "burnt" not counted
-		&&	++$n >= TRD_MAX_PER_ROOM
+		&&	++$n >= $limit
 		) {
 			return $n;
 		}
@@ -3517,10 +3519,7 @@ function data_log_post($post) {
 //* check if not too many existing threads:
 //* still possible to post over the cap, e.g. if user finished drawing too late:
 
-		if (
-			!$pic
-		&&	($i = data_is_thread_cap())
-		) {
+		if ($i = data_is_thread_cap($room, $pic)) {
 			$result['cap'] = $i;
 
 			if ($a) data_post_refresh();
