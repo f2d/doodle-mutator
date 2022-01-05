@@ -1263,8 +1263,13 @@ function clearSaves(e) {
 					if (v == 'unskip') deleteCookie(k[i]); else
 					if (v == 'unsave') LS.removeItem(k[i]);
 				}
-				if (e.getAttribute('data-room')) del(e), document.location.reload(true);
-				else checkSaves(e.id);
+				if (e.getAttribute('data-room')) {
+					del(e);
+					submitPostForm({'unskip': v});
+					// document.location.reload(true);
+				} else {
+					checkSaves(e.id);
+				}
 			}
 		}
 	}

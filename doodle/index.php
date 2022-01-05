@@ -2354,7 +2354,13 @@ posting:
 ob_start();
 
 if ($u_key) {
-	$post_status = (($_POST[ME] || $_POST[$qredir])?'OK':'unkn_req');
+	$post_status = (
+		$_POST[ME]
+	||	$_POST[ARG_UNSKIP]
+	||	$_POST[$qredir]
+		? 'OK'
+		: 'unkn_req'
+	);
 
 	if (isset($_POST[$qredir])) goto after_posting;
 
