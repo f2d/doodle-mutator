@@ -14,47 +14,47 @@ define('LOCALIZATION_TEXT', [
 ,	'archive' => 'Архив'
 ,	'archive_find' => 'Найти'
 ,	'archive_find_by' => [
-		'post' => [
+		ARG_POST_TEXT_PART => [
 			'select'	=> 'описание'
 		,	'found by'	=> 'описанию'
 		,	'placeholder'	=> 'Введите часть описания.'
 		]
-	,	'file' => [
+	,	ARG_POST_IMAGE_FILE_NAME_PART => [
 			'select'	=> 'имя файла'
 		,	'found by'	=> 'имени файла'
 		,	'placeholder'	=> 'Введите часть имени файла, напр.: 0123abcdef.png, jpg, res, и т.д.'
 		]
-	,	'bytes' => [
+	,	ARG_POST_IMAGE_FILE_SIZE => [
 			'select'	=> 'размер файла (байты)'
 		,	'found by'	=> 'размеру файла'
 		,	'placeholder'	=> 'Перечислите рамки размера файла, напр.: > 0, < 123кб, 4м-4.5мб, = 67890, и т.д.'
 		]
-	,	'width' => [
+	,	ARG_POST_IMAGE_WIDTH => [
 			'select'	=> 'ширина полотна (пиксели)'
 		,	'found by'	=> 'ширине полотна'
 		,	'placeholder'	=> 'Перечислите рамки ширины полотна, напр.: > 0, < 640, 640-800, = 800, и т.д.'
 		]
-	,	'height' => [
+	,	ARG_POST_IMAGE_HEIGHT => [
 			'select'	=> 'высота полотна (пиксели)'
 		,	'found by'	=> 'высоте полотна'
 		,	'placeholder'	=> 'Перечислите рамки высоты полотна, напр.: > 0, < 360, 360-800, = 800, и т.д.'
 		]
-	,	'time' => [
+	,	ARG_POST_USED_TIME => [
 			'select'	=> 'время на рисование (секунды)'
 		,	'found by'	=> 'времени на рисование'
 		,	'placeholder'	=> 'Перечислите рамки времени, напр.: > 0, < 10:20:30, 40-50, = 60, и т.д.'
 		]
-	,	'used' => [
+	,	ARG_POST_USED_TOOLS => [
 			'select'	=> 'использовано'
 		,	'found by'	=> 'использованному'
 		,	'placeholder'	=> 'Введите инструмент, напр.: имя рисовалки, undo, read file, text, и т.д.'
 		]
-	,	'name' => [
+	,	ARG_POST_USER_NAME_PART => [
 			'select'	=> 'часть имени автора'
 		,	'found by'	=> 'части имени автора'
 		,	'placeholder'	=> 'Введите часть имени автора постов.'
 		]
-	,	ARG_FULL_NAME => [
+	,	ARG_POST_USER_NAME_FULL => [
 			'select'	=> 'полное имя автора'
 		,	'found by'	=> 'полному имени автора'
 		,	'placeholder'	=> 'Введите полное имя автора постов.'

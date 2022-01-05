@@ -46,22 +46,29 @@ define('ARCH_PAT_POST', '~^
 $~uix');
 
 define('ARCH_PAT_POST_PIC', '~
-	(?P<open><a\s+[^>]+>)?
-	(?P<image><img\s+[^>]+?(?P<width>\s+width="\d+")?(?P<height>\s+height="\d+")?(?:\s+[^>]+?)?>)
-	(?P<close></a>)?
-	(?P<csv>(?:[;,]\s*[^;,]+)+\s+B)
+	(?P<Open><a\s+[^>]+>)?
+	(?P<Image>
+		<img\s+[^>]+?
+		(?P<Width>\s+width="\d+")?
+		(?P<Height>\s+height="\d+")?
+		(?:\s+[^>]+?)?
+		>
+	)
+	(?P<Close></a>)?
+	(?P<CSV>(?:[;,]\s*[^;,]+)+\s+B)
 ~uix');
 
 define('ARCH_SEARCH_ARG_ORDER', [
-	'post',
-	'file',
-	'bytes',
-	'width',
-	'height',
-	'time',
-	'used',
-	'name',
-	ARG_FULL_NAME,
+	ARG_POST_TEXT_PART		=> ARG_LEGACY_POST_TEXT,
+	ARG_POST_IMAGE_FILE_NAME_PART	=> ARG_LEGACY_POST_FILE,
+	ARG_POST_IMAGE_FILE_SIZE	=> ARG_LEGACY_POST_SIZE,
+	ARG_POST_IMAGE_WIDTH		=> ARG_LEGACY_POST_WIDTH,
+	ARG_POST_IMAGE_HEIGHT		=> ARG_LEGACY_POST_HEIGHT,
+	ARG_POST_USED_TIME		=> ARG_LEGACY_POST_TIME,
+	ARG_POST_USED_TOOLS		=> ARG_LEGACY_POST_USED,
+	ARG_POST_USER_NAME_PART		=> ARG_LEGACY_POST_NAME,
+	ARG_POST_USER_NAME_FULL		=> ARG_LEGACY_POST_FULL_NAME,
+	ARG_POST_USER_ID		=> false,
 ]);
 
 function data_archive_get_visible_rooms($type = '') {
@@ -299,7 +306,7 @@ function data_archive_get_post_fixed_values($line) {
 			count(array_filter($recheck))
 		||	!(
 				preg_match(ARCH_PAT_POST_PIC, $post_content, $match)
-			&&	($csv = $match['csv'])
+			&&	($csv = $match['CSV'])
 			&&	preg_match(PAT_POST_PIC_CRC32, $csv)
 			&&	preg_match(PAT_POST_PIC_BYTES, $csv)
 			&&	preg_match(PAT_POST_PIC_W_X_H, $csv)
@@ -586,7 +593,7 @@ function data_archive_rewrite($params = false) {
 		&&	is_file($f = "$dr/$fn")
 		&&	preg_match(PAT_CONTENT, $old = file_get_contents($f), $match)
 		) {
-			$new = data_archive_get_page_html($room, intval($fn), $match['content']);
+			$new = data_archive_get_page_html($room, intval($fn), $match['Content']);
 
 			if ($old === $new) {
 				$status = 'same';
@@ -648,7 +655,7 @@ function data_archive_rename_last_pic($old, $new, $n_last_pages = 0) {
 			if (
 				is_file($f = "$d$i$e")
 			&&	preg_match(PAT_CONTENT, file_get_contents($f), $match)
-			&&	false !== ($pos_before = mb_strpos($t = $match['content'], $old_name))
+			&&	false !== ($pos_before = mb_strpos($t = $match['Content'], $old_name))
 			&&	false !== ($pos_after = mb_strpos($t, ARCH_POST_FIELD_SEPARATOR, $pos_before))
 			) {
 				$before = mb_substr($t, 0, $pos_before);
@@ -661,7 +668,7 @@ function data_archive_rename_last_pic($old, $new, $n_last_pages = 0) {
 				}
 
 				if ($new !== $old) {
-					$done += file_put_contents($f, "$match[before]$before$new$after$match[after]");
+					$done += file_put_contents($f, "$match[Before]$before$new$after$match[After]");
 				}
 			}
 
@@ -677,14 +684,29 @@ function data_archive_rename_last_pic($old, $new, $n_last_pages = 0) {
 	return $done;
 }
 
+function data_archive_get_valid_search_term($query, $arg_name) {
+	if (
+		$arg_name
+	&&	array_key_exists($arg_name, $query)
+	&&	strlen($arg_value = $query[$arg_name])
+	&&	strlen($arg_value = trim_post(fix_encoding($arg_value), FIND_MAX_LENGTH))
+	) {
+		return $arg_value;
+	}
+
+	return false;
+}
+
 function data_archive_get_search_terms($query, $caseless = true) {
 	$terms = array();
 
 	if ($query && is_array($query)) {
-		foreach (ARCH_SEARCH_ARG_ORDER as $arg_name) if (	//* <- fixed order to canonically sort query arguments
-			array_key_exists($arg_name, $query)
-		&&	strlen($arg_value = $query[$arg_name])
-		&&	strlen($arg_value = trim_post(fix_encoding($arg_value), FIND_MAX_LENGTH))
+
+//* fixed order to canonically sort query arguments:
+
+		foreach (ARCH_SEARCH_ARG_ORDER as $arg_name => $legacy_name) if (
+			false !== ($arg_value = data_archive_get_valid_search_term($query, $arg_name))
+		||	false !== ($arg_value = data_archive_get_valid_search_term($query, $legacy_name))
 		) {
 			$terms[$arg_name] = $arg_value;
 		}
@@ -773,7 +795,7 @@ if (TIME_PARTS) {$n_found = 0; time_check_point(count($files)." files in $dr");}
 
 if (TIME_PARTS) $n_check = '';
 
-			foreach (mb_split_filter($match['content'], NL) as $line) {
+			foreach (mb_split_filter($match['Content'], NL) as $line) {
 				$tab = mb_split(ARCH_POST_FIELD_SEPARATOR, $line);
 				$post = array(
 					'date' => intval($tab[0]) ?: '?'

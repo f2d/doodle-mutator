@@ -8,8 +8,8 @@ if (PHP_MAJOR_VERSION >= 8) {
 
 define('LOCALHOST', $_SERVER['SERVER_ADDR'] === $_SERVER['REMOTE_ADDR']);
 
-function is_prefix($s, $p) {return substr($s, 0, strlen($p)) === $p;}
-function is_postfix($s, $p) {return substr($s, -strlen($p)) === $p;}
+function is_prefix($text, $part) {return substr($text, 0, strlen($part)) === $part;}
+function is_postfix($text, $part) {return substr($text, -strlen($part)) === $part;}
 function exit_no_access($why) {
 	header('HTTP/1.1 403 Forbidden');
 	die("Error 403: Forbidden. Reason: $why.");
@@ -57,7 +57,7 @@ ob_start();
 
 //* source: http://php.net/security.magicquotes.disabling#91653
 
-if (function_exists($f = 'get_magic_quotes_gpc') && $f()) {
+if (function_exists($func_name = 'get_magic_quotes_gpc') && $func_name()) {
 	function strip_magic_slashes(&$value, $key) {$value = stripslashes($value);}
 	$gpc = array(&$_COOKIE, &$_GET, &$_POST, &$_REQUEST, &$_SESSION);
 	array_walk_recursive($gpc, 'strip_magic_slashes');
@@ -88,6 +88,7 @@ define('WS_NGINX', stripos($s, 'nginx') !== false);
 define('WS_HTACCESS_SUPPORTED', stripos($s, 'apache') !== false);
 
 define('GET_Q', strpos($p, '?'));
+
 define('ARG_ERROR', '!');
 define('ARG_ERROR_SPLIT', '!');
 define('ARG_ABOUT', 'about');
@@ -104,7 +105,25 @@ define('ARG_REPORT', 'report');
 define('ARG_ANY', 'any');
 define('ARG_ANY_OF', 'any_of');
 define('ARG_DRAW_APP', 'draw_app');
-define('ARG_FULL_NAME', 'fullname');
+define('ARG_LEGACY_POST_TEXT', 'post');
+define('ARG_LEGACY_POST_FILE', 'file');
+define('ARG_LEGACY_POST_SIZE', 'bytes');
+define('ARG_LEGACY_POST_WIDTH', 'width');
+define('ARG_LEGACY_POST_HEIGHT', 'height');
+define('ARG_LEGACY_POST_TIME', 'time');
+define('ARG_LEGACY_POST_USED', 'used');
+define('ARG_LEGACY_POST_NAME', 'name');
+define('ARG_LEGACY_POST_FULL_NAME', 'fullname');
+define('ARG_POST_TEXT_PART', 'post_text_part');
+define('ARG_POST_IMAGE_FILE_NAME_PART', 'file_name_part');
+define('ARG_POST_IMAGE_FILE_SIZE', 'file_size_bytes');
+define('ARG_POST_IMAGE_WIDTH', 'image_width');
+define('ARG_POST_IMAGE_HEIGHT', 'image_height');
+define('ARG_POST_USED_TIME', 'used_time');
+define('ARG_POST_USED_TOOLS', 'used_tools');
+define('ARG_POST_USER_NAME_PART', 'user_name_part');
+define('ARG_POST_USER_NAME_FULL', 'full_user_name');
+define('ARG_POST_USER_ID', 'user_id');
 define('ARG_NAMING_VAR_PREFIX', '$');
 define('ARG_LANG', 'lang');
 
@@ -124,7 +143,6 @@ define('COUNT_ARCH', 'arch');
 define('COUNT_ROOM', 'room');
 define('COUNT_POST', 'post');
 
-$s = '@#?<>()\[\]\s\\\\/';				//* <- characters not allowed in email parts; keep it simple, for browser-side check
 define('NL', "\n");
 define('TAB', "\t");
 define('BOM', pack('CCC', 239, 187, 191));		//* <- UTF-8 Byte Order Mark
@@ -134,16 +152,19 @@ define('OPT_PRFX', 'opt_');
 define('CONTENT_DATETIME_FORMAT', 'Y-m-d H:i:s');
 define('FILENAME_DATETIME_FORMAT', 'Y-m-d H-i-s');
 define('HTTP_MOD_TIME_FORMAT', 'D, d M Y H:i:s \G\M\T');
-define('PAT_DATE', '~(?P<ym>(?P<y>\d+)-(?P<m>\d+))-(?P<d>\d+)~');
-define('PAT_REPORT', '~^(?P<thread>\d+)\D+(?P<post>\d+)\D+(?P<side>\d+)$~');
-define('PAT_CONTENT', '~^(?P<before>.*?<pre>)(?P<content>.*?\S)(?P<after>\s*</pre>.*)$~uis');
-define('PPM_BF', '~(?:^|[;,]\s*)');
-define('PPM_AF', '(?=$|[;,])~ui');
-define('PAT_POST_PIC_CRC32', PPM_BF.'0x(?P<crc32>[0-9a-f]{8})'.PPM_AF);
-define('PAT_POST_PIC_BYTES', PPM_BF.'(?P<bytes>[^0\D]\d*)\s+B'.PPM_AF);
-define('PAT_POST_PIC_W_X_H', PPM_BF.'(?P<width>[^0\D]\d*)\D(?P<height>[^0\D]\d*)'.PPM_AF);
+define('PAT_DATE', '~(?P<YearMonth>(?P<Year>\d+)-(?P<Month>\d+))-(?P<Day>\d+)~');
+define('PAT_REPORT', '~^(?P<Thread>\d+)\D+(?P<Post>\d+)\D+(?P<Side>\d+)$~');
+define('PAT_CONTENT', '~^(?P<Before>.*?<pre>)(?P<Content>.*?\S)(?P<After>\s*</pre>.*)$~uis');
+
+define('SUBPAT_PP_BEFORE', '~(?:^|[;,]\s*)');
+define('SUBPAT_PP_AFTER', '(?=$|[;,])~ui');
+define('PAT_POST_PIC_CRC32', SUBPAT_PP_BEFORE.'(?P<Prefix>0x)(?P<CRC32>[0-9a-f]{8})'.SUBPAT_PP_AFTER);
+define('PAT_POST_PIC_BYTES', SUBPAT_PP_BEFORE.'(?P<Bytes>[^0\D]\d*)\s+B'.SUBPAT_PP_AFTER);
+define('PAT_POST_PIC_W_X_H', SUBPAT_PP_BEFORE.'(?P<Width>[^0\D]\d*)\D(?P<Height>[^0\D]\d*)'.SUBPAT_PP_AFTER);
 define('PAT_REGEX_FORMAT', '~^/.+/[imsu]*$~u');
-define('PAT_EMAIL_FORMAT', "^.*?([^$s]+@[^$s.]+\\.[^$s]+).*?$");
+
+define('SUBPAT_EM_NONLETTERS', '@#?<>()\[\]\s\\\\/');	//* <- characters not allowed in email parts; keep it simple, for browser-side check
+define('PAT_EMAIL_FORMAT', '^.*?([^'.SUBPAT_EM_NONLETTERS.']+@[^'.SUBPAT_EM_NONLETTERS.'.]+\\.[^'.SUBPAT_EM_NONLETTERS.']+).*?$');
 define('RELATIVE_LINK_PREFIX', 'http://*/');
 
 //* Start buffering to clean up included output, like BOMs: *------------------
@@ -1143,7 +1164,7 @@ type_title = ".get_localized_text('room_types_title', $k);
 				}
 
 				$page['content'] = "
-arch_term_name = ".ARG_FULL_NAME."
+arch_term_name = ".ARG_POST_USER_NAME_FULL."
 archives = $arch_list_href
 profiles = ".ROOTPRFX.DIR_USER."
 page_ext = ".PAGE_EXT.get_flag_vars(
@@ -1649,7 +1670,7 @@ right = '.get_localized_text('report_user_hint')
 					)."
 report_to = .?report_post=$t";
 					$t .= "
-arch_term_name = ".ARG_FULL_NAME."
+arch_term_name = ".ARG_POST_USER_NAME_FULL."
 archives = $arch_list_href
 profiles = ".ROOTPRFX.DIR_USER."
 images = ".ROOTPRFX.DIR_PICS;
@@ -2413,12 +2434,15 @@ if ($u_key) {
 	if (isset($_POST['mod'])) {
 		if (MOD && (($qd_room && $room) || (GOD && ($query[LK_MOD_ACT] === LK_USERLIST || $etc === '3')))) {
 			$d = ord('a');
-			foreach ($_POST as $numbers => $text) if (preg_match('~^m\d+_(\d+)_(\d+)_(\d+)$~i', $numbers, $match)) {
+
+			foreach ($_POST as $numbers => $text)
+			if (preg_match('~^m\d+_(\d+)_(\d+)_(\d+)$~i', $numbers, $match)) {
 				$match[0] = $text;
 				$k = chr($d + substr_count($text, '+'));
 				$k = str_replace_first('_', "-$k-", $numbers);
 				$act[$k] = $match;
 			}
+
 			if ($act) {
 				krsort($act, SORT_NATURAL);		//* <- SORT_NATURAL - since php v5.4.0 only
 
@@ -2428,17 +2452,28 @@ if ($u_key) {
 
 				data_lock(LK_MOD_ACT);
 				data_lock(LK_ROOM.$room);
+
 				foreach ($act as $v) {
 					$m = data_mod_action($v);	//* <- act = array(option name, thread, row, column)
+
 					if ($m) {
-						if (array_key_exists($m, get_localized_text_array('post_err'))) ++$result[$m];
-						else ++$done;
-					} else ++$failed;
+						if (array_key_exists($m, get_localized_text_array('post_err'))) {
+							++$result[$m];
+						} else {
+							++$done;
+						}
+					} else {
+						++$failed;
+					}
 				}
+
 				data_unlock();
 
-				if ($result) $post_status = implode(ARG_ERROR_SPLIT, array_keys($result));
-				else $post_status = ($done && !$failed?'OK':'unkn_res');
+				if ($result) {
+					$post_status = implode(ARG_ERROR_SPLIT, array_keys($result));
+				} else {
+					$post_status = ($done && !$failed?'OK':'unkn_res');
+				}
 			}
 		}
 	} else
@@ -2448,15 +2483,30 @@ if ($u_key) {
 
 	if (isset($_POST[$k = ARG_REPORT])) {
 		if (!NO_MOD && ($report_post_ID = $query['report_post'] ?: $etc)) {
+
 			$post_status = 'no_path';
-			if (preg_match(PAT_REPORT, $report_post_ID, $r)) {
+
+			if (preg_match(PAT_REPORT, $report_post_ID, $match)) {
+
 				$post_status = 'text_short';
+
 				if (mb_strlen($t = trim_post($_POST[$k], REPORT_MAX_LENGTH)) >= REPORT_MIN_LENGTH) {
+
 					data_lock(LK_ROOM.$room);
-					$r['freeze'] = ($_POST['freeze'] || $_POST['stop'] || $_POST['check']);
-					$r['report'] = $t;
-					$r = data_log_report($r);
-					$post_status = ($r > 0?'OK':'trd_n_a');
+
+					$result = data_log_report(array(
+						'thread' => $match['Thread']
+					,	'post' => $match['Post']
+					,	'side' => $match['Side']
+					,	'report' => $t
+					,	'freeze' => (
+							$_POST['freeze']
+						||	$_POST['stop']
+						||	$_POST['check']
+						)
+					));
+					$post_status = ($result > 0 ? 'OK' : 'trd_n_a');
+
 					data_unlock();
 				}
 			}

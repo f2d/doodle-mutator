@@ -841,16 +841,16 @@ function get_search_ranges($criteria, $caseless = true) {
 	$pat_oom = '~'.SUBPAT_OOM_LETTERS.'~iu';
 	$patterns = array(
 		'(?P<number>\d+)'
-			=> array('width', 'height')
+			=> array(ARG_POST_IMAGE_WIDTH, ARG_POST_IMAGE_HEIGHT)
 	,	'(?P<number>\d+)((?P<float>[,.]\d+)?\s*(?P<oom>'.SUBPAT_OOM_LETTERS.'))?'
-			=> array('bytes')
+			=> array(ARG_POST_IMAGE_FILE_SIZE)
 	,	'(?P<csv>\d+(:+\d+)*)'
-			=> array('time')
+			=> array(ARG_POST_USED_TIME)
 	);
 
-	foreach ($patterns as $pattern => $types)
-	foreach ($types as $type) {
-		if (strlen($t = $criteria[$type])) {
+	foreach ($patterns as $pattern => $match_types)
+	foreach ($match_types as $match_type) {
+		if (strlen($t = $criteria[$match_type])) {
 			$sub_ranges = array();
 			$min = false;
 
@@ -930,29 +930,30 @@ function get_search_ranges($criteria, $caseless = true) {
 			}
 
 			if ($sub_ranges) {
-				$result[$type] = $sub_ranges;
+				$result[$match_type] = $sub_ranges;
 			}
 		}
 
-		unset($criteria[$type]);
+		unset($criteria[$match_type]);
 	}
 
 //* convert remaining text types to line-separated arrays and/or lowercase if needed:
 
-	foreach ($criteria as $type => $value) if (is_arg_type_any_of($type)) {
-		$result[$type] = get_search_ranges($value, $caseless);
+	foreach ($criteria as $match_type => $search_value)
+	if (is_arg_type_any_of($match_type)) {
+		$result[$match_type] = get_search_ranges($search_value, $caseless);
 	} else {
-		$value = "$value";
+		$search_value = "$search_value";
 
 		if ($caseless) {
-			$value = mb_strtolower($value);
+			$search_value = mb_strtolower($search_value);
 		}
 
-		if (preg_match('~\v~u', $value)) {
-			$value = mb_split_filter($value, NL);
+		if (preg_match('~\v~u', $search_value)) {
+			$search_value = mb_split_filter($search_value, NL);
 		}
 
-		$result[$type] = $value;
+		$result[$match_type] = $search_value;
 	}
 
 	return $result;
@@ -965,21 +966,29 @@ function is_arg_type_any_of($type) {
 	);
 }
 
-function is_post_text_matching($post_text, $search_value, $type = false, $caseless = false, $is_regex = false) {
-	foreach ((array)$post_text as $t) if (strlen($t)) {
-		$t = html_entity_decode($t);
+function is_post_text_matching(
+	$post_values
+,	$search_value
+,	$match_type = 'part'
+,	$caseless = false
+,	$is_match_by_regex = false
+) {
+	foreach ((array)$post_values as $post_value) if (strlen($post_value)) {
+		$post_value = html_entity_decode($post_value);
 
 		if ($caseless) {
-			$t = mb_strtolower($t);
+			$post_value = mb_strtolower($post_value);
 		}
 
 		if (
 			(
-				$type === ARG_FULL_NAME
-				? $t === $search_value
-				: false !== mb_strpos($t, $search_value)
+				false !== strpos($match_type, 'full')
+				? $post_value === $search_value
+				: false !== mb_strpos($post_value, $search_value)
+			) || (
+				$is_match_by_regex
+			&&	@preg_match($search_value, $post_value)
 			)
-		||	($is_regex && @preg_match($search_value, $t))
 		) {
 			return true;
 		}
@@ -998,9 +1007,9 @@ function is_post_matching($post, $criteria, $caseless = true) {
 
 	$is_image_post = isset($post['meta']);
 
-	foreach ($criteria as $type => $value) {
-		if (is_arg_type_any_of($type)) {
-			foreach ($value as $k => $v) {
+	foreach ($criteria as $match_type => $search_value) {
+		if (is_arg_type_any_of($match_type)) {
+			foreach ($search_value as $k => $v) {
 				if ($found = is_post_matching($post, array($k => $v), $caseless)) {
 					continue 2;
 				}
@@ -1009,115 +1018,165 @@ function is_post_matching($post, $criteria, $caseless = true) {
 			return false;
 		}
 
-		$found = $t = '';
+		$found = $post_value = '';
 
 	//* get values from relevant post field:
 
-		if ($type == 'name' || $type == ARG_FULL_NAME) {
-			$t = $post['username'];
+		if (
+			$match_type === ARG_POST_USER_ID
+		) {
+			$post_value = $post['user_id'];
 		} else
-		if ($type == 'user_id') {
-			$t = $post['user_id'];
+		if (
+			$match_type === ARG_POST_USER_NAME_PART
+		||	$match_type === ARG_POST_USER_NAME_FULL
+		) {
+			$post_value = $post['username'];
 		} else
-		if ($type == 'post') {
-			if ($is_image_post) {
-				return false;
-			}
+		if ($is_image_post) {
+			if (
+				$match_type === ARG_POST_IMAGE_FILE_NAME_PART
+			) {
+				$post_value = mb_split('"', $post['post']);
+				$post_value = array_filter($post_value, 'is_tag_attr');
+				$post_value = array_map('get_file_name', $post_value);		//* <- all filenames, original and resized
+			} else
+			if (
+				$match_type === ARG_POST_IMAGE_WIDTH
+			||	$match_type === ARG_POST_IMAGE_HEIGHT
+			||	$match_type === ARG_POST_IMAGE_FILE_SIZE
+			) {
+				$post_value = $post['post'];
 
-			$t = $post['post'];				//* <- text-only post content
+				$is_match_by_bytes = (
+					$match_type === ARG_POST_IMAGE_FILE_SIZE
+				);
 
-			if (false !== mb_strpos($t, '<')) {
-				$t = preg_replace('~<[^>]+>~u', '', mb_str_replace('<br>', NL, $t));
-			}
-		} else
-		if (!$is_image_post) {
-			return false;
-		} else
-		if ($type == 'file') {
-			$t = mb_split('"', $post['post']);
-			$t = array_filter($t, 'is_tag_attr');
-			$t = array_map('get_file_name', $t);		//* <- all filenames, original and resized
-		} else
-		if ($type == 'width' || $type == 'height' || $type == 'bytes') {
-			$t = $post['post'];
-			$pat = ($type == 'bytes' ? PAT_POST_PIC_BYTES : PAT_POST_PIC_W_X_H);
+				$match_pat = (
+					$is_match_by_bytes
+					? PAT_POST_PIC_BYTES
+					: PAT_POST_PIC_W_X_H
+				);
 
-			if (preg_match($pat, mb_substr_after($t, '>'), $match)) {
-				$t = intval($match[$type == 'height'?2:1]);
-			} else {
-				return false;
-			}
-		} else
-		if ($type == 'time') {
-			if (preg_match('~^[\d:-]+~i', $post['meta'], $match)) {
-				$t = $match[0];
+				if (preg_match($match_pat, mb_substr_after($post_value, '>'), $match)) {
 
-				if (mb_strrpos($t, '-')) {
-					$t1 = $t0 = false;
+					if ($is_match_by_bytes) {
+						$match_value = (
+							$match['Bytes']
+						?:	$match[1]
+						);
+					} else {
+						$is_match_by_width = (
+							$match_type === ARG_POST_IMAGE_WIDTH
+						);
 
-					foreach (mb_split('-', $t) as $n) if (strlen($n)) {
-						if (false === $t0) $t0 = $n;
-						$t1 = $n;
+						$match_value = (
+							$match[$is_match_by_width ? 'Width' : 'Height']
+						?:	$match[$is_match_by_width ? 1 : 2]
+						);
 					}
 
-					$t = intval(($t1-$t0)/1000);	//* <- msec. from JS
+					$post_value = intval($match_value);
 				} else {
-					$t = get_time_seconds($t);
+					return false;
 				}
+			} else
+			if (
+				$match_type == ARG_POST_USED_TIME
+			) {
+				if (preg_match('~^[\d:-]+~i', $post['meta'], $match)) {
+
+					$is_match_by_time = true;
+					$post_value = $match[0];
+
+					if (mb_strrpos($post_value, '-')) {
+						$t1 = $t0 = false;
+
+						foreach (mb_split('-', $post_value) as $n) if (strlen($n)) {
+							if (false === $t0) $t0 = $n;
+							$t1 = $n;
+						}
+
+						$post_value = intval(($t1-$t0)/1000);	//* <- msec. from JS
+					} else {
+						$post_value = get_time_seconds($post_value);
+					}
+				} else {
+					return false;
+				}
+			} else
+			if (
+				$match_type == ARG_POST_USED_TOOLS
+			) {
+				$post_value = $post['meta'];				//* <- what was used to draw
 			} else {
 				return false;
 			}
 		} else {
-			$t = $post['meta'];				//* <- what was used to draw
+			if (
+				$match_type == ARG_POST_TEXT_PART
+			) {
+				if ($is_image_post) {
+					return false;
+				}
+
+				$post_value = $post['post'];				//* <- text-only post content
+
+				if (false !== mb_strpos($post_value, '<')) {
+					$post_value = preg_replace('~<[^>]+>~u', '', mb_str_replace('<br>', NL, $post_value));
+				}
+			} else {
+				return false;
+			}
 		}
 
-if (TIME_PARTS && LOCALHOST) time_check_point("$type: $t vs ".get_print_or_none($value));
+if (TIME_PARTS && LOCALHOST) time_check_point("$match_type: $post_value vs ".get_print_or_none($search_value));
 
 	//* compare:
 
-		if (is_array($value)) {
-			foreach ($value as $cond_type => $cond)
+		if (is_array($search_value)) {
+			foreach ($search_value as $cond_type => $cond)
 			if (
 				!is_array($cond)
 			||	array_key_exists(0, $cond)
 			) {
 				if (
 					(is_array($cond) ? count($cond) : strlen($cond))
-				&&	($found = is_post_text_matching($t, $cond, $cond_type, $caseless))
+				&&	($found = is_post_text_matching($post_value, $cond, $cond_type, $caseless))
 				) {
 					break;
 				}
 			} else
 			if (
 				(
-					array_key_exists($k = 'operator', $cond)
+					array_key_exists($op = 'operator', $cond)
 				&&	array_key_exists($v = 'value', $cond)
 				&&	(
-						($cond[$k] == '=' && $t == $cond[$v])
-					||	($cond[$k] == '<' && $t < $cond[$v])
-					||	($cond[$k] == '>' && $t > $cond[$v])
+						($cond[$op] == '=' && $post_value == $cond[$v])
+					||	($cond[$op] == '<' && $post_value < $cond[$v])
+					||	($cond[$op] == '>' && $post_value > $cond[$v])
 					)
 				) || (
 					array_key_exists('min', $cond)
 				&&	array_key_exists('max', $cond)
-				&&	$t >= $cond['min']
-				&&	$t <= $cond['max']
+				&&	$post_value >= $cond['min']
+				&&	$post_value <= $cond['max']
 				)
 			) {
-				if ($type == 'time') {
-					$found = "drawn in $t sec.";
+				if ($is_match_by_time) {
+					$found = "drawn in $post_value sec.";
 				} else {
-					$found = "found $t";
+					$found = "found $post_value";
 				}
 
 				break;
 			}
 		} else {
-			if (!is_array($value)) {
-				$is_regex = preg_match(PAT_REGEX_FORMAT, $value);
+			if (!is_array($search_value)) {
+				$is_match_by_regex = preg_match(PAT_REGEX_FORMAT, $search_value);
 			}
 
-			$found = is_post_text_matching($t, $value, $type, $caseless, $is_regex);
+			$found = is_post_text_matching($post_value, $search_value, $match_type, $caseless, $is_match_by_regex);
 		}
 
 		if (!$found) {
@@ -1202,18 +1261,18 @@ function get_post_pic_info($p, $csv = '', $check_file = 0) {
 	if ($csv = $a['csv']) {
 		if (preg_match(PAT_POST_PIC_W_X_H, $csv, $match_res)) {
 			$a['full_res'] = array(
-				$match_res['width']
-			,	$match_res['height']
+				$match_res['Width']
+			,	$match_res['Height']
 			);
 		}
 
 		if (preg_match(PAT_POST_PIC_BYTES, $csv, $match_bytes)) {
-			$a['full_bytes'] = $b = $match_bytes['bytes'];
+			$a['full_bytes'] = $b = $match_bytes['Bytes'];
 			$a['full_bytes_f'] = format_filesize($b);
 		}
 
 		if (preg_match(PAT_POST_PIC_CRC32, $csv, $match_crc32)) {
-			$a['crc32'] = $match_crc32['crc32'];
+			$a['crc32'] = $match_crc32['CRC32'];
 		}
 	}
 
@@ -1254,10 +1313,10 @@ function get_archiver_dl_list($caseless = true, $include_hidden = true) {
 
 	$criteria = get_search_ranges(
 		array(
-			'file' => '.'
+			ARG_POST_IMAGE_FILE_NAME_PART => '.'
 		,	ARG_ANY_OF => array(
-				'user_id' => $user_id
-			,	ARG_FULL_NAME => $names
+				ARG_POST_USER_ID => $user_id
+			,	ARG_POST_USER_NAME_FULL => $names
 			)
 		)
 	,	$caseless

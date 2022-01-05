@@ -416,7 +416,7 @@ $cfg_header_links = array(
 
 //* ---------------------------------------------------------------------------
 
-define('FOOT_NOTE', '2013-2020.
+define('FOOT_NOTE', '2013-2022.
 <a href="'.ROOTPRFX.'?'.ARG_ABOUT.'">%s</a> /
 <a href="https://github.com/f2d/doodle-mutator">%s</a> /
 <a href="https://github.com/f2d/">%s</a> /
