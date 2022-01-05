@@ -101,6 +101,9 @@ define('ARG_SKIP', 'skip');
 define('ARG_UNSKIP', 'unskip');
 define('ARG_CHANGE', 'change');
 define('ARG_CHANGE_TO', 'change_to');
+define('ARG_UNDRAWN', 'undrawn');
+define('ARG_UNKNOWN', 'unknown');
+define('ARG_FINAL_TASK', 'final_task');
 define('ARG_REPORT', 'report');
 define('ARG_ANY', 'any');
 define('ARG_ANY_OF', 'any_of');
@@ -1914,6 +1917,7 @@ right = ".get_localized_text('empty')."$flags
 				}
 				if ($free_task_counts = $target['free_task_counts']) {
 					$free_task_types = array_keys(array_filter($free_task_counts));
+
 					sort($free_task_types);
 
 					$page['data']['task'][ARG_CHANGE] = implode(',', $free_task_types);
@@ -1926,7 +1930,7 @@ right = ".get_localized_text('empty')."$flags
 						$post_num = intval($target['posts']) ?: 1;
 						$page['data']['task'][ARG_REPORT] = "$thread_num-$post_num-0";
 					}
-				} else
+				}
 				if ($skip_threads_count = count($skip_threads)) {
 					$page['data']['task'][ARG_UNSKIP] = $skip_threads_count;
 				}

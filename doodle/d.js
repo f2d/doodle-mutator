@@ -130,9 +130,13 @@ if (lang == 'ru') la = {
 		,	draw: 'Рисовать что-то новое'
 		}
 	,	change: {
-			any: 'Любое другое задание'
-		,	desc: 'Описать другое'
-		,	draw: 'Рисовать другое'
+			any: 'Взять любое другое задание'
+		,	desc: 'Описать любое другое задание'
+		,	draw: 'Рисовать любое другое задание'
+		,	any_unknown: 'Взять любое задание из неоткрытых нитей'
+		,	desc_unknown: 'Описать задание из неоткрытых нитей'
+		,	draw_unknown: 'Рисовать задание из неоткрытых нитей'
+		,	final_task: 'Взять задание, завершающее нить'
 		}
 	}
 ,	draw_test: 'Попробовать'
@@ -251,9 +255,13 @@ if (lang == 'ru') la = {
 		,	draw: 'Draw anything new'
 		}
 	,	change: {
-			any: 'Any other task'
-		,	desc: 'Describe other'
-		,	draw: 'Draw other'
+			any: 'Take any other task'
+		,	desc: 'Describe other task'
+		,	draw: 'Draw other task'
+		,	any_unknown: 'Take any task from unknown thread'
+		,	desc_unknown: 'Describe task from unknown thread'
+		,	draw_unknown: 'Draw task from unknown thread'
+		,	final_task: 'Take final task in a thread'
 		}
 	}
 ,	draw_test: 'Try drawing'
@@ -2891,36 +2899,55 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 		}
 
 		for (var changeType in la.task) {
-		var	possibleChanges = k.getAttribute('data-' + changeType);
+		var	possibleChanges = k.getAttribute('data-' + changeType)
+			;
 
-			if (possibleChanges) possibleChanges.split(regSplitWord).map(
-				function(newTaskType) {
+			if (possibleChanges) {
+			var	btnTextByTaskType = la.task[changeType]
+			,	possibleChangeTypes = possibleChanges.split(regSplitWord)
+				;
+
+				function addTaskChangeBtn(newTaskType) {
+				var	btnParts = {
+						// href: ('?' + (changeType == 'free'?'':changeType+'=') + newTaskType).replace(regREqual, '')
+						href: (
+							changeType == 'free'
+							? '?' + newTaskType
+							: "javascript:changeMyTask('" + changeType + "', '" + newTaskType + "')"
+						)
+					};
+
 					addTaskMenuBtn(
-						la.task[changeType][newTaskType]
-					,	{
-							// href: ('?' + (changeType == 'free'?'':changeType+'=') + newTaskType).replace(regREqual, '')
-							href: (
-								changeType == 'free'
-								? '?' + newTaskType
-								: "javascript:changeMyTask('" + changeType + "', '" + newTaskType + "')"
-							)
-						}
+						btnTextByTaskType[newTaskType]
+					,	btnParts
 					,	m
 					);
 				}
-			);
+
+				for (var newTaskType in btnTextByTaskType)
+				if (possibleChangeTypes.indexOf(newTaskType) >= 0) {
+					addTaskChangeBtn(newTaskType);
+				}
+			}
 		}
 
 		if (taskUnskipNum) {
-			addTaskBtn(
-				la.unskip
-			,	{
-					href: 'javascript:void ' + orz(taskUnskipNum)
-				,	title: la.unskip_hint
-				,	id: 'unskip'
-				,	'data-room': room
-				}
-			);
+		var	btnParts = {
+				href: 'javascript:void ' + orz(taskUnskipNum)
+			,	title: la.unskip_hint
+			,	id: 'unskip'
+			,	'data-room': room
+			};
+
+			if (
+				taskKeepNum
+			||	taskSkipNum
+			||	taskReportNum
+			) {
+				addTaskMenuBtn(la.unskip, btnParts, m);
+			} else {
+				addTaskBtn(la.unskip, btnParts);
+			}
 		}
 
 		if (t > 0) {

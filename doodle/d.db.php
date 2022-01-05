@@ -3197,6 +3197,7 @@ function data_aim($task_changing_params = false) {
 	);
 
 	$prefer_unknown = !$u_opts['unknown'];
+	$separate_final_tasks = !!$u_opts['final_task_notice'];
 	$reply_type_must_be_alternate = !!$room_type['alternate_reply_type'];
 	$counts = array();
 	$u_own = array();
@@ -3227,13 +3228,17 @@ function data_aim($task_changing_params = false) {
 			$free_task_lists[ARG_ANY][$f] = $i;
 			$free_task_lists[$type][$f] = $i;
 
-			if ($prefer_unknown && !data_thread_has_posts_by($path, $u_num)) {
-				$free_task_lists[ARG_ANY.'_unknown'][$f] = $i;
-				$free_task_lists[$type.'_unknown'][$f] = $i;
+			if (!data_thread_has_posts_by($path, $u_num, DATA_FLAG_POST_IMG)) {
+				$free_task_lists[ARG_ANY.'_'.ARG_UNDRAWN][$f] = $i;
 			}
 
-			if (!data_thread_has_posts_by($path, $u_num, DATA_FLAG_POST_IMG)) {
-				$free_task_lists[ARG_ANY.'_undrawn'][$f] = $i;
+			if ($prefer_unknown && !data_thread_has_posts_by($path, $u_num)) {
+				$free_task_lists[ARG_ANY.'_'.ARG_UNKNOWN][$f] = $i;
+				$free_task_lists[$type.'_'.ARG_UNKNOWN][$f] = $i;
+			}
+
+			if ($separate_final_tasks && data_is_task_final($path, $room_type)) {
+				$free_task_lists[ARG_FINAL_TASK][$f] = $i;
 			}
 		}
 	}
@@ -3250,7 +3255,12 @@ function data_aim($task_changing_params = false) {
 
 //* throw away irrelevant pools:
 
-	$dont_count = array('undrawn', 'unknown');
+	$dont_count = array(
+		ARG_UNDRAWN,
+		// ARG_UNKNOWN,
+		// ARG_FINAL_TASK,
+	);
+
 	$task_lists_to_pick = array();
 
 	foreach ($free_task_lists as $k => $v) {
