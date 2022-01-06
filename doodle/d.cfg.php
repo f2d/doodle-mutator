@@ -193,6 +193,7 @@ define('DRAW_REST', 'resize_callback=onResizeDrawing; palettes='.DIR_DRAW_APP.'p
 define('QK_KEEP_AFTER_LOGOUT', false);
 define('QK_EXPIRES', 100200300);		//* <- seconds; renewed with every successful POST, incl.options
 
+define('CHANGE_TASK_USE_MORE_SPECIFIC_TYPES_OF_IDENTICAL_LISTS', true);
 define('TARGET_AUTOUPDATE_INTERVAL', 3600);	//* <- seconds, 1 hour
 define('TARGET_CHANGE_TIME', 600);		//* <- seconds, 10 minutes
 define('TARGET_DESC_TIME', 1200);		//* <- seconds, 20 minutes

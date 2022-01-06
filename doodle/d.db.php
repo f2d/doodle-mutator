@@ -3105,35 +3105,46 @@ function data_use_any_when_only_desc_or_draw($task_lists_by_type) {
 		return array();
 	}
 
-	$when_only_desc_or_draw_use_any = array(
-		'',
-		'_'.ARG_UNKNOWN,
-	);
-
-	$task_types_in_any = array(
-		ARG_DESC,
-		ARG_DRAW,
+	$task_type_supersets = array(
+		ARG_ANY => array(
+			ARG_DESC,
+			ARG_DRAW,
+		),
+		ARG_ANY.'_'.ARG_UNKNOWN => array(
+			ARG_DESC.'_'.ARG_UNKNOWN,
+			ARG_DRAW.'_'.ARG_UNKNOWN,
+		),
 	);
 
 	$task_lists_as_text = array_map(function($a) { return implode(',', $a); }, $task_lists_by_type);
 
-	foreach ($when_only_desc_or_draw_use_any as $suffix) if (
-		($t_any = $task_lists_as_text[$k_any = ARG_ANY.$suffix])
+	foreach ($task_type_supersets as $generic_type => $task_type_subsets) if (
+		($generic_tasks = $task_lists_as_text[$generic_type])
 	) {
-		foreach ($task_types_in_any as $prefix) if (
-			($t_desc_or_draw = $task_lists_as_text[$k_desc_or_draw = $prefix.$suffix])
-		&&	($t_desc_or_draw === $t_any)
+		foreach ($task_type_subsets as $specific_type) if (
+			($specific_tasks = $task_lists_as_text[$specific_type])
+		&&	($specific_tasks === $generic_tasks)
 		) {
+			$type_to_keep = (
+				CHANGE_TASK_USE_MORE_SPECIFIC_TYPES_OF_IDENTICAL_LISTS
+				? $specific_type
+				: $generic_type
+			);
+
+			$type_to_remove = (
+				CHANGE_TASK_USE_MORE_SPECIFIC_TYPES_OF_IDENTICAL_LISTS
+				? $generic_type
+				: $specific_type
+			);
 
 if (TIME_PARTS) time_check_point(
-	'unset['.$k_desc_or_draw
-	.'] = ['.$t_desc_or_draw
-	.'], same as ['.$k_any
-	.'] = ['.$t_any
+	'unset['.$type_to_remove
+	.'], same as ['.$type_to_keep
+	.'] = ['.$generic_tasks
 	.']'
 );
 
-			unset($task_lists_by_type[$k_desc_or_draw]);
+			unset($task_lists_by_type[$type_to_remove]);
 		}
 	}
 
