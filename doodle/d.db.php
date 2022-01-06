@@ -3381,7 +3381,11 @@ function data_aim($task_changing_params = false) {
 			||	is_prefix($task_type, ARG_DRAW)
 			)
 		) {
-			$task_lists_to_pick[$task_type] = $free_task_lists[$task_type];
+			$task_lists_to_pick[
+				$what_change_to
+				? $task_type
+				: implode('_', array_reverse(explode('_', $task_type)))
+			] = $free_task_lists[$task_type];
 		}
 	}
 
