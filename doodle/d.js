@@ -2869,8 +2869,8 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			addTaskMenuBtn(
 				'X'
 			,	{
-					href: 'javascript:skipMyTask(' + taskSkipNum + ')'
-				,	title: la.skip_hint
+					'href': 'javascript:skipMyTask(' + taskSkipNum + ')'
+				,	'title': la.skip_hint
 				}
 			,	m
 			);
@@ -2880,7 +2880,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			addTaskMenuBtn(
 				la.report
 			,	{
-					href: "javascript:openReportForm('" + taskReportNum + "')"
+					'href': "javascript:openReportForm('" + taskReportNum + "')"
 				}
 			,	m
 			);
@@ -2890,57 +2890,46 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			taskKeepNum
 		&&	ON.indexOf(taskKeepNum) < 0
 		) {
-		// var	match = location.search.match(/(^|[?&])(draw_app=[^&]+)/i);
-
 			addTaskMenuBtn(
 				la.keep_task
 			,	{
-					// href: '?keep=on'+(match ? '&'+match[2] : '')
-					href: 'javascript:keepMyTask(' + taskKeepNum + ')'
-				,	title: la.keep_task_hint
+					'href': 'javascript:keepMyTask(' + taskKeepNum + ')'
+				,	'title': la.keep_task_hint
 				}
 			,	m
 			);
 		}
 
 		for (var changeType in la.task) {
-		var	possibleChanges = k.getAttribute('data-' + changeType)
-			;
+		var	possibleChanges = k.getAttribute('data-' + changeType);
 
 			if (possibleChanges) {
 			var	btnTextByTaskType = la.task[changeType]
 			,	possibleChangeTypes = possibleChanges.split(regSplitWord)
 				;
 
-				function addTaskChangeBtn(newTaskType) {
-				var	btnParts = {
-						// href: ('?' + (changeType == 'free'?'':changeType+'=') + newTaskType).replace(regREqual, '')
-						href: (
-							changeType == 'free'
-							? '?' + newTaskType
-							: "javascript:changeMyTask('" + changeType + "', '" + newTaskType + "')"
-						)
-					};
-
-					addTaskMenuBtn(
-						btnTextByTaskType[newTaskType]
-					,	btnParts
-					,	m
-					);
-				}
-
 				for (var newTaskType in btnTextByTaskType)
 				if (possibleChangeTypes.indexOf(newTaskType) >= 0) {
-					addTaskChangeBtn(newTaskType);
+					addTaskMenuBtn(
+						btnTextByTaskType[newTaskType]
+					,	{
+							'href': (
+								changeType == 'free'
+								? '?' + newTaskType
+								: "javascript:changeMyTask('" + changeType + "', '" + newTaskType + "')"
+							)
+						}
+					,	m
+					);
 				}
 			}
 		}
 
 		if (taskUnskipNum) {
-		var	btnParts = {
-				href: 'javascript:void ' + orz(taskUnskipNum)
-			,	title: la.unskip_hint
-			,	id: 'unskip'
+		var	attr = {
+				'href': 'javascript:void ' + orz(taskUnskipNum)
+			,	'title': la.unskip_hint
+			,	'id': 'unskip'
 			,	'data-room': room
 			};
 
@@ -2949,9 +2938,9 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			||	taskSkipNum
 			||	taskReportNum
 			) {
-				addTaskMenuBtn(la.unskip, btnParts, m);
+				addTaskMenuBtn(la.unskip, attr, m);
 			} else {
-				addTaskBtn(la.unskip, btnParts);
+				addTaskBtn(la.unskip, attr);
 			}
 		}
 
@@ -2959,9 +2948,9 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			addTaskBtn(
 				'<span id="'+CS+'">?</span>'
 			,	{
-					href: 'javascript:checkMyTask()'
-				,	title: String(t > 0 ? new Date(t) : new Date) + toolTipNewLine + la.check
-				,	class: (a > 0?'auto ':'')+'ready'
+					'href': 'javascript:checkMyTask()'
+				,	'title': String(t > 0 ? new Date(t) : new Date) + toolTipNewLine + la.check
+				,	'class': (a > 0?'auto ':'')+'ready'
 				}
 			);
 		}
