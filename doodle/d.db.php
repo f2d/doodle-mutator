@@ -3283,20 +3283,47 @@ function data_aim($task_changing_params = false) {
 			||	data_get_last_post_u(data_cache($path)) != $u_num
 			)
 		) {
-			$type = (data_is_thread_last_post_pic($path) ? ARG_DESC : ARG_DRAW);
+			$is_desc_type = data_is_thread_last_post_pic($path);
+
+			$type = (
+				$is_desc_type
+				? ARG_DESC
+				: ARG_DRAW
+			);
+
 			$free_task_lists[ARG_ANY][$f] = $i;
 			$free_task_lists[$type][$f] = $i;
 
-			if (!data_thread_has_posts_by($path, $u_num, DATA_FLAG_POST_IMG)) {
-				$free_task_lists[ARG_ANY.'_'.ARG_UNDRAWN][$f] = $i;
+			if (
+				PICK_TASK_FROM_UNDESCRIBED_OR_UNDRAWN_THREADS
+			&&	!data_thread_has_posts_by($path, $u_num, (
+					$is_desc_type
+					? DATA_FLAG_POST_TXT
+					: DATA_FLAG_POST_IMG
+				))
+			) {
+				$type_suffix = (
+					$is_desc_type
+					? ARG_UNDESCRIBED
+					: ARG_UNDRAWN
+				);
+
+				// $free_task_lists[ARG_ANY.'_'.$type_suffix][$f] = $i;
+				$free_task_lists[$type.'_'.$type_suffix][$f] = $i;
 			}
 
-			if ($prefer_unknown && !data_thread_has_posts_by($path, $u_num)) {
+			if (
+				$prefer_unknown
+			&&	!data_thread_has_posts_by($path, $u_num)
+			) {
 				$free_task_lists[ARG_ANY.'_'.ARG_UNKNOWN][$f] = $i;
 				$free_task_lists[$type.'_'.ARG_UNKNOWN][$f] = $i;
 			}
 
-			if ($separate_final_tasks && data_is_task_final($path, $room_type)) {
+			if (
+				$separate_final_tasks
+			&&	data_is_task_final($path, $room_type)
+			) {
 				$free_task_lists[ARG_FINAL_TASK][$f] = $i;
 			}
 		}
@@ -3315,6 +3342,7 @@ function data_aim($task_changing_params = false) {
 //* throw away irrelevant pools:
 
 	$dont_count = array(
+		ARG_UNDESCRIBED,
 		ARG_UNDRAWN,
 		// ARG_UNKNOWN,
 		// ARG_FINAL_TASK,
@@ -3419,6 +3447,12 @@ if (TIME_PARTS) time_check_point('got free task lists'
 		) {
 			$f = '';
 		}
+
+if (TIME_PARTS) time_check_point('used free task lists'
+	.', sorted = '.get_print_or_none($task_lists_to_pick)
+	.', preferred = '.get_print_or_none($preferred_task_list)
+	.', random-picked = '.get_print_or_none($f)
+);
 
 		if ($f !== $own) {
 			$target_changed = true;

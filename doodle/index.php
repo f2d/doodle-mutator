@@ -101,6 +101,7 @@ define('ARG_SKIP', 'skip');
 define('ARG_UNSKIP', 'unskip');
 define('ARG_CHANGE', 'change');
 define('ARG_CHANGE_TO', 'change_to');
+define('ARG_UNDESCRIBED', 'undescribed');
 define('ARG_UNDRAWN', 'undrawn');
 define('ARG_UNKNOWN', 'unknown');
 define('ARG_FINAL_TASK', 'final_task');
