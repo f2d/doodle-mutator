@@ -3096,6 +3096,54 @@ function data_check_my_task($aim = false) {
 	return 'task_let_go';
 }
 
+function data_use_any_when_only_desc_or_draw($task_lists_by_type) {
+
+	if (
+		!$task_lists_by_type
+	||	!is_array($task_lists_by_type)
+	) {
+		return array();
+	}
+
+	$when_only_desc_or_draw_use_any = array(
+		'',
+		'_'.ARG_UNKNOWN,
+	);
+
+	$task_types_in_any = array(
+		ARG_DESC,
+		ARG_DRAW,
+	);
+
+	$task_lists_as_text = array_map(function($a) { return implode(',', $a); }, $task_lists_by_type);
+
+	foreach ($when_only_desc_or_draw_use_any as $suffix) if (
+		($t_any = $task_lists_as_text[$k_any = ARG_ANY.$suffix])
+	) {
+		foreach ($task_types_in_any as $prefix) if (
+			($t_desc_or_draw = $task_lists_as_text[$k_desc_or_draw = $prefix.$suffix])
+		&&	($t_desc_or_draw === $t_any)
+		) {
+
+if (TIME_PARTS) time_check_point(
+	'unset['.$k_desc_or_draw
+	.'] = ['.$t_desc_or_draw
+	.'], same as ['.$k_any
+	.'] = ['.$t_any
+	.']'
+);
+
+			unset($task_lists_by_type[$k_desc_or_draw]);
+		}
+	}
+
+if (TIME_PARTS) time_check_point(
+	'task_lists_by_type = '.get_print_or_none($task_lists_by_type)
+);
+
+	return $task_lists_by_type;
+}
+
 function data_aim($task_changing_params = false) {
 	global $u_num, $u_flag, $u_opts, $room, $room_type, $target;
 
@@ -3199,9 +3247,9 @@ function data_aim($task_changing_params = false) {
 	$prefer_unknown = !$u_opts['unknown'];
 	$separate_final_tasks = !!$u_opts['final_task_notice'];
 	$reply_type_must_be_alternate = !!$room_type['alternate_reply_type'];
-	$counts = array();
-	$u_own = array();
+
 	$free_task_lists = array();
+	$u_own = array();
 
 //* scan threads; ignore skipped, full or held by others:
 
@@ -3261,41 +3309,45 @@ function data_aim($task_changing_params = false) {
 		// ARG_FINAL_TASK,
 	);
 
+	$free_task_counts = array();
 	$task_lists_to_pick = array();
+	$task_lists_for_manual_change = data_use_any_when_only_desc_or_draw($free_task_lists);
 
-	foreach ($free_task_lists as $k => $v) {
-
-		$is_collection_by_task_type = (
-			is_prefix($k, ARG_DESC)
-		||	is_prefix($k, ARG_DRAW)
-		);
-
+	foreach ($task_lists_for_manual_change as $task_type => $tasks_by_type) {
 		if (
 			!$reply_type_must_be_alternate
-		&&	$is_collection_by_task_type
+		&&	(
+				is_prefix($task_type, ARG_DESC)
+			||	is_prefix($task_type, ARG_DRAW)
+			)
 		) {
-			goto after_count;
+			continue;
 		}
 
-		foreach ($dont_count as $x) if (is_postfix($k, $x)) {
-			goto after_count;
+		foreach ($dont_count as $suffix) if (is_postfix($task_type, $suffix)) {
+			continue 2;
 		}
 
-		$counts[$k] = count($v);
+		$free_task_counts[$task_type] = count($tasks_by_type);
+	}
 
-	after_count:
-
+	foreach ($free_task_lists as $task_type => $tasks_by_type) {
 		if (
 			$what_change_to
-			? (is_prefix($k, $what_change_to) || is_prefix($k, ARG_ANY))
-			: $is_collection_by_task_type
+			? (
+				is_prefix($task_type, $what_change_to)
+			||	is_prefix($task_type, ARG_ANY)
+			) : (
+				is_prefix($task_type, ARG_DESC)
+			||	is_prefix($task_type, ARG_DRAW)
+			)
 		) {
-			$task_lists_to_pick[$k] = $free_task_lists[$k];
+			$task_lists_to_pick[$task_type] = $free_task_lists[$task_type];
 		}
 	}
 
-	ksort($counts);
-	$target['free_task_counts'] = $counts;
+	ksort($free_task_counts);
+	$target['free_task_counts'] = $free_task_counts;
 
 	$own_exists = (
 		is_file($path = $d.$own)
@@ -3308,6 +3360,7 @@ function data_aim($task_changing_params = false) {
 	}
 
 if (TIME_PARTS) time_check_point('got free task lists'
+	.', counts = '.get_print_or_none($free_task_counts)
 	.', all = '.get_print_or_none($free_task_lists)
 	.', to pick = '.get_print_or_none($task_lists_to_pick)
 );
@@ -3372,7 +3425,7 @@ if (TIME_PARTS) time_check_point('got free task lists'
 				($target['pic'] ? ARG_DESC : ARG_DRAW)
 			,	ARG_ANY
 			] as $k) {
-				++$counts[$k];
+				++$free_task_counts[$k];
 			}
 		}
 
@@ -3413,8 +3466,8 @@ if (TIME_PARTS) time_check_point('got free task lists'
 				$type
 			,	ARG_ANY
 			] as $k) {
-				if ($counts[$k] > 0) {
-					--$counts[$k];
+				if ($free_task_counts[$k] > 0) {
+					--$free_task_counts[$k];
 				}
 			}
 
@@ -3434,7 +3487,7 @@ if (TIME_PARTS) time_check_point('got free task lists'
 			$new_task = array(T0, $room, $t, $p);
 		}
 
-		$target['free_task_counts'] = $counts;
+		$target['free_task_counts'] = $free_task_counts;
 	}
 
 //* task changed:
