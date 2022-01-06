@@ -1446,18 +1446,18 @@ function data_get_thread_name_tail($t, $count_pics = true) {
 
 	if (is_array($t)) {
 		if ($tt) {
-			list($TaskHoldTime, $TaskHoldUser) = $t;
+			list($task_hold_time, $task_hold_user) = $t;
 		}
 
 //* unlocked thread:
 
 	} else
 	if ($t) {
-		$pics = mb_substr_count($t, DATA_MARK_IMG);
+		$pics_count = mb_substr_count($t, DATA_MARK_IMG);
 
 		if ($tt) {
-			$LastPostUser = data_get_last_post_u($t);
-			$LastPostTime = data_get_last_post_time($t);
+			$last_post_user = data_get_last_post_u($t);
+			$last_post_time = data_get_last_post_time($t);
 		} else {
 			$count_pics = false;
 		}
@@ -1466,20 +1466,20 @@ function data_get_thread_name_tail($t, $count_pics = true) {
 
 		if (
 			!$count_pics
-		&&	$pics < TRD_MAX_POSTS
+		&&	$pics_count < TRD_MAX_POSTS
 		) {
-			unset($pics);
+			unset($pics_count);
 		}
 	}
 
 	$tail = '';
 
 	foreach (array(
-		'p' => 'PicsCount'
-	,	'l' => 'LastPostTime'
-	,	'a' => 'LastPostUser'
-	,	't' => 'TaskHoldTime'
-	,	'u' => 'TaskHoldUser'
+		'p' => 'pics_count'
+	,	'l' => 'last_post_time'
+	,	'a' => 'last_post_user'
+	,	't' => 'task_hold_time'
+	,	'u' => 'task_hold_user'
 	) as $k => $v) if (isset($$v)) {
 		$tail .= ".$k${$v}";
 	}
