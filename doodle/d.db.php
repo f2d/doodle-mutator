@@ -3711,7 +3711,8 @@ function data_rename_last_pic($old, $new) {
 		!$old
 	||	!$new
 	||	$new === $old
-	||	!strlen($f = $GLOBALS['data_thread_file_path'])
+	||	!is_string($f = $GLOBALS['data_thread_file_path'])
+	||	!strlen($f)
 	||	!is_file($f)
 	) {
 		return;
@@ -3726,15 +3727,20 @@ function data_rename_last_pic($old, $new) {
 	$t = file_get_contents($f);
 	$pos_before = mb_strrpos_after($t, DATA_MARK_IMG);
 	$pos_after = mb_strpos($t, DATA_FIELD_SEPARATOR, $pos_before);
-	$old_data_in_post = mb_substr($t, $pos_before, $pos_after - $pos_before);
+	$old_saved = mb_substr($t, $pos_before, $pos_after - $pos_before);
+
+//* verify that last pic filename in thread is the right one:
 
 	if (
-		$old_data_in_post === $old
-	||	0 === strpos($old_data_in_post, $old)
+		$old_saved === $old
+	||	(
+			mb_split(';', $old_saved, 2)[0]
+		===	mb_split(';', $old, 2)[0]
+		)
 	) {
 		$before = mb_substr($t, 0, $pos_before);
 		$after = mb_substr($t, $pos_after);
-		$new = get_post_pic_field_with_fixed_info(
+		$new_to_save = get_post_pic_field_with_fixed_info(
 			(
 				is_string($new) && strlen($new)
 				? $new
@@ -3743,9 +3749,9 @@ function data_rename_last_pic($old, $new) {
 		);
 
 		return (
-			$new
-		&&	$new !== $old
-		&&	file_put_contents($f, "$before$new$after")
+			$new_to_save
+		&&	$new_to_save !== $old_saved
+		&&	file_put_contents($f, "$before$new_to_save$after")
 		);
 	}
 }
