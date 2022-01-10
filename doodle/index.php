@@ -2769,7 +2769,9 @@ file: $upload[name]";
 					}
 				}
 
-				if ((($resize = ($w > DRAW_PREVIEW_WIDTH)) || $x < 9000) && $x > 0) {
+				$resize = ($w > DRAW_PREVIEW_WIDTH);
+
+				if ($x > 0 && ($x < 9000 || $resize)) {
 					$post_status = 'pic_fill';
 					$i = "imageCreateFrom$file_type";
 					$log = imageColorAt($pic = $i($f), 0, 0);
@@ -2791,9 +2793,10 @@ file: $upload[name]";
 					$x = 0;
 					$post_status = 'file_put';
 				} else {
+					$fwh = "$fn;$w*$h, ";
+
 					if ($resize) {
-						$fwh = $fn .= ";$w*$h, ";
-						$fn .= format_filesize($file_size);
+						$fn = $fwh.format_filesize($file_size);
 					} else if ($pic) {
 						imageDestroy($pic);
 					} else $log = "imageDestroy(none): $f";
@@ -3055,12 +3058,13 @@ if ($f = $pic_final_path) {
 			flush();
 		}
 
-		$program = optimize_pic($f);
+		$program_name = optimize_pic($f);
+		$new = filesize($f);
 
-		if ($old === ($new = filesize($f))) {
+		if ($new === $old) {
 			if ($page_reload_after_pause) {
 				echo (
-					$program
+					$program_name
 					? get_localized_text('no_change')
 					: get_localized_text('post_progress', 'no_program')
 				);
@@ -3068,13 +3072,15 @@ if ($f = $pic_final_path) {
 
 			return '';
 		} else {
-			$f = format_filesize($new);
+			$size_text = format_filesize($new);
 
 			if ($page_reload_after_pause) {
-				echo "$f, ".get_localized_text('post_progress', 'used_program').": $program.";
+				$made_with = get_localized_text('post_progress', 'used_program');
+
+				echo "$size_text, $made_with: $program_name.";
 			}
 
-			return $f;
+			return $size_text;
 		}
 	}
 
@@ -3138,17 +3144,24 @@ if ($f = $pic_final_path) {
 .': ';
 	}
 
-	$changed = pic_opt_get_size($f);
+//* rewriting already stored post is a crutch, but nothing better for now:
+
+	if ($changed = pic_opt_get_size($f)) {
+		if (LOCALHOST) echo pic_opt_get_time().'update last pic size text:';
+
+		$changed_result = data_rename_last_pic($fn, $fwh.$changed);
+
+		if (LOCALHOST) echo pic_opt_get_time().$changed_result;
+	}
 
 	if ($pic && $resize) {
-		if ($changed) {
-			//* rewriting already stored post is a crutch, but nothing better for now:
-			data_rename_last_pic($fn, $fwh.$changed);
-		}
-
 		$x = DRAW_PREVIEW_WIDTH;
 		$y = round($h/$w*$x);
 		$z = filesize($f);
+
+		if (is_file($f = get_pic_resized_path($f))) {
+			unlink($f);
+		}
 
 		if ($page_reload_after_pause) {
 			echo pic_opt_get_time().get_localized_text('post_progress', 'low_res').": $w$BY$h$TO$x$BY$y";
@@ -3159,7 +3172,6 @@ if ($f = $pic_final_path) {
 		imageSaveAlpha($p, true);
 		imageCopyResampled($p, $pic, 0,0,0,0, $x,$y, $w,$h);
 		imageDestroy($pic);
-		if (is_file($f = get_pic_resized_path($f))) unlink($f);
 		$i = "image$file_type";
 		$i($p, $f);
 

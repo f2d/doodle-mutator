@@ -3707,9 +3707,13 @@ function data_log_post($post) {
 }
 
 function data_rename_last_pic($old, $new) {
-	global $room;
-
-	if ($new === $old || !strlen($f = $GLOBALS['data_thread_file_path'])) {
+	if (
+		!$old
+	||	!$new
+	||	$new === $old
+	||	!strlen($f = $GLOBALS['data_thread_file_path'])
+	||	!is_file($f)
+	) {
 		return;
 	}
 
@@ -3719,18 +3723,30 @@ function data_rename_last_pic($old, $new) {
 		return data_archive_rename_last_pic($old, $new, $f);
 	}
 
-	if (is_file($f)) {
-		$t = file_get_contents($f);
-		$pos_before = mb_strrpos_after($t, DATA_MARK_IMG);
-		$pos_after = mb_strpos($t, DATA_FIELD_SEPARATOR, $pos_before);
+	$t = file_get_contents($f);
+	$pos_before = mb_strrpos_after($t, DATA_MARK_IMG);
+	$pos_after = mb_strpos($t, DATA_FIELD_SEPARATOR, $pos_before);
+	$old_data_in_post = mb_substr($t, $pos_before, $pos_after - $pos_before);
 
-		if (mb_substr($t, $pos_before, $pos_after - $pos_before) === $old) {
-			$before = mb_substr($t, 0, $pos_before);
-			$after = mb_substr($t, $pos_after);
-			$new = get_post_pic_field_with_fixed_info($new, 2);
+	if (
+		$old_data_in_post === $old
+	||	0 === strpos($old_data_in_post, $old)
+	) {
+		$before = mb_substr($t, 0, $pos_before);
+		$after = mb_substr($t, $pos_after);
+		$new = get_post_pic_field_with_fixed_info(
+			(
+				is_string($new) && strlen($new)
+				? $new
+				: $old
+			), 2
+		);
 
-			return file_put_contents($f, "$before$new$after");
-		}
+		return (
+			$new
+		&&	$new !== $old
+		&&	file_put_contents($f, "$before$new$after")
+		);
 	}
 }
 
