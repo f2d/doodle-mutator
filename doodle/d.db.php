@@ -759,7 +759,10 @@ function data_get_cached_userlist_shared_key() {
 */
 
 function data_get_cached_userlist_handle($mem_size = 0) {
-	if (!function_exists('shmop_open')) {
+	if (
+		!DATA_USE_SHARED_MEM
+	||	!function_exists('shmop_open')
+	) {
 		return;
 	}
 
@@ -771,25 +774,20 @@ function data_get_cached_userlist_handle($mem_size = 0) {
 }
 
 function data_get_cached_userlist() {
-	if (!DATA_USE_SHARED_MEM || !function_exists('shmop_read')) {
+	if (
+		!DATA_USE_SHARED_MEM
+	||	!function_exists('shmop_read')
+	) {
 		return;
 	}
 
 	$result = null;
+	$mem_content = data_get_cached_userlist_from_shared_memory();
 
-	data_lock($lk = DATA_LK_SHARED_MEM_USERLIST, false);
-
-	if ($shared_mem_handle = data_get_cached_userlist_handle()) {
-		$mem_content = shmop_read($shared_mem_handle, 0, 0);
-
-//* shmop_close() is deprecated since PHP 8.0 where shmop functions use objects instead of resources:
-
-		if (PHP_MAJOR_VERSION < 8) shmop_close($shared_mem_handle);
-
+	if (null !== $mem_content) {
 		if (false !== $mem_content) {
 			$data_content = data_read_null_terminated_string($mem_content);
 			$result = data_import_from_string($data_content);
-
 		}
 
 		time_check_point('done shmop_read'.(
@@ -797,63 +795,108 @@ function data_get_cached_userlist() {
 			? ', result = false'
 			: '('.strlen($mem_content)." bytes), filesize = $result[filesize], filemtime = $result[filemtime]"
 		));
-
-	}
-
-	data_unlock($lk);
-
-	return $result;
-}
-
-function data_clear_cached_userlist() {
-	if (!DATA_USE_SHARED_MEM || !function_exists('shmop_delete')) {
-		return;
-	}
-
-	$result = null;
-
-	data_lock(DATA_LK_SHARED_MEM_USERLIST);
-
-	if ($shared_mem_handle = data_get_cached_userlist_handle()) {
-		$result = shmop_delete($shared_mem_handle);
-
-		if (PHP_MAJOR_VERSION < 8) shmop_close($shared_mem_handle);
 	}
 
 	return $result;
 }
 
 function data_save_cached_userlist($data_obj) {
-	$data_content = data_export_to_string($data_obj);
-
-	time_check_point("inb4 shmop_write: filesize = $data_obj[filesize], filemtime = $data_obj[filemtime]");
-
-	return data_write_cached_userlist($data_content);
-}
-
-function data_write_cached_userlist($data_content) {
-	if (!DATA_USE_SHARED_MEM || !function_exists('shmop_write')) {
+	if (
+		!DATA_USE_SHARED_MEM
+	||	!function_exists('shmop_write')
+	||	!function_exists('shmop_delete')
+	) {
 		return;
 	}
 
-	$result = null;
+	time_check_point("inb4 shmop_delete + shmop_write: filesize = $data_obj[filesize], filemtime = $data_obj[filemtime]");
 
-	data_clear_cached_userlist();
-
+	$data_content = data_export_to_string($data_obj);
 	$mem_content = data_get_null_terminated_string($data_content);
 	$mem_size = strlen($mem_content);
 
-	if ($shared_mem_handle = data_get_cached_userlist_handle($mem_size)) {
-		$result = shmop_write($shared_mem_handle, $mem_content, 0);
+	$result = data_clear_cached_userlist();
 
-		if (PHP_MAJOR_VERSION < 8) shmop_close($shared_mem_handle);
+	if ($result !== null) {
+		time_check_point("done shmop_delete() = $result");
+	}
 
+	$result = data_write_cached_userlist_to_shared_memory($mem_content, $mem_size);
+
+	if ($result !== null) {
 		if (LOCALHOST) file_put_contents(DATA_USERLIST.'_shared_mem_content.txt', $mem_content);
 
 		time_check_point("done shmop_write($mem_size bytes) = $result");
 	}
 
 	data_unlock(DATA_LK_SHARED_MEM_USERLIST);
+
+	return $result;
+}
+
+function data_get_cached_userlist_from_shared_memory() {
+	if (
+		!DATA_USE_SHARED_MEM
+	||	!function_exists('shmop_read')
+	) {
+		return;
+	}
+
+	$mem_content = null;
+
+	data_lock(DATA_LK_SHARED_MEM_USERLIST, false);
+
+	if ($shared_mem_handle = data_get_cached_userlist_handle()) {
+		$mem_content = shmop_read($shared_mem_handle, 0, 0);
+
+//* shmop_close() is deprecated since PHP 8.0 where shmop functions use objects instead of resources:
+
+		if (PHP_MAJOR_VERSION < 8) shmop_close($shared_mem_handle);
+	}
+
+	data_unlock(DATA_LK_SHARED_MEM_USERLIST);
+
+	return $mem_content;
+}
+
+function data_write_cached_userlist_to_shared_memory($mem_content, $mem_size) {
+	if (
+		!DATA_USE_SHARED_MEM
+	||	!function_exists('shmop_write')
+	) {
+		return;
+	}
+
+	$result = null;
+
+	data_lock(DATA_LK_SHARED_MEM_USERLIST, true);
+
+	if ($shared_mem_handle = data_get_cached_userlist_handle($mem_size)) {
+		$result = shmop_write($shared_mem_handle, $mem_content, 0);
+
+		if (PHP_MAJOR_VERSION < 8) shmop_close($shared_mem_handle);
+	}
+
+	return $result;
+}
+
+function data_clear_cached_userlist() {
+	if (
+		!DATA_USE_SHARED_MEM
+	||	!function_exists('shmop_delete')
+	) {
+		return;
+	}
+
+	$result = null;
+
+	data_lock(DATA_LK_SHARED_MEM_USERLIST, true);
+
+	if ($shared_mem_handle = data_get_cached_userlist_handle()) {
+		$result = shmop_delete($shared_mem_handle);
+
+		if (PHP_MAJOR_VERSION < 8) shmop_close($shared_mem_handle);
+	}
 
 	return $result;
 }
