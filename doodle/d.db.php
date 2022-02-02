@@ -781,7 +781,10 @@ function data_get_cached_userlist() {
 
 	if ($shared_mem_handle = data_get_cached_userlist_handle()) {
 		$mem_content = shmop_read($shared_mem_handle, 0, 0);
-		shmop_close($shared_mem_handle);
+
+//* shmop_close() is deprecated since PHP 8.0 where shmop functions use objects instead of resources:
+
+		if (PHP_MAJOR_VERSION < 8) shmop_close($shared_mem_handle);
 
 		if (false !== $mem_content) {
 			$data_content = data_read_null_terminated_string($mem_content);
@@ -813,7 +816,8 @@ function data_clear_cached_userlist() {
 
 	if ($shared_mem_handle = data_get_cached_userlist_handle()) {
 		$result = shmop_delete($shared_mem_handle);
-		shmop_close($shared_mem_handle);
+
+		if (PHP_MAJOR_VERSION < 8) shmop_close($shared_mem_handle);
 	}
 
 	return $result;
@@ -841,7 +845,8 @@ function data_write_cached_userlist($data_content) {
 
 	if ($shared_mem_handle = data_get_cached_userlist_handle($mem_size)) {
 		$result = shmop_write($shared_mem_handle, $mem_content, 0);
-		shmop_close($shared_mem_handle);
+
+		if (PHP_MAJOR_VERSION < 8) shmop_close($shared_mem_handle);
 
 		if (LOCALHOST) file_put_contents(DATA_USERLIST.'_shared_mem_content.txt', $mem_content);
 

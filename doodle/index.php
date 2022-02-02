@@ -8,8 +8,8 @@ if (PHP_MAJOR_VERSION >= 8) {
 
 define('LOCALHOST', $_SERVER['SERVER_ADDR'] === $_SERVER['REMOTE_ADDR']);
 
-function is_prefix($text, $part) {return substr($text, 0, strlen($part)) === $part;}
-function is_postfix($text, $part) {return substr($text, -strlen($part)) === $part;}
+function is_prefix ($text, $part) { return substr($text ?? '', 0, strlen($part)) === $part; }
+function is_postfix($text, $part) { return substr($text ?? '',   -strlen($part)) === $part; }
 function exit_no_access($why) {
 	header('HTTP/1.1 403 Forbidden');
 	die("Error 403: Forbidden. Reason: $why.");
@@ -58,7 +58,7 @@ ob_start();
 //* source: http://php.net/security.magicquotes.disabling#91653
 
 if (function_exists($func_name = 'get_magic_quotes_gpc') && $func_name()) {
-	function strip_magic_slashes(&$value, $key) {$value = stripslashes($value);}
+	function strip_magic_slashes(&$value, $key) { $value = stripslashes($value); }
 	$gpc = array(&$_COOKIE, &$_GET, &$_POST, &$_REQUEST, &$_SESSION);
 	array_walk_recursive($gpc, 'strip_magic_slashes');
 }
@@ -351,7 +351,7 @@ $qfix = ROOTPRFX.encode_URL_parts($qpath).($q ? "?$q" : '');
 
 if (
 	!POST
-&&	!$query[LK_MOD_ACT]
+&&	!isset($query[LK_MOD_ACT])
 &&	!is_url_equivalent($qfix, $_SERVER['REQUEST_URI'])
 &&	(SERVE_AS_INDEX_PAGE || 'index' !== get_file_name_no_ext($_SERVER['REQUEST_URI'], 0))
 ) {
@@ -1000,7 +1000,7 @@ if ($qd_arch) {
 	$q = data_archive_get_search_url($search);
 
 	if (
-		strlen($query_in_url)
+		is_not_empty($query_in_url)
 	&&	!is_url_equivalent($q, $query_in_url)
 	) {
 		exit_redirect(ROOTPRFX.encode_URL_parts($qpath).($q ? "?$q" : ''));
@@ -1464,9 +1464,9 @@ sep_select = '.$sp.'
 
 //* task manipulation, implies that $room is set and fixed already ------------
 
-			if (strlen($v = $query['report_post'])) $etc = $v; else
-			if (strlen($v = $query['skip_thread'])) $etc = '-'.abs(intval($v)); else
-			if (strlen($v = $query['check_task'])) {
+			if (is_not_empty($v = $query['report_post'])) $etc = $v; else
+			if (is_not_empty($v = $query['skip_thread'])) $etc = '-'.abs(intval($v)); else
+			if (is_not_empty($v = $query['check_task'])) {
 				if ($v == 'keep' || $v == 'prolong') $etc = '-'; else
 				if ($v == 'post' || $v == 'sending') $etc = '--'; else
 				if ($v == 'save' || $v == 'preserve') $etc = '---';
@@ -1560,7 +1560,7 @@ sep_select = '.$sp.'
 
 //* active room task and visible content --------------------------------------
 
-				$errors_in_query = $query[ARG_ERROR];
+				$errors_in_query = ($query[ARG_ERROR] ?? '');
 				$errors_after_POST = array_filter(mb_split_filter($errors_in_query, ARG_ERROR_SPLIT), 'is_post_error');
 
 				$asked_to_keep_desc = isset($query[ARG_DESC]);
@@ -1569,7 +1569,7 @@ sep_select = '.$sp.'
 				$asked_to_drop = isset($query[ARG_DROP]);
 				$asked_to_change = isset($query[ARG_CHANGE]);
 
-				$change_to = ($query[ARG_CHANGE] ?: ARG_CHANGE);
+				$change_to = ($query[ARG_CHANGE] ?? '' ?: ARG_CHANGE);
 				$asked_to_desc = (
 					$change_to === ARG_DESC
 				// ||	$asked_to_keep_desc
@@ -2188,7 +2188,7 @@ if (!$is_report_page) {
 	).'</a>';
 	unset($v);
 
-	if (MOD && ($t = $query[LK_MOD_ACT_LOG])) $page['mod_act_log'] = $t;
+	if (MOD && is_not_empty($t = $query[LK_MOD_ACT_LOG])) $page['mod_act_log'] = $t;
 	if (GOD) {
 		define('M', A.'.?'.LK_MOD_ACT);
 		foreach (get_localized_text_array('mod_pages') as $k => $v) $mod_list .= M.'='.$k.'">'.$v.AB;
@@ -2341,7 +2341,7 @@ if (!$is_report_page) {
 
 	$page['anno'] = 1;
 }
-if ($v = $query[ARG_ERROR]) $page['report'] = $v;
+if (is_not_empty($v = $query[ARG_ERROR])) $page['report'] = $v;
 
 die(get_template_page($page));
 
@@ -2443,7 +2443,7 @@ if ($u_key) {
 //* admin/mod actions ---------------------------------------------------------
 
 	if (isset($_POST['mod'])) {
-		if (MOD && (($qd_room && $room) || (GOD && ($query[LK_MOD_ACT] === LK_USERLIST || $etc === '3')))) {
+		if (MOD && (($qd_room && $room) || (GOD && (($query[LK_MOD_ACT] ?? '') === LK_USERLIST || $etc === '3')))) {
 			$d = ord('a');
 
 			foreach ($_POST as $numbers => $text)
@@ -2493,7 +2493,7 @@ if ($u_key) {
 //* report problem in active room ---------------------------------------------
 
 	if (isset($_POST[$k = ARG_REPORT])) {
-		if (!NO_MOD && ($report_post_ID = $query['report_post'] ?: $etc)) {
+		if (!NO_MOD && ($report_post_ID = ($query['report_post'] ?? '') ?: $etc)) {
 
 			$post_status = 'no_path';
 
@@ -2894,7 +2894,7 @@ header("HTTP/1.1 303 Refresh after POST: $p");
 if ($u_profile) {
 	$refresh_location = ROOTPRFX.DIR_USER.$u_num;
 } else
-if ($query[LK_MOD_ACT]) {
+if (is_not_empty($query[LK_MOD_ACT])) {
 	$refresh_location = $qfix;
 } else {
 
@@ -3147,7 +3147,7 @@ if ($f = $pic_final_path) {
 //* rewriting already stored post is a crutch, but nothing better for now:
 
 	if ($changed = pic_opt_get_size($f)) {
-		if (LOCALHOST) echo pic_opt_get_time().'update last pic size text:';
+		if (LOCALHOST) echo pic_opt_get_time().'Debug check: update last pic size text:';
 
 		$changed_result = data_rename_last_pic($fn, $fwh.$changed);
 

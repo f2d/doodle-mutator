@@ -70,8 +70,8 @@ function exit_if_not_mod($new_time_int = 0) {
 		!POST
 	&&	!$GLOBALS['target']['changed']
 	&&	!$GLOBALS['u_opts']['modtime304']
-	&&	isset($_SERVER[$m = 'HTTP_IF_MODIFIED_SINCE'])
-	&&	isset($_SERVER[$n = 'HTTP_IF_NONE_MATCH'])
+	&&	is_not_empty($_SERVER[$m = 'HTTP_IF_MODIFIED_SINCE'])
+	&&	is_not_empty($_SERVER[$n = 'HTTP_IF_NONE_MATCH'])
 	&&	$_SERVER[$m] === $new_date_time
 	&&	(
 			$_SERVER[$n] === $etag_hash
@@ -87,7 +87,7 @@ function exit_if_not_mod($new_time_int = 0) {
 
 function exit_redirect($new_path = '', $comment = 'path fix', $pause_seconds = 0) {
 	if (headers_sent()) {
-		die('<meta http-equiv="refresh" content="'.abs(int($pause_seconds)).'; url='.$new_path.'">');
+		die('<meta http-equiv="refresh" content="'.abs(intval($pause_seconds)).'; url='.$new_path.'">');
 	} else {
 		header("HTTP/1.1 303 Redirect: $comment");
 		header("Location: $new_path");
@@ -197,8 +197,8 @@ $report");
 	return $report;
 }
 
-function time_check_point($comment) {$GLOBALS['tcp'][microtime()][] = $comment;}
-function get_print_or_none($a) {return $a ? trim(print_r($a, true)) : 'none';}
+function time_check_point($comment) { $GLOBALS['tcp'][microtime()][] = $comment; }
+function get_print_or_none($var) { return is_not_empty($var) ? trim(print_r($var, true)) : 'none'; }
 
 //* ---------------------------------------------------------------------------
 //* Always use mb_* for text, but simple str* for non-empty checks,
@@ -211,6 +211,10 @@ function get_print_or_none($a) {return $a ? trim(print_r($a, true)) : 'none';}
 
 function fix_encoding($text) {
 	global $fix_encoding_chosen;
+
+	if (empty($text)) {
+		return '';
+	}
 
 	if (mb_check_encoding($text)) {
 		$fix_encoding_chosen[] = ENC;
@@ -277,6 +281,11 @@ function log_preg_last_error($none_too = true) {
 }
 
 function get_const($name) {
+
+	if (empty($name)) {
+		return '';
+	}
+
 	return (
 		defined($uppercase_name = mb_strtoupper($name))
 		? constant($uppercase_name)
@@ -329,61 +338,98 @@ function get_localized_text(...$keys) {
 	);
 }
 
-function get_abbr($a, $separator = '_') {
-	if (!is_array($a)) {
-		$a = mb_split_filter($a, $separator);
+function get_abbr($words, $separator = '_') {
+
+	if (empty($words)) {
+		return '';
 	}
 
-	foreach ($a as $word) {
+	if (!is_array($words)) {
+		$words = mb_split_filter($words, $separator);
+	}
+
+	foreach ($words as $word) {
 		$r .= mb_substr($word,0,1);
 	}
 
 	return $r;
 }
 
-function get_imploded_non_empty_lines($a, $separator = NL) {
-	if (is_array($a)) {
-		$a = array_map('get_imploded_non_empty_lines', $a);
-		$a = array_filter($a, 'strlen');
+function get_imploded_non_empty_lines($lines, $separator = NL) {
 
-		return implode($separator, $a);
+	if (empty($lines)) {
+		return '';
 	}
 
-	return trim("$a");
+	if (is_array($lines)) {
+		$lines = array_map('get_imploded_non_empty_lines', $lines);
+		$lines = array_filter($lines, 'strlen');
+
+		return implode($separator, $lines);
+	}
+
+	return trim("$lines");
 }
 
-function mb_escape_regex($s, $delim = '/', $extend = '') {
-	return preg_replace("~[\\\\|\\$delim$extend\\[\\](){}^$.:?*+-]~u", '\\\\$0', $s);
+function mb_escape_regex($text, $delim = '/', $extend = '') {
+
+	if (empty($text)) {
+		return '';
+	}
+
+	return preg_replace("~[\\\\|\\$delim$extend\\[\\](){}^$.:?*+-]~u", '\\\\$0', $text);
 }
 
-function mb_normalize_slash($s) {
-	return mb_str_replace('\\', '/', $s);
+function mb_normalize_slash($text) {
+
+	if (empty($text)) {
+		return '';
+	}
+
+	return mb_str_replace('\\', '/', $text);
 }
 
-function mb_sanitize_filename_char($match) {
-	return $match[0] === '"' ? "'" : '_';
-}
+function mb_sanitize_filename_char($match) { return $match[0] === '"' ? "'" : '_'; }
+function mb_sanitize_filename($text) {
 
-function mb_sanitize_filename($s) {
-	return preg_replace_callback('~[\\/":?*<>]~u', 'mb_sanitize_filename_char', $s);
+	if (empty($text)) {
+		return '';
+	}
+
+	return preg_replace_callback('~[\\/":?*<>]~u', 'mb_sanitize_filename_char', $text);
 //	return strtr($s, array('"' => "'", ':' => '_', '?' => '_', '*' => '_', '<' => '_', '>' => '_'));
 }
 
 if (!function_exists($f = 'mb_str_split')) {
-	function mb_str_split($s) {
-		return preg_split('//u', $s);
+	function mb_str_split($text) {
+
+		if (empty($text)) {
+			return array();
+		}
+
+		return preg_split('//u', $text);
 	}
 }
 
-function mb_split_filter($s, $by = '/', $limit = 0) {
+function mb_split_filter($where, $by = '/', $limit = 0) {
+
+	if (empty($where)) {
+		return array();
+	}
+
 	return preg_split(
 		$by === NL
 		? '~\v+~u'
 		: '/('.mb_escape_regex($by).')+/u'
-	, $s, $limit, PREG_SPLIT_NO_EMPTY);
+	, $where, $limit, PREG_SPLIT_NO_EMPTY);
 }
 
 function mb_substr_before($where, $what, $offset = 0) {
+
+	if (empty($where)) {
+		return '';
+	}
+
 	return (
 		false !== ($pos = mb_strpos ($where, $what, $offset))
 		? mb_substr($where, 0, $pos)
@@ -392,10 +438,20 @@ function mb_substr_before($where, $what, $offset = 0) {
 }
 
 function mb_substr_after ($where, $what, $offset = 0) {
+
+	if (empty($where)) {
+		return '';
+	}
+
 	return mb_substr($where, mb_strrpos_after($where, $what, $offset));
 }
 
 function mb_strpos_after ($where, $what, $offset = 0) {
+
+	if (empty($where)) {
+		return '';
+	}
+
 	return (
 		false !== ($pos = mb_strpos ($where, $what, $offset))
 		? $pos + mb_strlen($what)
@@ -404,6 +460,11 @@ function mb_strpos_after ($where, $what, $offset = 0) {
 }
 
 function mb_strrpos_after($where, $what, $offset = 0) {
+
+	if (empty($where)) {
+		return '';
+	}
+
 	return (
 		false !== ($pos = mb_strrpos($where, $what, $offset))
 		? $pos + mb_strlen($what)
@@ -412,10 +473,20 @@ function mb_strrpos_after($where, $what, $offset = 0) {
 }
 
 function mb_str_replace($what, $to, $where) {
+
+	if (empty($where)) {
+		return '';
+	}
+
 	return implode($to, preg_split('/('.mb_escape_regex($what).')/u', $where));
 }
 
 function mb_str_replace_first($what, $to, $where) {
+
+	if (empty($where)) {
+		return '';
+	}
+
 	return (
 		false === ($pos = mb_strpos($where, $what))
 		? $where
@@ -424,6 +495,11 @@ function mb_str_replace_first($what, $to, $where) {
 }
 
 function str_replace_first($what, $to, $where) {
+
+	if (empty($where)) {
+		return '';
+	}
+
 	return (
 		false === ($pos = strpos($where, $what))
 		? $where
@@ -432,17 +508,32 @@ function str_replace_first($what, $to, $where) {
 }
 
 function trim_slash_dots($path, $remove_edge_slashes = true) {
+
+	if (empty($path)) {
+		return '';
+	}
+
 	$path = preg_replace('~(^|/)(\.*/+|\.+$)+~u', '$1', $path);
 	if ($remove_edge_slashes) $path = trim($path, '/');
 
 	return $path;
 }
 
-function trim_bom($str) {
-	return trim(str_replace(BOM, '', $str));
+function trim_bom($text) {
+
+	if (empty($text)) {
+		return '';
+	}
+
+	return trim(str_replace(BOM, '', $text));
 }
 
 function trim_post($text, $len = 0) {
+
+	if (empty($text)) {
+		return '';
+	}
+
 	$s = trim(preg_replace('~\s+~u', ' ', fix_encoding($text)));
 	if ($len > 0) {
 		$s = mb_substr($s, 0, $len);
@@ -452,6 +543,11 @@ function trim_post($text, $len = 0) {
 }
 
 function trim_room($name, $also_allow_chars = '') {
+
+	if (empty($name)) {
+		return '';
+	}
+
 	$t = mb_escape_regex("$GLOBALS[cfg_room_prefix_chars]$also_allow_chars");
 	$x = ROOM_NAME_ALLOWED_CHARS;
 	$w = "-\\w$x$t";
@@ -523,15 +619,15 @@ function is_url_external($url) {
 	return false;
 }
 
-function is_deny_arg($k) {return is_prefix($k, ARG_DENY);}
-function is_desc_arg($k) {return is_prefix($k, ARG_DESC);}
-function is_draw_arg($k) {return is_prefix($k, ARG_DRAW);}
-function is_opt_arg($k) {return is_prefix($k, OPT_PRFX);}
-function is_post_error($k) {return !($k === 'trd_arch' || $k === 'trd_miss');}
-function is_tag_attr($t) {return mb_strpos($t, '<') === mb_strpos($t, '>');}	//* <- if only both === false
-function is_not_empty($var) {return !empty($var);}
-function is_not_dot($path) {return !!trim($path, './\\');}
-function is_not_draw_none($var) {return $var !== DRAW_APP_NONE;}
+function is_deny_arg($k) { return is_prefix($k, ARG_DENY); }
+function is_desc_arg($k) { return is_prefix($k, ARG_DESC); }
+function is_draw_arg($k) { return is_prefix($k, ARG_DRAW); }
+function is_opt_arg($k) { return is_prefix($k, OPT_PRFX); }
+function is_post_error($k) { return !($k === 'trd_arch' || $k === 'trd_miss'); }
+function is_tag_attr($t) { return mb_strpos($t, '<') === mb_strpos($t, '>'); }	//* <- if only both === false
+function is_not_empty($var) { return !empty($var); }
+function is_not_dot($path) { return !!trim($path, './\\'); }
+function is_not_draw_none($var) { return $var !== DRAW_APP_NONE; }
 function is_not_hidden($room) {
 	global $u_flag;
 
@@ -850,7 +946,7 @@ function get_search_ranges($criteria, $caseless = true) {
 
 	foreach ($patterns as $pattern => $match_types)
 	foreach ($match_types as $match_type) {
-		if (strlen($t = $criteria[$match_type])) {
+		if (is_not_empty($t = $criteria[$match_type])) {
 			$sub_ranges = array();
 			$min = false;
 
@@ -1250,7 +1346,7 @@ function get_post_pic_info($p, $csv = '', $check_file = 0) {
 			? mb_sanitize_filename(get_file_name(mb_normalize_slash($filename)))
 			: $filename	//* <- faster for prepared active content
 		))
-	,	'csv' => trim($csv) ?: trim($etc) ?: ''
+	,	'csv' => trim($csv ?? '') ?: trim($etc ?? '') ?: ''
 	);
 
 	if ($check_file || $csv) {
@@ -1993,7 +2089,7 @@ function get_system_memory_info() {
 
 function indent($t, $n = 0) {
 	if (
-		strlen($t = trim($t))
+		strlen($t = trim("$t"))
 	&&	($n || false !== mb_strpos($t, NL))
 	) {
 		$before = str_repeat("\t", $n > 0?$n:1);
