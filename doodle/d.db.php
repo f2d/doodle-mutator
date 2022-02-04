@@ -34,6 +34,7 @@ define('DATA_DIR_USER', DATA_DIR.'users/');			//* <- per user files
 define('DATA_USERLIST', DATA_DIR.'users'.DATA_LOG_EXT);		//* <- user list filename
 define('DATA_REF_LIST', DATA_DIR.'reflinks'.DATA_LOG_EXT);	//* <- reflinks list filename
 
+define('DATA_LIST_PROCESS_AS_LINES', true);
 define('DATA_USE_SHARED_MEM', function_exists('shmop_open'));
 define('DATA_USERLIST_SHARED_MEM_KEY', 0x646F6F64);		//* <- "dood" in hex
 define('DATA_LK_SHARED_MEM_USERLIST', 'data_mem_users');
@@ -50,13 +51,13 @@ define('DATA_FIELD_SEPARATOR', "\t");
 define('DATA_MARK_TXT', "\t\t");
 define('DATA_MARK_IMG', "\t<\t");
 
-define('DATA_RE_LE', mb_escape_regex(DATA_LOG_EXT));
-define('DATA_RE_MI', mb_escape_regex(DATA_MARK_IMG, '~', '\\s'));
+define('DATA_RE_LOG_EXT', mb_escape_regex(DATA_LOG_EXT));
+define('DATA_RE_MARK_IMG', mb_escape_regex(DATA_MARK_IMG, '~', '\\s'));
 
 define('DATA_PAT_IMG', '~
 	(?P<Before>
 		(?:<a\\s+href|<img\\s+src)="?
-	|	'.DATA_RE_MI.'
+	|	'.DATA_RE_MARK_IMG.'
 	)
 	(?P<Path>[^">'.DATA_FIELD_SEPARATOR.']+)
 	(?=[">'.DATA_FIELD_SEPARATOR.']|$)
@@ -76,14 +77,14 @@ define('DATA_PAT_TRD_PLAY', '~^
 			)
 		)+
 	)?
-	(?P<Ext>'.DATA_RE_LE.')
+	(?P<Ext>'.DATA_RE_LOG_EXT.')
 $~iux');
 
 define('DATA_PAT_TRD_MOD', '~^
 	(?P<IsActive>
 		(?P<ThreadId>\d+)
 		(?P<Etc>\..+)?
-		(?P<Ext>'.DATA_RE_LE.')
+		(?P<Ext>'.DATA_RE_LOG_EXT.')
 	)
 	(?P<IsInactive>
 		(?:\.
@@ -654,7 +655,7 @@ function data_fix($what = '') {
 						: 'failed to write'
 					);
 					$n = strlen($new);
-					$done .= NL."$i: $f -> $n = $r";
+					$done .= NL."$room/$i: $f -> $n = $r";
 				}
 			}
 			data_unlock($lk);
@@ -824,7 +825,7 @@ function data_save_cached_userlist($data_obj) {
 	$result = data_write_cached_userlist_to_shared_memory($mem_content, $mem_size);
 
 	if ($result !== null) {
-		if (LOCALHOST) file_put_contents(DATA_USERLIST.'_shared_mem_content.txt', $mem_content);
+		if (IS_LOCALHOST) file_put_contents(DATA_USERLIST.'_shared_mem_content.txt', $mem_content);
 
 		time_check_point("done shmop_write($mem_size bytes) = $result");
 	}
@@ -851,7 +852,12 @@ function data_get_cached_userlist_from_shared_memory() {
 
 //* shmop_close() is deprecated since PHP 8.0 where shmop functions use objects instead of resources:
 
-		if (PHP_MAJOR_VERSION < 8) shmop_close($shared_mem_handle);
+		if (
+			PHP_MAJOR_VERSION < 8
+		&&	function_exists('shmop_close')
+		) {
+			shmop_close($shared_mem_handle);
+		}
 	}
 
 	data_unlock(DATA_LK_SHARED_MEM_USERLIST);
@@ -874,7 +880,12 @@ function data_write_cached_userlist_to_shared_memory($mem_content, $mem_size) {
 	if ($shared_mem_handle = data_get_cached_userlist_handle($mem_size)) {
 		$result = shmop_write($shared_mem_handle, $mem_content, 0);
 
-		if (PHP_MAJOR_VERSION < 8) shmop_close($shared_mem_handle);
+		if (
+			PHP_MAJOR_VERSION < 8
+		&&	function_exists('shmop_close')
+		) {
+			shmop_close($shared_mem_handle);
+		}
 	}
 
 	return $result;
@@ -895,7 +906,12 @@ function data_clear_cached_userlist() {
 	if ($shared_mem_handle = data_get_cached_userlist_handle()) {
 		$result = shmop_delete($shared_mem_handle);
 
-		if (PHP_MAJOR_VERSION < 8) shmop_close($shared_mem_handle);
+		if (
+			PHP_MAJOR_VERSION < 8
+		&&	function_exists('shmop_close')
+		) {
+			shmop_close($shared_mem_handle);
+		}
 	}
 
 	return $result;
@@ -1146,11 +1162,19 @@ function data_log_report($a) {			//* <- write to user report logs, filename by t
 
 function data_get_mod_log_file($f, $mt = false) {	//* <- (full_file_path, 1|0)
 	if (is_file($f)) {
-		return (
-			$mt
-			? filemtime($f)
-			: trim_bom(file_get_contents($f))
-		);
+		if ($mt) {
+			return filemtime($f);
+		}
+
+		if (DATA_LIST_PROCESS_AS_LINES) {
+			$lines = get_file_lines($f);
+
+			log_preg_last_error(false);
+
+			return $lines;
+		}
+
+		return trim_bom(file_get_contents($f));
 	}
 }
 
@@ -1183,14 +1207,14 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 		$t = data_get_mod_log_file(DATA_REF_LIST, $mt);
 
 		if (!$mt) {
-			$t = preg_replace(
+			$t = str_or_array_replace(
 				data_fields_to_text_line('~(\d+)([^\d\s]\V+)?', '(\V+)~u')
 			,	data_fields_to_text_line('$1', '$3')	//* <- arrange data fields
 			,	$t
 			);
 		}
 
-		return htmlspecialchars($t);
+		return str_or_array_replace_html_special_chars_to_str($t);
 	}
 
 //* single list of users:
@@ -1224,7 +1248,7 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 						: $f
 					)))
 				) {
-					$t = preg_replace(
+					$t = str_or_array_replace(
 						data_fields_to_text_line('~^'.$i, '[^', ']+~mu')
 					,	"$0, $fe: [$f]"
 					,	$t
@@ -1232,14 +1256,14 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 				}
 			}
 
-			$t = preg_replace(
+			$t = str_or_array_replace(
 				data_fields_to_text_line('~(\V+)', '(\V+)', '(\V+)\+\V+', '(\V+?)~Uu')
 			,	data_fields_to_text_line('$3,$1', '$4', '$2')	//* <- arrange data fields
 			,	$t
 			);
 		}
 
-		return htmlspecialchars($t);
+		return str_or_array_replace_html_special_chars_to_str($t);
 	}
 
 //* logs by date:
@@ -1286,7 +1310,9 @@ preg_replace_callback('~
 preg_replace('~\h+~u', ' ',
 preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1'.DATA_FIELD_SEPARATOR,		//* <- keep multiline entries atomic
 preg_replace('~\v+~u', '<br>',
-NL.htmlspecialchars($v)))));
+NL.
+str_or_array_replace_html_special_chars_to_str($v)
+))));
 
 //* check each message author and timestamp:
 

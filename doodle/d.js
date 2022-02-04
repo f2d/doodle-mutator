@@ -1,6 +1,8 @@
 ﻿var	LS = window.localStorage || localStorage
 ,	bnw = bnw || [] //* <- bells and whistles
 
+,	LAZY_LOADING_IMAGES = true
+
 ,	regClassHid = getClassReg('hid')
 ,	regClassAlt = getClassReg('alt|ok')
 ,	regClassPost = getClassReg('post')
@@ -26,6 +28,8 @@
 ,	regLNaN = /^\D+/
 ,	regNaN = /\D+/
 ,	regNaNa = /\D+/g
+// ,	regRefLinkSanitize = /[^(){}\[\]а-я\w,;:.\/#?&=+-]+/ig
+,	regRefLinkSanitize = /[\0-\x19]+/gi
 ,	regSpace = /\s+/g
 ,	regSpaceHTML = /\s|&(nbsp|#8203|#x200B);?/gi
 ,	regSplitCookie = /;\s*/g
@@ -996,6 +1000,18 @@ function formCleanUp(e) {
 	}
 }
 
+function getLazyLoadingAttr(is_cut_into_quotes) {
+	return (
+		LAZY_LOADING_IMAGES
+		? (
+			is_cut_into_quotes
+			? '" loading="lazy'
+			: ' loading="lazy"'
+		)
+		: ''
+	);
+}
+
 function getPicSubDir(p) {var s = p.split('.'); return s[1][0]+'/'+s[0][0]+'/';}
 function getPicPath(filename, param) {
 	return (
@@ -1884,7 +1900,12 @@ function showContent(sortOrder) {
 						+	'</a>';
 					} else
 					if (dtp.reflinks) {
-						try {d = decodeURIComponent(t);} catch (e) {d = t;}
+						try {
+							d = decodeURIComponent(t).replace(regRefLinkSanitize, '[?]');
+						} catch (e) {
+							d = t;
+						}
+
 						if (!(m = t.match(regLinkProtocol)) || !m[1]) {
 							t = 'http://'+t.replace(regLinkProtocol, '');
 						}
@@ -1990,6 +2011,7 @@ function showContent(sortOrder) {
 										(m[1] || m[4])
 									+	'<br><img src="'
 									+		getPicPath(m[2] || m[5], param)
+									+		getLazyLoadingAttr(true)
 									+	'">'
 									+	(m[3] || m[6])
 									);
@@ -2063,7 +2085,8 @@ function showContent(sortOrder) {
 									m = l.split(regSpace, 1)[0].substr(1).toLowerCase();
 									if (m == 'a') k[i] += '" class="res" target="_blank'; else
 									if (m == 'img') k[i] +=
-										'" alt="'+l.substr(l.lastIndexOf('/')+1)+', '+a
+										getLazyLoadingAttr(true)
+									+	'" alt="'+l.substr(l.lastIndexOf('/')+1)+', '+a
 									+	'" title="'+a;
 								}
 								t = k.join(sep);
@@ -2099,6 +2122,7 @@ function showContent(sortOrder) {
 								t = (
 									'<img src="'
 								+		getPicPath(t, param)
+								+		getLazyLoadingAttr(true)
 								+	'" alt="'+t+', '+q
 								+	'" title="'+(j?a+', '+k+'. '+la.resized_hint:a)
 								+	'">'

@@ -3,13 +3,35 @@
 $t = microtime();
 
 if (PHP_MAJOR_VERSION >= 8) {
-	error_reporting(~( E_NOTICE | E_STRICT | E_WARNING ));	//* <- TODO many fixes for PHP 8.0 warnings, shut up until then
+	error_reporting(~(
+		E_NOTICE
+	// |	E_STRICT
+	|	E_WARNING
+	// |	E_DEPRECATED
+	));	//* <- TODO many fixes for PHP 8.0+ warnings, shut up until then, change for testing and rewrites
 }
 
-define('LOCALHOST', $_SERVER['SERVER_ADDR'] === $_SERVER['REMOTE_ADDR']);
+define('IS_LOCALHOST', $_SERVER['SERVER_ADDR'] === $_SERVER['REMOTE_ADDR']);
 
-function is_prefix ($text, $part) { return substr($text ?? '', 0, strlen($part)) === $part; }
-function is_postfix($text, $part) { return substr($text ?? '',   -strlen($part)) === $part; }
+//* Wrapper to avoid PHP 8 Warning: Undefined array key:
+
+function get_value_or_empty($array, $key) {
+	if (
+		array_key_exists($key, $array)
+	&&	!empty($array[$key])
+	) {
+		return $array[$key];
+	}
+
+	return '';
+}
+
+function is_prefix ($text, $part) { return (strpos ($text ?? '', $part) === 0); }
+function is_postfix($text, $part) { return (strrpos($text ?? '', $part) === strlen($part)); }
+
+// function is_prefix ($text, $part) { return substr($text ?? '', 0, strlen($part)) === $part; }
+// function is_postfix($text, $part) { return substr($text ?? '',   -strlen($part)) === $part; }
+
 function exit_no_access($why) {
 	header('HTTP/1.1 403 Forbidden');
 	die("Error 403: Forbidden. Reason: $why.");
@@ -35,8 +57,8 @@ set_cache_control_header('no-cache');
 header('Expires: Mon, 12 Sep 2016 00:00:00 GMT');
 header('Pragma: no-cache');
 
-if ($_REQUEST['pass']) {
-	exit_no_access(LOCALHOST ? "pass = $_REQUEST[pass]" : 'pass');	//* <- ignore spam bot requests
+if (!empty($_REQUEST['pass'])) {
+	exit_no_access(IS_LOCALHOST ? "pass = $_REQUEST[pass]" : 'pass');	//* <- ignore spam bot requests
 }
 
 define('NAMEPRFX', 'd');
@@ -177,25 +199,33 @@ ob_start();
 require(NAMEPRFX.'.cfg.php');
 require(NAMEPRFX.'.fu.php');
 
-if ($v = $_GET[ARG_LANG] ?? $_POST[ARG_LANG]) {
+if (!empty($v =
+	get_value_or_empty($_GET, ARG_LANG)
+?:	get_value_or_empty($_POST, ARG_LANG)
+)) {
 	add_cookie_header(ARG_LANG, $v);
 
-	exit_redirect($_SERVER['HTTP_REFERER'] ?: ROOTPRFX, 'change language');
+	exit_redirect(get_value_or_empty($_SERVER, 'HTTP_REFERER') ?: ROOTPRFX, 'change language');
 }
 
 $cfg_wh = array('width', 'height');
 $cfg_room_prefixes = array();
-foreach ($cfg_room_types as $v) if ($v = $v['if_name_prefix']) $cfg_room_prefixes[] = $v;
+
+foreach ($cfg_room_types as $v) if (!empty($v = get_value_or_empty($v, 'if_name_prefix'))) {
+	$cfg_room_prefixes[] = $v;
+}
+
 foreach ($cfg_dir as $k => $v) {
 	define('DIR_'.strtoupper($k), $v .= '/');
 	${$k.'_list_href'} = ROOTPRFX.$v;
 }
+
 $cfg_room_prefix_chars = implode('', array_unique(mb_str_split(fix_encoding(implode('', $cfg_room_prefixes)))));
 
 //* Select UI language *-------------------------------------------------------
 
 if (
-	($v = $_REQUEST[ARG_LANG])
+	!empty($v = $_REQUEST[ARG_LANG])
 &&	(
 		in_array($v, $cfg_langs)
 	||	in_array($v = strtolower(substr($v, 0, 2)), $cfg_langs)
@@ -728,7 +758,8 @@ if (TIME_PARTS) time_check_point('ignore user abort');
 			if ($do === 'img2subdir') {
 				$i = 0;
 				foreach (get_dir_contents($d = DIR_PICS) as $f) if (is_file($old = $d.$f)) {
-					$new = get_pic_subpath($f);
+					$dup_count = 0;
+					while (is_file($new = get_pic_subpath($f, true).($dup_count++ ? "_$dup_count" : '')));
 					$t .=
 NL.(++$i)."	$old => $new	".($old === $new?'same':(rename($old, mkdir_if_none($new))?'OK':'fail'));
 				}
@@ -753,8 +784,8 @@ if (TIME_PARTS && $i) time_check_point("done $i pics");
 								$t .=
 NL.(++$i)."	$old => ".DIR_PICS_ORPHAN.' ?';
 							} else {
-								$j = 0;
-								while (is_file($new = DIR_PICS_ORPHAN.$f.($j++?"_$j":'')));
+								$dup_count = 0;
+								while (is_file($new = DIR_PICS_ORPHAN.$f.($dup_count++ ? "_$dup_count" : '')));
 								$t .=
 NL.(++$i)."	$old => $new	".($old === $new?'same':(rename($old, mkdir_if_none($new))?'OK':'fail'));
 							}
@@ -2947,8 +2978,8 @@ if (is_not_empty($query[LK_MOD_ACT])) {
 		: $_SERVER['PHP_SELF']
 	);
 
-	if (strlen($v = encode_URL_parts(array_filter($qpath, 'strlen')))) {
-		$refresh_location .= (strlen($qpath['etc']) ? $v : "$v/");
+	if (!empty($v = encode_URL_parts(array_filter($qpath, 'is_not_empty')))) {
+		$refresh_location .= (!empty($qpath['etc']) ? $v : "$v/");
 	}
 }
 
@@ -3147,11 +3178,11 @@ if ($f = $pic_final_path) {
 //* rewriting already stored post is a crutch, but nothing better for now:
 
 	if ($changed = pic_opt_get_size($f)) {
-		if (LOCALHOST) echo pic_opt_get_time().'Debug check: update last pic size text:';
+		if (IS_LOCALHOST) echo pic_opt_get_time().'Debug check: update last pic size text:';
 
 		$changed_result = data_rename_last_pic($fn, $fwh.$changed);
 
-		if (LOCALHOST) echo pic_opt_get_time().$changed_result;
+		if (IS_LOCALHOST) echo pic_opt_get_time().$changed_result;
 	}
 
 	if ($pic && $resize) {

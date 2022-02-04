@@ -5,9 +5,9 @@ define('ARCH_DESCRIPTION', 'Archived thread.');
 define('ARCH_POST_FIELD_SEPARATOR', "\t");
 define('ARCH_PIC_NOT_FOUND', '<img src="'.ROOTPRFX.PIC_404.'">');
 define('ARCH_PAT_HTML_TAG', '~<\w+("[^">]*"|[^>])*>~u');
-define('ARCH_PAT_PLACEHOLDER_TEXT', 'v\d|'.mb_escape_regex(NOR).'|'.mb_escape_regex(html_entity_decode(NOR)));
-define('ARCH_PAT_PLACEHOLDER', '
-	(?P<PlaceholderText>'.ARCH_PAT_PLACEHOLDER_TEXT.')
+define('ARCH_RE_PLACEHOLDER_TEXT', 'v\d|'.mb_escape_regex(NOR).'|'.mb_escape_regex(html_entity_decode(NOR)));
+define('ARCH_RE_PLACEHOLDER', '
+	(?P<PlaceholderText>'.ARCH_RE_PLACEHOLDER_TEXT.')
 	(?P<PlaceholderLink>
 		[\s()]*
 		<a\s+[^<]+</a>
@@ -16,7 +16,7 @@ define('ARCH_PAT_PLACEHOLDER', '
 	(?P<PlaceholderComment>\s*?<!--.*?-->)?
 ');
 
-define('ARCH_PAT_POST_PLACEHOLDER', '~^'.ARCH_PAT_PLACEHOLDER.'$~uix');
+define('ARCH_PAT_POST_PLACEHOLDER', '~^'.ARCH_RE_PLACEHOLDER.'$~uix');
 define('ARCH_PAT_POST_PLACEHOLDER_SPAN', '~^
 	<span\s+title="\s*
 	(?P<Title>
@@ -25,7 +25,7 @@ define('ARCH_PAT_POST_PLACEHOLDER_SPAN', '~^
 		(?P<Task>[^">]*?)
 	)
 	\s*">
-	(?P<Text>'.ARCH_PAT_PLACEHOLDER_TEXT.')
+	(?P<Text>'.ARCH_RE_PLACEHOLDER_TEXT.')
 	</span>
 $~uix');
 
@@ -38,7 +38,7 @@ define('ARCH_PAT_POST', '~^
 		[^'.ARCH_POST_FIELD_SEPARATOR.']*
 		['.ARCH_POST_FIELD_SEPARATOR.']
 		(?:
-			(?P<Placeholder>'.ARCH_PAT_PLACEHOLDER.')
+			(?P<Placeholder>'.ARCH_RE_PLACEHOLDER.')
 		|	(?P<Image><(?:a|img)\s.+)
 		|	(?P<Text>.+)
 		)
@@ -377,7 +377,13 @@ function data_archive_fix_post_date(&$posts, $i, $increment = false) {
 	$old_date = $post_date = $posts[$i]['post_date_int'];
 	$last_i = count($posts) - 1;
 
-	if ($posts[$i]['is_post_placeholder']) {
+	if (
+		$posts[$i]['is_post_placeholder']
+	&&	(
+			$i === 0
+		||	!$posts[$i-1]['is_post_placeholder']
+		)
+	) {
 		$post_date = $posts[
 			($i > 0)
 		||	($i > 1 && $i === $last_i)
@@ -812,7 +818,7 @@ if (TIME_PARTS) {++$n_found; $n_check .= "=$n_found: $found";}
 				}
 			}
 
-if (TIME_PARTS && (LOCALHOST || $n_check)) time_check_point("done $i$n_check");
+if (TIME_PARTS && (IS_LOCALHOST || $n_check)) time_check_point("done $i$n_check");
 
 		} else {
 

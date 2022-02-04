@@ -251,32 +251,42 @@ normalize:
 }
 
 function log_preg_last_error($none_too = true) {
-	if (!TIME_PARTS) {
-		return;
-	}
+	if (
+		get_const('TIME_PARTS')
+	&&	(
+			($e = preg_last_error())
+		||	$none_too
+		)
+	) {
 
-	if (($e = preg_last_error()) || $none_too) {
-
-		//* http://php.net/manual/en/pcre.constants.php
+//* http://php.net/manual/en/pcre.constants.php
 
 		foreach (array(
 			'PREG_NO_ERROR' => 'there were no errors. since v5.2.0'
 		,	'PREG_INTERNAL_ERROR' => 'there was an internal PCRE error. since v5.2.0'
 		,	'PREG_BACKTRACK_LIMIT_ERROR' => 'backtrack limit was exhausted. since v5.2.0'
 		,	'PREG_RECURSION_LIMIT_ERROR' => 'recursion limit was exhausted. since v5.2.0'
-		,	'PREG_BAD_UTF8_ERROR' => 'the last error was caused by malformed UTF-8 data (only when running a regex in UTF-8 mode). since v5.2.0'
-		,	'PREG_BAD_UTF8_OFFSET_ERROR' => 'the offset didn\'t correspond to the begin of a valid UTF-8 code point (only when running a regex in UTF-8 mode). since v5.3.0'
+		,	'PREG_BAD_UTF8_ERROR' => 'the last error was caused by malformed UTF-8 data (only in UTF-8 mode). since v5.2.0'
+		,	'PREG_BAD_UTF8_OFFSET_ERROR' => 'the offset is not beginning of a valid UTF-8 code point (only in UTF-8 mode). since v5.3.0'
 		,	'PREG_JIT_STACKLIMIT_ERROR' => 'the last PCRE function failed due to limited JIT stack space. since v7.0.0'
 		) as $k => $v) if (
 			defined($k)
 		&&	$e == get_const($k)
 		) {
 			$e = "$e, $k: $v";
+
 			break;
 		}
 
 		$v = PCRE_VERSION;
-		time_check_point("PCRE ver.$v, preg_last_error = $e, debug_backtrace = ".get_print_or_none(debug_backtrace(0)));
+		$m = preg_last_error_msg();
+		$t = get_print_or_none(debug_backtrace(0));
+
+		time_check_point("PCRE ver.$v
+preg_last_error = $e
+preg_last_error_msg = $m
+debug_backtrace = $t
+");
 	}
 }
 
@@ -377,7 +387,10 @@ function mb_escape_regex($text, $delim = '/', $extend = '') {
 		return '';
 	}
 
-	return preg_replace("~[\\\\|\\$delim$extend\\[\\](){}^$.:?*+-]~u", '\\\\$0', $text);
+//* https://www.php.net/manual/en/function.preg-quote.php
+//* The special regular expression characters are: . \ + * ? [ ^ ] $ ( ) { } = ! < > | : - #
+
+	return preg_replace("~[\\\\|\\$delim$extend\\[\\](){}<>^$.:?!*#+=-]~u", '\\\\$0', $text);
 }
 
 function mb_normalize_slash($text) {
@@ -437,7 +450,7 @@ function mb_substr_before($where, $what, $offset = 0) {
 	);
 }
 
-function mb_substr_after ($where, $what, $offset = 0) {
+function mb_substr_after($where, $what, $offset = 0) {
 
 	if (empty($where)) {
 		return '';
@@ -446,7 +459,7 @@ function mb_substr_after ($where, $what, $offset = 0) {
 	return mb_substr($where, mb_strrpos_after($where, $what, $offset));
 }
 
-function mb_strpos_after ($where, $what, $offset = 0) {
+function mb_strpos_after($where, $what, $offset = 0) {
 
 	if (empty($where)) {
 		return '';
@@ -505,6 +518,63 @@ function str_replace_first($what, $to, $where) {
 		? $where
 		: substr_replace($where, $to, $pos, strlen($what))
 	);
+}
+
+function str_or_array_replace_html_special_chars_in_all($where) {
+
+	if (empty($where)) {
+		return '';
+	}
+
+	if (is_array($where)) {
+		return array_map('str_or_array_replace_html_special_chars_in_all', $where);
+	} else {
+		return htmlspecialchars($where);
+	}
+}
+
+function str_or_array_replace_html_special_chars_to_str($where) {
+
+	if (empty($where)) {
+		return '';
+	}
+
+	if (is_array($where)) {
+		return implode(NL, array_map('str_or_array_replace_html_special_chars_to_str', $where));
+	} else {
+		return htmlspecialchars($where);
+	}
+}
+
+function str_or_array_replace($what, $to, $where, $replace_items_in_place = true) {
+
+	if (is_array($where)) {
+		if (empty($where)) {
+			return array();
+		}
+
+		if ($replace_items_in_place) {
+			foreach ($where as &$value) {
+				$value = str_or_array_replace($what, $to, $value, $replace_items_in_place);
+			}
+
+			return $where;
+		} else {
+			$result = array();
+
+			foreach ($where as $key => $value) {
+				$result[$key] = str_or_array_replace($what, $to, $value, $replace_items_in_place);
+			}
+
+			return $result;
+		}
+	} else {
+		if (empty($where)) {
+			return '';
+		}
+
+		return preg_replace($what, $to, $where);
+	}
 }
 
 function trim_slash_dots($path, $remove_edge_slashes = true) {
@@ -695,16 +765,19 @@ function get_dir_rooms($source_subdir = '', $output_subdir = '', $flags = 0, $ty
 function get_file_lines($path) {
 	return (
 		is_file($path)
-		? mb_split_filter(file_get_contents($path), NL)
+		? (
+			mb_split_filter(file_get_contents($path), NL)
+		?:	mb_split_filter(fix_encoding(file_get_contents($path)), NL)
+		)
 	//	? mb_split_filter(trim_bom(file_get_contents($path)), NL)	//* <- trim messes up line indexes, don't touch for now
 	//	? file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)
 		: array()
 	);
 }
 
-function get_file_name_no_ext($path, $flags = F_GET_FULL_IF_NONE) {return get_file_dir(get_file_name($path, $flags), $flags, '.');}
-function get_file_ext($path, $flags = 0) {return mb_strtolower(get_file_name($path, $flags, '.'));}
-function get_file_dir($path, $flags = F_GET_FULL_IF_NONE, $delim = '/') {return get_file_name($path, $flags | F_GET_DIR_PART, $delim);}
+function get_file_name_no_ext($path, $flags = F_GET_FULL_IF_NONE) { return get_file_dir(get_file_name($path, $flags), $flags, '.'); }
+function get_file_ext($path, $flags = 0) { return mb_strtolower(get_file_name($path, $flags, '.'));}
+function get_file_dir($path, $flags = F_GET_FULL_IF_NONE, $delim = '/') { return get_file_name($path, $flags | F_GET_DIR_PART, $delim); }
 function get_file_name($path, $flags = F_GET_FULL_IF_NONE, $delim = '/') {
 	return (
 		false === ($pos = mb_strrpos($path, $delim))
@@ -736,6 +809,7 @@ function get_room_skip_list($add = '', $room = '') {
 
 		foreach ($e as $r) {
 			$k[] = $q = ME.'-skip-'.md5($r);
+
 			if ($v = $_COOKIE[$q]) {
 				$a = array_slice(
 					explode(
@@ -744,8 +818,9 @@ function get_room_skip_list($add = '', $room = '') {
 					,	TRD_MAX_SKIP_PER_ROOM + 1
 					)
 				,	0
-				,	TRD_MAX_SKIP_PER_ROOM - ($add?1:0)
+				,	TRD_MAX_SKIP_PER_ROOM - ($add ? 1 : 0)
 				);
+
 				break;
 			}
 		}
@@ -896,14 +971,20 @@ function get_pic_url($p) {
 	);
 }
 
-function get_pic_normal_path($p) {
+function get_pic_normal_filename($p, $keep_suffix = false) {
 	return preg_replace('~^
-		(?P<before>.*?[\\\\/])?
-		(?P<filename>[^/._-]+)
-		(?P<suffix>[_-][^/.]*)?
-		(?P<ext>\.[^.,;]+)
-		(?P<after>[;,].*)?
-	$~ux', '$2$4', $p);
+		(?P<Before>.*?[\\\\/])?
+		(?P<FullName>
+			(?P<FileName>[^/._-]+)
+			(?P<Suffix>[_-][^/.]*)?
+			(?P<Ext>\.[^.,;]+)
+		)
+		(?P<After>[;,].*)?
+	$~ux', (
+		$keep_suffix
+		? '$2'
+		: '$3$5'
+	), $p);
 }
 
 function get_pic_resized_path($p) {
@@ -916,8 +997,9 @@ function get_pic_resized_path($p) {
 	);
 }
 
-function get_pic_subpath($p) {
-	$p = get_pic_normal_path(get_file_name($p));
+function get_pic_subpath($p, $keep_suffix = false) {
+	$p = get_file_name($p);
+	$p = get_pic_normal_filename($p, $keep_suffix);
 	$i = mb_strpos_after($p, '.');
 	$e = mb_substr($p,$i,1);
 	$n = mb_substr($p,0,1);
@@ -1226,7 +1308,7 @@ function is_post_matching($post, $criteria, $caseless = true) {
 			}
 		}
 
-if (TIME_PARTS && LOCALHOST) time_check_point("$match_type: $post_value vs ".get_print_or_none($search_value));
+if (TIME_PARTS && IS_LOCALHOST) time_check_point("$match_type: $post_value vs ".get_print_or_none($search_value));
 
 	//* compare:
 
@@ -1330,7 +1412,7 @@ function get_post_pic_to_display($p, $return_array = false) {
 	return (
 		$return_array
 		? array_map('htmlspecialchars', array(
-			'src' => get_pic_url($res ? get_pic_resized_path(get_pic_normal_path($src)) : $src)
+			'src' => get_pic_url($res ? get_pic_resized_path(get_pic_normal_filename($src)) : $src)
 		,	'alt' => $alt
 		))
 		: $alt
@@ -1813,7 +1895,7 @@ function get_time_seconds($t) {
 			$sec = $sec*60 + intval($n);
 		}
 
-		return ($t[0] == '-'?-$sec:$sec);
+		return ($t[0] == '-' ? -$sec : $sec);
 	}
 
 	return floor($t);	//* <- 32-bit signed integer overflow workaround
@@ -1824,19 +1906,32 @@ function format_time_units($t) {
 		$t = reset($t);
 	}
 
+	$result = '';
+
 	foreach (get_localized_text_array('time_units') as $k => $v) if ($t >= $k) {
-		if ($k) {$rem = $t%$k; $t = floor($t/$k);}
-		$i = count($v)-1;
+		if ($k) {
+			$rem = $t % $k;
+			$t = floor($t / $k);
+		}
+
+		$i = count($v) - 1;
+
 		if ($t < 11 || $t >= 20) {
-			$s = $t%10;
-			if ($s == 1) $i = 0; else
+			$s = $t % 10;
+			if ($s === 1) $i = 0; else
 			if ($s > 1 && $s < 5) $i = 1;
 		}
-		$r .= ($r?' ':'').$t.' '.$v[$i];
-		if ($rem) $t = $rem; else break;
+
+		$result .= ($result?' ':'')."$t $v[$i]";
+
+		if ($rem) {
+			$t = $rem;
+		} else {
+			break;
+		}
 	}
 
-	return $r;
+	return $result;
 }
 
 function format_filesize($b = 0, $frac = 2) {
@@ -2140,6 +2235,7 @@ function indent($t, $n = 0) {
 			}
 		,	$t
 		).NL;
+
 		log_preg_last_error(false);
 	}
 
