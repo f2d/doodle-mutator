@@ -28,8 +28,8 @@
 ,	regLNaN = /^\D+/
 ,	regNaN = /\D+/
 ,	regNaNa = /\D+/g
-// ,	regRefLinkSanitize = /[^(){}\[\]а-я\w,;:.\/#?&=+-]+/ig
-,	regRefLinkSanitize = /[\0-\x19]+/gi
+//* https://stackoverflow.com/questions/11598786/how-to-replace-non-printable-unicode-characters-javascript#comment55940195_11598864
+,	regRefLinkSanitize = /[\0-\x1F]+/gi
 ,	regSpace = /\s+/g
 ,	regSpaceHTML = /\s|&(nbsp|#8203|#x200B);?/gi
 ,	regSplitCookie = /;\s*/g
