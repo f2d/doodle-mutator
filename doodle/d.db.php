@@ -1289,29 +1289,35 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 
 //* for selected rooms:
 
-		foreach ($rooms as $r) if (
-			($p = ($r ? "$d$r/" : DATA_DIR))
+		foreach ($rooms as $each_room) if (
+			($p = ($each_room ? "$d$each_room/" : DATA_DIR))
 		&&	($v = data_get_mod_log_file("$p$s$t$e", $mt))
 		) {
 
 //* a) get contents to show:
 
 			if (!$mt) {
-				$k = $r ?: '*';
+				$k = $each_room ?: '*';
+				$v = trim_bom(str_or_array_replace_html_special_chars_to_str($v));
 				$v = "
 room = $k".
 preg_replace_callback('~
-	(?<=\v)
-	(?P<Date>\S+)\s+
-	(?P<User>[^\s\d]*(?P<UserId>\d*)\S*?)\s+
+	(?<=^|\v)
+	(?P<Date>\d\S*)
+	\s+
+	(?P<User>
+		(?P<UserType>[^\s\d]*)?
+		(?P<UserId>\d*)
+		(?P<UserEtc>[^\s\d]\S*)?
+	)
+	\s+
 	(?P<Text>\S+)
 ~ux', 'data_fix_mod_log_line_tabs',
 //preg_replace('~(\v\S+)\s+(\S+)\s+~u', data_fields_to_text_line('$1', '$2', ''),	//* <- arrange data fields
 preg_replace('~\h+~u', ' ',
-preg_replace('~<br[^>]*>(\d+)([^\d\s]\S+)\s~ui', NL.'$1'.DATA_FIELD_SEPARATOR,		//* <- keep multiline entries atomic
+preg_replace('~(?:^|<br[^>]*>)(\d+)([^\d\s]\S+)\s~ui', NL.'$1'.DATA_FIELD_SEPARATOR,	//* <- keep multiline entries atomic
 preg_replace('~\v+~u', '<br>',
-NL.
-str_or_array_replace_html_special_chars_to_str($v)
+$v
 ))));
 
 //* check each message author and timestamp:
@@ -1354,8 +1360,8 @@ str_or_array_replace_html_special_chars_to_str($v)
 //* list of all dates with existing logs:
 
 		$a = array();
-		foreach ($rooms as $r)
-		foreach (get_dir_contents(($r ? "$d$r/" : DATA_DIR).$s) as $f) {
+		foreach ($rooms as $each_room)
+		foreach (get_dir_contents(($each_room ? "$d$each_room/" : DATA_DIR).$s) as $f) {
 			if (preg_match(PAT_DATE, $f, $match)) {
 				$a[$match['YearMonth']][$match['Day']] = $match['Day'];
 			}
