@@ -267,8 +267,11 @@ define('LOCALIZATION_TEXT', [
 	,	'opt_res'	=> 'Optimizing low-res image copy'
 	,	'low_res'	=> 'Resizing down to fit image into page view'
 	,	'low_bit'	=> 'Restricting low-res image colors to keep file size below full copy'
-	,	'used_program'	=> 'used program'
+	,	'used_program'	=> 'Used program'
 	,	'no_program'	=> 'No suitable program found.'
+	,	'update_pic'	=> 'Update optimized pic metadata in post'
+	,	'done'		=> 'Done.'
+	,	'failed'	=> 'Failed.'
 	,	'refresh'	=> 'Finished. Click <a href="%s">here</a> if the page does not change after %s.'
 	]
 ,	'regex_hint' => 'Regular expressions are allowed in format {%s|%s}.'

@@ -3108,7 +3108,7 @@ if ($f = $pic_final_path) {
 			if ($page_reload_after_pause) {
 				$made_with = get_localized_text('post_progress', 'used_program');
 
-				echo "$size_text, $made_with: $program_name.";
+				echo "$size_text. $made_with: $program_name.";
 			}
 
 			return $size_text;
@@ -3133,6 +3133,7 @@ if ($f = $pic_final_path) {
 		$BY = ' x ';
 		$TO = ' &#x2192; ';
 		$page_reload_after_pause = max(intval(POST_PIC_WAIT), 1);
+		$refresh_header_content = "$page_reload_after_pause; url=$refresh_location";
 
 	//* this is not working here anyway, must set in php.ini:
 
@@ -3150,12 +3151,13 @@ if ($f = $pic_final_path) {
 
 	//* this is for the browser, some may be configured to prevent though:
 
-		header("Refresh: $page_reload_after_pause; url=$refresh_location");
+		header("Refresh: $refresh_header_content");
 
 		echo '<!doctype html>
 <html lang="'.LANG.'">
 <head>
 	<meta charset="'.ENC.'">
+	<meta http-equiv="refresh" content="'.$refresh_header_content.'">
 	<title>'.get_localized_text('sending').'</title>
 	<style>
 		html {background-color: #eee;}
@@ -3178,11 +3180,11 @@ if ($f = $pic_final_path) {
 //* rewriting already stored post is a crutch, but nothing better for now:
 
 	if ($changed = pic_opt_get_size($f)) {
-		if (IS_LOCALHOST) echo pic_opt_get_time().'Debug check: update last pic size text:';
+		if (IS_LOCALHOST) echo pic_opt_get_time().get_localized_text('post_progress', 'update_pic').": $fn$TO$fwh$changed";
 
 		$changed_result = data_rename_last_pic($fn, $fwh.$changed);
 
-		if (IS_LOCALHOST) echo pic_opt_get_time().$changed_result;
+		if (IS_LOCALHOST) echo pic_opt_get_time().get_localized_text('post_progress', $changed_result ? 'done' : 'failed');
 	}
 
 	if ($pic && $resize) {
@@ -3247,10 +3249,12 @@ if ($f = $pic_final_path) {
 		,	format_time_units($page_reload_after_pause)
 		);
 
-		echo pic_opt_get_time().$msg.'</p>
+//* Closing "</html>" should be the last thing to output:
+
+		die(pic_opt_get_time().$msg.'</p>
 <p>'.$page_reload_msg.'</p>
 </body>
-</html>';
+</html>');
 	} else {
 		ob_end_clean();
 	}
