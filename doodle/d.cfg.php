@@ -48,6 +48,7 @@ define('ARCH_FULL_THREADS_AT_ROOM_VIEW', false);
 define('ARCH_FULL_THREADS_AT_ROOM_LIST', false);
 
 define('NOT_MOD_SEE_ACTIVE_TRD_REPORTS', true);
+define('NOT_MOD_SEE_FULL_TRD', true);
 define('NOT_MOD_SEE_STOPPED_TRD', true);
 define('NOT_MOD_SEE_ROOM_MARKERS', true);
 

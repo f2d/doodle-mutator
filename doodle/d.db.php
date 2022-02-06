@@ -81,12 +81,12 @@ define('DATA_PAT_TRD_PLAY', '~^
 $~iux');
 
 define('DATA_PAT_TRD_MOD', '~^
-	(?P<IsActive>
+	(?P<Active>
 		(?P<ThreadId>\d+)
 		(?P<Etc>\..+)?
 		(?P<Ext>'.DATA_RE_LOG_EXT.')
 	)
-	(?P<IsInactive>
+	(?P<Inactive>
 		(?:\.
 			(?:
 				(?P<IsStopped>s)top
@@ -1116,12 +1116,19 @@ function data_log_report($a) {			//* <- write to user report logs, filename by t
 		&&	(
 				MOD
 
-//* cannot report invisible:
+//* can only report visible threads or current task:
 
 			||	(
-					preg_match(DATA_PAT_TRD_PLAY, $match['IsActive'], $active_match)
-				&&	($u = intval($active_match['TaskHoldUser'])) > 0
-				&&	$u == $u_num
+					preg_match(DATA_PAT_TRD_PLAY, $match['Active'], $active_match)
+				&&	(
+						(
+							($u = intval($active_match['TaskHoldUser'])) > 0
+						&&	$u == $u_num
+						) || (
+							NOT_MOD_SEE_FULL_TRD
+						&&	data_is_thread_full($active_match['PicsCount'])
+						)
+					)
 				)
 			||	data_thread_has_posts_by($f, $u_num)
 			)
@@ -1132,7 +1139,7 @@ function data_log_report($a) {			//* <- write to user report logs, filename by t
 			$act = 'report';
 			if ($a['freeze'] || $a['stop']) {
 				$act = 'freeze: '.(
-					$match['IsInactive']
+					$match['Inactive']
 					? 'done before'
 					: (
 						rename($f, "$f.stop")
@@ -1599,7 +1606,7 @@ function data_put_thread_rename_if_free($f, $t = '', $match = '') {
 		}
 
 		if ($t) {
-			$n = get_file_dir($f)."/$match[ThreadId]$t$match[Ext]$match[IsInactive]";
+			$n = get_file_dir($f)."/$match[ThreadId]$t$match[Ext]$match[Inactive]";
 		}
 	}
 
@@ -2191,23 +2198,21 @@ if (TIME_PARTS) time_check_point("$i: content not found in $path");
 
 //* Deletions: ----------------------------------------------------------------
 
-function data_del_pic_file($f, $keep = '') {
+function data_del_pic_file($file_path, $keep = '') {
 
-	if (!is_file($f)) {
+	if (!is_file($file_path)) {
 		return false;
 	}
 
-	$d = 'unlink';
+	if ($keep) {
+		$dup_count = 0;
+		$file_name = get_file_name($file_path);
+		while (is_file($new_path = $keep.$file_name.($dup_count++ ? "_$dup_count" : '')));
 
-	return (
-		(
-			$keep
-			? rename($f, $d = $keep.get_file_name($f))
-			: $d($f)
-		)
-		? $d
-		: ''
-	);
+		return (rename($file_path, $new_path) ? $new_path : '');
+	} else {
+		return (unlink($file_path) ? 'unlink' : '');
+	}
 }
 
 function data_del_pic($f, $keep = '') {
@@ -2224,13 +2229,13 @@ function data_del_pic($f, $keep = '') {
 	return $status;
 }
 
-function data_del_thread($f, $del_pics = false) {
+function data_del_thread($file_path, $del_pics = false) {
 	global $room;
 
 	$count = array();
 
-	if (is_file($f)) {
-		if ($del_pics && ($files = data_get_thread_pics($f, true))) {
+	if (is_file($file_path)) {
+		if ($del_pics && ($files = data_get_thread_pics($file_path, true))) {
 			$k = (
 				($to_trash = (1 == $del_pics))
 				? 'pics moved to trash'
@@ -2242,11 +2247,11 @@ function data_del_thread($f, $del_pics = false) {
 			}
 		}
 
-		if (unlink($f)) {
+		if (unlink($file_path)) {
 			$count['files']++;
-			$f = DATA_DIR_ROOM."$room/".DATA_SUB_REP.intval(get_file_name($f)).DATA_LOG_EXT;
+			$file_path = DATA_DIR_ROOM."$room/".DATA_SUB_REP.intval(get_file_name($file_path)).DATA_LOG_EXT;
 
-			if (is_file($f) && unlink($f)) {
+			if (is_file($file_path) && unlink($file_path)) {
 				$count['reports']++;
 			}
 		}
@@ -2255,21 +2260,21 @@ function data_del_thread($f, $del_pics = false) {
 	return $count;
 }
 
-function data_del_tree($d, $del_pics = false) {
+function data_del_tree($path, $del_pics = false) {
 	$count = array();
 
-	if (is_dir($d)) {
-		foreach (get_dir_contents($d) as $sub)
-		foreach (data_del_tree("$d/$sub", $del_pics) as $k => $v) {
+	if (is_dir($path)) {
+		foreach (get_dir_contents($path) as $sub)
+		foreach (data_del_tree("$path/$sub", $del_pics) as $k => $v) {
 			$count[$k] += $v;
 		}
 
-		if (rmdir($d)) {
+		if (rmdir($path)) {
 			$count['dirs']++;
 		}
 	} else
-	if (is_file($d)) {
-		foreach (data_del_thread($d, $del_pics) as $k => $v) {
+	if (is_file($path)) {
+		foreach (data_del_thread($path, $del_pics) as $k => $v) {
 			$count[$k] += $v;
 		}
 	}
@@ -2322,7 +2327,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 	if (substr($o,0,8) == 'freeze t') {
 		if (
 			(list($d,$f,$m) = data_get_thread_by_num($a[0]))
-		&&	$f != ($n = $m['IsActive'].($un > 1 ? '.del' : ($un ? '' : '.stop')))
+		&&	$f != ($n = $m['Active'].($un > 1 ? '.del' : ($un ? '' : '.stop')))
 		&&	rename($d.$f, $d.$n)
 		) {
 			$ok = 'OK';
@@ -2347,7 +2352,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 				($bak = NL.'['.NL.trim_bom(file_get_contents($d.$f)).NL.']')
 			&&	($count = data_del_thread($d.$f, $un))
 			)
-			: ($bak = rename($d.$f, "$d$m[IsActive].del"))
+			: ($bak = rename($d.$f, "$d$m[Active].del"))
 		) {
 			$ok = 'OK'.$bak;
 			if ($count) $ok .= NL.'deleted counts: '.get_print_or_none($count);
@@ -2426,7 +2431,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 				$lst .= implode(NL, $q);
 				$t = data_get_thread_name_tail($fst);
 				data_put_count($ok = data_get_count()+1);
-				file_put_mkdir("$d$ok$t$e$m[IsInactive]", $fst);//* <- put 1st half into new thread, un/frozen like old
+				file_put_mkdir("$d$ok$t$e$m[Inactive]", $fst);	//* <- put 1st half into new thread, un/frozen like old
 				data_put_thread_rename_if_free($f, $lst, $m);	//* <- put 2nd half into old thread, to keep people's target
 				data_post_refresh();
 			} else $ok .= ' post not found';
@@ -2588,7 +2593,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 				else if (
 					(list($d,$f,$m) = data_get_thread_by_num($i = $a[0]))
 				&&	($n = data_get_count(COUNT_ROOM, $msg)+1)
-				&&	($t = mkdir_if_none("$new/".DATA_SUB_TRD."$n$m[Etc]$e$m[IsInactive]"))
+				&&	($t = mkdir_if_none("$new/".DATA_SUB_TRD."$n$m[Etc]$e$m[Inactive]"))
 				&&	copy($d.$f, $t)
 				) {
 					$ok = "$f -> $t";
@@ -2868,8 +2873,20 @@ if (TIME_PARTS) time_check_point("done scan: $c files in $td, inb4 thread iterat
 		||	(MOD && ($frz || ($is_active_match && is_file($repf))))	//* <- frozen/reported for mods
 		||	($is_active_match && $u_flag['see'])			//* <- any active for seers
 		||	(
-				($is_active_match || ($frz && NOT_MOD_SEE_STOPPED_TRD))
-			&&	($show_unknown || data_thread_has_posts_by($f, $u_num))
+				(
+					$is_active_match
+				||	(
+						$frz
+					&&	NOT_MOD_SEE_STOPPED_TRD
+					)
+				) && (
+					$show_unknown
+				||	(
+						NOT_MOD_SEE_FULL_TRD
+					&&	data_is_thread_full($active_match['PicsCount'])
+					)
+				||	data_thread_has_posts_by($f, $u_num)
+				)
 			)
 		) {
 			$changes[] = $t = filemtime($path);
