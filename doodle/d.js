@@ -12,6 +12,7 @@
 ,	regCountTail = /\s*:+[\s\d]*(\([^()]*\))?$/
 ,	regCookieSkip = /^([^=]+?-skip-[0-9a-f]+)=([^\/]+?\/+(?:[^\/]+?\/{2})?)(.*)$/i
 ,	regLinkProtocol = /^(\w*:)?(\/*)/
+,	regTagA = /^a$/i
 ,	regTagDiv = /^div$/i
 ,	regTagDivP = /^(div|p)$/i
 ,	regTagForm = /^form$/i
@@ -19,6 +20,8 @@
 ,	regImgTag = /<img [^>]+>/i
 ,	regImgTitle = /\s+(title="[^"]+)"/i
 ,	regImgUrl = /(".*\/([^\/"]*)")>/
+,	regImgExtEtc = /(\.(\w+))(;.+)?$/
+,	regFileExt = /\.([^.\\\/]+)$/
 ,	regPostUID = /^(.*?)([@#]+)([^@#]+)$/
 ,	regTimeDrawn = /^((\d+)-(\d+)(?:[^\d:,=-]+(\d+)-(\d+))?|[\d:]+)(?:=(-?\d+))?,(.*)$/m
 ,	regTimeBreak = /^\d+(<|>|,|$)/
@@ -28,7 +31,9 @@
 ,	regLNaN = /^\D+/
 ,	regNaN = /\D+/
 ,	regNaNa = /\D+/g
+
 //* https://stackoverflow.com/questions/11598786/how-to-replace-non-printable-unicode-characters-javascript#comment55940195_11598864
+
 ,	regRefLinkSanitize = /[\0-\x1F]+/gi
 ,	regSpace = /\s+/g
 ,	regSpaceHTML = /\s|&(nbsp|#8203|#x200B);?/gi
@@ -36,7 +41,10 @@
 ,	regSplitComma = /,\s*/g
 ,	regSplitLineBreak = /\r\n|\r|\n/g
 ,	regSplitWord = /\W+/g
+,	regLastWord = /\s+(\S+)$/
 ,	regTextAreaBR = /(<|&lt;)br[ /]*(>|&gt;)/gi
+,	regTrimStatusMessageTail = /((:)\s+.+|\s*[:\d]*)$/
+,	regTrimTailPun = /[\s.:;,!?=-]+$/
 ,	regTrim = getTrimReg('\\s')
 ,	regTrimPun = getTrimReg(':,.')
 ,	regTrimSlash = getTrimReg('\\/')
@@ -50,6 +58,7 @@
 ,	NB = '&nbsp;'
 ,	NW = '&#8203;'
 ,	dropDownArrow = '&#x25BE;'
+,	dialogNewLine = '\n'
 ,	toolTipNewLine = ' \r\n'
 ,	CS = 'checkStatus'
 ,	CM = 'checkMistype'
@@ -166,6 +175,11 @@ if (lang == 'ru') la = {
 		unsave: {ask: 'Удалить данные из памяти браузера:', unit: 'байт'}
 	,	unskip: {ask: 'Пропуски будут очищены для этих комнат:', unit: ['нить','нити','нитей']}
 	}
+,	show_too_much_content: [
+		'Данных очень много, рекомендуется просмотр по частям.'
+	,	'Браузер может повиснуть при попытке показать всё сразу.'
+	,	'Показать всё равно?'
+	].join(dialogNewLine)
 ,	load: 'Проверка... '
 ,	fail: 'Ошибка '
 ,	empty: 'Ничего нет.'
@@ -177,7 +191,10 @@ if (lang == 'ru') la = {
 ,	resized_hint: 'Кликните для просмотра изображения в полном размере.'
 ,	task_old_src: 'Изображение, которое было на странице до проверки:'
 ,	task_new_src: 'Проверка вашего задания в этой комнате сейчас дала:'
-,	confirm_again: 'Защита от случайного нажатия: 5 секунд.\nПроверьте, что не ошиблись.'
+,	confirm_again: [
+		'Защита от случайного нажатия: 5 секунд.'
+	,	'Проверьте, что не ошиблись.'
+	].join(dialogNewLine)
 ,	post_menu: {
 		arch_room: 'Найти в архиве комнаты'
 	,	arch_all: 'Найти во всех архивах'
@@ -291,6 +308,11 @@ if (lang == 'ru') la = {
 		unsave: {ask: 'Data to be deleted from browser memory (Local Storage):', unit: 'bytes'}
 	,	unskip: {ask: 'Skipping will be cleared for following rooms:', unit: ['thread','threads']}
 	}
+,	show_too_much_content: [
+		'Too much data, paged view is recommended.'
+	,	'The browser can possibly hang while trying to show all at once.'
+	,	'Show all anyway?'
+	].join(dialogNewLine)
 ,	load: 'Checking... '
 ,	fail: 'Error '
 ,	empty: 'No data.'
@@ -302,7 +324,10 @@ if (lang == 'ru') la = {
 ,	resized_hint: 'Click to view full size image.'
 ,	task_old_src: 'Image that was on this page before checking:'
 ,	task_new_src: 'Checked your current task for this room, got this:'
-,	confirm_again: 'Accidental click safety: 5 seconds.\nPlease check that you are certain.'
+,	confirm_again: [
+		'Accidental click safety: 5 seconds.'
+	,	'Please check that you are certain.'
+	].join(dialogNewLine)
 ,	post_menu: {
 		arch_room: 'Search in room archive'
 	,	arch_all: 'Search in all archives'
@@ -360,7 +385,15 @@ var	t = +new Date
 	;
 	if (d <= 0) d = 5000;
 	return (
-		confirm(a ? la.confirm_again+(a > 1?' ['+a+']':'')+'\n\n'+text : text)
+		confirm(
+			a ? (
+				la.confirm_again
+			+	(a > 1 ? ' ['+a+']' : '')
+			+	dialogNewLine
+			+	dialogNewLine
+			+	text
+			) : text
+		)
 	&&	(
 			(+new Date)-t > d
 		||	confirmAgainInterval(text, d, a+1)
@@ -433,7 +466,7 @@ var	p = e, r = (c.test?c:getClassReg(c));
 
 function showProps(o,z /*incl.zero*/) {
 var	i,t = '';
-	for (i in o) if (z || o[i]) t += '\n'+i+'='+o[i];
+	for (i in o) if (z || o[i]) t += dialogNewLine+i+'='+o[i];
 	return alert(t), o;
 }
 
@@ -476,7 +509,9 @@ function eventStop(e,i,d) {
 
 function deleteCookie(c) {document.cookie = c+'=; expires='+(new Date(0).toUTCString())+'; Path='+rootPath;}
 function getCookie(name) {
-	//* https://stackoverflow.com/a/25490531
+
+//* https://stackoverflow.com/a/25490531
+
 var	m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
 	return m ? m.pop() : '';
 }
@@ -516,7 +551,7 @@ var	o = param.open || 0
 }
 
 function getDropdownMenuHTML(head, list, tag, id) {
-var	t = tag || 'u'
+var	t = tag || 'span'
 ,	a = '<'+t+' class="'
 ,	b = '</'+t+'>'
 	;
@@ -531,7 +566,7 @@ var	t = tag || 'u'
 
 function addDropdownMenuWrapper(a, id) {
 var	p = a.parentNode
-,	t = cre('u')
+,	t = cre('span')
 	;
 	t.innerHTML = getDropdownMenuHTML('', '', '', id);
 var	m = t.firstElementChild
@@ -723,10 +758,9 @@ function checkMyTask(event, e) {
 		,	tti = taskTime.intervalMax
 			;
 			if (xhr.status == 200) {
-			var	k = '\n'
-			,	j = xhr.responseText.split(regSplitLineBreak)
+			var	j = xhr.responseText.split(regSplitLineBreak)
 			,	i = j.pop()
-			,	j = j.join(k)
+			,	j = j.join(dialogNewLine)
 			,	status = j
 					.replace(/<[^>]+>/g, '')
 					.replace(regSpace, ' ')
@@ -744,43 +778,58 @@ function checkMyTask(event, e) {
 				if (eTask) {
 					e = eImg || gn('img', eTask)[0];
 					if (
+
 				//* 1-a) image on page with text in task, or vice versa:
+
 						(!e == !!img)
+
 				//* 1-b) something on page with nothing in task, or vice versa:
+
 					||	(!task == !!(e || eText))
 					) {
 						error = 'needs reload';
 					} else
 					if (!img) {
+
 				//* 2) text in task:
 				//* 2-a) text on page:
+
 						if (e = eText || gn('aside', eTask)[1]) {
 							if (
-								!((j = e.previousElementSibling) && regTagForm.test(j.tagName))
-							&&	decodeHTMLSpecialChars(e.innerHTML) != decodeHTMLSpecialChars(task)
-							) e.innerHTML = task, error = 'reloaded text';
+								!(
+									(j = e.previousElementSibling)
+								&&	regTagForm.test(j.tagName)
+								)
+							&&	decodeHTMLSpecialChars(e.innerHTML) !=
+								decodeHTMLSpecialChars(task)
+							) {
+								e.innerHTML = task;
+								error = 'reloaded text';
+							}
+
 				//* 2-b) no text on page:
-						} else error = 'needs reload';
+
+						} else {
+							error = 'needs reload';
+						}
 					} else
+
 				//* 3) image in task:
 				//* 3-a) image on page:
+
 					if (e) {
 					var	i = e.getAttribute('src')
 					,	k = task.indexOf(';')+1
 					,	m = (flag.pixr || (flag.pixr = i.split('/').slice(0, flag.p?-3:-1).join('/')+'/'))
-					,	t = (k ? task.replace(/(\.[^.\/;]+);.+$/, '_res$1') : task)
+					,	t = (k ? task.replace(regImgExtEtc, '_res$1') : task)
 					,	j = m + getPicPath(t);
 						if (i != j) {
 							alert(
 								[
-									la.task_old_src
-								,	i
-								,
-								,	la.task_new_src
-								,	j
-								,
-								,	task
-								].join('\n')
+									la.task_old_src, i,,
+									la.task_new_src, j,,
+									task
+								].join(dialogNewLine)
 							);
 
 							e.src = j;
@@ -788,16 +837,20 @@ function checkMyTask(event, e) {
 							setPicResize(e, k);
 							error = 'reloaded image';
 						}
+
 				//* 3-b) no image on page:
-					} else error = 'needs reload';
+
+					} else {
+						error = 'needs reload';
+					}
 				}
 				if (f && f.firstElementChild) {
 					if (!error || confirm(
 						(
 							message
-							? message+'.\n'+la.send_new_thread
+							? message + '.' + dialogNewLine + la.send_new_thread
 							: la.task_changed
-						)+'\n'+la.send_anyway
+						) + dialogNewLine + la.send_anyway
 					)) f.submit();
 					else status = la.canceled;
 				} else {
@@ -825,7 +878,7 @@ function checkMyTask(event, e) {
 						e.innerHTML =
 							'<b class="date-out l">'
 						+		'<b class="report">'
-						+			la.task_mistype.replace(/\s+(\S+)$/, ' <a href="'+k+'">$1</a>')
+						+			la.task_mistype.replace(regLastWord, ' <a href="'+k+'">$1</a>')
 						+		'</b>'
 						+	'</b>';
 					}
@@ -840,7 +893,7 @@ function checkMyTask(event, e) {
 			}
 			if (s) {
 				s.textContent = status;
-				(btn || s).title = new Date()+'\n\n'+task;
+				(btn || s).title = new Date() + dialogNewLine + dialogNewLine + task;
 				if (btn) toggleClass(btn, 'ready', 1);
 			}
 			requestInProgress.checking = 0;
@@ -850,7 +903,9 @@ function checkMyTask(event, e) {
 
 var	nothing = (event ? false : void(0));
 
-	if (requestInProgress.checking) return nothing;
+	if (requestInProgress.checking) {
+		return nothing;
+	}
 
 	requestInProgress.checking = 1;
 
@@ -886,8 +941,12 @@ var	xhr = new XMLHttpRequest();
 }
 
 function autoUpdateTaskTimer(event) {
-	if (requestInProgress.checking) return;
+	if (requestInProgress.checking) {
+		return;
+	}
+
 //* all stamps in milliseconds:
+
 var	t = taskTime.taken
 ,	d = taskTime.deadline
 ,	i = taskTime.interval
@@ -896,7 +955,9 @@ var	t = taskTime.taken
 ,	e = id(CS)
 	;
 	if (a || e) {
+
 //* a) automatically check to push deadline away:
+
 		if (a > 0) {
 		var	now = +new Date
 		,	i = taskTime.intervalMin
@@ -921,7 +982,9 @@ var	t = taskTime.taken
 				taskTime.nextCheckTime = n;
 			}
 		} else
+
 //* b) countdown to zero, then stop:
+
 		if (e && d > 0) {
 		var	statusMsg = (e.textContent || '').replace(regTrim, '')
 		,	now = +new Date
@@ -930,8 +993,9 @@ var	t = taskTime.taken
 			if (now < d) timeLeft = d - now;
 			else if (i) clearInterval(i);
 			e.textContent = (
-				statusMsg && statusMsg != '?'
-				? statusMsg.replace(/((:)\s+.+|\s*[:\d]*)$/, '$2 ')
+				statusMsg
+			&&	statusMsg != '?'
+				? statusMsg.replace(regTrimStatusMessageTail, '$2 ')
 				: ''
 			)+getFormattedHMS(timeLeft);
 		}
@@ -1022,7 +1086,7 @@ function getPicPath(filename, param) {
 }
 
 function setPicResize(e,i) {
-var	a = e.parentNode, nested = /^a$/i.test(a.tagName);
+var	a = e.parentNode, nested = regTagA.test(a.tagName);
 	if (i) {
 		if (!nested) {
 			a = cre('a',a,e);
@@ -1054,7 +1118,7 @@ function togglePicSize(e) {
 var	r = '_res';
 	e.src = (e.src.indexOf(r) > 0
 		? e.src.replace(r, '')
-		: e.src.replace(/(\.[^.\/]+$)/, r+'$1')
+		: e.src.replace(regImgExtEtc, r+'$1')
 	);
 }
 
@@ -1274,7 +1338,7 @@ function clearSaves(e) {
 			if (!k.length) {
 				alert(la.empty);
 			} else
-			if (confirm(la.clear[v].ask+'\n\n'+a.rows.join('\n'))) {
+			if (confirm(la.clear[v].ask + dialogNewLine + dialogNewLine + a.rows.join(dialogNewLine))) {
 				for (var i in k) {
 					if (v == 'unskip') deleteCookie(k[i]); else
 					if (v == 'unsave') LS.removeItem(k[i]);
@@ -1462,11 +1526,15 @@ var	a = form.elements
 			);
 			if (e.type != 'submit') {
 				if (v.replace) {
-					v = getFormPartHTML(k, v.split(/[\r\n]+/g));
+					v = getFormPartHTML(k, v.split(regSplitLineBreak));
 					k = 'text';
 				} else {
 					if (e = getParentByTagName(e, 'label')) {
-						v = e.textContent.replace(/[\s.:;,!?=-]+$/, '').replace(regTrim, '');
+						v = (
+							e.textContent
+							.replace(regTrimTailPun, '')
+							.replace(regTrim, '')
+						);
 					} else v = k;
 					k = 'bool';
 				}
@@ -1500,7 +1568,7 @@ function selectLink(e,aa,no,r,t) {
 var	i = e.name+'_link'
 ,	a = id(i)
 ,	v = e.value || ''
-,	r = (v === no ? '' : r.replace('*', r.indexOf('.') < 0 ? v : v.replace(/\.[^.\/]+$/, '')))
+,	r = (v === no ? '' : r.replace('*', r.indexOf('.') < 0 ? v : v.replace(regFileExt, '')))
 ,	t = (r ? (t || la.draw_test) : '')
 	;
 	if (a) {
@@ -1627,9 +1695,13 @@ var	i = param.on_page
 	}
 }
 
+function showAllContent(sortOrder) {
+	return showContent(sortOrder, true);
+}
+
 //* compile user content *-----------------------------------------------------
 
-function showContent(sortOrder) {
+function showContent(sortOrder, confirmTooMuchContent) {
 
 	function getThreadHTML(threadText, addMarks) {
 
@@ -1642,16 +1714,22 @@ function showContent(sortOrder) {
 		,	alter = 0
 			;
 			if (line.indexOf('\t') < 0) {
+
 		//* as is:
+
 				if (line[0] == '<') return line;
 				if (line[0] == '|') {
+
 		//* announce indent:
+
 					if (line[1] == '|') return (
 						getLineHTML(t = '\t\t')
 					+	getLineHTML(t+line.slice(2), true)
 					+	getLineHTML(t)
 					);
+
 		//* 1 line, any cell count, evenly hor.aligned:
+
 					tableRow.push(line.slice(1));
 				var	next_i = orz(l_i)+1;
 					if (lines.length <= next_i || lines[next_i][0] != '|') {
@@ -1684,7 +1762,9 @@ function showContent(sortOrder) {
 						tableRow = [];
 					}
 				} else
+
 		//* save variables, show nothing:
+
 				if ((i = line.indexOf('=')) > 0) {
 				var	i = parseLineKeyVal(line)
 				,	k = i[0]
@@ -1700,7 +1780,9 @@ function showContent(sortOrder) {
 					return '';
 				}
 			} else {
+
 		//* 3 columns, sort of:
+
 			var	t,a,b,c,d,i,j,k,l,m,n
 			,	u = ''
 			,	userID = ''
@@ -1781,21 +1863,29 @@ function showContent(sortOrder) {
 				}
 				if (roomCount && isNotEmpty(t = tab[2]) && t.indexOf(sep) >= 0) {
 					k = t.split(sep);
+
 				//* room name:
+
 					tab[2] = k.shift();
+
 				//* colored counters:
+
 					a = {};
 					for (i in k) if (c = reportClass[b = k[i].slice(-1)]) {
 						a[b] = '<span class="'+c+'" title="'+la.marks[c]+'">'+orz(k[i])+'</span>';
 					} else
+
 				//* user's default room or mod status:
+
 					if ((b = k[i].replace(regTrimWord, '')).length > 0) {
 						if (b === 'mod') roomClasses.push('u'); else
 						if (b === 'home') roomClasses.push(b);
 					}
 					for (i in reportClass) if (a[i]) marks += a[i]+sep;
 				}
+
 			//* crutch for menus:
+
 				i = 2;
 				while (i--) if (
 					!isNotEmpty(t = tab[i])
@@ -1807,13 +1897,17 @@ function showContent(sortOrder) {
 					if (i > 0 && NA.indexOf(t) >= 0) userNameHidden = 1;
 					tab[i] = dropDownArrow;
 				}
+
 			//* left:
+
 				if (tab.length > 0 && isNotEmpty(t = tab[0])) {
 					if (dtp.options && t.indexOf(j = '|') > 0) {
 						t = (optionNames = t.split(j)).shift().replace(regTrimPun, '')+':';
 					} else
 					if (dtp.rooms && sep) {
+
 				//* arch link:
+
 						j = '*';
 						if (t.indexOf(j) < 0) j = '';
 
@@ -1836,7 +1930,9 @@ function showContent(sortOrder) {
 
 						if (roomCount && t.indexOf(sep) >= 0) {
 							k = t.split(sep).map(orz);
+
 				//* last arch date:
+
 							if (k.length > 3 && (i = k[3])) {
 								roomDates['a '+(insideOut?'r':'l')] = i = getFTimeIfTime(i);
 								if (count.uLast < i) count.uLast = i;
@@ -1846,7 +1942,9 @@ function showContent(sortOrder) {
 							if (i = k[2]) k[2] = m+i+n;
 							t = k.join(sep);
 						} else
+
 				//* date hidden:
+
 						if (tab[2] && isNotEmpty(t)) t = m+t+n;
 					} else {
 					var	time = t = getFTimeIfTime(t);
@@ -1877,12 +1975,18 @@ function showContent(sortOrder) {
 					}
 					tab[0] = t;
 				}
+
 			//* right:
+
 				if (tab.length > 1 && isNotEmpty(t = tab[1])) {
 					userName = t;
+
+				//* fix for textarea source and evil usernames:
+
 					if (!regTagPre.test(pre.tagName)) {
-						t = encodeHTMLSpecialChars(t);	//* <- fix for textarea source and evil usernames
+						t = encodeHTMLSpecialChars(t);
 					}
+
 					if (dtp.found) {
 						t =	'<a href="?'
 						+		(param.arch_term_name || 'name')
@@ -1911,7 +2015,9 @@ function showContent(sortOrder) {
 						}
 						t = '<a href="'+t+'">'+d+'</a>';
 					} else
+
 				//* rooms:
+
 					if (dtp.rooms && dtp.archive && t.indexOf(j = '*') >= 0) {
 						t = (
 							'<span title="'
@@ -1924,7 +2030,9 @@ function showContent(sortOrder) {
 					} else
 					if (roomCount && t.indexOf(sep) >= 0) {
 						k = t.split(sep).map(orz);
+
 				//* last post date:
+
 						if (k.length > 2) {
 							if (i = k[2]) {
 								roomDates[insideOut?'l':'r'] = i = getFTimeIfTime(i);
@@ -1935,7 +2043,9 @@ function showContent(sortOrder) {
 						}
 						t = k.join(sep);
 					} else
+
 				//* options:
+
 					if (dtp.options && t[0] != '<' && (i = t.indexOf('=')) >= 0) {
 					var	i = parseLineKeyVal(t)
 					,	k = i[0]
@@ -1945,7 +2055,9 @@ function showContent(sortOrder) {
 					,	t = param.apply_change || ''
 					,	t = (t?"'"+t+"'":'')
 						;
+
 				//* drop-down select:
+
 						if (v.indexOf(sel) >= 0) {
 						var	l = v.split(sel)
 						,	m = orz(l.shift())
@@ -1970,9 +2082,13 @@ function showContent(sortOrder) {
 							+	'</option>';
 							t += '</select>';
 						} else if (
+
 				//* add trigger to activate submit button:
+
 							(t = '" onChange="allowApply('+t+')"'),
+
 				//* text field:
+
 							(v.indexOf(sep) >= 0)
 						) {
 							l = v.split(sep);
@@ -1982,7 +2098,9 @@ function showContent(sortOrder) {
 							+	'" placeholder="'+l[1]
 							+	t+'>';
 						} else {
+
 				//* toggle box:
+
 							t = '['+[0,1].map(
 								function(i) {
 								var	text = (optionNames[i] || la.toggle[i]).replace(regTrimPun, '');
@@ -1999,7 +2117,9 @@ function showContent(sortOrder) {
 					}
 					tab[1] = (marks && !isNotEmpty(t) ? marks.slice(0, -sep.length) : marks+t);
 				}
+
 			//* center:
+
 				if (tab.length > 2 && isNotEmpty(t = tab[2])) {
 					if (dtp.reports) {
 						t = (
@@ -2026,11 +2146,17 @@ function showContent(sortOrder) {
 					if (dtp.rooms) {
 						j = (param.type?param.type+'/':''), a = '';
 						postAttr += '" data-filter-value="'+(j || '/')+t;
+
 				//* room hidden:
+
 						if (t[0] == '.') roomClasses.push('gloom');
+
 				//* room frozen:
+
 						if (tab.length > 4) a = tab[4], roomClasses.push('frozen');
+
 				//* room announce:
+
 						if (tab.length > 3 && (isNotEmpty(a) || isNotEmpty(a = tab[3]))) {
 							a = encodeTagAttr(
 								a
@@ -2049,7 +2175,9 @@ function showContent(sortOrder) {
 						+	t
 						+ '</a>';
 					} else
+
 				//* image post:
+
 					if (tab.length > 3 && isNotEmpty(a = tab[3])) {
 						imgRes = (t.indexOf(', ') > 0);
 						if (flag.c) ++count.img;
@@ -2108,7 +2236,7 @@ function showContent(sortOrder) {
 							} else {
 								if (imgRes) {
 									j = t.split(';');
-									t = j[0].replace(/(\.[^.]+)$/, '_res$1');
+									t = j[0].replace(regImgExtEtc, '_res$1');
 									k = j[1].replace(regNaN, 'x');
 									if (isNotEmpty(tab[0])) tab[0] +=
 										'<span class="'+(u == 'u'?u:'res')
@@ -2140,7 +2268,9 @@ function showContent(sortOrder) {
 						if (!dtp.found && imgPost) alter = 1;
 						imgPost = 1;
 					} else {
+
 				//* text post:
+
 						if (dtp.threads) t = ++descNum+'. '+t;
 						t = t
 							.replace(/\s+(-|&mdash;|—|&ndash;|–|)\s+/gi, '&nbsp;$1 ')
@@ -2184,7 +2314,9 @@ function showContent(sortOrder) {
 					postID = 'post-'+threadNum+'-'+postNum;
 					postAttr += '" id="'+postID;
 				}
+
 			//* left & right wrap:
+
 				i = 2;
 				while (i--) if (isNotEmpty(t = tab[i])) {
 				var	asideAttr = ''
@@ -2336,12 +2468,16 @@ function showContent(sortOrder) {
 				lineHTML += tab.slice(0,3).filter(isNotEmpty).join('');
 			}
 			if (isNotEmpty(lineHTML)) {
+
 		//* half width:
+
 				if (!noShrink && (dtp.options || dtp.rooms)) lineHTML =
 						'<div class="center">'
 				+			lineHTML
 				+		'</div>';
+
 		//* toggle bg color:
+
 				if (!dtp.found && !imgPost) alter = 1;
 				if (alter) alt = !alt;
 				lineHTML =
@@ -2434,34 +2570,59 @@ var	flagVarNames = ['flag', 'flags']
 	for (var r_i in raws) if ((pre = e = raws[r_i]) && (t = e.getAttribute('data-type'))) {
 
 	//* already have generated content:
+
 		if ((p = e.previousElementSibling) && (h = p.threadsHTML)) {
 		var	i = p.threadsLastSortIndex || 0
 		,	k = p.threadsSortIndexKeys || []
 			;
 			if (sortOrder === 'last') {
 				rawr.push(p);
-				i = !!(!p.innerHTML && (p.innerHTML = h[i]));
+
+				if (!p.firstElementChild)
+				if (
+					!confirmTooMuchContent
+				||	confirm(la.show_too_much_content)
+				) {
+					p.innerHTML = h[i];
+				}
 			} else {
 			var	n = 0;
+
 				if (typeof sortOrder !== 'undefined') {
 					if ((j = k.indexOf(sortOrder)) >= 0) n = j; else
 					if (sortOrder > 0) n = 1; else
 					if (sortOrder < 0) n = 2; else h = '';
 				}
+
 				if (h) {
-					h = (i == n && p.innerHTML?'':h[n]);
+					h = (
+						i === n
+					&&	p.firstElementChild
+						? ''
+						: h[n]
+					);
+				}
+
+				if (
+					!h
+				||	!confirmTooMuchContent
+				||	confirm(la.show_too_much_content)
+				) {
+					p.innerHTML = h;
 					p.threadsLastSortIndex = n;
 				}
-				i = !!(p.innerHTML = h);
 			}
-			if (i) {
+
+			if (p.firstElementChild) {
 				bnw.adorn();
 				if (i = id('filter')) i.onchange(null, i);
 			}
+
 			continue;
 		}
 
 	//* generate first:
+
 	var	raw = e.value || e.innerHTML
 	,	dtp = o0(t, regSpace, 1)	//* <- split into object properties
 	,	sectionCount = 0
@@ -2560,7 +2721,9 @@ var	flagVarNames = ['flag', 'flags']
 				).join('');
 			} else
 			if (threadsHTML.length > 1) {
+
 		//* multiple threads, top bar with counters:
+
 			var	o = {
 					left: []
 				,	right: []
@@ -2574,11 +2737,16 @@ var	flagVarNames = ['flag', 'flags']
 			,	n = '<br>'
 			,	sep = ', '
 			,	splitRanges = {}
+			,	countOnToggleButton = sectionCount || threadsHTML.length
 				;
 				for (i in la.groups) if (dtp[i]) {a = la.groups[i]; break;}
 				o.left.push(
-					'<a href="javascript:showContent()">'
-				+		a+': '+(sectionCount || threadsHTML.length)
+					'<a href="javascript:'+(
+						countOnToggleButton > splitSort
+						? 'showAllContent'
+						: 'showContent'
+					)+'()">'
+				+		a+': '+countOnToggleButton
 				+	'</a>'
 				);
 				if (flag.c) for (i in count) if (k = count[i]) {
@@ -2592,7 +2760,11 @@ var	flagVarNames = ['flag', 'flags']
 						(	dtp.reflinks ? (l.lastr || l.last) :
 							l.last
 						));
-						j = '<a href="javascript:showContent(\''+k_i+'\')">'+j+'</a>';
+						j = '<a href="javascript:'+(
+							l_i > splitSort
+							? 'showAllContent'
+							: 'showContent'
+						)+'(\''+k_i+'\')">'+j+'</a>';
 						if (l_i > splitSort) {
 						var	l_min = 1
 						,	l_max = l_i-1
@@ -2673,7 +2845,9 @@ var	flagVarNames = ['flag', 'flags']
 				+		o.right
 				+		o.left
 				+	'</p>';
+
 		//* unsorted content:
+
 			var	h = [threadsHTML.map(
 					function(v,i) {
 						if (i = threadsMarks[i]) {
@@ -2693,7 +2867,9 @@ var	flagVarNames = ['flag', 'flags']
 						+	'</div>';
 					}
 				).join('')];
+
 		//* sorted content:
+
 				if ((j = linesToSort) && (l = j.length)) {
 				var	aik = new Array(h.length)
 				,	r = splitRanges
@@ -2713,7 +2889,9 @@ var	flagVarNames = ['flag', 'flags']
 					,	k = (s?'+':'-')+'Infinity'
 						;
 						addSortedLinesHTML(j[v](), k);
+
 		//* sorted content parts:
+
 						if (r && (v = r[k])) for (var i = 0, n = v.length; i < n; i++) {
 						var	k = v[i]
 						,	a,b = k.split('-').map(orz)
@@ -2731,10 +2909,14 @@ var	flagVarNames = ['flag', 'flags']
 				for (i = 0, j = h.length; i < j; i++) if (h[i]) h[i] += afterThreadsBar;
 				e.className = 'threads';
 				e.threadsHTML = h;
+
 		//* show open threads on page load only if option set:
+
 				if (flag.a) e.innerHTML = h[0];
 			} else {
+
 		//* single thread, without counters:
+
 				if (dtp.found || (dtp.threads && !flag.v)) cre('div', p, e.nextElementSibling).outerHTML = afterThreadsBar;
 				j = (
 					(i = threadsMarks)
@@ -2819,7 +3001,7 @@ var	flagVarNames = ['flag', 'flags']
 
 	if (rawToDelete.length) window.addEventListener('load', function() {
 		rawToDelete.map(function(e) {
-			e.textContent = '';	//* <- clean up raw data, but keep element in DOM
+			e.textContent = '';	//* <- clean up raw data (TSV table), but keep element in DOM
 		});
 	}, false);
 
@@ -2840,6 +3022,7 @@ var	t = e.getAttribute('data-t');
 });
 
 if (k = id('task')) {
+
 //* room task:
 
 	function addTaskBtn(content, attr, parent) {
@@ -3000,7 +3183,9 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 		if (a) window.addEventListener('focus', f, false);
 		document.addEventListener('DOMContentLoaded', f, false);
 	}
+
 //* room task image, set up resize on click:
+
 	if (
 		(i = id('task-img') || gn('img',k)[0])
 	&&	(a = i.alt)
@@ -3011,7 +3196,9 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			.replace('*','x');
 		setPicResize(i,j+1);
 	}
+
 //* archive search:
+
 	for (i in (j = gi('text',k))) if (
 		(e = j[i])
 	&&	(n = (e.getAttribute(m = 'data-select') || e.name).replace(regTrim, ''))
@@ -3066,7 +3253,9 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			}
 		} else e.name = '!';
 	}
+
 //* show/hide rules:
+
 	if (i = (j = gn('ul',k).concat(gc('hid',k))).length) {
 		while (i--) if (
 			(m = (n = j[i]).previousElementSibling)
