@@ -1123,7 +1123,7 @@ var	r = '_res';
 }
 
 function getNormalizedText(str) {return (str || '').replace(regTrim, '').toLowerCase();}
-function filter(event, e) {
+function filterContent(event, e, containers) {
 	if (event) e = eventStop(event).target;
 	if (!e) return;
 var	v = getNormalizedText(e.value)
@@ -1136,8 +1136,8 @@ var	v = getNormalizedText(e.value)
 var	f_type = e.getAttribute('data-filter') || ''
 ,	f_num = Math.max(0, orz(f_type))
 ,	va = (!f_num && f_type ? v.split(f_type) : 0)
-,	containers = showContent('last')
 	;
+	if (containers || (containers = showContent('last')))
 	for (var c_i = 0, c_len = containers.length; c_i < c_len; c_i++) {
 	var	container = e = containers[c_i]
 	,	threads = gn('div', e).filter(function(e) {return regClassThread.test(e.className);})
@@ -1210,7 +1210,7 @@ function filterPrefix(p) {
 	,	i = v.lastIndexOf(j)
 		;
 		e.value = p+(i < 0 ? v : v.slice(i+j.length));
-		filter(0, e);
+		filterContent(0, e);
 	}
 }
 
@@ -2574,6 +2574,7 @@ var	flagVarNames = ['flag', 'flags']
 		if ((p = e.previousElementSibling) && (h = p.threadsHTML)) {
 		var	i = p.threadsLastSortIndex || 0
 		,	k = p.threadsSortIndexKeys || []
+		,	isContentChangedAndNotEmpty = false
 			;
 			if (sortOrder === 'last') {
 				rawr.push(p);
@@ -2583,7 +2584,9 @@ var	flagVarNames = ['flag', 'flags']
 					!confirmTooMuchContent
 				||	confirm(la.show_too_much_content)
 				) {
-					p.innerHTML = h[i];
+					h = h[i] || '';
+					isContentChangedAndNotEmpty = !!h;
+					p.innerHTML = h;
 				}
 			} else {
 			var	n = 0;
@@ -2600,7 +2603,7 @@ var	flagVarNames = ['flag', 'flags']
 					&&	p.firstElementChild
 						? ''
 						: h[n]
-					);
+					) || '';
 				}
 
 				if (
@@ -2608,14 +2611,15 @@ var	flagVarNames = ['flag', 'flags']
 				||	!confirmTooMuchContent
 				||	confirm(la.show_too_much_content)
 				) {
+					isContentChangedAndNotEmpty = !!h;
 					p.innerHTML = h;
 					p.threadsLastSortIndex = n;
 				}
 			}
 
-			if (p.firstElementChild) {
+			if (isContentChangedAndNotEmpty) {
 				bnw.adorn();
-				if (i = id('filter')) i.onchange(null, i);
+				if (i = id('filter')) i.onchange(null, i, rawr);
 			}
 
 			continue;
@@ -3271,7 +3275,7 @@ showContent();
 
 if (e = id('time-zone')) e.innerHTML = getFormattedTimezoneOffset();
 if (e = id('filter')) {
-	e.onchange = e.onkeyup = filter;
+	e.onchange = e.onkeyup = filterContent;
 	if (
 		(h = location.hash)
 	&&	(i = e.getAttribute('data-filter'))
