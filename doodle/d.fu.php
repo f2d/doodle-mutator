@@ -70,8 +70,8 @@ function exit_if_not_mod($new_time_int = 0) {
 		!POST
 	&&	!$GLOBALS['target']['changed']
 	&&	!$GLOBALS['u_opts']['modtime304']
-	&&	is_not_empty($_SERVER[$m = 'HTTP_IF_MODIFIED_SINCE'])
-	&&	is_not_empty($_SERVER[$n = 'HTTP_IF_NONE_MATCH'])
+	&&	!empty($_SERVER[$m = 'HTTP_IF_MODIFIED_SINCE'])
+	&&	!empty($_SERVER[$n = 'HTTP_IF_NONE_MATCH'])
 	&&	$_SERVER[$m] === $new_date_time
 	&&	(
 			$_SERVER[$n] === $etag_hash
@@ -198,7 +198,7 @@ $report");
 }
 
 function time_check_point($comment) { $GLOBALS['tcp'][microtime()][] = $comment; }
-function get_print_or_none($var) { return is_not_empty($var) ? trim(print_r($var, true)) : 'none'; }
+function get_print_or_none($var) { return (empty($var) ? 'none' : trim(print_r($var, true))); }
 
 //* ---------------------------------------------------------------------------
 //* Always use mb_* for text, but simple str* for non-empty checks,
@@ -1028,7 +1028,7 @@ function get_search_ranges($criteria, $caseless = true) {
 
 	foreach ($patterns as $pattern => $match_types)
 	foreach ($match_types as $match_type) {
-		if (is_not_empty($t = $criteria[$match_type])) {
+		if (!empty($t = $criteria[$match_type])) {
 			$sub_ranges = array();
 			$min = false;
 
@@ -1810,27 +1810,58 @@ function get_draw_app_list($allow_upload = true) {
 function get_draw_vars($send = '') {
 	global $cfg_draw_vars, $cfg_wh, $errors_after_POST;
 
-	$vars = ($send?"$send;":'').DRAW_REST.
-		';keep_prefix='.DRAW_PERSISTENT_PREFIX
-	.($GLOBALS['u_opts']['save2common']?'':
-		';save_prefix='.DRAW_BACKUPCOPY_PREFIX.';saveprfx='.NAMEPRFX
-	).($errors_after_POST?
-		';preload_last_save=yes'
-	:'');
+	$vars = DRAW_REST;
 
-	foreach ($cfg_draw_vars as $k => $v) {
-		if (($i = $GLOBALS["u_$v"]) || ($i = get_const($v))) $vars .= ";$k=$i";
+	if (!empty($send)) $vars .= ";$send";
+	if (!empty(DRAW_PERSISTENT_PREFIX)) $vars .= ';keep_prefix='.DRAW_PERSISTENT_PREFIX;
+	if (!$GLOBALS['u_opts']['save2common']) $vars .= ';save_prefix='.DRAW_BACKUPCOPY_PREFIX.';saveprfx='.NAMEPRFX;
+	if (!empty($errors_after_POST)) $vars .= ';preload_last_save=yes';
+
+	foreach ($cfg_draw_vars as $var_name => $source_name)
+	if (
+		($var_value = $GLOBALS["u_$source_name"])
+	||	($var_value = get_const($source_name))
+	) {
+		$vars .= ";$var_name=$var_value";
 	}
 
-	if (($res = $GLOBALS['query']['draw_res']) && false !== mb_strpos($res, 'x')) {
-		$wh = array_map('intval', mb_split('x', $res, 2));
+	if (
+		($draw_res_text = $GLOBALS['query']['draw_res'])
+	&&	false !== mb_strpos($draw_res_text, 'x')
+	) {
+		$requested_dimensions = array_map('intval', mb_split('x', $draw_res_text, 2));
 	}
 
 	if ($send) {
-		foreach (array('DEFAULT_', 'LIMIT_') as $i => $j)
-		foreach ($cfg_wh as $k => $l) {
-			$p = mb_strtolower(mb_substr($l,0,1)).($i?'l':'');
-			if ((!$i && $wh && ($v = $wh[$k])) || ($v = get_const("DRAW_$j$l"))) $vars .= ";$p=$v";
+		foreach (array('DEFAULT_', 'LIMIT_') as $is_limit => $const_name_prefix)
+		foreach ($cfg_wh as $dimension_index => $dimension_name) {
+			if (
+				(
+					!$is_limit
+				&&	$requested_dimensions
+				&&	($var_value = $requested_dimensions[$dimension_index])
+				)
+			||	($var_value = get_const("DRAW_$const_name_prefix$dimension_name"))
+			) {
+				$var_name = mb_strtolower($dimension_name).($is_limit ? '_limits' : '');
+				$vars .= ";$var_name=$var_value";
+			}
+		}
+	}
+
+	if (!empty(DRAW_COMMON_PALETTES_PATH)) {
+		$file_path = DRAW_COMMON_PALETTES_PATH;
+
+		if ($file_path[0] !== '/') {
+			$file_path = ROOTPRFX.$file_path;
+		}
+
+		if (is_file($file_path = $_SERVER['DOCUMENT_ROOT'].$file_path)) {
+			$vars .= ';palettes='.DRAW_COMMON_PALETTES_PATH;
+
+			if (LINK_TIME) {
+				$vars .= '?'.filemtime($file_path);
+			}
 		}
 	}
 
