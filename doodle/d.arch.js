@@ -2,12 +2,12 @@
 ,	bnw = bnw || []
 
 ,	param = {
-		caps: 'atm'
-	,	caps_around: 3
-	,	caps_width: 640
-	,	arch_term_name: 'fullname'
-	,	archives: '../'
-	,	page_ext: '.htm'
+		caps		: 'atm'
+	,	caps_around	: 3
+	,	caps_width	: 640
+	,	arch_term_name	: 'fullname'
+	,	archives	: '../'
+	,	page_ext	: '.htm'
 	}
 
 ,	regClassPost = getClassReg('post')
@@ -51,29 +51,28 @@
 //* UI translation *-----------------------------------------------------------
 
 if (lang == 'ru') la = {
-	post_menu_hint: {
-		post: 'Действия с этим постом.'
-	,	user: 'Действия с этим пользователем.'
+	post_menu_hint : {
+		post : 'Действия с этим постом.'
+	,	user : 'Действия с этим пользователем.'
 	}
-,	post_menu: {
-		arch_room: 'Найти в архиве комнаты'
-	,	arch_all: 'Найти во всех архивах'
-	,	capture_thread: 'Снимок всей нити'
-	,	capture_to_last_pic: 'Снимок по последний рисунок'
-	,	capture_to_this_post: 'Снимок по этот пост'
-	,	title_:'Actions on this post'
+,	post_menu : {
+		arch_room	: 'Найти в архиве комнаты'
+	,	arch_all	: 'Найти во всех архивах'
+	,	capture_thread	: 'Снимок всей нити'
+	,	capture_to_last_pic	: 'Снимок по последний рисунок'
+	,	capture_to_this_post	: 'Снимок по этот пост'
 	}
 }; else la = {
-	post_menu_hint: {
-		post: 'Actions on this post.'
-	,	user: 'Actions on this user.'
+	post_menu_hint : {
+		post : 'Actions on this post.'
+	,	user : 'Actions on this user.'
 	}
-,	post_menu: {
-		arch_room: 'Search in room archive'
-	,	arch_all: 'Search in all archives'
-	,	capture_thread: 'Save screenshot of the thread'
-	,	capture_to_last_pic: 'Save screenshot up to last pic'
-	,	capture_to_this_post: 'Save screenshot up to this post'
+,	post_menu : {
+		arch_room	: 'Search in room archive'
+	,	arch_all	: 'Search in all archives'
+	,	capture_thread	: 'Save screenshot of the thread'
+	,	capture_to_last_pic	: 'Save screenshot up to last pic'
+	,	capture_to_this_post	: 'Save screenshot up to this post'
 	}
 };
 
@@ -98,13 +97,13 @@ function encodeHTMLSpecialChars(t) {
 	.replace(/>/g, '&gt;');
 }
 
-function gc(n,p) {try {return TOS.slice.call((p || document).getElementsByClassName(n) || []);} catch(e) {return [];}}
-function gn(n,p) {try {return TOS.slice.call((p || document).getElementsByTagName(n) || []);} catch(e) {return [];}}
-function id(i) {return document.getElementById(i);}
-function fit() {v.content = 'width='+(d.maxWidth = w[d.maxWidth != w[1]?1:0]).replace(regNaN,'');}
-function meta() {toggleClass(document.body, 'hide-aside');}
-function isNotEmpty(t) {return String(t).replace(regSpaceHTML, '').length;}
-function getClassReg(c) {return new RegExp('(^|\\s)('+c+')($|\\s)', 'i');}
+function gc(n,p) { try { return TOS.slice.call((p || document).getElementsByClassName(n) || []); } catch(e) { return []; } }
+function gn(n,p) { try { return TOS.slice.call((p || document).getElementsByTagName(n) || []); } catch(e) { return []; } }
+function id(i) { return document.getElementById(i); }
+function fit() { v.content = 'width='+(d.maxWidth = w[d.maxWidth != w[1] ? 1 : 0]).replace(regNaN,''); }
+function meta() { toggleClass(document.body, 'hide-aside'); }
+function isNotEmpty(t) { return String(t).replace(regSpaceHTML, '').length > 0; }
+function getClassReg(c) { return new RegExp('(^|\\s)('+c+')($|\\s)', 'i'); }
 function toggleClass(e,c,keep) {
 var	k = 'className'
 ,	old = e[k]
@@ -139,7 +138,7 @@ var	o;
 }
 
 function getParentBeforeClass(e,c) {
-var	p = e, r = (c.test?c:getClassReg(c));
+var	p = e, r = (c.test ? c : getClassReg(c));
 	while ((e = e.parentNode) && !(e.className && r.test(e.className))) p = e;
 	return p;
 }
@@ -152,7 +151,7 @@ function cre(e,p,b) {
 }
 
 function del(e,p) {
-	if (p?p:p = e.parentNode) p.removeChild(e);
+	if (p ? p : p = e.parentNode) p.removeChild(e);
 	return p;
 }
 
@@ -200,12 +199,12 @@ var	t = tag || 'div'
 	+	b+b+b+b;
 }
 
-function orz(n) {return parseInt(n||0)||0;}
-function leftPad(n) {n = orz(n); return n > 9 || n < 0?n:'0'+n;}
+function orz(n) { return parseInt(n||0)||0; }
+function leftPad(n) { n = orz(n); return (n > 9 || n < 0 ? n : '0'+n); }
 function getFormattedTimezoneOffset(t) {
 	return (
 		(t = (t && t.getTimezoneOffset ? t : new Date()).getTimezoneOffset())
-		? (t < 0?(t = -t, '+'):'-')+leftPad(Math.floor(t/60))+':'+leftPad(t%60)
+		? (t < 0 ? (t = -t, '+') : '-')+leftPad(Math.floor(t/60))+':'+leftPad(t%60)
 		: 'Z'
 	);
 }
@@ -219,7 +218,7 @@ var	t = orz(msec)
 		if (a[i] >= splitSec) a[i-1] = Math.floor(a[i]/splitSec), a[i] %= splitSec;
 		if (a[i] < 10) a[i] = '0'+a[i];
 	}
-	return (t < 0?'-':'')+a.join(':');
+	return (t < 0 ? '-' : '')+a.join(':');
 }
 
 function getFTimeIfTime(t, plain) {
@@ -240,7 +239,7 @@ var	d = (
 		: new Date()
 	)
 ,	t = (
-		('FullYear,Month,Date'+(only_ymd?'':',Hours,Minutes,Seconds'))
+		('FullYear,Month,Date'+(only_ymd ? '' : ',Hours,Minutes,Seconds'))
 		.split(',')
 		.map(
 			function(v,i) {
@@ -251,11 +250,11 @@ var	d = (
 		)
 	)
 ,	YMD = t.slice(0,3).join('-')
-,	HIS = t.slice(3).join(for_filename?'-':':')
+,	HIS = t.slice(3).join(for_filename ? '-' : ':')
 	;
 	return (
 		plain
-		? YMD+(for_filename?'_':' ')+HIS
+		? YMD+(for_filename ? '_' : ' ')+HIS
 		: (
 			'<time datetime="'+YMD+'T'+HIS
 		+	getFormattedTimezoneOffset(t)
@@ -345,7 +344,7 @@ var	threadHTML = ''
 
 			if (tab[3][0] == '?') {
 				m = tab[2].match(regImgUrl);
-				post = '<span title="'+(m?m[1]:tab[2])+'">'
+				post = '<span title="'+(m ? m[1] : tab[2])+'">'
 				+		tab[3].slice(1)
 				+	'</span>';
 			} else {
@@ -360,8 +359,8 @@ var	threadHTML = ''
 						;
 						m[1] = (
 							orz(j) > 0 && (j = getFormattedHMS(j)) != k
-							? j+' ('+k+(i?' / '+i:'')+')'
-							: k+(i?' ('+i+')':'')
+							? j+' ('+k+(i ? ' / '+i : '')+')'
+							: k+(i ? ' ('+i+')' : '')
 						);
 					}
 					tab[3] = m[1]+', '+m[7];
@@ -392,7 +391,7 @@ var	threadHTML = ''
 					post = post.substr(0, post.lastIndexOf('>')+1);
 				}
 			}
-			if (img) alt = (alt?'':' alt');
+			if (img) alt = (alt ? '' : ' alt');
 			img = 1;
 		} else {
 
@@ -411,7 +410,7 @@ var	threadHTML = ''
 					.replace(/\s+([^<\s]{1,2})\s+/g, ' $1&nbsp;')
 				);
 			}
-			alt = (alt?'':' alt');
+			alt = (alt ? '' : ' alt');
 			img = 0;
 		}
 
@@ -446,21 +445,21 @@ var	threadHTML = ''
 				: null
 			)
 		,	a = {
-				arch_room: (
+				arch_room : (
 					nameQuery
 					? archPath + roomName + '/' + nameQuery
 					+ '" class="menu-btn-mark search-mark" rel="nofollow'
 					: ''
 				)
-			,	arch_all: (
+			,	arch_all : (
 					nameQuery
 					? archPath + nameQuery
 					+ '" class="menu-btn-mark search-mark" rel="nofollow'
 					: ''
 				)
-			,	capture_thread:       (capBtnParts ? capBtnParts.join(0)       : '')
-			,	capture_to_last_pic:  (capBtnParts ? capBtnParts.join(-1)      : '')
-			,	capture_to_this_post: (capBtnParts ? capBtnParts.join(postNum) : '')
+			,	capture_thread		: (capBtnParts ? capBtnParts.join(0)       : '')
+			,	capture_to_last_pic	: (capBtnParts ? capBtnParts.join(-1)      : '')
+			,	capture_to_this_post	: (capBtnParts ? capBtnParts.join(postNum) : '')
 			}
 		,	m = ''
 			;
@@ -493,8 +492,8 @@ var	threadHTML = ''
 
 			asides.push(
 				'<aside'
-			+	(i?' class="r"':'')
-			+	(m?' title="'+(la.post_menu_hint[i?'user':'post'])+'"':'')
+			+	(i ? ' class="r"' : '')
+			+	(m ? ' title="'+(la.post_menu_hint[i ? 'user' : 'post'])+'"' : '')
 			+	'>'
 			+		t
 			+	'</aside>'
@@ -505,9 +504,9 @@ var	threadHTML = ''
 
 		threadHTML += (
 			'<div class="post pad'
-		+	(descNum?' p':'')
-		+	(res?' res':'')
-		+	(postHoverMenu?' hover-menu':'')
+		+	(descNum ? ' p' : '')
+		+	(res ? ' res' : '')
+		+	(postHoverMenu ? ' hover-menu' : '')
 		+	alt
 		+	'" id="'+postID
 		+	'">'
@@ -522,22 +521,26 @@ var	threadHTML = ''
 //* thread container:
 
 	if (threadHTML) {
-		window.addEventListener('load', function() {del(pre);}, false);
-		document.title = room.replace(/\/+/g, ' - ')+' - '+thisPage+(timeRange?', '+timeRange.join(' - '):'');
+		window.addEventListener('load', function() { del(pre); }, false);
+
+		document.title = room.replace(/\/+/g, ' - ')+' - '+thisPage+(timeRange ? ', '+timeRange.join(' - ') : '');
 
 //* header, links up:
 
+		h = '';
 		a = {
-			'&#8662;': rootPath || lastDir || '../..'
-		,	'&#8679;': '.'
-		,	'&#8596;': 'javascript:fit()'
-		,	'&#9636;': 'javascript:meta()'
-		}, h = '';
+			'&#8662;' : rootPath || lastDir || '../..'
+		,	'&#8679;' : '.'
+		,	'&#8596;' : 'javascript:fit()'
+		,	'&#9636;' : 'javascript:meta()'
+		};
+
 		for (i in a) {
 			h += '<u><a href="'+a[i]+'">'+i+'</a></u>';
 		}
+
 		e = gn(i = 'header')[0] || cre(i, d, d.firstChild);
-		e.className = i+' a'+(touch?' touch':'');
+		e.className = i+' a'+(touch ? ' touch' : '');
 		e.innerHTML = '<u>'+h+'</u>';
 
 //* top/bottom bar, links to prev/next:
@@ -566,12 +569,13 @@ var	threadHTML = ''
 		e = cre('div', e);
 		e.className = 'thread';
 		e.innerHTML = threadHTML;
-		bnw.map(function(f) {f(1);});
+
+		bnw.map(function(f) { f(1); });
 	}
 }
 
 //* Runtime *------------------------------------------------------------------
 
-if (a = gn('meta')) for (i in a) if ((e = a[i]) && e.name == 'viewport') {v = e; break;}
+if (a = gn('meta')) for (i in a) if ((e = a[i]) && e.name == 'viewport') { v = e; break; }
 if (a = gn('pre')) for (i in a) if (e = a[i]) showArch(e);
 if (touch) fit(), meta();	//* <- compact view and big buttons for touch screen

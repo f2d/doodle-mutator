@@ -64,26 +64,26 @@
 ,	CM = 'checkMistype'
 ,	requestInProgress = {}, taskTime = {}, flag = {}, inputHints = {}, param = {}
 ,	count = {
-		u: 0
-	,	uLast: ''
-	,	o: 0
-	,	oLast: ''
-	,	img: 0
+		u : 0
+	,	uLast : ''
+	,	o : 0
+	,	oLast : ''
+	,	img : 0
 	}
 ,	userClass = {
-		0: 'born'
-	,	b: 'burn'
-	,	g: 'goo'
-	,	m: 'ice'
-	,	n: 'null'
-	,	u: 'me'
+		0 : 'born'
+	,	b : 'burn'
+	,	g : 'goo'
+	,	m : 'ice'
+	,	n : 'null'
+	,	u : 'me'
 	}
 ,	reportClass = {
-		0: 'rooms'
-	,	r: 'report'
-	,	s: 'frozen'
-	,	d: 'burnt'
-	,	f: 'full'
+		0 : 'rooms'
+	,	r : 'report'
+	,	s : 'frozen'
+	,	d : 'burnt'
+	,	f : 'full'
 	}
 ,	rootPath = gn('link').reduce(function(r,e) {
 		return e.rel == 'index' && e.href
@@ -97,7 +97,7 @@
 	||	'room'
 	)
 ,	touch = ('ontouchstart' in document.documentElement)
-,	insideOut = (touch?'':'date-out')
+,	insideOut = (touch ? '' : 'date-out')
 
 ,	d = document.body.style
 ,	maxWidth = [d.maxWidth||'1000px', '690px']
@@ -110,269 +110,269 @@
 //if (LS && !(LS.lang && LS.lang == lang)) LS.lang = lang;	//* <- use user-selectable cookie instead
 
 if (lang == 'ru') la = {
-	toggle: ['да', 'нет']
-,	room_arch: 'Архив комнаты'
-,	room_logs: 'Записи комнаты'
-,	arch: 'архив'
-,	page: 'Страница'
-,	page_limit_hint: 'Архив однобуквенных комнат хранит не больше одной страницы.'
-,	search_add: 'Добавить предмет поиска'
-,	search_remove: 'Убрать'
-,	search_hint: {
-		restore: 'Вернуть значение в поле ввода.'
-	,	anchor: 'Вечная ссылка на этот пост в результате этого поиска.'
-	,	thread: 'Перейти к той нити, в которой был найден этот пост.'
-	,	name: 'Искать этого автора.'
+	toggle	: ['да', 'нет']
+,	room_arch : 'Архив комнаты'
+,	room_logs : 'Записи комнаты'
+,	arch : 'архив'
+,	page : 'Страница'
+,	page_limit_hint : 'Архив однобуквенных комнат хранит не больше одной страницы.'
+,	search_add : 'Добавить предмет поиска'
+,	search_remove : 'Убрать'
+,	search_hint : {
+		restore : 'Вернуть значение в поле ввода.'
+	,	anchor : 'Вечная ссылка на этот пост в результате этого поиска.'
+	,	thread : 'Перейти к той нити, в которой был найден этот пост.'
+	,	name : 'Искать этого автора.'
 	}
-,	arch_dl: {
-		no: 'Ничего не найдено.'
-	,	ready: 'Готово:'
-	,	names: 'Имена авторов:'
-	,	naming: 'Именование файлов внутри:'
-	,	incl: 'Включая файлы:'
-	,	dl: 'Скачать архив тут.'
-	,	see: 'Посмотреть список файлов внутри.'
+,	arch_dl : {
+		no : 'Ничего не найдено.'
+	,	ready : 'Готово:'
+	,	names : 'Имена авторов:'
+	,	naming : 'Именование файлов внутри:'
+	,	incl : 'Включая файлы:'
+	,	dl : 'Скачать архив тут.'
+	,	see : 'Посмотреть список файлов внутри.'
 	}
-,	task: {
-		free: {
-			desc: 'Писать что угодно'
-		,	draw: 'Рисовать что угодно'
+,	task : {
+		free : {
+			desc : 'Писать что угодно'
+		,	draw : 'Рисовать что угодно'
 		}
-	,	drop: {
-			desc: 'Описать что-то новое'
-		,	draw: 'Рисовать что-то новое'
+	,	drop : {
+			desc : 'Описать что-то новое'
+		,	draw : 'Рисовать что-то новое'
 		}
-	,	change: {
-			any: 'Взять любое другое задание'
-		,	desc: 'Описать любое другое задание'
-		,	draw: 'Рисовать любое другое задание'
-		,	any_unknown: 'Взять любое задание из неоткрытых нитей'
-		,	desc_unknown: 'Описать задание из неоткрытых нитей'
-		,	draw_unknown: 'Рисовать задание из неоткрытых нитей'
-		,	final_task: 'Взять задание, завершающее нить'
+	,	change : {
+			any : 'Взять любое другое задание'
+		,	desc : 'Описать любое другое задание'
+		,	draw : 'Рисовать любое другое задание'
+		,	any_unknown : 'Взять любое задание из неоткрытых нитей'
+		,	desc_unknown : 'Описать задание из неоткрытых нитей'
+		,	draw_unknown : 'Рисовать задание из неоткрытых нитей'
+		,	final_task : 'Взять задание, завершающее нить'
 		}
 	}
-,	draw_test: 'Попробовать'
-,	check: 'Нажмите, чтобы проверить и продлить задание.'
-,	task_mistype: 'Тип задания сменился, обновите страницу или нажмите сюда.'
-,	task_changed: 'Задание было изменено другими действиями за прошедшее время.'
-,	send_new_thread: 'Будет создана новая нить.'
-,	send_anyway: 'Всё равно отправить?'
-,	canceled: 'Отправка отменена'
-,	comment: 'сообщение'
-,	keep_task: 'Оставить себе это задание'
-,	keep_task_hint: [
+,	draw_test : 'Попробовать'
+,	check : 'Нажмите, чтобы проверить и продлить задание.'
+,	task_mistype : 'Тип задания сменился, обновите страницу или нажмите сюда.'
+,	task_changed : 'Задание было изменено другими действиями за прошедшее время.'
+,	send_new_thread : 'Будет создана новая нить.'
+,	send_anyway : 'Всё равно отправить?'
+,	canceled : 'Отправка отменена'
+,	comment : 'сообщение'
+,	keep_task : 'Оставить себе это задание'
+,	keep_task_hint : [
 		'Оставить его до выполнения или ручной смены.'
 	,	'Это лишь предотвратит автоматическую смену задания при посещении комнаты.'
 	,	'Чтобы не дать другим участникам взять его, всё ещё надо держать вкладку с заданием открытой или открывать её хотя бы раз в день.'
 	].join(toolTipNewLine)
-,	report: 'Пожаловаться на это задание'
-,	skip: 'Пропустить'
-,	skip_hint: 'Пропускать задания из этой нити до её завершения.'
-,	unskip: 'Сбросить пропуски'
-,	unskip_hint: 'Очистить список нитей, пропущенных в этой комнате.'
-,	clear: {
-		unsave: {ask: 'Удалить данные из памяти браузера:', unit: 'байт'}
-	,	unskip: {ask: 'Пропуски будут очищены для этих комнат:', unit: ['нить','нити','нитей']}
+,	report : 'Пожаловаться на это задание'
+,	skip : 'Пропустить'
+,	skip_hint : 'Пропускать задания из этой нити до её завершения.'
+,	unskip : 'Сбросить пропуски'
+,	unskip_hint : 'Очистить список нитей, пропущенных в этой комнате.'
+,	clear : {
+		unsave : { ask : 'Удалить данные из памяти браузера:', unit : 'байт' }
+	,	unskip : { ask : 'Пропуски будут очищены для этих комнат:', unit : ['нить','нити','нитей'] }
 	}
-,	show_too_much_content: [
+,	show_too_much_content : [
 		'Данных очень много, рекомендуется просмотр по частям.'
 	,	'Браузер может повиснуть при попытке показать всё сразу.'
 	,	'Показать всё равно?'
 	].join(dialogNewLine)
-,	load: 'Проверка... '
-,	fail: 'Ошибка '
-,	empty: 'Ничего нет.'
-,	hax: '(?)'		//'Неизвестный набор данных.'
-,	time: 'Нарисовано за'
-,	using: 'с помощью'
-,	using_file_upload: 'файл'
-,	resized: 'Размер'	//'\nИзображение уменьшено.\nРазмер'
-,	resized_hint: 'Кликните для просмотра изображения в полном размере.'
-,	task_old_src: 'Изображение, которое было на странице до проверки:'
-,	task_new_src: 'Проверка вашего задания в этой комнате сейчас дала:'
-,	confirm_again: [
+,	load : 'Проверка... '
+,	fail : 'Ошибка '
+,	empty : 'Ничего нет.'
+,	hax : '(?)'		//'Неизвестный набор данных.'
+,	time : 'Нарисовано за'
+,	using : 'с помощью'
+,	using_file_upload : 'файл'
+,	resized : 'Размер'	//'\nИзображение уменьшено.\nРазмер'
+,	resized_hint : 'Кликните для просмотра изображения в полном размере.'
+,	task_old_src : 'Изображение, которое было на странице до проверки:'
+,	task_new_src : 'Проверка вашего задания в этой комнате сейчас дала:'
+,	confirm_again : [
 		'Защита от случайного нажатия: 5 секунд.'
 	,	'Проверьте, что не ошиблись.'
 	].join(dialogNewLine)
-,	post_menu: {
-		arch_room: 'Найти в архиве комнаты'
-	,	arch_all: 'Найти во всех архивах'
-	,	capture_thread: 'Снимок всей нити'
-	,	capture_to_last_pic: 'Снимок по последний рисунок'
-	,	capture_to_this_post: 'Снимок по этот пост'
-	,	report: 'Сообщить или ответить о проблеме'
-	,	user: 'Все данные пользователя'
-	,	mod: 'Меню модерации'
+,	post_menu : {
+		arch_room : 'Найти в архиве комнаты'
+	,	arch_all : 'Найти во всех архивах'
+	,	capture_thread : 'Снимок всей нити'
+	,	capture_to_last_pic : 'Снимок по последний рисунок'
+	,	capture_to_this_post : 'Снимок по этот пост'
+	,	report : 'Сообщить или ответить о проблеме'
+	,	user : 'Все данные пользователя'
+	,	mod : 'Меню модерации'
 	}
-,	bottom: {
-		close: 'Закрыть.'
-	,	hide: 'Скрыть поля.'
-	,	narrow: 'Сжать.'
-	,	top: 'Наверх.'
+,	bottom : {
+		close : 'Закрыть.'
+	,	hide : 'Скрыть поля.'
+	,	narrow : 'Сжать.'
+	,	top : 'Наверх.'
 	}
-,	marks: {
-		rooms: 'Комнаты'
-	,	report: 'Жалоб'
-	,	active: 'Активных нитей'
-	,	frozen: 'Замороженные нити'
-	,	burnt: 'Выжженные нити'
-	,	full: 'Полные нити'
+,	marks : {
+		rooms : 'Комнаты'
+	,	report : 'Жалоб'
+	,	active : 'Активных нитей'
+	,	frozen : 'Замороженные нити'
+	,	burnt : 'Выжженные нити'
+	,	full : 'Полные нити'
 	}
-,	hint: {
-		show: 'Кликните, чтобы показать/спрятать.'
-	,	frozen: 'Замороженная нить'
-	,	burnt: 'Выжженная нить'
-	,	full: 'Полная нить'
+,	hint : {
+		show : 'Кликните, чтобы показать/спрятать.'
+	,	frozen : 'Замороженная нить'
+	,	burnt : 'Выжженная нить'
+	,	full : 'Полная нить'
 	}
-,	count: {
-		img: 'Рисунков'
-	,	posts: 'постов'
-	,	u: 'Своих постов'
-	,	o: 'Прочих'
-	,	last: 'последний'
-	,	lastr: 'последняя'
-	,	self: 'Себя'
-	,	each: 'Всех'
-	,	total: 'Всего'
+,	count : {
+		img : 'Рисунков'
+	,	posts : 'постов'
+	,	u : 'Своих постов'
+	,	o : 'Прочих'
+	,	last : 'последний'
+	,	lastr : 'последняя'
+	,	self : 'Себя'
+	,	each : 'Всех'
+	,	total : 'Всего'
 	}
-,	groups: {
-		found: 'Комнат'
-	,	reports: 'Комнат'
-	,	users: 'Групп по дням'
-	,	reflinks: 'Групп по доменам'
+,	groups : {
+		found : 'Комнат'
+	,	reports : 'Комнат'
+	,	users : 'Групп по дням'
+	,	reflinks : 'Групп по доменам'
 	}
 }; else la = {
-	toggle: ['yes', 'no']
-,	room_arch: 'Room archive'
-,	room_logs: 'Room logs'
-,	arch: 'archive'
-,	page: 'Page'
-,	page_limit_hint: 'Archive of a single-letter room keeps no more than one page.'
-,	search_add: 'Add search term'
-,	search_remove: 'Remove'
-,	search_hint: {
-		restore: 'Restore this text into search input field.'
-	,	anchor: 'Permanent link to this post in this search result.'
-	,	thread: 'Go to the thread, where this post is from.'
-	,	name: 'Search this name.'
+	toggle : ['yes', 'no']
+,	room_arch : 'Room archive'
+,	room_logs : 'Room logs'
+,	arch : 'archive'
+,	page : 'Page'
+,	page_limit_hint : 'Archive of a single-letter room keeps no more than one page.'
+,	search_add : 'Add search term'
+,	search_remove : 'Remove'
+,	search_hint : {
+		restore : 'Restore this text into search input field.'
+	,	anchor : 'Permanent link to this post in this search result.'
+	,	thread : 'Go to the thread, where this post is from.'
+	,	name : 'Search this name.'
 	}
-,	arch_dl: {
-		no: 'Nothing found.'
-	,	ready: 'Ready:'
-	,	names: 'Author names:'
-	,	naming: 'File naming inside:'
-	,	incl: 'Including files:'
-	,	dl: 'Download archive here.'
-	,	see: 'See list of files inside.'
+,	arch_dl : {
+		no : 'Nothing found.'
+	,	ready : 'Ready:'
+	,	names : 'Author names:'
+	,	naming : 'File naming inside:'
+	,	incl : 'Including files:'
+	,	dl : 'Download archive here.'
+	,	see : 'See list of files inside.'
 	}
-,	task: {
-		free: {
-			draw: 'Draw anything'
-		,	desc: 'Write anything'
+,	task : {
+		free : {
+			draw : 'Draw anything'
+		,	desc : 'Write anything'
 		}
-	,	drop: {
-			desc: 'Describe anything new'
-		,	draw: 'Draw anything new'
+	,	drop : {
+			desc : 'Describe anything new'
+		,	draw : 'Draw anything new'
 		}
-	,	change: {
-			any: 'Take any other task'
-		,	desc: 'Describe other task'
-		,	draw: 'Draw other task'
-		,	any_unknown: 'Take any task from unknown thread'
-		,	desc_unknown: 'Describe task from unknown thread'
-		,	draw_unknown: 'Draw task from unknown thread'
-		,	final_task: 'Take final task in a thread'
+	,	change : {
+			any : 'Take any other task'
+		,	desc : 'Describe other task'
+		,	draw : 'Draw other task'
+		,	any_unknown : 'Take any task from unknown thread'
+		,	desc_unknown : 'Describe task from unknown thread'
+		,	draw_unknown : 'Draw task from unknown thread'
+		,	final_task : 'Take final task in a thread'
 		}
 	}
-,	draw_test: 'Try drawing'
-,	check: 'Click this to verify and prolong your task.'
-,	task_mistype: 'Task type changed, please reload the page or click here.'
-,	task_changed: 'Task was changed by some actions in the meantime.'
-,	send_new_thread: 'Sending will make a new thread.'
-,	send_anyway: 'Send anyway?'
-,	canceled: 'Sending canceled'
-,	comment: 'message'
-,	keep_task: 'Keep this task for yourself'
-,	keep_task_hint: [
+,	draw_test : 'Try drawing'
+,	check : 'Click this to verify and prolong your task.'
+,	task_mistype : 'Task type changed, please reload the page or click here.'
+,	task_changed : 'Task was changed by some actions in the meantime.'
+,	send_new_thread : 'Sending will make a new thread.'
+,	send_anyway : 'Send anyway?'
+,	canceled : 'Sending canceled'
+,	comment : 'message'
+,	keep_task : 'Keep this task for yourself'
+,	keep_task_hint : [
 		'Keep it until done or manually changed.'
 	,	'This will prevent automatic task change when opening room.'
 	,	'To prevent another participant take it, you still need to keep a tab with this task open, or at least open it once a day.'
 	].join(toolTipNewLine)
-,	report: 'Report a problem with this task'
-,	skip: 'Skip'
-,	skip_hint: 'Skip any task from this thread from now on.'
-,	unskip: 'Unskip'
-,	unskip_hint: 'Clear list of threads, skipped in this room.'
-,	clear: {
-		unsave: {ask: 'Data to be deleted from browser memory (Local Storage):', unit: 'bytes'}
-	,	unskip: {ask: 'Skipping will be cleared for following rooms:', unit: ['thread','threads']}
+,	report : 'Report a problem with this task'
+,	skip : 'Skip'
+,	skip_hint : 'Skip any task from this thread from now on.'
+,	unskip : 'Unskip'
+,	unskip_hint : 'Clear list of threads, skipped in this room.'
+,	clear : {
+		unsave : { ask : 'Data to be deleted from browser memory (Local Storage):', unit : 'bytes' }
+	,	unskip : { ask : 'Skipping will be cleared for following rooms:', unit : ['thread','threads'] }
 	}
-,	show_too_much_content: [
+,	show_too_much_content : [
 		'Too much data, paged view is recommended.'
 	,	'The browser can possibly hang while trying to show all at once.'
 	,	'Show all anyway?'
 	].join(dialogNewLine)
-,	load: 'Checking... '
-,	fail: 'Error '
-,	empty: 'No data.'
-,	hax: '(?)'		//'Unknown data set.'
-,	time: 'Drawn in'
-,	using: 'using'
-,	using_file_upload: 'file'
-,	resized: 'Full size'	//'\nShown image is resized.\nFull size'
-,	resized_hint: 'Click to view full size image.'
-,	task_old_src: 'Image that was on this page before checking:'
-,	task_new_src: 'Checked your current task for this room, got this:'
-,	confirm_again: [
+,	load : 'Checking... '
+,	fail : 'Error '
+,	empty : 'No data.'
+,	hax : '(?)'		//'Unknown data set.'
+,	time : 'Drawn in'
+,	using : 'using'
+,	using_file_upload : 'file'
+,	resized : 'Full size'	//'\nShown image is resized.\nFull size'
+,	resized_hint : 'Click to view full size image.'
+,	task_old_src : 'Image that was on this page before checking:'
+,	task_new_src : 'Checked your current task for this room, got this:'
+,	confirm_again : [
 		'Accidental click safety: 5 seconds.'
 	,	'Please check that you are certain.'
 	].join(dialogNewLine)
-,	post_menu: {
-		arch_room: 'Search in room archive'
-	,	arch_all: 'Search in all archives'
-	,	capture_thread: 'Save screenshot of the thread'
-	,	capture_to_last_pic: 'Save screenshot up to last pic'
-	,	capture_to_this_post: 'Save screenshot up to this post'
-	,	report: 'Report or comment a problem'
-	,	user: 'List all data of this user'
-	,	mod: 'Mod menu'
+,	post_menu : {
+		arch_room : 'Search in room archive'
+	,	arch_all : 'Search in all archives'
+	,	capture_thread : 'Save screenshot of the thread'
+	,	capture_to_last_pic : 'Save screenshot up to last pic'
+	,	capture_to_this_post : 'Save screenshot up to this post'
+	,	report : 'Report or comment a problem'
+	,	user : 'List all data of this user'
+	,	mod : 'Mod menu'
 	}
-,	bottom: {
-		close: 'Close.'
-	,	hide: 'Hide asides.'
-	,	narrow: 'Narrow.'
-	,	top: 'Go to top.'
+,	bottom : {
+		close : 'Close.'
+	,	hide : 'Hide asides.'
+	,	narrow : 'Narrow.'
+	,	top : 'Go to top.'
 	}
-,	marks: {
-		rooms: 'Rooms'
-	,	report: 'Reports'
-	,	active: 'Active threads'
-	,	frozen: 'Frozen threads'
-	,	burnt: 'Burnt threads'
-	,	full: 'Full threads'
+,	marks : {
+		rooms : 'Rooms'
+	,	report : 'Reports'
+	,	active : 'Active threads'
+	,	frozen : 'Frozen threads'
+	,	burnt : 'Burnt threads'
+	,	full : 'Full threads'
 	}
-,	hint: {
-		show: 'Click here to show/hide.'
-	,	frozen: 'Frozen thread'
-	,	burnt: 'Burnt thread'
-	,	full: 'Full thread'
+,	hint : {
+		show : 'Click here to show/hide.'
+	,	frozen : 'Frozen thread'
+	,	burnt : 'Burnt thread'
+	,	full : 'Full thread'
 	}
-,	count: {
-		img: 'Pictures'
-	,	posts: 'posts'
-	,	u: 'Own posts'
-	,	o: 'Others'
-	,	last: 'last'
-	,	self: 'Self'
-	,	each: 'All at once'
-	,	total: 'Total'
+,	count : {
+		img : 'Pictures'
+	,	posts : 'posts'
+	,	u : 'Own posts'
+	,	o : 'Others'
+	,	last : 'last'
+	,	self : 'Self'
+	,	each : 'All at once'
+	,	total : 'Total'
 	}
-,	groups: {
-		found: 'Rooms'
-	,	reports: 'Rooms'
-	,	users: 'Groups by day'
-	,	reflinks: 'Groups by domain'
+,	groups : {
+		found : 'Rooms'
+	,	reports : 'Rooms'
+	,	users : 'Groups by day'
+	,	reflinks : 'Groups by domain'
 	}
 };
 
@@ -459,7 +459,7 @@ var	p = e, t = t.toLowerCase();
 }
 
 function getParentBeforeClass(e,c) {
-var	p = e, r = (c.test?c:getClassReg(c));
+var	p = e, r = (c.test ? c : getClassReg(c));
 	while (e && (e = e.parentNode) && !(e.className && r.test(e.className))) p = e;
 	return p;
 }
@@ -470,19 +470,19 @@ var	i,t = '';
 	return alert(t), o;
 }
 
-function isNotEmpty(t) {return String(t).replace(regSpaceHTML, '').length;}
-function getTrimReg(c) {return new RegExp('^['+c+']+|['+c+']+$', 'gi');}
-function getClassReg(c) {return new RegExp('(^|\\s)('+c+')($|\\s)', 'i');}
+function isNotEmpty(t) { return String(t).replace(regSpaceHTML, '').length > 0; }
+function getTrimReg(c) { return new RegExp('^['+c+']+|['+c+']+$', 'gi'); }
+function getClassReg(c) { return new RegExp('(^|\\s)('+c+')($|\\s)', 'i'); }
 function o0(line, split, value) {
 var	a = line.split(split || ','), i,o = {};
 	for (i in a) o[a[i]] = value || 0;
 	return o;
 }
 
-function gc(n,p) {try {return TOS.slice.call((p || document).getElementsByClassName(n) || []);} catch(e) {return [];}}
-function gn(n,p) {try {return TOS.slice.call((p || document).getElementsByTagName(n) || []);} catch(e) {return [];}}
-function gi(t,p) {return (p = gn('input', p)).length && t ? p.filter(function(e) {return e.type == t;}) : p;}
-function id(i) {return document.getElementById(i);}
+function gc(n,p) { try { return TOS.slice.call((p || document).getElementsByClassName(n) || []); } catch(e) { return []; } }
+function gn(n,p) { try { return TOS.slice.call((p || document).getElementsByTagName(n) || []); } catch(e) { return []; } }
+function gi(t,p) { return (p = gn('input', p)).length && t ? p.filter(function(e) { return e.type == t; }) : p; }
+function id(i) { return document.getElementById(i); }
 function cre(e,p,b) {
 	e = document.createElement(e);
 	if (b) p.insertBefore(e, b); else
@@ -493,7 +493,7 @@ function cre(e,p,b) {
 function del(e,p) {
 	if (!e) return;
 	if (e.map) e.map(del); else
-	if (p?p:p = e.parentNode) p.removeChild(e);
+	if (p ? p : p = e.parentNode) p.removeChild(e);
 	return p;
 }
 
@@ -507,7 +507,7 @@ function eventStop(e,i,d) {
 	return e;
 }
 
-function deleteCookie(c) {document.cookie = c+'=; expires='+(new Date(0).toUTCString())+'; Path='+rootPath;}
+function deleteCookie(c) { document.cookie = c+'=; expires='+(new Date(0).toUTCString())+'; Path='+rootPath; }
 function getCookie(name) {
 
 //* https://stackoverflow.com/a/25490531
@@ -519,7 +519,7 @@ var	m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
 function getToggleButtonHTML(content, opened) {
 	return '<a href="javascript:void this'
 	+	'" onClick="toggleHideNext(this)'
-	+	'" class="toggle'+(opened?' open':'')
+	+	'" class="toggle'+(opened ? ' open' : '')
 	+	'">'
 	+		content.replace(regTrimPun, '')
 	+	'</a>';
@@ -542,7 +542,7 @@ var	o = param.open || 0
 	if (!c.join) c = [c];
 	if (!o) c.push('hid');
 	return	'<div'+getTagAttrIfNotEmpty('class', param.headerClass)+'>'
-	+		(h?h+' ':'')
+	+		(h ? h+' ' : '')
 	+		getToggleButtonHTML(param.buttonText || la.hint.show, o)
 	+	'</div>'
 	+	'<div'+getTagAttrIfNotEmpty('class', c)+'>'
@@ -578,10 +578,10 @@ var	m = t.firstElementChild
 	return m;
 }
 
-function toggleHide(e,d) {e.style.display = (e.style.display != (d?d:d='')?d:'none');}
+function toggleHide(e,d) { e.style.display = (e.style.display != (d ? d : d='') ? d : 'none'); }
 function toggleHideNext(e) {
 	toggleClass(h = e.parentNode.nextElementSibling, 'hid');
-	toggleClass(e, 'open', regClassHid.test(h.className)?-1:1);
+	toggleClass(e, 'open', regClassHid.test(h.className) ? -1 : 1);
 }
 
 function toggleClass(e,c,keep) {
@@ -602,10 +602,10 @@ var	j = orz(keep)
 	} else if (old) e[k] = '', e.removeAttribute(k);
 }
 
-function meta() {toggleClass(id('content') || document.body, 'hide-aside');}
+function meta() { toggleClass(id('content') || document.body, 'hide-aside'); }
 function fit() {
 var	e = (id('content') || document.body).style, w = maxWidth;
-	e.maxWidth = w[e.maxWidth != w[1]?1:0];
+	e.maxWidth = w[e.maxWidth != w[1] ? 1 : 0];
 }
 
 function parseLineKeyVal(line) {
@@ -629,7 +629,7 @@ var	i = arguments.length, total = 0;
 	return total;
 }
 
-function orz(n) {return parseInt(n||0)||0;}
+function orz(n) { return parseInt(n||0)||0; }
 function leftPad(n, len, pad) {
 	n = String(orz(n));
 	len = orz(len) || 2;
@@ -641,7 +641,7 @@ function leftPad(n, len, pad) {
 function getFormattedTimezoneOffset(t) {
 	return (
 		(t = (t && t.getTimezoneOffset ? t : new Date()).getTimezoneOffset())
-		? (t < 0?(t = -t, '+'):'-')+leftPad(Math.floor(t/60))+':'+leftPad(t%60)
+		? (t < 0 ? (t = -t, '+') : '-')+leftPad(Math.floor(t/60))+':'+leftPad(t%60)
 		: 'Z'
 	);
 }
@@ -655,7 +655,7 @@ var	t = orz(msec)
 		if (a[i] >= splitSec) a[i-1] = Math.floor(a[i]/splitSec), a[i] %= splitSec;
 		if (a[i] < 10) a[i] = '0'+a[i];
 	}
-	return (t < 0?'-':'')+a.join(':');
+	return (t < 0 ? '-' : '')+a.join(':');
 }
 
 function getFTimeIfTime(t, plain) {
@@ -676,7 +676,7 @@ var	d = (
 		: new Date()
 	)
 ,	t = (
-		('FullYear,Month,Date'+(only_ymd?'':',Hours,Minutes,Seconds'))
+		('FullYear,Month,Date'+(only_ymd ? '' : ',Hours,Minutes,Seconds'))
 		.split(',')
 		.map(
 			function(v,i) {
@@ -687,11 +687,11 @@ var	d = (
 		)
 	)
 ,	YMD = t.slice(0,3).join('-')
-,	HIS = t.slice(3).join(for_filename?'-':':')
+,	HIS = t.slice(3).join(for_filename ? '-' : ':')
 	;
 	return (
 		plain
-		? YMD+(for_filename?'_':' ')+HIS
+		? YMD+(for_filename ? '_' : ' ')+HIS
 		: (
 			'<time datetime="'+YMD+'T'+HIS
 		+	getFormattedTimezoneOffset(t)
@@ -767,9 +767,9 @@ function checkMyTask(event, e) {
 					.replace(regTrim, '')
 			,	d = j.match(/\bdeadline=["']*([^"'>\s]*)/i)
 			,	sending = j.match(/\bid=["']*([^"'>\s]*)/i)
-			,	message = (sending?status:'')
+			,	message = (sending ? status : '')
 			,	img = i.match(/<img[^>]+\balt=["']*([^"'>\s]+)/i)
-			,	task = (img?img[1]:i)
+			,	task = (img ? img[1] : i)
 			,	error = 0
 			,	eTask = id('task')
 			,	eText = id('task-text')
@@ -820,7 +820,7 @@ function checkMyTask(event, e) {
 					if (e) {
 					var	i = e.getAttribute('src')
 					,	k = task.indexOf(';')+1
-					,	m = (flag.pixr || (flag.pixr = i.split('/').slice(0, flag.p?-3:-1).join('/')+'/'))
+					,	m = (flag.pixr || (flag.pixr = i.split('/').slice(0, flag.p ? -3 : -1).join('/')+'/'))
 					,	t = (k ? task.replace(regImgExtEtc, '_res$1') : task)
 					,	j = m + getPicPath(t);
 						if (i != j) {
@@ -871,7 +871,7 @@ function checkMyTask(event, e) {
 					if (eText) e = eText.parentNode; else
 					if (e = btn || s) while (e && !regTagDivP.test(e.tagName) && (i = e.parentNode)) e = i;
 					if (e) {
-						k = (param.task_keep_prefix || '?') + (img || !task?'desc':'draw');
+						k = (param.task_keep_prefix || '?') + (img || !task ? 'desc' : 'draw');
 						e = cre('b', e, eText);
 						e.id = CM;
 						e.className = 'post r';
@@ -1002,9 +1002,9 @@ var	t = taskTime.taken
 	} else if (i) clearInterval(i);
 }
 
-function skipMyTask(v) {submitPostForm({'skip': v});}
-function keepMyTask(v) {submitPostForm({'keep': v});}
-function changeMyTask(k,v) {submitPostForm({'change': k, 'change_to': v});}
+function skipMyTask(v) { submitPostForm({ 'skip' : v }); }
+function keepMyTask(v) { submitPostForm({ 'keep' : v }); }
+function changeMyTask(k,v) { submitPostForm({ 'change' : k, 'change_to' : v }); }
 
 function submitPostForm() {
 
@@ -1064,11 +1064,11 @@ function formCleanUp(e) {
 	}
 }
 
-function getLazyLoadingAttr(is_cut_into_quotes) {
+function getLazyLoadingAttr(isCutIntoQuotes) {
 	return (
 		LAZY_LOADING_IMAGES
 		? (
-			is_cut_into_quotes
+			isCutIntoQuotes
 			? '" loading="lazy'
 			: ' loading="lazy"'
 		)
@@ -1076,7 +1076,7 @@ function getLazyLoadingAttr(is_cut_into_quotes) {
 	);
 }
 
-function getPicSubDir(p) {var s = p.split('.'); return s[1][0]+'/'+s[0][0]+'/';}
+function getPicSubDir(p) { var s = p.split('.'); return s[1][0]+'/'+s[0][0]+'/'; }
 function getPicPath(filename, param) {
 	return (
 		(param ? (param.images || '') : '')
@@ -1104,10 +1104,10 @@ var	a = e.parentNode, nested = regTagA.test(a.tagName);
 function setPicStyle(e) {
 var	i = e.offsetWidth+16
 ,	a = e.parentNode
-,	e = (a.href?a.parentNode:a).style
+,	e = (a.href ? a.parentNode : a).style
 ,	a = {
-		minWidth: Math.max(656,i)
-	,	maxWidth: Math.max(1000,i)
+		minWidth : Math.max(656,i)
+	,	maxWidth : Math.max(1000,i)
 	}
 ,	b = document.body.style
 	;
@@ -1122,7 +1122,7 @@ var	r = '_res';
 	);
 }
 
-function getNormalizedText(str) {return (str || '').replace(regTrim, '').toLowerCase();}
+function getNormalizedText(str) { return (str || '').replace(regTrim, '').toLowerCase(); }
 function filterContent(event, e, containers) {
 	if (event) e = eventStop(event).target;
 	if (!e) return;
@@ -1190,14 +1190,14 @@ var	f_type = e.getAttribute('data-filter') || ''
 					if (!foundPosts || !i || (!i == !imgPost)) alt = !alt;
 					if (!v === !c) ++foundPosts;
 					imgPost = i;
-					toggleClass(post, 'alt', (exact ? eqAlt : alt)?-1:1);
-					toggleClass(post, 'ok', exact?1:-1);
+					toggleClass(post, 'alt', (exact ? eqAlt : alt) ? -1 : 1);
+					toggleClass(post, 'ok', exact ? 1 : -1);
 				} else imgPost = 1;
-				post.style.display = (found?'':'none');
+				post.style.display = (found ? '' : 'none');
 			}
-			thread.style.display = (foundPosts?(++foundThreads, ''):'none');
+			thread.style.display = (foundPosts ? (++foundThreads, '') : 'none');
 		}
-		container.style.display = (foundThreads?'':'none');
+		container.style.display = (foundThreads ? '' : 'none');
 	}
 }
 
@@ -1230,7 +1230,7 @@ var	t = id(i) || (showContent(), id(i))
 
 //* Options-specific functions *-----------------------------------------------
 
-function sortNum(a,b) {return (a>b?1 : a<b?-1 : 0);}
+function sortNum(a,b) { return (a > b ? 1 : a < b ? -1 : 0); }
 function getSaves(v,e) {
 
 	function isMatchingAnyPrefix(line, prefixes) {
@@ -1258,9 +1258,9 @@ function getSaves(v,e) {
 		return false;
 	}
 
-var	room = (e?e.getAttribute('data-room'):0) || ''
-,	dptk = (e?e.getAttribute('data-prefixes-to-keep'):0) || ''
-,	dptd = (e?e.getAttribute('data-prefixes-to-delete'):0) || ''
+var	room = (e ? e.getAttribute('data-room') : 0) || ''
+,	dptk = (e ? e.getAttribute('data-prefixes-to-keep') : 0) || ''
+,	dptd = (e ? e.getAttribute('data-prefixes-to-delete') : 0) || ''
 ,	prefToKeep = dptk.split(regSplitComma)
 ,	prefToDel = dptd.split(regSplitComma)
 ,	c = []
@@ -1304,9 +1304,9 @@ var	room = (e?e.getAttribute('data-room'):0) || ''
 		}
 	}
 	return {
-		counts: c.sort()
-	,	rows: j.sort()
-	,	keys: k.sort()
+		counts	: c.sort()
+	,	rows	: j.sort()
+	,	keys	: k.sort()
 	};
 }
 
@@ -1345,7 +1345,7 @@ function clearSaves(e) {
 				}
 				if (e.getAttribute('data-room')) {
 					del(e);
-					submitPostForm({'unskip': v});
+					submitPostForm({ 'unskip' : v });
 					// document.location.reload(true);
 				} else {
 					checkSaves(e.id);
@@ -1506,7 +1506,7 @@ var	form, formData, e = eventStop(0,1,1);
 
 var	a = form.elements
 ,	i = a.length
-,	formParts = {bool: [], text: []}
+,	formParts = { 'bool' : [], 'text' : [] }
 ,	queryParts = []
 ,	k,v
 	;
@@ -1662,11 +1662,11 @@ function page(p) {
 		return page(1);
 	}
 	param.current = {
-		page: p
-	,	order: k
-	,	range: [0,0]
-	,	rangeHTML: ''
-	,	thumbsHTML: ''
+		page : p
+	,	order : k
+	,	range : [0,0]
+	,	rangeHTML : ''
+	,	thumbsHTML : ''
 	};
 var	i = param.on_page
 ,	j = param.total
@@ -1684,13 +1684,13 @@ var	i = param.on_page
 	if (j = id('pages')) {
 		k = Math.ceil(param.total / param.on_page);
 		for (i = 0; i<=k; i++) p = (
-			i || (param.current.order?'&r':'&l')+'aquo;'
+			i || (param.current.order ? '&r' : '&l')+'aquo;'
 		), param.current.rangeHTML += '\n'+(
 			param.current.page == i
 			? '<span id="current-page">'+p+'</span>'
 			: '<a href="javascript:page('+i+')">'+p+'</a>'
 		);
-		j.innerHTML = (touch?'':la.page+': ')+param.current.rangeHTML;
+		j.innerHTML = (touch ? '' : la.page+': ')+param.current.rangeHTML;
 		if (i = id('current-page')) (i.nextElementSibling || i.parentNode.firstElementChild).focus();
 	}
 }
@@ -1736,7 +1736,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 					var	rowHTML = ''
 					,	rowLen = tableRow.length
 					,	align = (rowLen > 1 && rowLen < 4) || ''
-					,	cellWidth = (align?' width="'+Math.floor(100/rowLen)+'%"':'')
+					,	cellWidth = (align ? ' width="'+Math.floor(100/rowLen)+'%"' : '')
 						;
 						for (var td_i in tableRow) {
 							if (align) align = ' align="'+(
@@ -1806,7 +1806,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 					;
 				} else
 				if (dtp.found) {
-					if (!threadMark && param.room) threadMark = {id: param.room+'/', posts: 0};
+					if (!threadMark && param.room) threadMark = { 'id' : param.room+'/', 'posts' : 0 };
 					if (threadNum != param.t) {
 						threadNum = param.t;
 						alter = 1;
@@ -1827,14 +1827,14 @@ function showContent(sortOrder, confirmTooMuchContent) {
 						t = j.join(sep);
 						k = t.match(regNaN);
 						t = t.replace(regNaN, '');
-						if (k && (k = k[0]) in reportClass) threadMark = {id: t, class: k};
+						if (k && (k = k[0]) in reportClass) threadMark = { 'id' : t, 'class' : k };
 						threadNum = t;
 						modEnabled = 1;
 					}
 					if (flag.m) {
 						j = (
 							userID
-							? {user: userID, time: tab[0]}
+							? { 'user' : userID, 'time' : tab[0] }
 							: {}
 						);
 						if (tab.length > 3) {
@@ -1842,7 +1842,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 							j.meta = tab[3];
 							if (tab.length > 4) j.browser = tab[4];
 						} else j.text = tab[2];
-						for (k in j) editPostData += (editPostData?'\n':'')+k+': '+j[k];
+						for (k in j) editPostData += (editPostData ? '\n' : '')+k+': '+j[k];
 					}
 				} else
 				if (dtp.users) {
@@ -1854,7 +1854,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 						if (selfID === userID) u = 'u';
 						tab[0] = j.join(sep);
 					}
-					if (threadNum = (tab.length > 2?1:0)) {
+					if (threadNum = (tab.length > 2 ? 1 : 0)) {
 						if (tab[2].indexOf(', about: [') >= 0) {
 							userLink = (param.profiles || '')+userID;
 						}
@@ -1914,7 +1914,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 						m = (
 							'<a href="'
 						+		param.archives
-						+		(param.type?param.type+'/':'')
+						+		(param.type ? param.type+'/' : '')
 						+		tab[2]
 						+		'/'
 						+	(
@@ -1934,7 +1934,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 				//* last arch date:
 
 							if (k.length > 3 && (i = k[3])) {
-								roomDates['a '+(insideOut?'r':'l')] = i = getFTimeIfTime(i);
+								roomDates['a '+(insideOut ? 'r' : 'l')] = i = getFTimeIfTime(i);
 								if (count.uLast < i) count.uLast = i;
 							}
 							if (!count.u.length) count.u = [0,0,0];
@@ -1950,16 +1950,16 @@ function showContent(sortOrder, confirmTooMuchContent) {
 					var	time = t = getFTimeIfTime(t);
 
 						if (dtp.found) t = (
-							'<a href="'+(param.room?param.room+'/':'')+param.t+param.page_ext
+							'<a href="'+(param.room ? param.room+'/' : '')+param.t+param.page_ext
 						+	'" title="'+la.search_hint.thread
 						+	'">'
 						+		t
 						+	'</a>'
-						+	(alter?' → '+threadNum:'')
+						+	(alter ? ' → '+threadNum : '')
 						);
 					}
 					if (flag.c && (dtp.reflinks || (tab.length > 2 && isNotEmpty(tab[2])))) {
-						++count[k = (u == 'u'?u:'o')];
+						++count[k = (u == 'u' ? u : 'o')];
 						if (time) {
 							if (count[k += 'Last'] < time) count[k] = time;
 							if (threadMark) {
@@ -2035,7 +2035,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 
 						if (k.length > 2) {
 							if (i = k[2]) {
-								roomDates[insideOut?'l':'r'] = i = getFTimeIfTime(i);
+								roomDates[insideOut ? 'l' : 'r'] = i = getFTimeIfTime(i);
 								if (count.oLast < i) count.oLast = i;
 							}
 							if (!count.o.length) count.o = [0,0];
@@ -2053,7 +2053,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 					,	sep = sep || ','
 					,	sel = param.sep_select || ';'
 					,	t = param.apply_change || ''
-					,	t = (t?"'"+t+"'":'')
+					,	t = (t ? "'"+t+"'" : '')
 						;
 
 				//* drop-down select:
@@ -2076,9 +2076,9 @@ function showContent(sortOrder, confirmTooMuchContent) {
 							l = (l[0] || '').split(sep);
 							for (i in k) t +=
 								'<option value="'+k[i]+'"'
-							+		(m == i?' selected':'')
+							+		(m == i ? ' selected' : '')
 							+	'>'
-							+		(l[i]?l:k)[i]
+							+		(l[i] ? l : k)[i]
 							+	'</option>';
 							t += '</select>';
 						} else if (
@@ -2108,7 +2108,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 									+		'<input type="radio'
 									+			'" name="'+param.opt_prefix+k
 									+			'" value="'+i+t
-									+			(i == v?' checked':'')
+									+			(i == v ? ' checked' : '')
 									+		'>\n<b>'+text+'</b>\n'
 									+	'</label>';
 								}
@@ -2141,10 +2141,10 @@ function showContent(sortOrder, confirmTooMuchContent) {
 						);
 					} else
 					if (dtp.users) {
-						t = userID+'. '+(u == 'u'?t:'<span class="a">'+t+'</span>');
+						t = userID+'. '+(u == 'u' ? t : '<span class="a">'+t+'</span>');
 					} else
 					if (dtp.rooms) {
-						j = (param.type?param.type+'/':''), a = '';
+						j = (param.type ? param.type+'/' : ''), a = '';
 						postAttr += '" data-filter-value="'+(j || '/')+t;
 
 				//* room hidden:
@@ -2194,8 +2194,8 @@ function showContent(sortOrder, confirmTooMuchContent) {
 									;
 									m[1] = (
 										orz(j) > 0 && (j = getFormattedHMS(j)) != k
-										? j+' ('+k+(i?' / '+i:'')+')'
-										: k+(i?' ('+i+')':'')
+										? j+' ('+k+(i ? ' / '+i : '')+')'
+										: k+(i ? ' ('+i+')' : '')
 									);
 								}
 							var	q = m[1]+', '+m[7]
@@ -2239,7 +2239,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 									t = j[0].replace(regImgExtEtc, '_res$1');
 									k = j[1].replace(regNaN, 'x');
 									if (isNotEmpty(tab[0])) tab[0] +=
-										'<span class="'+(u == 'u'?u:'res')
+										'<span class="'+(u == 'u' ? u : 'res')
 								//	+	'" title="'+k+'. '+la.resized_hint
 									+	'">'
 									+		('\n'+la.resized).replace(regLineBreak, '<br>')
@@ -2252,14 +2252,14 @@ function showContent(sortOrder, confirmTooMuchContent) {
 								+		getPicPath(t, param)
 								+		getLazyLoadingAttr(true)
 								+	'" alt="'+t+', '+q
-								+	'" title="'+(j?a+', '+k+'. '+la.resized_hint:a)
+								+	'" title="'+(j ? a+', '+k+'. '+la.resized_hint : a)
 								+	'">'
 								);
 
 								if (j) t = (
 									'<a target="_blank" href="'
 								+		getPicPath(j[0], param)
-								+	'" class="res'+(u == 'u'?' u':'')+'">'
+								+	'" class="res'+(u == 'u' ? ' u' : '')+'">'
 								+		t
 								+	'</a>'
 								);
@@ -2278,18 +2278,18 @@ function showContent(sortOrder, confirmTooMuchContent) {
 						imgPost = 0;
 					}
 					if (dtp.found) {
-					var	i = (param.room?param.room+'/':'')+postNum;
+					var	i = (param.room ? param.room+'/' : '')+postNum;
 						postAttr += '" id="'+i;
 						t =	'<a href="#'+i
 						+	'" title="'+la.search_hint.anchor
-						+	(imgPost?'" class="image-num':'')
+						+	(imgPost ? '" class="image-num' : '')
 						+	'">'
 						+		postNum
 						+	'.</a>'
-						+	(imgPost?'':' ')
+						+	(imgPost ? '' : ' ')
 						+	t;
 					}
-					if (!imgRes) t = '<span class="post-text'+(u == 'u'?' u':'')+'">'+t+'</span>';
+					if (!imgRes) t = '<span class="post-text'+(u == 'u' ? ' u' : '')+'">'+t+'</span>';
 					tab[2] = t;
 				} else tab[2] = (
 					dtp.users
@@ -2302,7 +2302,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 				);
 
 				if (roomCount && roomDates) {
-				var	k = (insideOut?' class="'+insideOut+'"':'');
+				var	k = (insideOut ? ' class="'+insideOut+'"' : '');
 					for (i in roomDates) lineHTML +=
 						'<div'+k+'>'
 					+		'<aside class="'+i+'">'
@@ -2357,7 +2357,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 							: null
 						)
 					,	a = {
-							arch_room: (
+							arch_room : (
 								i > 0
 							&&	(!dtp.users || threadNum)
 							&&	a.length > 0
@@ -2367,7 +2367,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 								+ '" class="menu-btn-mark search-mark'
 								: ''
 							)
-						,	arch_all: (
+						,	arch_all : (
 								i > 0
 							&&	(!dtp.users || threadNum)
 							&&	a.length > 0
@@ -2376,10 +2376,10 @@ function showContent(sortOrder, confirmTooMuchContent) {
 								+ '" class="menu-btn-mark search-mark'
 								: ''
 							)
-						,	capture_thread:       (capBtnParts ? capBtnParts.join(0)       : '')
-						,	capture_to_last_pic:  (capBtnParts ? capBtnParts.join(-1)      : '')
-						,	capture_to_this_post: (capBtnParts ? capBtnParts.join(postNum) : '')
-						,	report: (
+						,	capture_thread		: (capBtnParts ? capBtnParts.join(0)       : '')
+						,	capture_to_last_pic	: (capBtnParts ? capBtnParts.join(-1)      : '')
+						,	capture_to_this_post	: (capBtnParts ? capBtnParts.join(postNum) : '')
+						,	report : (
 								modEnabled && dtp.threads && !flag.n
 								? (
 									'javascript:openReportForm(\''
@@ -2387,7 +2387,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 								+	'\')" class="menu-btn-mark warn-mark'
 								) : ''
 							)
-						,	user: (
+						,	user : (
 								modEnabled && dtp.users
 								? (
 									'javascript:openReportForm(\''
@@ -2395,7 +2395,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 								+	'\')'
 								) : ''
 							)
-						,	mod: (
+						,	mod : (
 								modEnabled && bnw.menu && (!flag.n || flag.g || i > 0)
 								? (
 									(postClickMenu = 1)
@@ -2482,13 +2482,13 @@ function showContent(sortOrder, confirmTooMuchContent) {
 				if (alter) alt = !alt;
 				lineHTML =
 					'<div class="post'
-				+		(dtp.found || dtp.threads || dtp.users?' pad':'')
-				+		(dtp.users?' al':'')
-				+		(postHoverMenu?' hover-menu':'')
-				+		(postClickMenu?' click-menu':'')
-				+		(modEnabled?' '+userClass[isNaN(u)?u:0]:'')
-				+		(alt?' alt':'')
-				+		(imgRes?' res':'')
+				+		(dtp.found || dtp.threads || dtp.users ? ' pad' : '')
+				+		(dtp.users ? ' al' : '')
+				+		(postHoverMenu ? ' hover-menu' : '')
+				+		(postClickMenu ? ' click-menu' : '')
+				+		(modEnabled ? ' '+userClass[isNaN(u) ? u : 0] : '')
+				+		(alt ? ' alt' : '')
+				+		(imgRes ? ' res' : '')
 				+		postAttr
 				+	'">'
 				+		lineHTML
@@ -2518,17 +2518,18 @@ function showContent(sortOrder, confirmTooMuchContent) {
 			if ((dtp.found || dtp.reports) && (t = param.room)) {
 				threadHTML = getToggleThreadHTML(
 					{
-						content: threadHTML
-					,	open: 1
-					,	headerClass: 'post alt x3'
-					,	headerText:
+						content : threadHTML
+					,	open : 1
+					,	headerClass : 'post alt x3'
+					,	headerText : (
 							'<a href="'
 						+	(dtp.reports ? param.rooms : '')
 						+	(t === '*' ? param.day_link : t+'/')
 						+	'" class="anno dust">'
 						+		t
 						+	'</a>'
-					,	buttonText: (dtp.found ? la.room_arch : la.room_logs)
+						)
+					,	buttonText : (dtp.found ? la.room_arch : la.room_logs)
 					}
 				);
 			} else
@@ -2537,16 +2538,17 @@ function showContent(sortOrder, confirmTooMuchContent) {
 				s = param.type || '';
 				threadHTML = getToggleThreadHTML(
 					{
-						content: threadHTML
-					,	open: 1
-					,	headerClass: 'post alt x3'
-					,	headerText:
+						content : threadHTML
+					,	open : 1
+					,	headerClass : 'post alt x3'
+					,	headerText : (
 							'<a href="'
-						+	(s?s+'/':'.')
+						+	(s ? s+'/' : '.')
 						+	'" class="anno dust">'
 						+		t
 						+	'</a>'
-					,	buttonText: la.marks.rooms
+						)
+					,	buttonText : la.marks.rooms
 					}
 				);
 				param.type = param.type_title = null;
@@ -2729,9 +2731,9 @@ var	flagVarNames = ['flag', 'flags']
 		//* multiple threads, top bar with counters:
 
 			var	o = {
-					left: []
-				,	right: []
-				,	marks: []
+					left  : []
+				,	right : []
+				,	marks : []
 				}
 			,	a = la.marks.active
 			,	j = ''
@@ -2755,7 +2757,7 @@ var	flagVarNames = ['flag', 'flags']
 				);
 				if (flag.c) for (i in count) if (k = count[i]) {
 					if (dtp.reflinks || (dtp.users && i[0] != 'u')) {
-					var	sign = (l[i]?'+':'-')
+					var	sign = (l[i] ? '+' : '-')
 					,	neg = (sign === '-')
 					,	k_i = sign+'Infinity'
 					,	l_i = linesToSort.length
@@ -2814,7 +2816,7 @@ var	flagVarNames = ['flag', 'flags']
 					for (i in j) if ((m = j[i]).length) {
 						if (i == 0) a = '';
 						else {
-							m.sort(function(a,b) {return a.t == b.t?0:(a.t > b.t?1:-1);}).reverse();
+							m.sort(function(a,b) {return a.t == b.t ? 0 : (a.t > b.t ? 1 : -1);}).reverse();
 							a = la.marks[reportClass[i]]+': '+m.length+sep;
 						}
 						o.marks.push(
@@ -2830,16 +2832,16 @@ var	flagVarNames = ['flag', 'flags']
 									+		(v.s || '?')
 									+	'</a> &mdash; '
 									: '')
-									+	'<a href="javascript:showOpen('+i+(v.t?'':',true')+')">'
+									+	'<a href="javascript:showOpen('+i+(v.t ? '' : ',true')+')">'
 									+		(v.t || v.id)
 									+	'</a>';
 								}
-							).join(a?sep:n)
+							).join(a ? sep : n)
 						);
 					}
 				}
 				for (i in o) o[i] = o[i].join(n);
-				if (j = o.marks) o[dtp.found?'right':'left'] += n+j;
+				if (j = o.marks) o[dtp.found ? 'right' : 'left'] += n+j;
 				if (j = o.right) o.right = '<span class="r">'+j+'</span>';
 				b = cre('div', document.body, getParentBeforeTagName(e, 'body'));
 				b.className = 'task';
@@ -2860,9 +2862,9 @@ var	flagVarNames = ['flag', 'flags']
 							;
 							if (dontCollapse.indexOf(j) < 0) v = getToggleThreadHTML(
 								{
-									content: v
-								,	headerClass: 'post alt anno'
-								,	buttonText: la.hint[j]
+									content : v
+								,	headerClass : 'post alt anno'
+								,	buttonText : la.hint[j]
 								}
 							);
 						}
@@ -2890,7 +2892,7 @@ var	flagVarNames = ['flag', 'flags']
 						}
 
 					var	s = (v === 'sort')
-					,	k = (s?'+':'-')+'Infinity'
+					,	k = (s ? '+' : '-')+'Infinity'
 						;
 						addSortedLinesHTML(j[v](), k);
 
@@ -2970,7 +2972,7 @@ var	flagVarNames = ['flag', 'flags']
 				+	'</p>'
 				) : (
 					param.total > param.on_page
-					? '<p id="pages"'+(touch?' class="touch"':'')+'></p>'
+					? '<p id="pages"'+(touch ? ' class="touch"' : '')+'></p>'
 					: '<p>'+la.page+': 1</p>'
 				)
 			)+'<div id="thumbs"></div>'+(
@@ -2983,7 +2985,7 @@ var	flagVarNames = ['flag', 'flags']
 
 		if ((e = id('total-counts')) && count.o.length) {
 		var	a = '<aside class="a '
-		,	b = '<div'+(insideOut?' class="'+insideOut+'"':'')+'>'+a
+		,	b = '<div'+(insideOut ? ' class="'+insideOut+'"' : '')+'>'+a
 		,	c = '</aside>'
 		,	d = c+'</div>'
 		,	j = param.separator || ','
@@ -3080,8 +3082,8 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			addTaskMenuBtn(
 				'X'
 			,	{
-					'href': 'javascript:skipMyTask(' + taskSkipNum + ')'
-				,	'title': la.skip_hint
+					'href'  : 'javascript:skipMyTask(' + taskSkipNum + ')'
+				,	'title' : la.skip_hint
 				}
 			,	m
 			);
@@ -3091,7 +3093,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			addTaskMenuBtn(
 				la.report
 			,	{
-					'href': "javascript:openReportForm('" + taskReportNum + "')"
+					'href' : "javascript:openReportForm('" + taskReportNum + "')"
 				}
 			,	m
 			);
@@ -3104,8 +3106,8 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			addTaskMenuBtn(
 				la.keep_task
 			,	{
-					'href': 'javascript:keepMyTask(' + taskKeepNum + ')'
-				,	'title': la.keep_task_hint
+					'href'  : 'javascript:keepMyTask(' + taskKeepNum + ')'
+				,	'title' : la.keep_task_hint
 				}
 			,	m
 			);
@@ -3124,7 +3126,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 					addTaskMenuBtn(
 						btnTextByTaskType[newTaskType]
 					,	{
-							'href': (
+							'href' : (
 								changeType == 'free'
 								? '?' + newTaskType
 								: "javascript:changeMyTask('" + changeType + "', '" + newTaskType + "')"
@@ -3138,10 +3140,10 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 
 		if (taskUnskipNum) {
 		var	attr = {
-				'href': 'javascript:void ' + orz(taskUnskipNum)
-			,	'title': la.unskip_hint
-			,	'id': 'unskip'
-			,	'data-room': room
+				'href'  : 'javascript:void ' + orz(taskUnskipNum)
+			,	'title' : la.unskip_hint
+			,	'id'    : 'unskip'
+			,	'data-room' : room
 			};
 
 			if (
@@ -3159,9 +3161,9 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			addTaskBtn(
 				'<span id="'+CS+'">?</span>'
 			,	{
-					'href': 'javascript:checkMyTask()'
-				,	'title': String(t > 0 ? new Date(t) : new Date) + toolTipNewLine + la.check
-				,	'class': (a > 0?'auto ':'')+'ready'
+					'href'  : 'javascript:checkMyTask()'
+				,	'title' : String(t > 0 ? new Date(t) : new Date) + toolTipNewLine + la.check
+				,	'class' : (a > 0 ? 'auto ' : '')+'ready'
 				}
 			);
 		}
@@ -3176,13 +3178,13 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 	if (t > 0) {
 		f = autoUpdateTaskTimer;
 		taskTime = {
-			taken:		1000*t
-		,	deadline:	1000*d
-		,	intervalFail:	1000*600
-		,	intervalMin:	1000*5
-		,	intervalMax:	1000*a
-		,	intervalCheck:	(i = 1000)
-		,	interval: setInterval(f, i)
+			taken		: 1000*t
+		,	deadline	: 1000*d
+		,	intervalFail	: 1000*600
+		,	intervalMin	: 1000*5
+		,	intervalMax	: 1000*a
+		,	intervalCheck	: (i = 1000)
+		,	interval	: setInterval(f, i)
 		};
 		if (a) window.addEventListener('focus', f, false);
 		document.addEventListener('DOMContentLoaded', f, false);
@@ -3232,7 +3234,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 			e.onchange();
 
 			if (e = getParentByTagName(e, 'form')) {
-				e.id = selectId = 'select-search-type'+(i > 0?'-'+i:'');
+				e.id = selectId = 'select-search-type'+(i > 0 ? '-'+i : '');
 
 				e = cre('p', e.parentNode, e.nextElementSibling);
 				e.className = 'hint r';

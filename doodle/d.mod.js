@@ -8,7 +8,7 @@ bnw.push(bnw.menu = function menuInit(i) {
 		if (d && !k && (k = id('task'))) k = k.firstElementChild;
 	}
 	if (k) {
-	var	a = function (i,t,d) {return '<a href="'+(d || '')+i+(i == day?(at = y, '" class="at'):'')+'">'+t+'</a>';}
+	var	getLinkHTML = function (i,t,d) { return '<a href="'+(d || '')+i+(i == day ? (at = y, '" class="at') : '')+'">'+t+'</a>'; }
 	,	h = ''
 	,	n = k.textContent.replace(regTrim, '').split('|')
 	,	day = k.getAttribute('data-day') || location.search.split('=').slice(-1)[0] || location.pathname.split('/').slice(-1)[0]
@@ -16,7 +16,7 @@ bnw.push(bnw.menu = function menuInit(i) {
 		;
 //* task category tabs:
 		if (n.length > 1) {
-			for (i in n) h += (h?'\n|\t':'')+a(+i+1, n[i]);
+			for (i in n) h += (h ? '\n|\t' : '')+getLinkHTML(+i+1, n[i]);
 			k.innerHTML = '[\t'+h+'\t]';
 		}
 	var	p = k.parentNode
@@ -35,11 +35,11 @@ bnw.push(bnw.menu = function menuInit(i) {
 		,	y = 'year'+f
 		,	n = j.pop().split(',')
 		,	j = j.join('-')
-		,	h = function (v) {return a(j+'-'+v.replace(w, ''), v, prefix);}
+		,	getLinkInRowHTML = function (v) { return getLinkHTML(j+'-'+v.replace(w, ''), v, prefix); }
 			;
-			m.innerHTML = j+': '+n.map(h).join(' ');
+			m.innerHTML = j+': '+n.map(getLinkInRowHTML).join(' ');
 			if (!d || d.id != y) {
-				(d = cre('div',c?c:c = cre('div',p,k.nextElementSibling))).id = y;
+				(d = cre('div',c ? c : c = cre('div',p,k.nextElementSibling))).id = y;
 				if (d.previousElementSibling) {
 					d.className = 'hid';
 					cre('p',c,d).innerHTML = getToggleButtonHTML(f);
@@ -98,7 +98,7 @@ var	leftSide = (n.slice(-1) == 0)
 ,	la
 	;
 	if (lang == 'ru') la = {
-		tip: (
+		tip : (
 			leftSide ? [
 				'Применение заданных операций, по пунктам снизу вверх, разом со всей комнаты.'
 			,	'Удалить пост и файл - 2 разных пункта.'
@@ -117,30 +117,33 @@ var	leftSide = (n.slice(-1) == 0)
 			,	'Модератор не может менять статус супермодератора, банить модераторов или снимать с себя полномочия.'
 			]
 		)
-	,	go: 'пуск'
-	,	r: (g?'Добавить сообщение':'Сообщить о проблеме')
-	,	t: 'Ваш текст тут.'
-	,	i: 'Новый текст поста / имя / объявление.'
-	,	x: 'Закрыть и забыть это меню.'
-	,	z: 'Закрыть и забыть все меню на странице.'
-	,	o: (
+	,	go : 'пуск'
+	,	r : (g ? 'Добавить сообщение' : 'Сообщить о проблеме')
+	,	t : 'Ваш текст тут.'
+	,	i : 'Новый текст поста / имя / объявление.'
+	,	x : 'Закрыть и забыть это меню.'
+	,	z : 'Закрыть и забыть все меню на странице.'
+	,	o : (
 			leftSide ? (
-				ngm?'':(
-				(v?'':'в архив+готово+нет|замороз.нить+отм.'+(g?'+скрыть':'')+'|удалить сообщения||уд.нить'
-			+	(g?'+и файлы+и стереть файлы с диска':'')+'|удалить пост (но не файл)|уд.файл+обнулить'
-			+	(g?'+стереть с диска':'')+'|доб.пост+перед+изменить||слить нити сюда+отсюда вниз|разделить нить отсюда вниз'+(g?'|':''))
-			+	(g?'уд.комн.+и стер.файлы+и архив и метаданные|переимен.комн.'+(v?'':'+копир.нить в комнату'):'')
+				ngm ? '' : (
+				(v ? '' : 'в архив+готово+нет|замороз.нить+отм.'
+			+	(g ? '+скрыть' : '')+'|удалить сообщения||уд.нить'
+			+	(g ? '+и файлы+и стереть файлы с диска' : '')+'|удалить пост (но не файл)|уд.файл+обнулить'
+			+	(g ? '+стереть с диска' : '')+'|доб.пост+перед+изменить||слить нити сюда+отсюда вниз|разделить нить отсюда вниз'
+			+	(g ? '|' : ''))
+			+	(g ? 'уд.комн.+и стер.файлы+и архив и метаданные|переимен.комн.'
+			+	(v ? '' : '+копир.нить в комнату') : '')
 			)) : (
-				ngm?'комнатное объявление':(
-				(v?'':'закрыть доступ+открыть|может жаловаться+нет|'
-			+	(g?'получает цели+нет|видит неизв.+нет|':'')+'дать модератора+снять|'
-			+	(g?'дать супермод.+снять|переименовать||':''))
-			+	(g?'общее объявление'+(u?'':'|комнатное объявление|замороз. комнату+отм.')+'|заморозить всё+отм.'
-				:'||комнатное объявление')
+				ngm ? 'комнатное объявление' : (
+				(v ? '' : 'закрыть доступ+открыть|может жаловаться+нет|'
+			+	(g ? 'получает цели+нет|видит неизв.+нет|' : '')+'дать модератора+снять|'
+			+	(g ? 'дать супермод.+снять|переименовать||' : ''))
+			+	(g ? 'общее объявление'
+			+	(u ? '' : '|комнатное объявление|замороз. комнату+отм.')+'|заморозить всё+отм.' : '||комнатное объявление')
 			))
 		)
 	}; else la = {
-		tip: (
+		tip : (
 			leftSide ? [
 				'Apply changes on entire room (options go last to first).'
 			,	'Preferably avoid batch submits, use freeze.'
@@ -159,46 +162,49 @@ var	leftSide = (n.slice(-1) == 0)
 			,	'Moderator cannot change status of a supermoderator, ban other moderators or self-resign.'
 			]
 		)
-	,	go: 'go'
-	,	r: (g?'Add a comment':'Report a problem')
-	,	t: 'Your text here.'
-	,	i: 'New post content / name / announcement.'
-	,	x: 'Close and forget this menu.'
-	,	z: 'Close and forget all menus on the page.'
+	,	go : 'go'
+	,	r : (g ? 'Add a comment' : 'Report a problem')
+	,	t : 'Your text here.'
+	,	i : 'New post content / name / announcement.'
+	,	x : 'Close and forget this menu.'
+	,	z : 'Close and forget all menus on the page.'
 	};
 var	o = (
 		leftSide ? (
-			ngm?'':(
-			(v?'':'archive+ready+wait|freeze trd.+warm up'+(g?'+hide':'')+'|delete comments||delete thread'
-		+	(g?'+& pics+& erase pics from disk':'')+'|delete post (but not pic)|delete pic+nullify'
-		+	(g?'+erase from disk':'')+'|add post+before+edit||merge trd. target+source down from here|split thread down from here'+(g?'|':''))
-		+	(g?'nuke room+& er.pics+& archive and metadata|rename room'+(v?'':'+copy trd. to room'):'')
+			ngm ? '' : (
+			(v ? '' : 'archive+ready+wait|freeze trd.+warm up'
+		+	(g ? '+hide' : '')+'|delete comments||delete thread'
+		+	(g ? '+& pics+& erase pics from disk' : '')+'|delete post (but not pic)|delete pic+nullify'
+		+	(g ? '+erase from disk' : '')+'|add post+before+edit||merge trd. target+source down from here|split thread down from here'
+		+	(g ? '|' : ''))
+		+	(g ? 'nuke room+& er.pics+& archive and metadata|rename room'
+		+	(v ? '' : '+copy trd. to room') : '')
 		)) : (
-			ngm?'room announce':(
-			(v?'':'ban+lift|can report+not|'
-		+	(g?'gets targets+not|sees unknown+not|':'')+'give mod+take|'
-		+	(g?'give god+take|rename||':''))
-		+	(g?'global announce'+(u?'':'|room announce|room freeze+warm up')+'|global freeze+warm up'
-			:'||room announce')
+			ngm ? 'room announce' : (
+			(v ? '' : 'ban+lift|can report+not|'
+		+	(g ? 'gets targets+not|sees unknown+not|' : '')+'give mod+take|'
+		+	(g ? 'give god+take|rename||' : ''))
+		+	(g ? 'global announce'
+		+	(u ? '' : '|room announce|room freeze+warm up')+'|global freeze+warm up' : '||room announce')
 		))
 	).split('|')
 //* warning message dialogs:
 ,	check = {
 //* for each functionality type:
-		confirm: {
+		confirm : {
 //* get first phrase ID, where button fits any criteria from array:
-			erase_trd: [/\berase pics\b/]
-		,	erase_pic: [/\bnullify\b/, /\berase\b/]
-		,	wipe_all: [/^.+archive\b/]
-		,	wipe_active: [/^nuke room/]
-		,	rename: ['rename room']
+			erase_trd	: [/\b(erase pics)\b/]
+		,	erase_pic	: [/\b(nullify)\b/, /\b(erase)\b/]
+		,	wipe_all	: [/^.+\b(archive)\b/]
+		,	wipe_active	: [/^nuke room/]
+		,	rename		: ['rename room']
 		}
-	,	textarea: {
-			require: [/^add post/, /^rename/]
-		,	enable: [/ announce$/, / freeze$/]
+	,	textarea : {
+			require		: [/^add post/, /^rename/]
+		,	enable		: [/ announce$/, / freeze$/]
 		}
 	}
-,	a = (la.o?la.o.split('|'):o)
+,	a = (la.o ? la.o.split('|') : o)
 ,	m = ''
 	;
 
@@ -251,24 +257,24 @@ var	o = (
 			b[j] = '</label><label title="'
 			+		b[j]
 			+	'">'
-			+	(leftSide?'':b[j])
+			+	(leftSide ? '' : b[j])
 			+	c
 			+	joinCheckList(checkList)
 			+	l+v1
 			+	'">'
-			+	(leftSide?b[j]:'');
+			+	(leftSide ? b[j] : '');
 		}
 		checkList = getCheckList(v0) || k;
 		m += '<label title="'
 		+		b0
 		+	'">'
 		+	(b0?
-				(leftSide?'':b0)
+				(leftSide ? '' : b0)
 			+	c
 			+	joinCheckList(checkList)
 			+	l+v0
 			+	'">'
-			+	(leftSide?b0:'')
+			+	(leftSide ? b0 : '')
 			:'')
 		+	b.join('')
 		+	'</label>';
@@ -281,7 +287,7 @@ var	b = '<input type="button" value="'
 ,	i = '" title="'
 ,	j = p.id.split('_').slice(1).join('-')
 ,	t = la.tip.join('\r\n')
-,	align = (leftSide?'l':'r')
+,	align = (leftSide ? 'l' : 'r')
 ,	rep = '' /*(
 		!g && (ngm || u || v)
 		? ''
@@ -297,11 +303,11 @@ var	b = '<input type="button" value="'
 	+'<textarea name="'+p.id.replace('m', 't')+i+la.i+'" placeholder="'+la.t+'"></textarea>'
 	+'<div class="button-row a'+align+'">'
 	+	'<div class="'+align+'">'
-	+		(rep && leftSide?'':rep)
+	+		(rep && leftSide ? '' : rep)
 	+		'<input type="submit" value="'+la.go+i+t+'">&ensp;'
 	+		b+'x'+i+la.x+c+'this)">'
 	+		b+'&gt;&lt;'+i+la.z+c+')">'
-	+		(rep && !leftSide?'':rep)
+	+		(rep && !leftSide ? '' : rep)
 	+	'</div>'
 	+'</div>'
 	;
@@ -321,30 +327,30 @@ var	opening = (d == target);
 	if (k) {
 		e = target;
 		if (!e.getAttribute('data-textarea')) k = 0;
-		do {if (e = e.parentNode) a = e;} while (!regTagDivP.test(e.tagName));
+		do { if (e = e.parentNode) a = e; } while (!regTagDivP.test(e.tagName));
 		a = gi('checkbox', a), i = a.length;
 		while (i--) if ((e = a[i]) != target) e.checked = 0;
 	} else if (opening) k = 1;
-var	count = {checked: 0, text: 0, req: 0}
+var	count = { checked : 0, text : 0, req : 0 }
 ,	a = gi('checkbox', d)
 ,	i = a.length
 ,	j = []
 ,	la
 	;
 	if (lang == 'ru') la = {
-		wipe_active: 'Всё активное содержимое комнаты будет уничтожено, восстановление невозможно.'
-	,	wipe_all: 'Комната будет уничтожена, восстановление невозможно.'
-	,	erase_pic: 'Выбранные рисунки будут уничтожены, восстановление невозможно.'
-	,	erase_trd: 'В нитях, выбранных к удалению, все рисунки будут уничтожены, восстановление невозможно.'
-	,	rename: 'Комната сменит адрес, возможны конфликты данных.'
-	,	sure: 'Вы уверены?'
+		wipe_active	: 'Всё активное содержимое комнаты будет уничтожено, восстановление невозможно.'
+	,	wipe_all	: 'Комната будет уничтожена, восстановление невозможно.'
+	,	erase_pic	: 'Выбранные рисунки будут уничтожены, восстановление невозможно.'
+	,	erase_trd	: 'В нитях, выбранных к удалению, все рисунки будут уничтожены, восстановление невозможно.'
+	,	rename		: 'Комната сменит адрес, возможны конфликты данных.'
+	,	sure		: 'Вы уверены?'
 	}; else la = {
-		wipe_active: 'All active content of the room will be deleted, this cannot be reverted.'
-	,	wipe_all: 'The room will be deleted, this cannot be reverted.'
-	,	erase_pic: 'Selected images will be deleted, this cannot be reverted.'
-	,	erase_trd: 'Images will be deleted from threads, selected for deletion, this cannot be reverted.'
-	,	rename: 'The room will be renamed, this can possibly cause conflicts in data.'
-	,	sure: 'Are you sure?'
+		wipe_active	: 'All active content of the room will be deleted, this cannot be reverted.'
+	,	wipe_all	: 'The room will be deleted, this cannot be reverted.'
+	,	erase_pic	: 'Selected images will be deleted, this cannot be reverted.'
+	,	erase_trd	: 'Images will be deleted from threads, selected for deletion, this cannot be reverted.'
+	,	rename		: 'The room will be renamed, this can possibly cause conflicts in data.'
+	,	sure		: 'Are you sure?'
 	};
 	while (i--) if ((e = a[i]) && e.checked) {
 		count.checked++;
@@ -361,7 +367,7 @@ var	count = {checked: 0, text: 0, req: 0}
 	,	focus = (k && t)
 		;
 		e.required = !!count.req;
-		e.style.display = (t?'':'none');
+		e.style.display = (t ? '' : 'none');
 		if (focus) {
 		var	v = target.value;
 			if (i && v) {
@@ -402,7 +408,7 @@ var	count = {checked: 0, text: 0, req: 0}
 				} else
 				if ((i = ['announce', 'freeze'].indexOf(v.split(' ').slice(-1)[0])) >= 0) {
 					e.value = (
-						(v = id(v) || id((v.indexOf('room') == 0?'room_':'') + ['anno', 'stop'][i]))
+						(v = id(v) || id((v.indexOf('room') == 0 ? 'room_' : '') + ['anno', 'stop'][i]))
 						? v.innerHTML
 							.replace(regTrim, '')
 							.replace(regSpace, ' ')

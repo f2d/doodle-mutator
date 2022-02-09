@@ -57,8 +57,11 @@ var	f,e = id('content') || document.body
 			e.addEventListener(capsL, capsTextSelect, false);
 		}
 		if (!regClassCapsBtn) regClassCapsBtn = getClassReg(capsBtn);
-		if (lang == 'ru') t += (t?n+'Или в':'В')+'ыделить текст нужных постов и появится кнопка сохранения.';
-		else t += (t?n+'Or s':'S')+'elect text across posts to capture, then a save button appears.';
+		if (lang == 'ru') {
+			t += (t ? n+'Или выделить' : 'Выделить') + ' текст нужных постов и появится кнопка сохранения.';
+		} else {
+			t += (t ? n+'Or select' : 'Select') + ' text across posts to capture, then a save button appears.';
+		}
 	}
 	if (!(a = gc('threads', e)).length) a = gc('content');
 	i = n = a.length;
@@ -118,13 +121,13 @@ function capsPostClick(e) {
 
 	if (e && (p = e.target) && (p = getCapsParentPost(p))) {
 		eventStop(e,1,1);
-	var	a,i,j,p,n = (e.which === 1?0:-1);
+	var	a,i,j,p,n = (e.which === 1 ? 0 : -1);
 
 //* capture snapshot of all selected posts:
 
 		if (e.altKey) {
 			if (e.ctrlKey || e.shiftKey) {
-				a = getCapsGroup(p, e.shiftKey?1:-1);
+				a = getCapsGroup(p, e.shiftKey ? 1 : -1);
 			} else {
 				a = gc('post selected', id('content'));
 				if (a.indexOf(p) < 0) a = getCapsGroup(p);
@@ -136,7 +139,7 @@ function capsPostClick(e) {
 
 		if (e.ctrlKey) {
 		var	a = getCapsGroup(capsLastPost = p
-		,	j = (e.shiftKey?1:0))
+		,	j = (e.shiftKey ? 1 : 0))
 		,	i = a.length
 			;
 			while (i--) toggleClass(a[i], 'selected', n || j);
@@ -190,31 +193,31 @@ function capsTextSelect(e) {
 
 function capsTextButtons(f,e,n) {
 var	la,a = {
-		top: f || e
-	,	bottom: e || f
+		top	: f || e
+	,	bottom	: e || f
 	};
 	if (lang == 'ru') la = {
-		label: {
-			top: 'Начало ряда'
-		,	bottom: 'Конец ряда'
+		label : {
+			top	: 'Начало ряда'
+		,	bottom	: 'Конец ряда'
 		}
-	,	hint: {
-			top: 'Снимок будет начиная с этого поста'
-		,	bottom: 'Снимок будет по этот пост'
+	,	hint : {
+			top	: 'Снимок будет начиная с этого поста'
+		,	bottom	: 'Снимок будет по этот пост'
 		}
-	,	save: 'Сохранить снимок'
-	,	close: 'Скрыть эту панель'
+	,	save		: 'Сохранить снимок'
+	,	close		: 'Скрыть эту панель'
 	}; else la = {
-		label: {
-			top: 'Selection start'
-		,	bottom: 'Selection end'
+		label : {
+			top	: 'Selection start'
+		,	bottom	: 'Selection end'
 		}
-	,	hint: {
-			top: 'Capture will start at this post'
-		,	bottom: 'Capture will end at this post'
+	,	hint : {
+			top	: 'Capture will start at this post'
+		,	bottom	: 'Capture will end at this post'
 		}
-	,	save: 'Save screenshot'
-	,	close: 'Hide this panel'
+	,	save		: 'Save screenshot'
+	,	close		: 'Hide this panel'
 	};
 	for (var i in a) {
 		e = id(f = capsBtn+'-'+i);
@@ -315,7 +318,7 @@ function capsSave(posts) {
 
 		function addLine(t, w) {
 			if (blockWidth < w) blockWidth = w;
-			lines.push({text: t, width: w});
+			lines.push({ text : t, width : w });
 		}
 
 		//* source: http://sourcoder.blogspot.ru/2012/12/text-wrapping-in-html-canvas.html
@@ -363,8 +366,8 @@ function capsSave(posts) {
 
 	function getNewBlock(e, color) {
 		return {
-			color: (e ? e.color || getStyleValue(e, 'background-color') : 0) || color || 'white'
-		,	height: pad
+			color : (e ? e.color || getStyleValue(e, 'background-color') : 0) || color || 'white'
+		,	height : pad
 		};
 	}
 
@@ -387,8 +390,8 @@ function capsSave(posts) {
 			;
 			if (u && u.createObjectURL) {
 			var	data = dataURI.slice(dataURI.indexOf(',')+1)
-			,	data = Uint8Array.from(TOS.map.call(atob(data), function(v) {return v.charCodeAt(0);}))
-			,	blob = window.URL.createObjectURL(new Blob([data], {'type': type}))
+			,	data = Uint8Array.from(TOS.map.call(atob(data), function(v) { return v.charCodeAt(0); }))
+			,	blob = window.URL.createObjectURL(new Blob([ data ], { 'type' : type }))
 			,	size = data.length
 				;
 				a.href = blob;
@@ -399,7 +402,7 @@ function capsSave(posts) {
 				,	room || ''
 				,	thisPage || ''
 				].filter(isNotEmpty).join('_')
-			+	(ext?'.'+ext:'')
+			+	(ext ? '.'+ext : '')
 			);
 			a.click();
 			setTimeout(function() {
@@ -413,23 +416,23 @@ function capsSave(posts) {
 
 var	la;
 	if (lang == 'ru') la = {
-		no_posts: 'Не выбран ни один пост для захвата.'
-	,	no_image_size: 'Ошибка: программа-браузер не может создать полотно необходимого размера. Выберите меньше постов.'
-	,	no_image_data: 'Ошибка: программа-браузер не может создать данные для файла изображения.'
-	,	save_size: 'Размер содержимого файла'
-	,	image_data: 'Содержимое изображения'
-	,	image_res: 'Размер изображения'
-	,	pixels: ' пикселей'
-	,	bytes: ' байт'
+		no_posts	: 'Не выбран ни один пост для захвата.'
+	,	no_image_size	: 'Ошибка: программа-браузер не может создать полотно необходимого размера. Выберите меньше постов.'
+	,	no_image_data	: 'Ошибка: программа-браузер не может создать данные для файла изображения.'
+	,	save_size	: 'Размер содержимого файла'
+	,	image_data	: 'Содержимое изображения'
+	,	image_res	: 'Размер изображения'
+	,	pixels		: ' пикселей'
+	,	bytes		: ' байт'
 	}; else la = {
-		no_posts: 'No posts selected to capture.'
-	,	no_image_size: 'Error: the browser program failed to create a canvas of required size. Try selecting less posts.'
-	,	no_image_data: 'Error: the browser program failed to create resulting image file content.'
-	,	save_size: 'File content size'
-	,	image_data: 'Image content'
-	,	image_res: 'Image size'
-	,	pixels: ' pixels'
-	,	bytes: ' bytes'
+		no_posts	: 'No posts selected to capture.'
+	,	no_image_size	: 'Error: the browser program failed to create a canvas of required size. Try selecting less posts.'
+	,	no_image_data	: 'Error: the browser program failed to create resulting image file content.'
+	,	save_size	: 'File content size'
+	,	image_data	: 'Image content'
+	,	image_res	: 'Image size'
+	,	pixels		: ' pixels'
+	,	bytes		: ' bytes'
 	};
 
 	if (
@@ -573,14 +576,17 @@ var	la;
 			if (e || !z) {
 				alert(
 					la.no_image_data
-				+	'\n\n'+la.image_res+': '+cnv.width+' x '+cnv.height+la.pixels+', '+(z?Math.round(y*3/4):y)+la.bytes
-				+	(y ?	'\n'+la.image_data+': '+x.slice(0,42)+(y > 42?'(...)':'')
-					+	'\n'+la.save_size+': '+z+la.bytes
-					: '')
-				+	(e ?	'\nError code: '+e.code
-					+	'\nError name: '+e.name
-					+	'\nError text: '+(e.message || 'none')
-					: '')
+				+	'\n\n'+la.image_res+': '+cnv.width+' x '+cnv.height+la.pixels+', '+(z ? Math.round(y*3/4) : y)+la.bytes
+				+	(
+						y ?	'\n'+la.image_data+': '+x.slice(0,42)+(y > 42 ? '(...)' : '')
+						+	'\n'+la.save_size+': '+z+la.bytes
+						: ''
+					)+(
+						e ?	'\nError code: '+e.code
+						+	'\nError name: '+e.name
+						+	'\nError text: '+(e.message || 'none')
+						: ''
+					)
 				);
 			}
 		} else {
