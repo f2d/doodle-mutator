@@ -765,11 +765,12 @@ function get_dir_rooms($source_subdir = '', $output_subdir = '', $flags = 0, $ty
 function get_file_lines($path) {
 	return (
 		is_file($path)
+	&&	!empty($content = file_get_contents($path))
 		? (
-			mb_split_filter(file_get_contents($path), NL)
-		?:	mb_split_filter(fix_encoding(file_get_contents($path)), NL)
+			mb_split_filter($content, NL)
+		?:	mb_split_filter(fix_encoding($content), NL)
 		)
-	//	? mb_split_filter(trim_bom(file_get_contents($path)), NL)	//* <- trim messes up line indexes, don't touch for now
+	//	? mb_split_filter(trim_bom($content), NL)	//* <- trim messes up line indexes, don't touch for now
 	//	? file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)
 		: array()
 	);
