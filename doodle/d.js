@@ -62,7 +62,11 @@
 ,	toolTipNewLine = ' \r\n'
 ,	CS = 'checkStatus'
 ,	CM = 'checkMistype'
-,	requestInProgress = {}, taskTime = {}, flag = {}, inputHints = {}, param = {}
+,	flag = {}
+,	param = {}
+,	taskTime = {}
+,	inputHints = {}
+,	requestInProgress = {}
 ,	count = {
 		u : 0
 	,	uLast : ''
@@ -428,6 +432,10 @@ function escapeRegex(t) {
 	return t.replace(/[\\|\/\[\](){}^$.:?*+-]/g, '\\$&');
 }
 
+function regRefLinkSanitizeCallback(t) {
+	return '[?0x' + encodeURIComponent(t).split('%').filter().join(',') + '?]';
+}
+
 function propNameForIE(n) {
 	return n
 	.split('-')
@@ -525,9 +533,10 @@ function getToggleButtonHTML(content, opened) {
 	+	'</a>';
 }
 
+function filterNotEmpty(v) { return !!v && v.length; }
 function getTagAttrIfNotEmpty(name, values, delim) {
 	if (name) {
-	var	a = (values.filter ? values : [values]).filter(function(v) {return !!v;});
+	var	a = (values.filter ? values : [values]).filter(filterNotEmpty);
 		if (a.length) return ' '+name+'="'+encodeTagAttr(a.join(delim || ' '))+'"';
 	}
 	return '';
@@ -1122,8 +1131,13 @@ var	r = '_res';
 	);
 }
 
-function getNormalizedText(str) { return (str || '').replace(regTrim, '').toLowerCase(); }
+function getNormalizedText(t) { return String(t || '').replace(regTrim, '').toLowerCase(); }
 function filterContent(event, e, containers) {
+
+	function filterThreads(e) { return regClassThread.test(e.className); }
+	function filterPosts(e) { return regClassPost.test(e.className) && !regClassSkipFilter.test(e.className); }
+	function filterDirectChildElements(p) { return p.parentNode === e; }
+
 	if (event) e = eventStop(event).target;
 	if (!e) return;
 var	v = getNormalizedText(e.value)
@@ -1140,13 +1154,13 @@ var	f_type = e.getAttribute('data-filter') || ''
 	if (containers || (containers = showContent('last')))
 	for (var c_i = 0, c_len = containers.length; c_i < c_len; c_i++) {
 	var	container = e = containers[c_i]
-	,	threads = gn('div', e).filter(function(e) {return regClassThread.test(e.className);})
+	,	threads = gn('div', e).filter(filterThreads)
 	,	foundThreads = 0
 		;
 		if (!threads.length) threads = [e];
 		for (var t_i = 0, t_len = threads.length; t_i < t_len; t_i++) {
 		var	thread = e = threads[t_i]
-		,	posts = gn('div', e).filter(function(e) {return regClassPost.test(e.className) && !regClassSkipFilter.test(e.className);})
+		,	posts = gn('div', e).filter(filterPosts)
 		,	foundPosts = 0
 		,	imgPost = 0
 		,	eqAlt = 0
@@ -1169,7 +1183,7 @@ var	f_type = e.getAttribute('data-filter') || ''
 						while (e && e.firstElementChild == (c = e.lastElementChild)) e = c;
 						if (e && c) {
 							if (f_num > 1) e = c; else
-							if (f_num > 0) e = gn('aside', e).filter(function(p) {return p.parentNode == e;}).slice(-1)[0];
+							if (f_num > 0) e = gn('aside', e).filter(filterDirectChildElements).slice(-1)[0];
 						}
 						c = (e ? getNormalizedText((e.firstChild || e).textContent) : '');
 					}
@@ -1215,16 +1229,21 @@ function filterPrefix(p) {
 }
 
 function showOpen(i,top) {
-var	t = id(i) || (showContent(), id(i))
-,	d = t.firstElementChild
-,	a = function(e) {return !!e.onclick || e.href.slice(0,11) === 'javascript:';}
-,	c
-	;
-	if (d
-	&&	(a = gn('a', d).filter(a)[0])
+
+	function filterJavascriptLinks(e) { return !!e.onclick || e.href.indexOf('javascript:') === 0; }
+
+var	a,c,d,t;
+
+	if (
+		(t = id(i) || (showContent(), id(i)))
+	&&	(d = t.firstElementChild)
+	&&	(a = gn('a', d).filter(filterJavascriptLinks)[0])
 	&&	(d = d.nextElementSibling)
 	&&	(((c = d.style.display) && c === 'none') || ((c = d.className) && regClassHid.test(c)))
-	) a.click();
+	) {
+		a.click();
+	}
+
 	t.scrollIntoView(!!top);
 }
 
@@ -1311,6 +1330,9 @@ var	room = (e ? e.getAttribute('data-room') : 0) || ''
 }
 
 function checkSaves(e) {
+
+	function filterCountableSaves(v) { return !regCountSkip.test(v); }
+
 	if (e.target) v = (e = e.target).id; else e = id(v = e);
 	if (e) {
 	var	a = getSaves(v,e)
@@ -1323,7 +1345,7 @@ function checkSaves(e) {
 			k += a.counts[i];
 		}
 		if (v == 'unsave') {
-			j = a.keys.filter(function(v) {return !regCountSkip.test(v);}).length;
+			j = a.keys.filter(filterCountableSaves).length;
 		}
 		e.disabled = !j;
 		e.value = e.value.replace(regCountTail, '')+': '+(j ? j+' ('+getFormattedNumUnits(k, la.clear[v].unit)+')' : j);
@@ -1545,13 +1567,17 @@ var	a = form.elements
 	if (queryParts) {
 	var	url = '.?'+queryParts.join('&');
 
-		for (i in formParts) {
-			if (formParts[i][0].sort) {
-				formParts[i].map(function(v) {v.sort();});
-			} else {
-				formParts[i].sort();
+		function sortEach(v) {
+			if (v && v.sort && v[0]) {
+				if (v[0].sort) {
+					v.map(sortEach);
+				} else {
+					v.sort();
+				}
 			}
 		}
+
+		for (i in formParts) sortEach(formParts[i]);
 
 		btn.disabled = true;
 
@@ -2005,7 +2031,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 					} else
 					if (dtp.reflinks) {
 						try {
-							d = decodeURIComponent(t).replace(regRefLinkSanitize, '[?]');
+							d = decodeURIComponent(t).replace(regRefLinkSanitize, regRefLinkSanitizeCallback);
 						} catch (e) {
 							d = t;
 						}
@@ -2721,10 +2747,11 @@ var	flagVarNames = ['flag', 'flags']
 		if (threadsHTML.length) {
 		var	e = cre('div', p, e);
 			if (sectionCount) {
+
+				function getContentInBlock(v) { return '<div class="thread">'+v+'</div>'; }
+
 				e.className = 'threads combined';
-				e.threadsHTML = e.innerHTML = threadsHTML.map(
-					function(v) {return '<div class="thread">'+v+'</div>';}
-				).join('');
+				e.threadsHTML = e.innerHTML = threadsHTML.map(getContentInBlock).join('');
 			} else
 			if (threadsHTML.length > 1) {
 
@@ -2745,7 +2772,7 @@ var	flagVarNames = ['flag', 'flags']
 			,	splitRanges = {}
 			,	countOnToggleButton = sectionCount || threadsHTML.length
 				;
-				for (i in la.groups) if (dtp[i]) {a = la.groups[i]; break;}
+				for (i in la.groups) if (dtp[i]) { a = la.groups[i]; break; }
 				o.left.push(
 					'<a href="javascript:'+(
 						countOnToggleButton > splitSort
@@ -2816,7 +2843,9 @@ var	flagVarNames = ['flag', 'flags']
 					for (i in j) if ((m = j[i]).length) {
 						if (i == 0) a = '';
 						else {
-							m.sort(function(a,b) {return a.t == b.t ? 0 : (a.t > b.t ? 1 : -1);}).reverse();
+							function sortByT(a,b) { return a.t == b.t ? 0 : (a.t > b.t ? 1 : -1); }
+
+							m.sort(sortByT).reverse();
 							a = la.marks[reportClass[i]]+': '+m.length+sep;
 						}
 						o.marks.push(

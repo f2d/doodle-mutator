@@ -64,7 +64,7 @@ define('LOCALIZATION_TEXT', [
 ,	'archive_hint' => 'Скрытые комнаты не показаны.'
 ,	'archiver_button' => 'Приготовить архив'
 ,	'archiver_by_user_id' => 'По вашему номеру профиля (отсутствует в архивах)'
-,	'archiver_by_user_names' => 'По указанным именам авторов (целиком одно на строку)'
+,	'archiver_by_user_names' => 'По именам авторов (по одному на строку)'
 ,	'archiver_by_user_names_hint' => 'Список имён авторов целиком (по одному на строку).'
 ,	'archiver_from_arch' => 'Из архивных нитей'
 ,	'archiver_from_room' => 'Из активных (незавершённых)'
