@@ -649,7 +649,7 @@ function leftPad(n, len, pad) {
 
 function getFormattedTimezoneOffset(t) {
 	return (
-		(t = (t && t.getTimezoneOffset ? t : new Date()).getTimezoneOffset())
+		(t = (t && t.getTimezoneOffset ? t : new Date).getTimezoneOffset())
 		? (t < 0 ? (t = -t, '+') : '-')+leftPad(Math.floor(t/60))+':'+leftPad(t%60)
 		: 'Z'
 	);
@@ -677,12 +677,12 @@ function getFTimeIfTime(t, plain) {
 
 function getFormattedTime(t, plain, only_ymd, for_filename) {
 	if (TOS.indexOf(typeof t) > -1) {
-		t = orz(t)*1000;
+		t = orz(t) * 1000;
 	}
 var	d = (
 		t
-		? new Date(t+(t > 0 ? 0 : new Date()))
-		: new Date()
+		? new Date(t > 0 ? t : t + new Date)
+		: new Date
 	)
 ,	t = (
 		('FullYear,Month,Date'+(only_ymd ? '' : ',Hours,Minutes,Seconds'))
@@ -704,7 +704,7 @@ var	d = (
 		: (
 			'<time datetime="'+YMD+'T'+HIS
 		+	getFormattedTimezoneOffset(t)
-		+	'" data-t="'+Math.floor(d/1000)
+		+	'" data-t="'+Math.floor(d / 1000)
 		+	'">'
 		+		YMD+' <small>'+HIS+'</small>'
 		+	'</time>'
@@ -902,7 +902,7 @@ function checkMyTask(event, e) {
 			}
 			if (s) {
 				s.textContent = status;
-				(btn || s).title = new Date() + dialogNewLine + dialogNewLine + task;
+				(btn || s).title = String(new Date) + dialogNewLine + dialogNewLine + task;
 				if (btn) toggleClass(btn, 'ready', 1);
 			}
 			requestInProgress.checking = 0;
@@ -3191,7 +3191,7 @@ var	a = orz(k.getAttribute('data-autoupdate'))
 				'<span id="'+CS+'">?</span>'
 			,	{
 					'href'  : 'javascript:checkMyTask()'
-				,	'title' : String(t > 0 ? new Date(t) : new Date) + toolTipNewLine + la.check
+				,	'title' : String(t > 0 ? new Date(t * 1000) : new Date) + toolTipNewLine + la.check
 				,	'class' : (a > 0 ? 'auto ' : '')+'ready'
 				}
 			);
