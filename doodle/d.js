@@ -158,6 +158,7 @@ if (lang == 'ru') la = {
 	}
 ,	draw_test : 'Попробовать'
 ,	check : 'Нажмите, чтобы проверить и продлить задание.'
+,	checked_task_hint : 'Ваше задание:'
 ,	task_mistype : 'Тип задания сменился, обновите страницу или нажмите сюда.'
 ,	task_changed : 'Задание было изменено другими действиями за прошедшее время.'
 ,	send_new_thread : 'Будет создана новая нить.'
@@ -291,6 +292,7 @@ if (lang == 'ru') la = {
 	}
 ,	draw_test : 'Try drawing'
 ,	check : 'Click this to verify and prolong your task.'
+,	checked_task_hint : 'Your task:'
 ,	task_mistype : 'Task type changed, please reload the page or click here.'
 ,	task_changed : 'Task was changed by some actions in the meantime.'
 ,	send_new_thread : 'Sending will make a new thread.'
@@ -902,7 +904,13 @@ function checkMyTask(event, e) {
 			}
 			if (s) {
 				s.textContent = status;
-				(btn || s).title = String(new Date) + dialogNewLine + dialogNewLine + task;
+
+				(btn || s).title = [
+					String(new Date)
+				,	la.checked_task_hint
+				,	task
+				].join(toolTipNewLine);
+
 				if (btn) toggleClass(btn, 'ready', 1);
 			}
 			requestInProgress.checking = 0;
