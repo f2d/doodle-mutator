@@ -34,6 +34,7 @@ function is_postfix($text, $part) { return (strrpos($text ?? '', $part) === strl
 
 function exit_no_access($why) {
 	header('HTTP/1.1 403 Forbidden');
+
 	die("Error 403: Forbidden. Reason: $why.");
 }
 
@@ -43,6 +44,7 @@ function remove_header_if_possible($header_name) {
 
 function replace_header_value($header_name, $header_value) {
 	remove_header_if_possible($header_name);
+
 	header("$header_name: $header_value");
 }
 
@@ -50,10 +52,9 @@ function set_cache_control_header($can_store) {
 	replace_header_value('Cache-Control', "max-age=0; must-revalidate; $can_store");
 }
 
-// remove_header_if_possible('Vary');		//* <- fallback to this in case of problems?
-
-replace_header_value('Vary', 'Accept-Encoding, Accept-Language');
+replace_header_value('Vary', 'Accept-Language, Cookie');
 set_cache_control_header('no-cache');
+
 header('Expires: Mon, 12 Sep 2016 00:00:00 GMT');
 header('Pragma: no-cache');
 
@@ -477,10 +478,6 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 
 		if (POST) $post_status = 'user_qk';
 	}
-}
-
-if ($u_key) {
-	replace_header_value('Vary', 'Accept-Encoding, Accept-Language, Cookie');
 }
 
 if (!POST) {
