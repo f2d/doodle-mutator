@@ -731,7 +731,20 @@ if (TIME_PARTS) time_check_point('ignore user abort');
 						if (is_array($b = &$a[$k])) ksort($b);
 						unset($b);
 					}
-					$t = get_print_or_none($a);
+
+					if ($t = get_print_or_none($a)) {
+						$t = preg_replace_callback(
+							'~time[^=\v]+=>\s*(?P<Time>\d+)+~iu'
+						,	function($match) {
+								return (
+									intval($match['Time']) > 0
+									? $match[0].' ('.date(DATE_ATOM, $match['Time']).')'
+									: $match[0]
+								);
+							}
+						,	$t
+						);
+					}
 				} else $t = $a;
 			} else
 			if ($do === 'opcache_reset') {

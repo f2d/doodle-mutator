@@ -1016,14 +1016,14 @@ function get_search_ranges($criteria, $caseless = true) {
 //* convert numeric types to array of ranges and/or comparison operators:
 
 	$signs = array('<','>','-');
-	$before = '^(?P<before>\D*?)(?P<minus>-)?';
+	$before = '^(?P<Before>\D*?)(?P<Minus>-)?';
 	$pat_oom = '~'.SUBPAT_OOM_LETTERS.'~iu';
 	$patterns = array(
-		'(?P<number>\d+)'
+		'(?P<Number>\d+)'
 			=> array(ARG_POST_IMAGE_WIDTH, ARG_POST_IMAGE_HEIGHT)
-	,	'(?P<number>\d+)((?P<float>[,.]\d+)?\s*(?P<oom>'.SUBPAT_OOM_LETTERS.'))?'
+	,	'(?P<Number>\d+)((?P<Float>[,.]\d+)?\s*(?P<OOM>'.SUBPAT_OOM_LETTERS.'))?'
 			=> array(ARG_POST_IMAGE_FILE_SIZE)
-	,	'(?P<csv>\d+(:+\d+)*)'
+	,	'(?P<CSV>\d+(:+\d+)*)'
 			=> array(ARG_POST_USED_TIME)
 	);
 
@@ -1035,8 +1035,8 @@ function get_search_ranges($criteria, $caseless = true) {
 
 			while (preg_match("~$before$pattern~iux", $t, $match)) {
 				$t = substr($t, strlen($match[0]));
-				$prefix = $match['before'] ?: '';
-				$minus = $match['minus'] ?: '';
+				$prefix = $match['Before'] ?: '';
+				$minus = $match['Minus'] ?: '';
 
 				if (
 					strlen($minus)
@@ -1047,17 +1047,17 @@ function get_search_ranges($criteria, $caseless = true) {
 					$minus = '';
 				}
 
-				if (strlen($v = $match['csv'])) {
+				if (strlen($v = $match['CSV'])) {
 					$v = get_time_seconds($x = "$minus$v");
 				} else {
-					$v = intval($match['number']);
+					$v = intval($match['Number']);
 					$x = "$minus$v";
 
 					if (
-						($oom = $match['oom'])
+						($oom = $match['OOM'])
 					&&	preg_match($pat_oom, $oom, $m)
 					) {
-						$v = (float)"$x$match[float]";
+						$v = (float)"$x$match[Float]";
 						$x = "$v$oom";
 						$i = 0;
 
@@ -1564,9 +1564,9 @@ function get_archiver_dl_list($caseless = true, $include_hidden = true) {
 						foreach (get_localized_text_array('archiver_naming_parts') as $k => $tip) {
 							$v = $$k;
 							$k = mb_escape_regex(ARG_NAMING_VAR_PREFIX.$k).'(?:\b|(?=_))';
-							$pat =	'~[<](?P<before>[^>]*?)'
+							$pat =	'~[<](?P<Before>[^>]*?)'
 							.		$k
-							.	'(?P<after>[^>]*?)[>]|'
+							.	'(?P<After>[^>]*?)[>]|'
 							.		$k
 							.	'~u'
 							;
@@ -1575,7 +1575,7 @@ function get_archiver_dl_list($caseless = true, $include_hidden = true) {
 							,	function($match) use ($v) {
 									return (
 										strlen($v)
-										? "$match[before]$v$match[after]"
+										? "$match[Before]$v$match[After]"
 										: ''
 									);
 								}
@@ -1969,7 +1969,7 @@ function format_time_units($t) {
 function format_filesize($b = 0, $frac = 2) {
 	$m = 'BkMGTPEZY';
 
-	if ($i = floor((strlen($b) - 1) / 3)) {
+	if ($i = intval(floor((strlen($b) - 1) / 3))) {
 		$b = sprintf("%.{$frac}f", $b/pow(1024, $i));
 
 		return "$b $m[$i]$m[0]";
@@ -1978,14 +1978,14 @@ function format_filesize($b = 0, $frac = 2) {
 	return "$b $m[0]";
 }
 
-function format_matched_link($a) {
-	if ($m = $a['a'] ?: $a['img']) {
+function format_matched_link($match) {
+	if ($m = $match['Link'] ?: $match['Image']) {
 		$url = $text = $m;
 
-		if ($a['img']) {
+		if ($match['Image']) {
 			$text = '<img src="'.$url.'" alt="'.$text.'" class="'
 			.(
-				($m = ($a['align'] ?: '')[0])
+				($m = ($match['Align'] ?: '')[0])
 			&&	($m == 'l' || $m == 'r')
 				? $m
 				: 'center'
@@ -1995,7 +1995,7 @@ function format_matched_link($a) {
 		return '<a href="'.$url.'" rel="nofollow">'.$text.'</a>';
 	}
 
-	return $a[0];
+	return $match[0];
 }
 
 function format_post_text($text, $uncut = '') {
@@ -2235,12 +2235,12 @@ function indent($t, $n = 0) {
 				\h*
 				(?:
 					<
-					(?P<openTag>pre|textarea)
+					(?P<OpenTag>pre|textarea)
 					\b\V*?
 				)?
 				(?:
 					</
-					(?P<closeTag>pre|textarea)
+					(?P<CloseTag>pre|textarea)
 					>
 				)?
 			~imux'
@@ -2250,15 +2250,15 @@ function indent($t, $n = 0) {
 				} else {
 					$add = $before;
 
-					if ($tag = $match['openTag']) {
+					if ($tag = $match['OpenTag']) {
 						$in = $tag;
 					}
 				}
 
-				if ($in && ($tag = $match['closeTag']) && ($in === $tag)) {
+				if ($in && ($tag = $match['CloseTag']) && ($in === $tag)) {
 					$in = false;
 
-					if (!$add && !$match['openTag']) {
+					if (!$add && !$match['OpenTag']) {
 						$add = $before;
 					}
 				}
@@ -2403,17 +2403,17 @@ function get_template_welcome($a) {
 }
 
 function get_template_profile_text($t) {
-	$p = strtolower($_SERVER['REQUEST_SCHEME'] ?: 'http');
+	$protocol = strtolower($_SERVER['REQUEST_SCHEME'] ?: 'http');
 
-	return mb_str_replace(RELATIVE_LINK_PREFIX, "$p://$_SERVER[SERVER_NAME]/", $t);
+	return mb_str_replace(RELATIVE_LINK_PREFIX, "$protocol://$_SERVER[SERVER_NAME]/", $t);
 }
 
 function get_template_profile_html($t) {
-	$p = 'https?';	//* <- protocols allowed in links
-	$s = '"\s<>';	//* <- characters not allowed in links
+	$protocol = 'https?';	//* <- protocols allowed in links
+	$ex_chars = '"\s<>';	//* <- characters not allowed in links
 	$pat = "~
-		(?P<a>(?:$p)://[^$s/]/*[^$s]*?)(?=[,.]*(?:[$s]|$))
-	|	\[\s*(?P<img>(?:$p)://[^$s/][^$s]*?)(?:\s+(?P<align>left|right|center)|)?\s*\]
+			(?P<Link>	(?:$protocol)://[^$ex_chars/]/*[^$ex_chars]*?)	(?=[,.]*(?:[$ex_chars]|$))
+	|	\[\s*	(?P<Image>	(?:$protocol)://[^$ex_chars/][^$ex_chars]*?)	(?:\s+(?P<Align>left|right|center)|)?	\s*\]
 	~iux";
 	$t = get_template_profile_text($t);
 	$t = preg_replace_callback($pat, 'format_matched_link', $t);
