@@ -511,7 +511,7 @@ function data_archive_get_page_html($room, $num, $tsv) {
 			,	'next' => ($n > 0 ? $n.PAGE_EXT : '')
 			)
 		,	'meta' => array(
-				'og:type'  => 'article'
+				'og:type'  => 'website'
 			,	'og:url'   => $full_link_prefix.$link_here
 			,	'og:image' => $full_link_prefix.$thumbnail
 			,	'og:title' => $description
