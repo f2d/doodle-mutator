@@ -2204,6 +2204,16 @@ $page['title'] = (
 	: ''
 );
 
+if (!$u_key) {
+	$page['meta'] = array(
+		'og:type' => 'website'
+	,	'og:url' => $cfg_link_canonical_base.ltrim($_SERVER['REQUEST_URI'],  './')
+	,	'og:image' => $cfg_meta_image
+	,	'og:title' => $page['title']
+	,	'og:site_name' => $top_title
+	);
+}
+
 if (!$is_report_page) {
 	$index_link_url = (SERVE_AS_INDEX_PAGE ? ROOTPRFX : $_SERVER['PHP_SELF']);
 
@@ -2211,7 +2221,9 @@ if (!$is_report_page) {
 	define('AB', '</a>');
 	define('CHK_ON', '&#x2611; ');
 	define('CHK_OFF', '&#x2610; ');
+
 	$short = !!$u_opts['head'];
+
 	$a_head = array(
 		'/' => $top_title
 	,	'..' => get_localized_text('rooms')
@@ -2222,21 +2234,31 @@ if (!$is_report_page) {
 	,	'~' => get_localized_text('draw_test')
 	,	'#' => get_localized_text('mod_panel')
 	);
+
 	foreach ($a_head as $k => &$v) $v = '">'.(
 		$short
 		? $k
 		: $v.(mb_substr($v, -1) == '.'?'':'.')
 	).'</a>';
+
 	unset($v);
 
-	if (MOD && is_not_empty($t = $query[LK_MOD_ACT_LOG])) $page['mod_act_log'] = $t;
+	if (MOD && is_not_empty($t = $query[LK_MOD_ACT_LOG])) {
+		$page['mod_act_log'] = $t;
+	}
+
 	if (GOD) {
 		define('M', A.'.?'.LK_MOD_ACT);
-		foreach (get_localized_text_array('mod_pages') as $k => $v) $mod_list .= M.'='.$k.'">'.$v.AB;
+
+		foreach (get_localized_text_array('mod_pages') as $k => $v) {
+			$mod_list .= M.'='.$k.'">'.$v.AB;
+		}
+
 		$mod_link_menu = get_template_menu(M.$a_head['#'], $mod_list);
 	}
 
 	$a = (array)$cfg_link_schemes;
+
 	if ($s = strtolower($_SERVER['REQUEST_SCHEME'] ?? $_SERVER['HTTPS'] ?? $a[0])) {
 		if ($s === 'off') $s = 'http'; else
 		if ($s === 'on') $s = 'https';
@@ -2365,24 +2387,35 @@ if (!$is_report_page) {
 	if (!$u_opts['names'] && defined('FOOT_NOTE')) {
 		$links = vsprintf(FOOT_NOTE, get_localized_text_array('foot_notes'));
 	}
+
 	if (!$u_opts['times'] && $u_key) {
 		define('TOOK', $took = '<!--?-->');
+
 		if (TIME_PARTS) {
 			time_check_point('inb4 template');
 			$took = '<a href="javascript:'.(++$page['js'][0]).',toggleHide(took),took.scrollIntoView()">'.$took.'</a>';
 		}
+
 		$took = get_time_html().mb_str_replace_first(' ', NL, sprintf(get_localized_text('took'), $took));
 	}
+
 	foreach (array(
 		'l' => $took
 	,	'r' => $links
-	) as $k => $v) if (strlen($v)) $footer .= NL.'<span class="'.$k.'">'.indent($v).'</span>';
+	) as $k => $v) if (strlen($v)) {
+		$footer .= NL.'<span class="'.$k.'">'.indent($v).'</span>';
+	}
 
-	if ($footer) $page['footer'] = '<p class="hint">'.indent($footer).'</p>';
+	if ($footer) {
+		$page['footer'] = '<p class="hint">'.indent($footer).'</p>';
+	}
 
 	$page['anno'] = 1;
 }
-if (is_not_empty($v = $query[ARG_ERROR])) $page['report'] = $v;
+
+if (is_not_empty($v = $query[ARG_ERROR])) {
+	$page['report'] = $v;
+}
 
 die(get_template_page($page));
 

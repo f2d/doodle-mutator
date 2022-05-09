@@ -8,6 +8,7 @@
 $cfg_langs = array('en', 'ru');
 $cfg_link_schemes = array('http', 'https');
 $cfg_link_canonical_base = 'https://www.example.com/';	//* <- main protocol and domain address, for search engines
+$cfg_meta_image = $cfg_link_canonical_base.'d.demo.1a.png';	//* <- <meta property="og:image">
 $cfg_dir = array(
 //* Format: ID => subfolder
 //* real folder with accessible static files:
