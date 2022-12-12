@@ -172,7 +172,8 @@ define('COUNT_POST', 'post');
 
 define('NL', "\n");
 define('TAB', "\t");
-define('BOM', pack('CCC', 239, 187, 191));		//* <- UTF-8 Byte Order Mark
+define('BOM', pack('CCC', 239, 187, 191));	//* <- UTF-8 Byte Order Mark
+define('TRANSPARENT_COLOR', 0x7f000000);	//* <- alpha 0 = opaque, 127 = transparent, https://php.net/imagecolorallocatealpha
 define('ARCH_DL_HASH_TYPE', 'crc32b');
 define('B64_PRFX', 'base64:');
 define('OPT_PRFX', 'opt_');
@@ -2137,8 +2138,14 @@ $a#$j$l|$r$m");
 
 //* not registered ------------------------------------------------------------
 
-	if ($etc) die('x');
-	foreach ($cfg_dir as $k => $v) unset(${"qd_$k"});
+	if ($etc) {
+		die('x');
+	}
+
+	foreach ($cfg_dir as $k => $v) {
+		unset(${"qd_$k"});
+	}
+
 	$page['signup'] = true;
 	$page['welcome'] = get_localized_text_array('welcome_parts');
 	$page['task'] = get_template_form(
@@ -2299,6 +2306,7 @@ if (!$is_report_page) {
 //* lang selection:
 
 		$i_b = array();
+
 		foreach ($cfg_langs as $v) {
 			$i_b[] = (
 				A.ROOTPRFX.'?lang='.$v.'">'
@@ -2307,11 +2315,13 @@ if (!$is_report_page) {
 			.	AB
 			);
 		}
+
 		if ($i_b) $i_a[] = $i_b;
 
 //* HTTP(S) selection:
 
 		$i_b = array();
+
 		foreach ($cfg_link_schemes as $v) {
 			$i_b[] = (
 				A."$v://$_SERVER[SERVER_NAME]$_SERVER[REQUEST_URI]\">"
@@ -2320,11 +2330,13 @@ if (!$is_report_page) {
 			.	AB
 			);
 		}
+
 		if ($i_b) $i_a[] = $i_b;
 
 //* room type selection:
 
 		$i_b = array();
+
 		if ($u_key) foreach ($cfg_game_type_dir as $k => $v) {
 			$i_b[] = (
 				A
@@ -2336,11 +2348,13 @@ if (!$is_report_page) {
 			.	AB
 			);
 		}
+
 		if ($i_b) $i_a[] = $i_b;
 
 //* other links:
 
 		$i_b = array();
+
 		foreach ($cfg_header_links as $k => $v) {
 			$i_b[] = (
 				A.$v.'">'
@@ -2348,6 +2362,7 @@ if (!$is_report_page) {
 			.	AB
 			);
 		}
+
 		if ($i_b) $i_a[] = $i_b;
 
 //* compile menu blocks:
@@ -2457,8 +2472,12 @@ if ($u_key) {
 				foreach ($cfg_opts_order as $i => $o)
 				foreach ($o as $k) {
 					$v = (isset($p[$j = OPT_PRFX.get_abbr($k)]) ? $p[$j] : '');
-					if ($i === 'input') ${"u_$k"} = $v;
-					else $u_opts[$k] = $v;
+
+					if ($i === 'input') {
+						${"u_$k"} = $v;
+					} else {
+						$u_opts[$k] = $v;
+					}
 				}
 			}
 
@@ -2467,9 +2486,11 @@ if ($u_key) {
 			if (isset($p[OPT_PRFX.'apply_user'])) {
 				$old = data_get_user_profile($u_num);
 				$new = array();
+
 				if ($t = $_POST['email'] ?: '') {
 				//	$t = filter_var($t, FILTER_SANITIZE_EMAIL);
 					$pat = '~'.PAT_EMAIL_FORMAT.'~u';
+
 					if (
 						preg_match($pat, $t, $match)
 					&&	$t = trim(mb_strtolower(fix_encoding($match[1])))
@@ -2491,6 +2512,7 @@ if ($u_key) {
 						));
 					}
 				}
+
 				if ($t = $_POST['about'] ?: '') {
 
 					//* optimize text blob for storage.
@@ -2648,10 +2670,15 @@ if ($u_key) {
 	if (isset($_POST[$k = 'describe'])) {
 		$post_status = 'text_short';
 		$trim_len = mb_strlen($post_text = trim_post($_POST[$k], DESCRIBE_MAX_LENGTH));
+
 		if ($trim_len >= DESCRIBE_MIN_LENGTH) {
-			$full_len = mb_strlen($unlim = trim_post($_POST[$k]));
-			if ($full_len > $trim_len) data_log_action("full post length = $full_len > $trim_len, full text", $unlim);
-			$x = format_post_text($post_text, $unlim);
+			$full_len = mb_strlen($full_text = trim_post($_POST[$k]));
+
+			if ($full_len > $trim_len) {
+				data_log_action("full post length = $full_len > $trim_len, full text", $full_text);
+			}
+
+			$x = format_post_text($post_text, $full_text);
 			$post_status = 'new_post';
 		}
 	} else
@@ -2673,6 +2700,7 @@ file: $upload[name]";
 			} else {
 				$x = $upload['type'];
 				$file_type = mb_strtolower(mb_substr($x, mb_strpos_after($x, '/')));
+
 				if (in_array($file_type, $cfg_draw_file_types)) {
 					$file_size = $upload['size'];
 					$file_meta_text = "$t,file: $upload[name]";
@@ -2697,8 +2725,10 @@ file: $upload[name]";
 				$z = min($k, $l);
 				$file_type = strtolower(substr($post_data, $x, $z-$x));
 				$mime_type = strtolower(substr($post_data, $y, $z-$y));
+
 				if (in_array($file_type, $cfg_draw_file_types)) {
 					$file_content = base64_decode(substr($post_data, max($i, $j, $k, $l)+1));
+
 					if (false === $file_content) {
 						$log = "invalid content, $post_data_size bytes: ".(
 							$post_data_size > REPORT_MAX_LENGTH

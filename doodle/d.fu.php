@@ -584,7 +584,10 @@ function trim_slash_dots($path, $remove_edge_slashes = true) {
 	}
 
 	$path = preg_replace('~(^|/)(\.*/+|\.+$)+~u', '$1', $path);
-	if ($remove_edge_slashes) $path = trim($path, '/');
+
+	if ($remove_edge_slashes) {
+		$path = trim($path, '/');
+	}
 
 	return $path;
 }
@@ -598,15 +601,16 @@ function trim_bom($text) {
 	return trim(str_replace(BOM, '', $text));
 }
 
-function trim_post($text, $len = 0) {
+function trim_post($text, $max_len = 0) {
 
 	if (empty($text)) {
 		return '';
 	}
 
 	$s = trim(preg_replace('~\s+~u', ' ', fix_encoding($text)));
-	if ($len > 0) {
-		$s = mb_substr($s, 0, $len);
+
+	if ($max_len > 0) {
+		$s = mb_substr($s, 0, $max_len);
 	}
 
 	return POST ? htmlspecialchars($s) : $s;
@@ -1998,25 +2002,25 @@ function format_matched_link($match) {
 	return $match[0];
 }
 
-function format_post_text($text, $uncut = '') {
-	if (!$uncut) {
-		$uncut = $text;
+function format_post_text($limited_text, $full_text = '') {
+	if (!$full_text) {
+		$full_text = $limited_text;
 	}
 
 	if (
-		is_prefix($uncut, POST_LINE_BREAK)
-	&&	is_postfix($uncut, POST_LINE_BREAK)
-	&&	mb_substr_count($text = trim($text, $spaced = ' '.POST_LINE_BREAK.' '), $spaced)
+		is_prefix($full_text, POST_LINE_BREAK)
+	&&	is_postfix($full_text, POST_LINE_BREAK)
+	&&	($spaced = ' '.POST_LINE_BREAK.' ')
+	&&	($limited_text = trim($limited_text, $spaced))
+	&&	mb_substr_count($limited_text, $spaced)
 	) {
-		return'<i class="poem">'
-		.	mb_str_replace($spaced, '<br>',
-			preg_replace('~\s+('.POST_LINE_BREAK.'\s+){2,}~', '<br><br>',
-				trim($text, $spaced)
-			))
-		.'</i>';
+		$limited_text = preg_replace('/\s+('.mb_escape_regex(POST_LINE_BREAK).'\s+){2,}/u', '<br><br>', $limited_text);
+		$limited_text = mb_str_replace($spaced, '<br>', $limited_text);
+
+		return '<i class="poem">'.$limited_text.'</i>';
 	}
 
-	return $text;
+	return $limited_text;
 }
 
 function delay_timeout($add_sec = 10) {
