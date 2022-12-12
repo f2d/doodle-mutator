@@ -27,7 +27,7 @@ function get_value_or_empty($array, $key) {
 }
 
 function is_prefix ($text, $part) { return (strpos ($text ?? '', $part) === 0); }
-function is_postfix($text, $part) { return (strrpos($text ?? '', $part) === strlen($part)); }
+function is_postfix($text, $part) { return (strrpos($text ?? '', $part) === strlen($text) - strlen($part)); }
 
 // function is_prefix ($text, $part) { return substr($text ?? '', 0, strlen($part)) === $part; }
 // function is_postfix($text, $part) { return substr($text ?? '',   -strlen($part)) === $part; }
