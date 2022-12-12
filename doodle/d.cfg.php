@@ -73,6 +73,7 @@ define('DRAW_APP_DEFAULT_EXT', '.js');
 
 define('POST_PIC_WAIT', 5);		//* <- seconds; wait before refreshing the page after processing posted images
 define('PIC_OPT_ADD_TIMEOUT', 30);	//* <- seconds; added per each program tried to prevent abort by interpreter if running too long
+define('PIC_OPT_REDUCE_COLORS', true);
 define('PIC_OPT_TRY_GLOBAL_EXEC', false);
 /*
  * Global exec notes:

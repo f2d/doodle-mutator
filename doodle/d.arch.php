@@ -110,65 +110,96 @@ function data_archive_get_images($room = '') {
 	return $a;
 }
 
-function data_archive_get_thumb($src, $xMax = 0, $yMax = 0) {
+function data_archive_get_thumb($src, $max_width = 0, $max_height = 0) {
 	if (!is_file($src)) {
 		return false;
 	}
 
 	ob_start();
 	$data = getImageSize($src);
-	$data['w'] = $width = $data[0];
-	$data['h'] = $height = $data[1];
+	$data['w'] = $old_width = $data[0];
+	$data['h'] = $old_height = $data[1];
 
 	switch ($data['mime']) {
 		case 'image/jpg':
 		case 'image/jpeg':
 		case 'image/pjpeg':
 		{
-			$orig = imageCreateFromJPEG($src);
+			$file_type = 'jpeg';
+			$pic_original = imageCreateFromJPEG($src);
 
 			break;
 		}
 		case 'image/png':
 		case 'image/x-png':
 		{
-			$orig = imageCreateFromPNG($src);
+			$file_type = 'png';
+			$pic_original = imageCreateFromPNG($src);
 
 			break;
 		}
 	}
 	ob_end_clean();
 
-	if (!$orig) {
+	if (!$pic_original) {
 		return 0;
 	}
 
-	imageAlphaBlending($orig, false);
-	imageSaveAlpha($orig, true);
-	$w = $xMax;
-	$h = $yMax;
-	if ($ratio = ($w && $width > $w) + ($h && $height > $h)*2) {
-		if ($ratio == 3) $ratio = ($width/$w < $height/$h ? 2 : 1);
-		if ($ratio == 2) $w = round($h*$width/$height); else	//* <- h tops, w depends
-		if ($ratio == 1) $h = round($w*$height/$width);		//* <- w tops, h depends
-		$res = imageCreateTrueColor($w,$h);
-		imageAlphaBlending($res, false);
-		imageSaveAlpha($res, true);
-		imageCopyResampled($res, $orig, 0,0,0,0, $w,$h, $width,$height);
-		imageDestroy($orig);
-		imageTrueColorToPalette($res, false, 255);
-		$data['w'] = $w;
-		$data['h'] = $h;
-		$data['imgdata'] = $res;
+	imageSaveAlpha($pic_original, true);
+	imageAlphaBlending($pic_original, true);
+
+	$new_width  = $max_width;
+	$new_height = $max_height;
+	$refit_w = ($new_width  && $new_width  < $old_width);
+	$refit_h = ($new_height && $new_height < $old_height);
+
+	if ($refit_w && $refit_h) {
+		if ($old_width / $new_width < $old_height / $new_height) {
+			$refit_w = false;
+		} else {
+			$refit_h = false;
+		}
+	}
+
+	if ($refit_w || $refit_h) {
+		if ($refit_w) $new_height = round($new_width * $old_height / $old_width);	//* <- w preset, h depends
+		if ($refit_h) $new_width = round($new_height * $old_width / $old_height);	//* <- h preset, w depends
+
+		$pic_resized = imageCreateTrueColor($new_width,$new_height);
+
+		imageSaveAlpha($pic_resized, true);
+		imageAlphaBlending($pic_resized, true);
+
+		imageFill($pic_resized, 0,0, TRANSPARENT_COLOR);
+		imageCopyResampled(
+			$pic_resized,
+			$pic_original,
+			0,0,0,0,
+			$new_width, $new_height,
+			$old_width, $old_height
+		);
+
+		imageDestroy($pic_original);
+
+		if (
+			$file_type != 'png'
+		||	!pic_has_transparency($pic_resized, $new_width, $new_height)
+		) {
+			imageTrueColorToPalette($pic_resized, false, 255);
+		}
+
+		$data['w'] = $new_width;
+		$data['h'] = $new_height;
+		$data['imgdata'] = $pic_resized;
 	} else {
-		$data['imgdata'] = $orig;
+		$data['imgdata'] = $pic_original;
 	}
 
 	return $data;
 }
 
-function data_archive_put_thumb($src, $dest, $xMax = 0, $yMax = 0) {
-	if (!is_array($data = data_archive_get_thumb($src, $xMax, $yMax))) {
+function data_archive_put_thumb($src, $dest, $max_width = 0, $max_height = 0) {
+	if (!is_array($data = data_archive_get_thumb($src, $max_width, $max_height))) {
 		return false;
 	}
 

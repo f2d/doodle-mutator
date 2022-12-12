@@ -2030,6 +2030,18 @@ function delay_timeout($add_sec = 10) {
 	}
 }
 
+function pic_has_transparency($pic, $width, $height) {
+
+	for ($x = $width; --$x;)
+	for ($y = $height; --$y;)
+	if (imageColorAt($pic, $x, $y) & TRANSPARENT_COLOR) {
+
+		return true;
+	}
+
+	return false;
+}
+
 function optimize_pic($filepath) {
 	if (
 		function_exists('exec')

@@ -3261,8 +3261,8 @@ if ($f = $pic_final_path) {
 	}
 
 	if ($pic && $resize) {
-		$x = DRAW_PREVIEW_WIDTH;
-		$y = round($h/$w*$x);
+		$new_width = DRAW_PREVIEW_WIDTH;
+		$new_height = round($h / $w * $new_width);
 		$z = filesize($f);
 
 		if (is_file($f = get_pic_resized_path($f))) {
@@ -3270,16 +3270,21 @@ if ($f = $pic_final_path) {
 		}
 
 		if ($page_reload_after_pause) {
-			echo pic_opt_get_time().get_localized_text('post_progress', 'low_res').": $w$BY$h$TO$x$BY$y";
+			echo pic_opt_get_time().get_localized_text('post_progress', 'low_res').": $w$BY$h$TO$new_width$BY$new_height";
 		}
 
-		$p = imageCreateTrueColor($x,$y);
-		imageAlphaBlending($p, false);
-		imageSaveAlpha($p, true);
-		imageCopyResampled($p, $pic, 0,0,0,0, $x,$y, $w,$h);
+		$pic_resized = imageCreateTrueColor($new_width, $new_height);
+
+		imageAlphaBlending($pic_resized, true);
+		imageSaveAlpha($pic_resized, true);
+
+		imageFill($pic_resized, 0,0, TRANSPARENT_COLOR);
+		imageCopyResampled($pic_resized, $pic, 0,0,0,0, $new_width, $new_height, $w,$h);
+
 		imageDestroy($pic);
+
 		$i = "image$file_type";
-		$i($p, $f);
+		$i($pic_resized, $f);
 
 		if ($page_reload_after_pause) {
 			echo pic_opt_get_time().get_localized_text('post_progress', 'opt_res').': ';
@@ -3288,21 +3293,31 @@ if ($f = $pic_final_path) {
 		pic_opt_get_size($f);
 
 		if (
-			$file_type == 'png'
+			PIC_OPT_REDUCE_COLORS
+		&&	$file_type == 'png'
 		&&	($z < filesize($f))
+		&&	!pic_has_transparency($pic_resized, $new_width, $new_height)
 		) {
 			if ($page_reload_after_pause) {
 				echo pic_opt_get_time().get_localized_text('post_progress', 'low_bit').': 255';
 			}
 
-			$c = imageCreateTrueColor($x,$y);
-			imageCopyMerge($c, $p, 0,0,0,0, $x,$y, 100);
-			imageTrueColorToPalette($p, false, 255);
-			imageColorMatch($c, $p);
-			imageDestroy($c);
+			$pic_less_colored = imageCreateTrueColor($new_width, $new_height);
+
+			imageAlphaBlending($pic_less_colored, true);
+			imageSaveAlpha($pic_less_colored, true);
+
+			imageFill($pic_less_colored, 0,0, TRANSPARENT_COLOR);
+			imageCopyMerge($pic_less_colored, $pic_resized, 0,0,0,0, $new_width, $new_height, 100);
+			imageTrueColorToPalette($pic_resized, false, 255);
+			imageColorMatch($pic_less_colored, $pic_resized);
+
+			imageDestroy($pic_less_colored);
+
 			unlink($f);
-			$i($p, $f);
-			imageDestroy($p);
+			$i($pic_resized, $f);
+
+			imageDestroy($pic_resized);
 
 			if ($page_reload_after_pause) {
 				echo pic_opt_get_time().get_localized_text('post_progress', 'opt_res').': ';
@@ -3310,7 +3325,7 @@ if ($f = $pic_final_path) {
 
 			pic_opt_get_size($f);
 		} else {
-			imageDestroy($p);
+			imageDestroy($pic_resized);
 		}
 	}
 	data_unlock();
