@@ -1306,7 +1306,7 @@ function is_post_matching($post, $criteria, $caseless = true) {
 				$post_value = $post['post'];				//* <- text-only post content
 
 				if (false !== mb_strpos($post_value, '<')) {
-					$post_value = preg_replace('~<[^>]+>~u', '', mb_str_replace('<br>', NL, $post_value));
+					$post_value = get_post_text_without_html($post_value);
 				}
 			} else {
 				return false;
@@ -2021,6 +2021,10 @@ function format_post_text($limited_text, $full_text = '') {
 	}
 
 	return $limited_text;
+}
+
+function get_post_text_without_html($html) {
+	return preg_replace('~<[^>]+>~u', '', mb_str_replace('<br>', NL, $html));
 }
 
 function delay_timeout($add_sec = 10) {

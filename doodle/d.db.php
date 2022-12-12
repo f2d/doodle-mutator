@@ -1409,8 +1409,8 @@ function data_get_count($type = COUNT_ROOM, $r = '', $uncached = false, $read = 
 	);
 }
 
-function data_get_mtime($type = COUNT_ROOM, $r = '', $uncached = false) {
-	return data_get_count($type, $r, $uncached, 'filemtime', 'get_dir_top_filemtime');
+function data_get_mtime($type = COUNT_ROOM, $r = '', $uncached = false, $read = 'filemtime', $count = 'get_dir_top_filemtime') {
+	return data_get_count($type, $r, $uncached, $read, $count);
 }
 
 function data_get_thread_content($t) {

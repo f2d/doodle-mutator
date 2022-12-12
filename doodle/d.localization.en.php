@@ -134,6 +134,7 @@ define('LOCALIZATION_TEXT', [
 ,	'me_submit' => 'Enter'
 ,	'mod_files' => [
 		'arch' =>		'Rewrite all archives with newest template.'
+	,	'arch_fix_poems' =>	'Rewrite all archives, recover missed multiline descriptions format.'
 	,	'arch_pix_404' =>	'Rewrite all archives, replacing not found images with 404 placeholder, or vice versa.'
 	,	'arch_pix_hash' =>	'Rewrite all archives, recalculate file hashes (for zip, not filenames) + 404 placeholder.'
 	,	'threads' =>		'Rewrite active threads, recalculate image file sizes and hashes.'

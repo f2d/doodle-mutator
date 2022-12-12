@@ -295,56 +295,68 @@ function data_archive_get_post_fixed_values($line) {
 	global $data_archive_rewrite_params;
 
 	$tab = mb_split(ARCH_POST_FIELD_SEPARATOR, $line);
+	$post_content = $tab[2];
+
 	$is_post_with_pic = (count($tab) > 3);
+	$is_post_placeholder = false;
 
 //* date:
 
-	$t = $tab[0];
+	$timestamp = $tab[0];
 	$post_date_int = intval(
-		preg_match('~\s+data-timestamp=[\'"](\d+)~i', $t, $match)
+		preg_match('~\s+data-timestamp=[\'"](\d+)~i', $timestamp, $match)
 		? $match[1]
-		: strtotime($t)
-	) ?: intval($t);
-
-//* text placeholder:
-
-	$post_content = $tab[2];
-	if (
-		!$is_post_with_pic
-	&&	preg_match(ARCH_PAT_POST_PLACEHOLDER_SPAN, $post_content, $match)
-	) {
-		$post_content = (
-			strlen($match['Time']) && strlen($match['Task'])
-			? "$match[Text]<!-- $match[Title] -->"
-			: "$match[Text]"
-		);
-	}
-
-	$is_post_placeholder = (
-		!$is_post_with_pic
-	&&	preg_match(ARCH_PAT_POST_PLACEHOLDER, $post_content)
-	);
+		: strtotime($timestamp)
+	) ?: intval($timestamp);
 
 //* image + optional link:
 
-	$recheck = $data_archive_rewrite_params['recheck_img'] ?: array();
+	if ($is_post_with_pic) {
+		$recheck = $data_archive_rewrite_params['recheck_img'] ?: array();
 
-	if (
-		$is_post_with_pic
-	&&	false !== mb_strpos($post_content, '<img')
-	&&	($post_content = data_archive_fix_image_path($post_content))
-	&&	(
-			count(array_filter($recheck))
-		||	!(
-				preg_match(ARCH_PAT_POST_PIC, $post_content, $match)
-			&&	($csv = $match['CSV'])
-			&&	preg_match(PAT_POST_PIC_CRC32, $csv)
-			&&	preg_match(PAT_POST_PIC_BYTES, $csv)
-			&&	preg_match(PAT_POST_PIC_W_X_H, $csv)
+		if (
+			false !== mb_strpos($post_content, '<img')
+		&&	($post_content = data_archive_fix_image_path($post_content))
+		&&	(
+				count(array_filter($recheck))
+			||	!(
+					preg_match(ARCH_PAT_POST_PIC, $post_content, $match)
+				&&	($csv = $match['CSV'])
+				&&	preg_match(PAT_POST_PIC_CRC32, $csv)
+				&&	preg_match(PAT_POST_PIC_BYTES, $csv)
+				&&	preg_match(PAT_POST_PIC_W_X_H, $csv)
+				)
 			)
-		)
-	) {
-		$post_content = data_archive_fix_image_html_and_meta($post_content, $recheck);
+		) {
+			$post_content = data_archive_fix_image_html_and_meta($post_content, $recheck);
+		}
+	} else {
+
+//* text placeholder:
+
+		if (preg_match(ARCH_PAT_POST_PLACEHOLDER_SPAN, $post_content, $match)) {
+			$post_content = (
+				strlen($match['Time'])
+			&&	strlen($match['Task'])
+				? "$match[Text]<!-- $match[Title] -->"
+				: "$match[Text]"
+			);
+		}
+
+		$is_post_placeholder = (
+			!$is_post_with_pic
+		&&	preg_match(ARCH_PAT_POST_PLACEHOLDER, $post_content)
+		);
+
+//* salvage broken multiline formatting:
+
+		if (
+			!$is_post_placeholder
+		&&	($line_break = $data_archive_rewrite_params['line_break'])
+		&&	false !== mb_strpos($post_content, $line_break)
+		) {
+			$post_content = format_post_text(POST_LINE_BREAK.$post_content.POST_LINE_BREAK);
+		}
 	}
 
 	return array(
@@ -384,7 +396,7 @@ function data_archive_get_post_fixed_lines($post) {
 				!$meta[$k]
 			||	$meta[$j] > $post_date_int
 			)
-		&&	($post_text = preg_replace(ARCH_PAT_HTML_TAG, '', $post_content))
+		&&	($post_text = preg_replace(ARCH_PAT_HTML_TAG, '', get_post_text_without_html($post_content)))
 		) {
 			$meta[$k] = $post_text;
 			$meta[$j] = $post_date_int;
@@ -621,16 +633,17 @@ function data_archive_rewrite($params = false) {
 	$d = DIR_ARCH;
 	$elen = -strlen(PAGE_EXT);
 
-	data_lock($lk = LK_ARCH.$room, true);
-	foreach (get_dir_rooms($d, '', F_NATSORT) as $room) {
+	foreach (get_dir_rooms($d, '', F_NATSORT) as $each_room) {
 		$t = 0;
 
-		foreach (get_dir_contents($dr = "$d$room", F_NATSORT) as $fn) if (
+		data_lock($lk = LK_ARCH.$each_room, true);
+
+		foreach (get_dir_contents($dr = "$d$each_room", F_NATSORT) as $fn) if (
 			substr($fn, $elen) == PAGE_EXT
 		&&	is_file($f = "$dr/$fn")
 		&&	preg_match(PAT_CONTENT, $old = file_get_contents($f), $match)
 		) {
-			$new = data_archive_get_page_html($room, intval($fn), $match['Content']);
+			$new = data_archive_get_page_html($each_room, intval($fn), $match['Content']);
 
 			if ($old === $new) {
 				$status = 'same';
@@ -661,12 +674,18 @@ function data_archive_rewrite($params = false) {
 			++$t;
 		}
 
+		if ($t) {
+			data_post_refresh($each_room);
+			data_get_mtime(COUNT_ARCH, $each_room, true, 'touch');
+		}
+
+		data_unlock($lk);
+
 		++$a;
 
 if (TIME_PARTS && $t) time_check_point("done $a: $room, $t threads");
 
 	}
-	data_unlock($lk);
 
 	return $text_report;
 }

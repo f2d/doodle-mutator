@@ -828,11 +828,11 @@ $x
 			} else
 			if (is_prefix($do, 'arch')) {
 				require_once(NAMEPRFX.'.arch.php');
-				$i = is_postfix($do, '404');
 				$h = is_postfix($do, 'hash');
 				$t = data_archive_rewrite(array(
-					'recheck_img' => array(
-						'exists' => $h || $i
+					'line_break' => (is_postfix($do, 'poems') ? ' '.POST_LINE_BREAK.' ' : false)
+				,	'recheck_img' => array(
+						'exists' => $h || is_postfix($do, '404')
 					,	'hash' => $h
 					)
 				));
