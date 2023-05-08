@@ -1568,7 +1568,7 @@ function data_get_thread_name_tail($t, $count_pics = true) {
 	,	't' => 'task_hold_time'
 	,	'u' => 'task_hold_user'
 	) as $k => $v) if (isset($$v)) {
-		$tail .= ".$k${$v}";
+		$tail .= '.'.$k.$$v;
 	}
 
 	return $tail;
