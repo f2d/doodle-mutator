@@ -50,7 +50,8 @@
 ,	regTrimSlash = getTrimReg('\\/')
 ,	regTrimWord = getTrimReg('\\W')
 
-,	splitSec = 60
+,	splitDayHours = 24
+,	splitHMS = 60
 ,	splitSort = 500
 ,	TOS = ['object','string']
 ,	ON = ['on','yes','true']
@@ -189,7 +190,8 @@ if (lang == 'ru') la = {
 ,	fail : 'Ошибка '
 ,	empty : 'Ничего нет.'
 ,	hax : '(?)'		//'Неизвестный набор данных.'
-,	time : 'Нарисовано за'
+,	drawn_time : 'Нарисовано за'
+,	drawn_time_days : 'д.'
 ,	using : 'с помощью'
 ,	using_file_upload : 'файл'
 ,	resized : 'Размер'	//'\nИзображение уменьшено.\nРазмер'
@@ -323,7 +325,8 @@ if (lang == 'ru') la = {
 ,	fail : 'Error '
 ,	empty : 'No data.'
 ,	hax : '(?)'		//'Unknown data set.'
-,	time : 'Drawn in'
+,	drawn_time : 'Drawn in'
+,	drawn_time_days : 'd.'
 ,	using : 'using'
 ,	using_file_upload : 'file'
 ,	resized : 'Full size'	//'\nShown image is resized.\nFull size'
@@ -659,13 +662,22 @@ function getFormattedTimezoneOffset(t) {
 
 function getFormattedHMS(msec) {
 var	t = orz(msec)
-,	a = [0, 0, Math.floor(Math.abs(t)/1000)]
+,	a = [0, 0, Math.floor(Math.abs(t) / 1000)]
 ,	i = a.length
 	;
 	while (--i) {
-		if (a[i] >= splitSec) a[i-1] = Math.floor(a[i]/splitSec), a[i] %= splitSec;
+		if (a[i] >= splitHMS) a[i-1] = Math.floor(a[i] / splitHMS), a[i] %= splitHMS;
 		if (a[i] < 10) a[i] = '0'+a[i];
 	}
+
+	if (a[0] >= splitDayHours) a[0] = (
+		Math.floor(a[i] / splitDayHours)
+	// +	' '
+	+	la.drawn_time_days
+	+	' '
+	+	(a[0] % splitDayHours)
+	);
+
 	return (t < 0 ? '-' : '')+a.join(':');
 }
 
@@ -2274,7 +2286,7 @@ function showContent(sortOrder, confirmTooMuchContent) {
 									);
 								}
 							var	q = m[1]+', '+m[7]
-							,	a = la.time+' '+m[1]+(
+							,	a = la.drawn_time+' '+m[1]+(
 									m[7].slice(0,6) === 'file: '
 									? ', '+la.using_file_upload+': '+m[7].slice(6)
 									: ' '+la.using+' '+m[7]

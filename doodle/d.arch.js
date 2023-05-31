@@ -20,7 +20,8 @@
 ,	regTrim = /^\s+|\s+$/g
 ,	regTimeBreak = /^\d+(<|>|,|$)/
 
-,	splitSec = 60
+,	splitDayHours = 24
+,	splitHMS = 60
 ,	TOS = ['object','string']
 
 ,	touch = ('ontouchstart' in document.documentElement)
@@ -62,6 +63,7 @@ if (lang == 'ru') la = {
 	,	capture_to_last_pic	: 'Снимок по последний рисунок'
 	,	capture_to_this_post	: 'Снимок по этот пост'
 	}
+,	drawn_time_days : 'д.'
 }; else la = {
 	post_menu_hint : {
 		post : 'Actions on this post.'
@@ -74,6 +76,7 @@ if (lang == 'ru') la = {
 	,	capture_to_last_pic	: 'Save screenshot up to last pic'
 	,	capture_to_this_post	: 'Save screenshot up to this post'
 	}
+,	drawn_time_days : 'd.'
 };
 
 //* Utility functions *--------------------------------------------------------
@@ -211,13 +214,22 @@ function getFormattedTimezoneOffset(t) {
 
 function getFormattedHMS(msec) {
 var	t = orz(msec)
-,	a = [0, 0, Math.floor(Math.abs(t)/1000)]
+,	a = [0, 0, Math.floor(Math.abs(t) / 1000)]
 ,	i = a.length
 	;
 	while (--i) {
-		if (a[i] >= splitSec) a[i-1] = Math.floor(a[i]/splitSec), a[i] %= splitSec;
+		if (a[i] >= splitHMS) a[i-1] = Math.floor(a[i] / splitHMS), a[i] %= splitHMS;
 		if (a[i] < 10) a[i] = '0'+a[i];
 	}
+
+	if (a[0] >= splitDayHours) a[0] = (
+		Math.floor(a[i] / splitDayHours)
+	// +	' '
+	+	la.drawn_time_days
+	+	' '
+	+	(a[0] % splitDayHours)
+	);
+
 	return (t < 0 ? '-' : '')+a.join(':');
 }
 
