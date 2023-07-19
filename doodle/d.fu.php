@@ -1051,7 +1051,7 @@ function get_search_ranges($criteria, $caseless = true) {
 					$minus = '';
 				}
 
-				if (strlen($v = $match['CSV'])) {
+				if (($v = $match['CSV']) && strlen($v)) {
 					$v = get_time_seconds($x = "$minus$v");
 				} else {
 					$v = intval($match['Number']);
