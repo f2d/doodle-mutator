@@ -119,7 +119,7 @@ $cfg_optimize_pics = array(
 	OxiPng with -Z (zopfli) takes forever to finish, but makes the smallest result (not much difference).
 	OxiPng with -Z takes too much CPU if thread count is too high (> 1, and especially > 6).
 	Both remove appended data (e.g. rarpng), but OptiPng - only with -fix option.
-	Only PngOptimizerCL supports APNG currently.
+	Only PngOptimizerCL and ApngOpt support APNG currently.
  * Overall notes:
 	Leanify only works in-place, so a copy of the image file should be made for safety.
 	All of these programs must be installed manually and PHP must be allowed to run them with exec().
@@ -163,6 +163,10 @@ $cfg_optimize_pics = array(
 		array(
 			'name' => 'pngoptimizercl'
 		,	'command_line' => '"%1$s" -stdio < "%2$s" > "%2$s.out" 2>&1'
+		),
+		array(
+			'name' => 'apngopt'
+		,	'command_line' => '"%1$s" -z2 "%2$s" "%2$s.out" 2>&1'
 		),
 	//* Warning, Leanify may corrupt APNG:
 	//	array('name' => 'leanify', 'command_line' => '"%s" -v --iteration 3 --keep-icc "%s" 2>&1', 'temp_file_ext' => '.out'),
