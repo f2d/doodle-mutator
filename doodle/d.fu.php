@@ -1051,7 +1051,10 @@ function get_search_ranges($criteria, $caseless = true) {
 					$minus = '';
 				}
 
-				if (($v = $match['CSV']) && strlen($v)) {
+				if (
+					is_string($v = $match['CSV'])
+				&&	strlen($v)
+				) {
 					$v = get_time_seconds($x = "$minus$v");
 				} else {
 					$v = intval($match['Number']);
@@ -2302,7 +2305,7 @@ function csv2nl($v, $c = ';', $n = 1) {
 }
 
 function get_template_attr($a = '', $prefix = 'data-') {
-	foreach ((array)$a as $k => $v) if (strlen($v)) {
+	foreach ((array)$a as $k => $v) if (strlen($v ?: '')) {
 		$line .= ' '.$prefix.$k.'="'.$v.'"';
 	}
 
