@@ -620,7 +620,7 @@ if (GOD && (
 	} else
 	if ($q === 'logs') {
 		$day = $query[$qday] ?: $etc;
-		$ymd = preg_match(PAT_DATE, $day);
+		$ymd = ($day ? preg_match(PAT_DATE, $day) : false);
 		if ($mod_logs = data_get_mod_log()) {
 			$page['data']['content']['type'] = 'reports';
 			$page['content'] = "
@@ -933,11 +933,14 @@ $x
 		}
 	} else
 	if ($q && array_key_exists($q, get_localized_text_array('mod_pages'))) {
-		data_lock($q, false);
+		
+		$k = (is_prefix($q, 'user') ? LK_USERLIST : $q);
+		
+		data_lock($k, false);
 
 		exit_if_not_mod(data_get_mod_log($q, 1));
 		if ($t = data_get_mod_log($q)) {
-			if ($q === LK_USERLIST) {
+			if ($k === LK_USERLIST) {
 				$page['content'] .= "
 archives = $arch_list_href
 profiles = ".ROOTPRFX.DIR_USER."
@@ -948,17 +951,17 @@ flags = cgu
 v,$u_num,u	v
 $t";
 			} else
-			if ($q === LK_REF_LIST) {
+			if ($k === LK_REF_LIST) {
 				$page['content'] .= "
 flags = c
 $t";
 			}
 
-			$page['data']['content']['type'] = $q;
+			$page['data']['content']['type'] = $k;
 			$lnk .= get_template_form(array('filter' => 1));
 		}
 
-		data_unlock($q);
+		data_unlock($k);
 	}
 	if (
 		$page['content']
@@ -2539,7 +2542,25 @@ if ($u_key) {
 //* admin/mod actions ---------------------------------------------------------
 
 	if (isset($_POST['mod'])) {
-		if (MOD && (($qd_room && $room) || (GOD && (($query[LK_MOD_ACT] ?? '') === LK_USERLIST || $etc === '3')))) {
+		if (
+			MOD
+		&&	(
+				($qd_room && $room)
+			||	(
+					GOD
+				&&	(
+						$etc === '3'
+					||	(
+							($q = $query[LK_MOD_ACT] ?? '')
+						&&	(
+								($q === LK_USERLIST)
+							||	is_prefix($q, 'user')
+							)
+						)
+					)
+				)
+			)
+		) {
 			$d = ord('a');
 
 			foreach ($_POST as $numbers => $text)

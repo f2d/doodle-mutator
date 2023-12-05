@@ -164,6 +164,9 @@ define('LOCALIZATION_TEXT', [
 ,	'mod_pages' => [
 		'logs' =>	'Журнал'
 	,	'files' =>	'Файлы'
+	,	'userflags' =>	'Польз.флаги'
+	,	'usermails' =>	'Польз.ящики'
+	,	'userpages' =>	'Польз.профили'
 	,	LK_USERLIST =>	'Пользователи'
 	,	LK_REF_LIST =>	'Реф.Ссылки'
 	,	'vars' =>	'Переменные'

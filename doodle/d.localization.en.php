@@ -155,6 +155,9 @@ define('LOCALIZATION_TEXT', [
 ,	'mod_pages' => [
 		'logs' =>	'Logs'
 	,	'files' =>	'Files'
+	,	'userflags' =>	'User flags'
+	,	'usermails' =>	'User mails'
+	,	'userpages' =>	'User profiles'
 	,	LK_USERLIST =>	'Users'
 	,	LK_REF_LIST =>	'Ref.links'
 	,	'vars' =>	'Vars'

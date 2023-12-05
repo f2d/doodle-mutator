@@ -1205,31 +1205,48 @@ function data_fix_mod_log_line_tabs($match) {
 	);
 }
 
-function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
+function data_get_mod_log($type = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 	global $room, $u_num;
 
 //* single list of reflinks:
 
-	if ($t === LK_REF_LIST) {
-		$t = data_get_mod_log_file(DATA_REF_LIST, $mt);
+	if ($type === LK_REF_LIST) {
+		$data = data_get_mod_log_file(DATA_REF_LIST, $mt);
 
 		if (!$mt) {
-			$t = str_or_array_replace(
+			$data = str_or_array_replace(
 				data_fields_to_text_line('~(\d+)([^\d\s]\V+)?', '(\V+)~u')
 			,	data_fields_to_text_line('$1', '$3')	//* <- arrange data fields
-			,	$t
+			,	$data
 			);
 		}
 
-		return str_or_array_replace_html_special_chars_to_str($t);
+		return str_or_array_replace_html_special_chars_to_str($data);
 	}
 
 //* single list of users:
 
-	if ($t === LK_USERLIST) {
-		$t = data_get_mod_log_file(DATA_USERLIST, $mt);
+	if (
+		$type === LK_USERLIST
+	||	is_prefix($type, 'user')
+	) {
+		$data = data_get_mod_log_file(DATA_USERLIST, $mt);
 
 		if (!$mt) {
+			$check_flag = !!strpos($type, 'flag');
+			$check_mail = !!(strpos($type, 'mail') || strpos($type, 'addr'));
+			$check_page = !!(strpos($type, 'page') || strpos($type, 'prof'));
+
+			$filtered_users = (
+				$check_flag
+			||	$check_mail
+			||	$check_page
+				? array()
+				: false
+			);
+
+			$add_user_data = array();
+
 			foreach (array(
 				DATA_U_FLAG => array(
 					'func' => 'data_get_user_flags'
@@ -1248,29 +1265,74 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 				&&	($i = intval(get_file_name($f)))
 				&&	($f = $a['func'])
 				&&	($f = $f($i))
+				&&	($f = array_filter($f, 'get_imploded_non_empty_lines'))
 				&&	($f = array_keys($f))
+				&&	(
+						DATA_U_ABOUT !== $e
+					||	!(
+							($check_mail && !in_array('email', $f))
+						||	($check_page && !in_array('about', $f))
+						)
+					)
 				&&	($f = trim(implode(', ',
 						($x = $a['exclude'])
 						? array_diff($f, (array)$x)
 						: $f
 					)))
 				) {
-					$t = str_or_array_replace(
-						data_fields_to_text_line('~^'.$i, '[^', ']+~mu')
-					,	"$0, $fe: [$f]"
-					,	$t
+					$add_user_data[$i][$e] = "$fe: [$f]";
+				}
+			}
+
+			foreach ($add_user_data as $each_user_id => $each_user_data) {
+
+				$data_keys = array_keys($each_user_data);
+				sort($data_keys);
+
+				$user_all_fields_pat = '~^'.$each_user_id.DATA_FIELD_SEPARATOR.'[^'.NL.']+~mu';
+				$user_first_field_pat = data_fields_to_text_line('~^'.$each_user_id, '[^', ']+~mu');
+
+				if (is_array($filtered_users)) {
+					if (
+						($check_flag && !in_array(DATA_U_FLAG, $data_keys))
+					||	(($check_mail || $check_page) && !in_array(DATA_U_ABOUT, $data_keys))
+					) {
+						continue;
+					}
+
+					foreach ((array)$data as $each_data_part)
+					if (preg_match($user_all_fields_pat, $each_data_part, $each_user_line)) {
+
+						foreach ($data_keys as $data_type) {
+							$each_user_line = str_or_array_replace(
+								$user_first_field_pat
+							,	'$0, '.$each_user_data[$data_type]
+							,	$each_user_line
+							);
+						}
+
+						$filtered_users[$each_user_id] = $each_user_line;
+
+						break;
+					}
+				} else
+				foreach ($data_keys as $data_type) {
+					$data = str_or_array_replace(
+						$user_first_field_pat
+					,	'$0, '.$each_user_data[$data_type]
+					,	$data
 					);
 				}
 			}
 
-			$t = str_or_array_replace(
+			$data = str_or_array_replace(
 				data_fields_to_text_line('~(\V+)', '(\V+)', '(\V+)\+\V+', '(\V+?)~Uu')
 			,	data_fields_to_text_line('$3,$1', '$4', '$2')	//* <- arrange data fields
-			,	$t
+			,	(is_array($filtered_users) ? $filtered_users : $data)
 			);
 		}
 
-		return str_or_array_replace_html_special_chars_to_str($t);
+		return str_or_array_replace_html_special_chars_to_str($data);
 	}
 
 //* logs by date:
@@ -1287,12 +1349,20 @@ function data_get_mod_log($t = '', $mt = false) {	//* <- (Y-m-d|key_name, 1|0)
 
 //* for a single day:
 
-	if ($t) {
+	if ($type) {
 		$a = ($mt ? 0 : array());
 
 //* for a single timestamp:
 
-		if (false === mb_strpos($t, '-')) $t = date('Y-m-d', $t0 = $t);
+		if (
+			!is_string($type)
+		||	false === mb_strpos($type, '-')
+		) {
+			$t = date('Y-m-d', $t0 = $type);
+		} else {
+			$t = $type;
+			$t0 = false;
+		}
 
 //* for selected rooms:
 
