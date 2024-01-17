@@ -590,7 +590,9 @@ if (GOD && (
 		}
 	}
 
-	if ($q === LK_USERLIST && $i) {
+	$k = (is_prefix($q, 'user') ? LK_USERLIST : $q);
+
+	if ($k === LK_USERLIST && $i) {
 		die(get_template_page(array(
 			'title' => get_localized_text('mod_pages', $q).": $i, $usernames[$i]"
 		,	'content' => (
@@ -933,9 +935,7 @@ $x
 		}
 	} else
 	if ($q && array_key_exists($q, get_localized_text_array('mod_pages'))) {
-		
-		$k = (is_prefix($q, 'user') ? LK_USERLIST : $q);
-		
+
 		data_lock($k, false);
 
 		exit_if_not_mod(data_get_mod_log($q, 1));
