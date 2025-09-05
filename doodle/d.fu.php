@@ -993,12 +993,10 @@ function get_pic_normal_filename($p, $keep_suffix = false) {
 }
 
 function get_pic_resized_path($p) {
-	$s = '_res';
-
 	return (
 		false === ($i = mb_strrpos($p, '.'))
-		? $p.$s
-		: mb_substr($p,0,$i).$s.mb_substr($p,$i)
+		? $p.PIC_PREVIEW_SUFFIX
+		: mb_substr($p,0,$i).PIC_PREVIEW_SUFFIX.mb_substr($p,$i)
 	);
 }
 

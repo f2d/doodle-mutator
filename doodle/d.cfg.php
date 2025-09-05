@@ -37,6 +37,7 @@ define('DIR_PICS_DEL', DIR_PICS.'deleted/');
 define('DIR_PICS_ORPHAN', DIR_PICS.'orphan/');
 define('DIR_THUMB', 'th/');		//* <- subfolder in each room archive
 define('PIC_404', 'err.png');		//* <- filename for htaccess and nginx cfg example
+define('PIC_PREVIEW_SUFFIX', '_res');
 
 define('SERVE_AS_INDEX_PAGE', true);
 define('DIR_DOTS', false);		//* <- use href="./.." in top menu

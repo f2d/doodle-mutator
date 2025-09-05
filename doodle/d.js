@@ -2214,10 +2214,15 @@ function showContent(sortOrder, confirmTooMuchContent) {
 						+	t.replace(
 								/(task:\s*)(\S+)(\s*<br>\s*pic:\s*1)|(Denied\s+file\w*:\s*)(\S+)(\s*<br>)/gi
 							,	function(m) {
-									return m = arguments, (
+									return m = arguments, n = m[2] || m[5], (
 										(m[1] || m[4])
+									+		n
 									+	'<br><img src="'
-									+		getPicPath(m[2] || m[5], param)
+									+		getPicPath(n, param)
+									+	'" alt="'
+									+		n
+									+	'" title="'
+									+		n
 									+		getLazyLoadingAttr(true)
 									+	'">'
 									+	(m[3] || m[6])

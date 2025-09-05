@@ -2858,10 +2858,18 @@ file: $upload[name]";
 				: md5($file_content)
 			))
 		&&	($fn = "$hash.$ext")
-		&&	is_file($pic_final_path = get_pic_subpath($fn))
+		&&	(
+				is_file($pic_final_path = get_pic_subpath($found_path = $fn))
+			||	is_file($found_path = DIR_PICS_DEL."$room/$fn")
+			||	is_file($found_path = DIR_PICS_DEL."$fn")
+			)
 		) {
 			$post_status = 'file_dup';
-			$log = $fn;
+			$log = (
+				is_prefix($found_path, DIR_PICS)
+				? substr($found_path, strlen(DIR_PICS))
+				: $found_path
+			);
 		} else {
 
 	//* save pic file:
@@ -3171,7 +3179,7 @@ if ($query && is_array($query)) {
 
 $page_reload_after_pause = 0;
 
-if ($f = $pic_final_path) {
+if ($f_full = $pic_final_path) {
 
 	function pic_opt_get_size($f) {
 		global $page_reload_after_pause, $TO;
@@ -3273,7 +3281,7 @@ if ($f = $pic_final_path) {
 
 //* rewriting already stored post is a crutch, but nothing better for now:
 
-	if ($changed = pic_opt_get_size($f)) {
+	if ($changed = pic_opt_get_size($f_full)) {
 		if (IS_LOCALHOST) echo pic_opt_get_time().get_localized_text('post_progress', 'update_pic').": $fn$TO$fwh$changed";
 
 		$changed_result = data_rename_last_pic($fn, $fwh.$changed);
@@ -3284,10 +3292,10 @@ if ($f = $pic_final_path) {
 	if ($pic && $resize) {
 		$new_width = DRAW_PREVIEW_WIDTH;
 		$new_height = round($h / $w * $new_width);
-		$z = filesize($f);
+		$z = filesize($f_full);
 
-		if (is_file($f = get_pic_resized_path($f))) {
-			unlink($f);
+		if (is_file($f_res = get_pic_resized_path($f_full))) {
+			unlink($f_res);
 		}
 
 		if ($page_reload_after_pause) {
@@ -3305,18 +3313,18 @@ if ($f = $pic_final_path) {
 		imageDestroy($pic);
 
 		$i = "image$file_type";
-		$i($pic_resized, $f);
+		$i($pic_resized, $f_res);
 
 		if ($page_reload_after_pause) {
 			echo pic_opt_get_time().get_localized_text('post_progress', 'opt_res').': ';
 		}
 
-		pic_opt_get_size($f);
+		pic_opt_get_size($f_res);
 
 		if (
 			PIC_OPT_REDUCE_COLORS
 		&&	$file_type == 'png'
-		&&	($z < filesize($f))
+		&&	($z < filesize($f_res))
 		&&	!pic_has_transparency($pic_resized, $new_width, $new_height)
 		) {
 			if ($page_reload_after_pause) {
@@ -3335,8 +3343,8 @@ if ($f = $pic_final_path) {
 
 			imageDestroy($pic_less_colored);
 
-			unlink($f);
-			$i($pic_resized, $f);
+			unlink($f_res);
+			$i($pic_resized, $f_res);
 
 			imageDestroy($pic_resized);
 
@@ -3344,7 +3352,7 @@ if ($f = $pic_final_path) {
 				echo pic_opt_get_time().get_localized_text('post_progress', 'opt_res').': ';
 			}
 
-			pic_opt_get_size($f);
+			pic_opt_get_size($f_res);
 		} else {
 			imageDestroy($pic_resized);
 		}
