@@ -153,13 +153,13 @@ $cfg_optimize_pics = array(
 	),
 	'png' => array(
 		array(
+			'name' => 'oxipng'
+		,	'command_line' => '"%s" -vvvvvv --verbose --fix --interlace off --threads 1 "%s" 2>&1'
+		),
+		array(
 			'name' => 'optipng'
 		,	'command_line' => '"%s" -v -i 0 -fix "%s" 2>&1'
 		,	'retry' => 1
-		),
-		array(
-			'name' => 'oxipng'
-		,	'command_line' => '"%s" -v -i 0 --fix -t 1 "%s" 2>&1'
 		),
 		array(
 			'name' => 'pngoptimizercl'
@@ -428,7 +428,7 @@ $cfg_header_links = array(
 
 //* ---------------------------------------------------------------------------
 
-define('FOOT_NOTE', '2013-2022.
+define('FOOT_NOTE', '2013-2026.
 <a href="'.ROOTPRFX.'?'.ARG_ABOUT.'">%s</a> /
 <a href="https://github.com/f2d/doodle-mutator">%s</a> /
 <a href="https://github.com/f2d/">%s</a> /
