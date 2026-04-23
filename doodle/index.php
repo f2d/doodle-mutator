@@ -91,6 +91,7 @@ $debug_dump = array(ob_get_clean());
 define('ME', 'me');
 define('ME_VAL', $_POST[ME] ?? $_COOKIE[ME] ?? '');	//* <- don't rely on $_REQUEST and EGPCS order
 define('POST', 'POST' === $_SERVER['REQUEST_METHOD']);
+define('IMAGE_DESTROY', PHP_MAJOR_VERSION < 8);		//* <- imagedestroy() is deprecated since PHP 8.5, has no effect since 8.0
 
 if (POST) {
 	set_cache_control_header('no-store');
@@ -2931,7 +2932,7 @@ file: $upload[name]";
 					if ($resize) {
 						$fn = $fwh.format_filesize($file_size);
 					} else if ($pic) {
-						imageDestroy($pic);
+						if (IMAGE_DESTROY) imageDestroy($pic);
 					} else $log = "imageDestroy(none): $f";
 
 	//* gather post data fields to store:
@@ -3310,7 +3311,7 @@ if ($f_full = $pic_final_path) {
 		imageFill($pic_resized, 0,0, TRANSPARENT_COLOR);
 		imageCopyResampled($pic_resized, $pic, 0,0,0,0, $new_width, $new_height, $w,$h);
 
-		imageDestroy($pic);
+		if (IMAGE_DESTROY) imageDestroy($pic);
 
 		$i = "image$file_type";
 		$i($pic_resized, $f_res);
@@ -3341,12 +3342,12 @@ if ($f_full = $pic_final_path) {
 			imageTrueColorToPalette($pic_resized, false, 255);
 			imageColorMatch($pic_less_colored, $pic_resized);
 
-			imageDestroy($pic_less_colored);
+			if (IMAGE_DESTROY) imageDestroy($pic_less_colored);
 
 			unlink($f_res);
 			$i($pic_resized, $f_res);
 
-			imageDestroy($pic_resized);
+			if (IMAGE_DESTROY) imageDestroy($pic_resized);
 
 			if ($page_reload_after_pause) {
 				echo pic_opt_get_time().get_localized_text('post_progress', 'opt_res').': ';
@@ -3354,7 +3355,7 @@ if ($f_full = $pic_final_path) {
 
 			pic_opt_get_size($f_res);
 		} else {
-			imageDestroy($pic_resized);
+			if (IMAGE_DESTROY) imageDestroy($pic_resized);
 		}
 	}
 	data_unlock();

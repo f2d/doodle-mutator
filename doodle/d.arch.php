@@ -179,7 +179,7 @@ function data_archive_get_thumb($src, $max_width = 0, $max_height = 0) {
 			$old_width, $old_height
 		);
 
-		imageDestroy($pic_original);
+		if (IMAGE_DESTROY) imageDestroy($pic_original);
 
 		if (
 			$file_type != 'png'
