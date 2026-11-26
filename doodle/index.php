@@ -67,8 +67,10 @@ define('NAMEPRFX', 'd');
 //* Config parts that are not safe to change: ---------------------------------
 
 define('ENC', 'utf-8');
+define('USE_MB_REGEX', PHP_MAJOR_VERSION < 8 || (PHP_MAJOR_VERSION === 8 && PHP_MINOR_VERSION < 6));
+
 mb_internal_encoding(ENC);
-mb_regex_encoding(ENC);
+if (USE_MB_REGEX) mb_regex_encoding(ENC);
 
 define('ROOTPRFX', mb_substr($s = $_SERVER['PHP_SELF'] ?: $_SERVER['SCRIPT_NAME'] ?: '/', 0, mb_strrpos($s, '/')+1));
 
@@ -223,7 +225,7 @@ foreach ($cfg_dir as $k => $v) {
 	${$k.'_list_href'} = ROOTPRFX.$v;
 }
 
-$cfg_room_prefix_chars = implode('', array_unique(mb_str_split(fix_encoding(implode('', $cfg_room_prefixes)))));
+$cfg_room_prefix_chars = implode('', array_unique(mb_split_to_chars(fix_encoding(implode('', $cfg_room_prefixes)))));
 
 //* Select UI language *-------------------------------------------------------
 
@@ -409,15 +411,15 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 
 //* v1, one separator for all, like "hash_etc_etc":
 
-		list($u_qk, $u_opti, $u_trd_per_page, $u_room_default) = mb_split('_', $me, 4);
+		list($u_qk, $u_opti, $u_trd_per_page, $u_room_default) = mb_split_by_str('_', $me, 4);
 	} else
 	if (false === mb_strpos($me, ':')) {
 
 //* v2, plain ordered numbers, like "hash/vvv_val_val/etc":
 
-		list($u_qk, $i, $u_room_default, $u_draw_app) = mb_split('\\/', $me, 4);
+		list($u_qk, $i, $u_room_default, $u_draw_app) = mb_split_by_str('/', $me, 4);
 		if (!preg_match_all('~(\d+)([a-z])~u', mb_strtolower($i), $m)) {
-			list($u_opti, $u_trd_per_page, $u_draw_max_undo) = mb_split(false !== mb_strpos($i, '_')?'_':'.', $i);
+			list($u_opti, $u_trd_per_page, $u_draw_max_undo) = mb_split_by_str(false !== mb_strpos($i, '_')?'_':'.', $i);
 		} else {
 
 //* v3, abbreviated suffixes for middle part, like "01adm_0010opt_30per_page_99undo", or "0a1o2p3u", in any order:
@@ -428,7 +430,7 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 
 //* v4, key prefixes for all, like "hash/key:val/key:val/etc:etc", in any order:
 
-		$a = mb_split('\\/', $me);
+		$a = mb_split_by_str('/', $me);
 		$u_qk = array_shift($a);
 		$key_value_pairs = $a;
 	}
@@ -462,13 +464,13 @@ if (ME_VAL && ($me = fix_encoding(URLdecode(ME_VAL)))) {
 		if ($key_value_pairs) {
 			$i = 'input';
 			foreach ($a as $key_value_pair) {
-				list($k, $v) = mb_split(':', $key_value_pair, 2);
+				list($k, $v) = mb_split_by_str(':', $key_value_pair, 2);
 				if (strlen($v = decode_opt_value($v))) {
 					if (array_key_exists($k, $cfg_opts_order[$i])) {
 						${'u_'.$cfg_opts_order[$i][$k]} = $v;
 					} else
 					if (array_key_exists($k, $cfg_opts_order) && $k !== $i) {
-						$y = (false !== mb_strpos($v, '.') ? mb_split('\\.', $v) : mb_str_split($v));
+						$y = (false !== mb_strpos($v, '.') ? mb_split_by_str('.', $v) : mb_split_to_chars($v));
 						foreach ($cfg_opts_order[$k] as $v) if (in_array(get_abbr($v), $y)) $u_opts[$v] = 1;
 					}
 				}
@@ -780,10 +782,15 @@ NL.(++$i)."	$old => $new	".($old === $new?'same':(rename($old, mkdir_if_none($ne
 if (TIME_PARTS && $i) time_check_point("done $i pics");
 			} else
 			if (is_prefix($do, 'img2orphan')) {
+
 				require_once(NAMEPRFX.'.arch.php');
-				$i = $k = 0;
-				$c = count($links = array_unique(array_merge($r = data_get_visible_images(), $a = data_archive_get_images())));
+
 				$check = is_postfix($do, 'check');
+				$i = $k = 0;
+				$c = count($links = array_unique(array_merge(
+					data_get_visible_images()
+				,	data_archive_get_images()
+				)));
 
 				function move_leftover_files($d) {
 					global $check, $links, $t, $i, $k;
@@ -830,7 +837,9 @@ $x
 				}
 			} else
 			if (is_prefix($do, 'arch')) {
+
 				require_once(NAMEPRFX.'.arch.php');
+
 				$h = is_postfix($do, 'hash');
 				$t = data_archive_rewrite(array(
 					'line_break' => (is_postfix($do, 'poems') ? ' '.POST_LINE_BREAK.' ' : false)
@@ -875,8 +884,8 @@ $x
 				'PHP_OS',
 				'PHP_VERSION',
 				'PCRE_VERSION',
-				'mb_regex_encoding',
-				'mb_regex_set_options',
+				(USE_MB_REGEX ? 'mb_regex_encoding' : ''),
+				(USE_MB_REGEX ? 'mb_regex_set_options' : ''),
 
 				'sys_getloadavg',
 				'get_system_memory_info',
@@ -1760,13 +1769,13 @@ if (TIME_PARTS) $pi = $ri = $li = 0;
 							$uid_append = '';
 							if ($t = $post['time']) {
 								if ($u_opts['times']) {
-									$l = mb_split($b, $t, 2);
+									$l = mb_split_by_str($b, $t, 2);
 									$l[0] = NB;
 									$l = implode($b, $l);
 								} else $l = $t;
 							} else $l = NB;
 							if ($t = $post['user']) {
-								$r = mb_split($b, $t, 2);
+								$r = mb_split_by_str($b, $t, 2);
 								$uid = $r[0];
 								if (!$u_opts['names'] && array_key_exists($uid, $usernames)) {
 									if (u_profile_exists($uid)) {
@@ -2957,7 +2966,7 @@ file: $upload[name]";
 		if ($log = $x['fork']) $t[] = 'trd_miss';
 		if ($log = $x['cap']) $t[] = 'trd_max'; else
 		if (!$x['post']) {
-			if ($a = array_filter(array_keys($x), 'is_deny_arg')) $t = array_merge($t, $a);
+			if ($a = array_filter(array_keys($x), 'is_deny_arg')) array_push($t, ...$a);
 			else $t[] = 'unkn_res';
 			$del_pic = $pic_final_path;
 		}

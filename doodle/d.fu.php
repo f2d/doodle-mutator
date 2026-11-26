@@ -208,6 +208,10 @@ function get_print_or_none($var) { return (empty($var) ? 'none' : trim(print_r($
 //* not sure about mb_split() vs preg_split('//u');
 //* mb_split() takes regex without delimiters, and allows encoding other that UTF-8;
 //* ---------------------------------------------------------------------------
+//* https://www.php.net/manual/en/migration86.deprecated.php
+//* The mbregex functions are deprecated in PHP 8.6 and will be removed in PHP 9.0:
+//* mb_ereg*|mb_regex*|mb_split.
+//* ---------------------------------------------------------------------------
 
 function fix_encoding($text) {
 	global $fix_encoding_chosen;
@@ -413,8 +417,10 @@ function mb_sanitize_filename($text) {
 //	return strtr($s, array('"' => "'", ':' => '_', '?' => '_', '*' => '_', '<' => '_', '>' => '_'));
 }
 
-if (!function_exists($f = 'mb_str_split')) {
-	function mb_str_split($text) {
+if (function_exists('mb_str_split')) {
+	function mb_split_to_chars(...$args) { return mb_str_split(...$args); }
+} else {
+	function mb_split_to_chars($text) {
 
 		if (empty($text)) {
 			return array();
@@ -424,9 +430,22 @@ if (!function_exists($f = 'mb_str_split')) {
 	}
 }
 
-function mb_split_filter($where, $by = '/', $limit = 0) {
+function mb_split_by_str($by, $text, $limit = 0, $flags = 0) {
 
-	if (empty($where)) {
+	if (empty($text)) {
+		return array();
+	}
+
+	return preg_split(
+		$by === NL
+		? '~(\r\n|\v)~u'
+		: '/('.mb_escape_regex($by).')/u'
+	, $text, $limit, $flags);
+}
+
+function mb_split_filter($text, $by = '/', $limit = 0) {
+
+	if (empty($text)) {
 		return array();
 	}
 
@@ -434,7 +453,7 @@ function mb_split_filter($where, $by = '/', $limit = 0) {
 		$by === NL
 		? '~\v+~u'
 		: '/('.mb_escape_regex($by).')+/u'
-	, $where, $limit, PREG_SPLIT_NO_EMPTY);
+	, $text, $limit, PREG_SPLIT_NO_EMPTY);
 }
 
 function mb_substr_before($where, $what, $offset = 0) {
@@ -1221,7 +1240,7 @@ function is_post_matching($post, $criteria, $caseless = true) {
 			if (
 				$match_type === ARG_POST_IMAGE_FILE_NAME_PART
 			) {
-				$post_value = mb_split('"', $post['post']);
+				$post_value = mb_split_by_str('"', $post['post']);
 				$post_value = array_filter($post_value, 'is_tag_attr');
 				$post_value = array_map('get_file_name', $post_value);		//* <- all filenames, original and resized
 			} else
@@ -1276,7 +1295,7 @@ function is_post_matching($post, $criteria, $caseless = true) {
 					if (mb_strrpos($post_value, '-')) {
 						$t1 = $t0 = false;
 
-						foreach (mb_split('-', $post_value) as $n) if (strlen($n)) {
+						foreach (mb_split_by_str('-', $post_value) as $n) if (strlen($n)) {
 							if (false === $t0) $t0 = $n;
 							$t1 = $n;
 						}
@@ -1426,7 +1445,7 @@ function get_post_pic_to_display($p, $return_array = false) {
 }
 
 function get_post_pic_info($p, $csv = '', $check_file = 0) {
-	list($filename, $etc) = mb_split(';', $p, 2);
+	list($filename, $etc) = mb_split_by_str(';', $p, 2);
 
 	$a = array(
 		'file_name_ext' => ($p = trim(
@@ -1835,7 +1854,7 @@ function get_draw_vars($send = '') {
 		($draw_res_text = $GLOBALS['query']['draw_res'])
 	&&	false !== mb_strpos($draw_res_text, 'x')
 	) {
-		$requested_dimensions = array_map('intval', mb_split('x', $draw_res_text, 2));
+		$requested_dimensions = array_map('intval', mb_split_by_str('x', $draw_res_text, 2));
 	}
 
 	if ($send) {

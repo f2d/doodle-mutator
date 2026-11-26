@@ -211,7 +211,7 @@ function data_archive_get_post_date($line) {
 }
 
 function data_archive_get_post_pic_info($img_html, $check_file = 1) {
-	$a = mb_split($b = '>', $img_html);
+	$a = mb_split_by_str($b = '>', $img_html);
 
 	$csv = array_pop($a);
 	if ($csv.$b == ARCH_PIC_NOT_FOUND) $csv = array_pop($a);
@@ -227,7 +227,7 @@ function data_archive_fix_image_path($post_content) {
 		'<img src="'
 	,	'<a href="'
 	) as $i) {
-		$x = mb_split($i, $post_content);
+		$x = mb_split_by_str($i, $post_content);
 		$post_content = array_shift($x);
 
 		foreach ($x as $y) {
@@ -294,7 +294,7 @@ function data_archive_fix_image_html_and_meta($post_content, $recheck = false) {
 function data_archive_get_post_fixed_values($line) {
 	global $data_archive_rewrite_params;
 
-	$tab = mb_split(ARCH_POST_FIELD_SEPARATOR, $line);
+	$tab = mb_split_by_str(ARCH_POST_FIELD_SEPARATOR, $line);
 	$post_content = $tab[2];
 
 	$is_post_with_pic = (count($tab) > 3);
@@ -702,8 +702,8 @@ function data_archive_rename_last_pic($old, $new, $n_last_pages = 0) {
 	$e = PAGE_EXT;
 	$j = ';';
 
-	list($old_name, $old_size) = mb_split($j, $old, 2);
-	list($new_name, $new_size) = mb_split($j, $new, 2);
+	list($old_name, $old_size) = mb_split_by_str($j, $old, 2);
+	list($new_name, $new_size) = mb_split_by_str($j, $new, 2);
 
 	data_lock($lk = LK_ARCH.$room, true);
 	if ($i = get_dir_top_file_id($d, $e)) {
@@ -852,7 +852,7 @@ if (TIME_PARTS) {$n_found = 0; time_check_point(count($files)." files in $dr");}
 if (TIME_PARTS) $n_check = '';
 
 			foreach (mb_split_filter($match['Content'], NL) as $line) {
-				$tab = mb_split(ARCH_POST_FIELD_SEPARATOR, $line);
+				$tab = mb_split_by_str(ARCH_POST_FIELD_SEPARATOR, $line);
 				$post = array(
 					'date' => intval($tab[0]) ?: '?'
 				,	'username' => $tab[1] ?: '?'

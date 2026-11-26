@@ -952,7 +952,7 @@ function data_check_user($u_key_requested, $reg = false) {
 		}
 
 		foreach (get_file_lines(DATA_USERLIST) as $line) if (false !== mb_strpos($line, DATA_FIELD_SEPARATOR)) {
-			list($i, $k, $t, $name) = mb_split(DATA_FIELD_SEPARATOR, $line);
+			list($i, $k, $t, $name) = mb_split_by_str(DATA_FIELD_SEPARATOR, $line);
 			$i = intval($i);
 
 			if ($last_user < $i) {
@@ -1028,7 +1028,7 @@ function data_get_user_flags($u_num) {
 		data_lock(LK_USER.$u_num, false);
 
 		foreach (get_file_lines("$d$e/$u_num.$e") as $line) if (strlen($line = trim_bom($line))) {
-			$a = mb_split(DATA_FIELD_SEPARATOR, $line);
+			$a = mb_split_by_str(DATA_FIELD_SEPARATOR, $line);
 			$flag = end($a);
 			$time = reset($a);
 			$result[$flag] = $time;
@@ -1400,9 +1400,9 @@ $v
 //* check each message author and timestamp:
 
 				if ($t0) {
-					$v = mb_split(NL, $v);
+					$v = mb_split_by_str(NL, $v);
 					$v = array_filter(array_map(function($line) use ($t0, $u_num) {
-						$tab = mb_split(DATA_FIELD_SEPARATOR.'\D*', $line, 3);
+						$tab = preg_split('~'.DATA_FIELD_SEPARATOR.'\D*~u', $line, 3);
 
 						return (
 							(
@@ -2110,7 +2110,7 @@ function data_get_full_threads($get_content = true) {
 		$a = array('name' => $f);
 
 		foreach (get_file_lines($f) as $line) if (false !== mb_strpos($line, DATA_FIELD_SEPARATOR)) {
-			$tab = mb_split(DATA_FIELD_SEPARATOR, $line);
+			$tab = mb_split_by_str(DATA_FIELD_SEPARATOR, $line);
 
 			if ($tab[0]) {
 				if ($last_time < $tab[0]) $last_time = $tab[0];
@@ -2125,7 +2125,7 @@ function data_get_full_threads($get_content = true) {
 
 			//* image markup for scriptless view, autofixed by archive template:
 
-				list($src, $res) = mb_split(';', $tab[3], 2);
+				list($src, $res) = mb_split_by_str(';', $tab[3], 2);
 				if (!isset($a['thumb'])) $a['thumb'] = get_pic_subpath($src);
 				$tab[3] = '<img src="'.get_pic_url($src).'">'.($res ? ";$res" : '');
 			}
@@ -2190,7 +2190,7 @@ function data_archive_ready_go($reloading = false) {
 }
 
 function data_get_post_pic_info($post_content, $check_file = 1) {
-	list($pic, $csv) = mb_split(';', $post_content, 2);
+	list($pic, $csv) = mb_split_by_str(';', $post_content, 2);
 
 	return get_post_pic_info($pic, $csv, $check_file);
 }
@@ -2235,7 +2235,7 @@ if (TIME_PARTS) {$n_found = 0; time_check_point(count($files)." files in $dr");}
 if (TIME_PARTS) $n_check = '';
 
 			foreach (mb_split_filter($t, NL) as $line) {
-				$tab = mb_split(DATA_FIELD_SEPARATOR, $line);
+				$tab = mb_split_by_str(DATA_FIELD_SEPARATOR, $line);
 				$post = array_filter(array(
 					'date' => intval($tab[0]) ?: '?'
 				,	'username' => $usernames[$tab[1]] ?: '?'
@@ -2540,7 +2540,7 @@ function data_mod_action($a) {		//* <- array(option name, thread, row, column, o
 					$tab = (
 						$un < 2
 						? array(T0, $u_num)			//* <- add, insert (own post from now, if not specified)
-						: mb_split(DATA_FIELD_SEPARATOR, $old)	//* <- edit, replace (assume old post as valid)
+						: mb_split_by_str(DATA_FIELD_SEPARATOR, $old)	//* <- edit, replace (assume old post as valid)
 					);
 
 			//* timestamp/ID, accept digits > 0 only, or no change:
@@ -2965,7 +2965,7 @@ if (TIME_PARTS) time_check_point("done scan: $c files in $td, inb4 thread iterat
 			$posts = array();
 
 			foreach (mb_split_filter($f, NL) as $line) if (false !== mb_strpos($line = trim($line), DATA_FIELD_SEPARATOR)) {
-				$tab = mb_split(DATA_FIELD_SEPARATOR, $line);
+				$tab = mb_split_by_str(DATA_FIELD_SEPARATOR, $line);
 				$t = intval($tab[0]);
 
 				if ($last < $t) {
@@ -3025,7 +3025,7 @@ if (TIME_PARTS) time_check_point("done scan: $c files in $td, inb4 thread iterat
 
 				foreach (get_file_lines($repf) as $line) if (
 					trim_bom($line)
-				&&	count($tab = mb_split(DATA_FIELD_SEPARATOR, $line, 4)) > 3
+				&&	count($tab = mb_split_by_str(DATA_FIELD_SEPARATOR, $line, 4)) > 3
 				) {
 					$t = intval($tab[0]);
 
@@ -3122,7 +3122,7 @@ function data_check_my_task($aim = false) {
 //* check if line is a task:
 
 		false !== mb_strpos($line, DATA_FIELD_SEPARATOR)
-	&&	(list($t, $r, $thread, $post) = mb_split(DATA_FIELD_SEPARATOR, $line, 4))
+	&&	(list($t, $r, $thread, $post) = mb_split_by_str(DATA_FIELD_SEPARATOR, $line, 4))
 	&&	$r && $thread && $post
 	) {
 		if ($g && false === mb_strpos($r, '/')) $r = "$g/$r";
@@ -3901,8 +3901,8 @@ function data_rename_last_pic($old, $new) {
 	if (
 		$old_saved === $old
 	||	(
-			mb_split(';', $old_saved, 2)[0]
-		===	mb_split(';', $old, 2)[0]
+			mb_split_by_str(';', $old_saved, 2)[0]
+		===	mb_split_by_str(';', $old, 2)[0]
 		)
 	) {
 		$before = mb_substr($t, 0, $pos_before);
